@@ -87,17 +87,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rtab{padding:9px 20px 8px;border:none;background:rgba(255,255,255,.1);font-family:inherit;font-size:12px;color:rgba(255,255,255,.65);cursor:pointer;border-radius:8px 8px 0 0;transition:.15s;font-weight:600;letter-spacing:.02em;border:1px solid transparent;border-bottom:none;margin-bottom:0;position:relative;top:1px}
 .rtab:hover{background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
 .rtab.on{background:var(--gray-bg);color:var(--navy);border-color:rgba(255,255,255,.15);font-weight:800;top:0;padding-top:10px}
-.r-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:14px 16px}
+/* 右パネル本体：シンプルに縦スクロールのみ */
+.r-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px 16px}
 .r-body::-webkit-scrollbar{width:6px}
 .r-body::-webkit-scrollbar-track{background:#f0f4f8}
 .r-body::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
 .r-summary{margin-bottom:8px}
-.tbl-wrap{overflow:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 240px);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border)}
-.tbl-wrap::-webkit-scrollbar{width:8px;height:10px}
+/* テーブル：横スクロール */
+.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border)}
+.tbl-wrap::-webkit-scrollbar{height:10px}
 .tbl-wrap::-webkit-scrollbar-track{background:#e8ecf0}
 .tbl-wrap::-webkit-scrollbar-thumb{background:#7b8fa3;border-radius:5px}
 .tbl-wrap::-webkit-scrollbar-thumb:hover{background:#4a5e73}
-.tbl-wrap::-webkit-scrollbar-corner{background:#e8ecf0}
 
 /* ============================================================
    入力フォーム共通
@@ -4037,7 +4038,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       ${sub?`<div style="font-size:9px;color:var(--muted);margin-top:1px">${sub}</div>`:''}
     </div>
   </div>`;
-  let h=`<div class="r-summary"><div class="cf-summary" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+  let h=`<div class="r-summary"><div class="cf-summary" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
     ${sc('💰','総収入',ri(totI_s).toLocaleString(),'万円','#2d7dd2',`${disp}年間合計`)}
     ${sc('💸','総支出',ri(totE_s).toLocaleString(),'万円','#fc5b4a',`${disp}年間合計`)}
     ${sc('🏦','最終残高',ri(finSav_s).toLocaleString(),'万円',finSav_s>=0?'#0d8a20':'#d63a2a',`${hAge+disp-1}歳時点`)}
@@ -4228,20 +4229,19 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
 
   // スクロール位置を保存してからDOM置換 → 復元
   const _rb=$('right-body');
-  const _prevRbTop=_rb?_rb.scrollTop:0;
+  const _prevTop=_rb?_rb.scrollTop:0;
   const _oldTw=_rb?_rb.querySelector('.tbl-wrap'):null;
-  window._prevTblLeft=_oldTw?_oldTw.scrollLeft:0;
-  window._prevTblTop=_oldTw?_oldTw.scrollTop:0;
+  const _prevLeft=_oldTw?_oldTw.scrollLeft:0;
   _rb.innerHTML=h;
 
   // 万が一タブが存在すればタブボタンを表示維持
   if(window._mgStore?.h)$('rt-mg-h').style.display='';
   if(window._mgStore?.w)$('rt-mg-w').style.display='';
 
-  // テーブルの横スクロールと右パネルの縦スクロールを復元
-  if(_rb&&_prevRbTop>0)_rb.scrollTop=_prevRbTop;
-  const _twNew=_rb?_rb.querySelector('.tbl-wrap'):null;
-  if(_twNew){if(window._prevTblLeft>0)_twNew.scrollLeft=window._prevTblLeft;if(window._prevTblTop>0)_twNew.scrollTop=window._prevTblTop;}
+  // スクロール位置を復元
+  if(_rb&&_prevTop>0)_rb.scrollTop=_prevTop;
+  const _newTw=_rb?_rb.querySelector('.tbl-wrap'):null;
+  if(_newTw&&_prevLeft>0)_newTw.scrollLeft=_prevLeft;
   _applyFinAssetVisibility();
   _reapplyHighlightAfterRender();
 }
