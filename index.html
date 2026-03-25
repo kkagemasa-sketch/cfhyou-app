@@ -7540,30 +7540,106 @@ function exportLoanExcel(){
   const clientName=_v('client-name')||'CF表';
   const rows=[];const types=[];
   const push=(r,t)=>{rows.push(r);types.push(t)};
-  // タイトル
+
+  // ── 繰上返済シミュレーション結果を取得 ──
+  let hasPP=false,ppTypeLabel='',ppTermFrom=0,ppTermTo=0;
+  let ppAmtA=0,ppAmtB=0,ppAmtTotal=0,ppSaved=0;
+  let withPPA=null,withPPB=null;
+  let ppReduceAmt=0,ppReduceNewMP=0;
+
+  if(_ppType==='term'){
+    ppTermFrom=parseInt($('pp-term-from')?.value)||0;
+    ppTermTo=parseInt($('pp-term-to')?.value)||0;
+    if(ppTermFrom>0&&ppTermTo>=ppTermFrom){
+      ppTypeLabel='期間短縮型';
+      if(normalA.length>0){
+        const bfA=ppTermFrom<=1?amtA:(ppTermFrom-1<=normalA.length?normalA[ppTermFrom-2]?.balance||0:0);
+        const afA=ppTermTo<=normalA.length?normalA[ppTermTo-1]?.balance||0:0;
+        ppAmtA=Math.max(0,bfA-afA);
+        if(ppAmtA>0)withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:Math.max(1,ppTermFrom-1),amt:ppAmtA}],'term',ratesAx);
+      }
+      if(showPair&&normalB.length>0){
+        const bfB=ppTermFrom<=1?amtB:(ppTermFrom-1<=normalB.length?normalB[ppTermFrom-2]?.balance||0:0);
+        const afB=ppTermTo<=normalB.length?normalB[ppTermTo-1]?.balance||0:0;
+        ppAmtB=Math.max(0,bfB-afB);
+        if(ppAmtB>0)withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:Math.max(1,ppTermFrom-1),amt:ppAmtB}],'term',ratesBx);
+      }
+      ppAmtTotal=ppAmtA+ppAmtB;
+      const nIntA=normalA.reduce((s,r)=>s+r.interest,0);
+      const nIntB=normalB.reduce((s,r)=>s+r.interest,0);
+      const ppIntA=withPPA?withPPA.reduce((s,r)=>s+r.interest,0):nIntA;
+      const ppIntB=withPPB?withPPB.reduce((s,r)=>s+r.interest,0):nIntB;
+      ppSaved=(nIntA-ppIntA)+(nIntB-ppIntB);
+      hasPP=ppAmtTotal>0;
+    }
+  }else if(_ppType==='reduce'){
+    ppReduceAmt=(parseFloat($('pp-reduce-amt')?.value)||0)*10000;
+    if(ppReduceAmt>0){
+      ppTypeLabel='返済額軽減型';
+      ppAmtTotal=ppReduceAmt;
+      if(normalA.length>0){
+        const ratio=showPair?(amtA/(amtA+amtB)):1;
+        ppAmtA=Math.round(ppReduceAmt*ratio);
+        withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:1,amt:ppAmtA}],'reduce',ratesAx);
+      }
+      if(showPair&&normalB.length>0){
+        ppAmtB=ppReduceAmt-ppAmtA;
+        withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:1,amt:ppAmtB}],'reduce',ratesBx);
+      }
+      const nIntA=normalA.reduce((s,r)=>s+r.interest,0);
+      const nIntB=normalB.reduce((s,r)=>s+r.interest,0);
+      const ppIntA=withPPA?withPPA.reduce((s,r)=>s+r.interest,0):nIntA;
+      const ppIntB=withPPB?withPPB.reduce((s,r)=>s+r.interest,0):nIntB;
+      ppSaved=(nIntA-ppIntA)+(nIntB-ppIntB);
+      hasPP=true;
+    }
+  }
+
+  // ── タイトル ──
   push([`${clientName} 様 返済計画シミュレーション`,''],'title');
   push([''],'blank');
-  // ローン条件
+
+  // ── ローン条件 ──
   if(showPair){
     push(['ローンA',`借入額 ${(amtA/10000).toLocaleString()}万円`,`金利 ${(rateA*100)}%`,`期間 ${yrsA}年`],'info');
     push(['ローンB',`借入額 ${(amtB/10000).toLocaleString()}万円`,`金利 ${(rateB*100)}%`,`期間 ${yrsB}年`],'info');
   }else{
     push(['ローン条件',`借入額 ${(amtA/10000).toLocaleString()}万円`,`金利 ${(rateA*100)}%`,`期間 ${yrsA}年`],'info');
   }
+
+  // ── 繰上返済シミュレーション情報 ──
+  if(hasPP){
+    push([''],'blank');
+    push(['繰上返済シミュレーション','','',''],'ppHeader');
+    push(['タイプ',ppTypeLabel,'',''],'ppInfo');
+    if(_ppType==='term'){
+      push(['短縮期間',`${ppTermFrom}年目〜${ppTermTo}年目（${ppTermTo-ppTermFrom+1}年間）`,'',''],'ppInfo');
+    }
+    push(['繰上返済に必要な元金',`${Math.round(ppAmtTotal).toLocaleString()}円`,'',''],'ppInfo');
+    push(['利息軽減額',`${Math.round(ppSaved).toLocaleString()}円`,'',''],'ppResult');
+    if(showPair){
+      push(['','A: '+Math.round(ppAmtA).toLocaleString()+'円','B: '+Math.round(ppAmtB).toLocaleString()+'円',''],'ppDetail');
+    }
+  }
+
   push([''],'blank');
-  // ヘッダー
+
+  // ── ヘッダー ──
   if(showPair){
     push(['年次','A返済額','A元金','A利息','A繰上返済','A残高','B返済額','B元金','B利息','B残高','合計返済額','合計残高'],'header');
   }else{
     push(['年次','月額','返済合計','元金','利息','繰上返済','元金残高'],'header');
   }
-  // データ行
-  const maxLen=Math.max(normalA.length,normalB.length);
-  let totPayA=0,totPrincA=0,totIntA=0,totPPA=0,totPayB=0,totPrincB=0,totIntB=0;
+
+  // ── データ行（繰上返済ありの場合はそちらを使用） ──
+  const dataA=hasPP&&withPPA?withPPA:normalA;
+  const dataB=hasPP&&withPPB?withPPB:normalB;
+  const maxLen=Math.max(dataA.length,dataB.length);
+  let totPayA=0,totPrincA=0,totIntA=0,totPPA2=0,totPayB=0,totPrincB=0,totIntB=0;
   for(let i=0;i<maxLen;i++){
-    const rA=i<normalA.length?normalA[i]:null;
-    const rB=i<normalB.length?normalB[i]:null;
-    if(rA){totPayA+=rA.pay;totPrincA+=rA.principal;totIntA+=rA.interest;totPPA+=rA.prepay;}
+    const rA=i<dataA.length?dataA[i]:null;
+    const rB=i<dataB.length?dataB[i]:null;
+    if(rA){totPayA+=rA.pay;totPrincA+=rA.principal;totIntA+=rA.interest;totPPA2+=rA.prepay;}
     if(rB){totPayB+=rB.pay;totPrincB+=rB.principal;totIntB+=rB.interest;}
     if(showPair){
       push([
@@ -7585,16 +7661,17 @@ function exportLoanExcel(){
   }
   // 合計行
   if(showPair){
-    push(['合計',Math.round(totPayA),Math.round(totPrincA),Math.round(totIntA),Math.round(totPPA),'-',
+    push(['合計',Math.round(totPayA),Math.round(totPrincA),Math.round(totIntA),Math.round(totPPA2),'-',
       Math.round(totPayB),Math.round(totPrincB),Math.round(totIntB),'-',
       Math.round(totPayA+totPayB),'-'],'total');
   }else{
-    push(['合計','-',Math.round(totPayA),Math.round(totPrincA),Math.round(totIntA),Math.round(totPPA),'-'],'total');
+    push(['合計','-',Math.round(totPayA),Math.round(totPrincA),Math.round(totIntA),Math.round(totPPA2),'-'],'total');
   }
-  // Excel生成
+
+  // ── Excel生成 ──
   const ws=XLSX.utils.aoa_to_sheet(rows);
   const colCount=showPair?12:7;
-  ws['!cols']=[{wch:6},...Array(colCount-1).fill({wch:14})];
+  ws['!cols']=[{wch:8},...Array(colCount-1).fill({wch:14})];
   // スタイル
   rows.forEach((row,ri)=>{
     const t=types[ri];
@@ -7606,6 +7683,10 @@ function exportLoanExcel(){
       if(t==='title')cell.s={font:{bold:true,sz:14,color:{rgb:'1A3A6A'}},fill:{fgColor:{rgb:'EEF5FF'}}};
       else if(t==='header')cell.s={font:{bold:true,sz:10,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1A3A6A'}},alignment:{horizontal:'center'}};
       else if(t==='info')cell.s={font:{sz:10,color:{rgb:'1A3A6A'}},fill:{fgColor:{rgb:'EEF5FF'}}};
+      else if(t==='ppHeader')cell.s={font:{bold:true,sz:11,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'059669'}}};
+      else if(t==='ppInfo')cell.s={font:{sz:10,color:{rgb:'1A3A6A'}},fill:{fgColor:{rgb:'D1FAE5'}}};
+      else if(t==='ppResult')cell.s={font:{bold:true,sz:11,color:{rgb:'DC2626'}},fill:{fgColor:{rgb:'FEF2F2'}}};
+      else if(t==='ppDetail')cell.s={font:{sz:9,color:{rgb:'6B7280'}},fill:{fgColor:{rgb:'F0FDF4'}}};
       else if(t==='total')cell.s={font:{bold:true,sz:10,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1A3A6A'}},numFmt:'#,##0'};
       else if(t==='data'){
         cell.s={font:{sz:10},alignment:{horizontal:ci===0?'center':'right'}};
@@ -7615,7 +7696,7 @@ function exportLoanExcel(){
   });
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'返済計画');
-  XLSX.writeFile(wb,`${clientName}_返済計画.xlsx`);
+  XLSX.writeFile(wb,`${clientName}様_返済計画.xlsx`);
 }
 </script>
 </body>
