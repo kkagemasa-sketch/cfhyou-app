@@ -7671,7 +7671,19 @@ function exportLoanExcel(){
   // ── Excel生成 ──
   const ws=XLSX.utils.aoa_to_sheet(rows);
   const colCount=showPair?12:7;
-  ws['!cols']=[{wch:8},...Array(colCount-1).fill({wch:14})];
+  ws['!cols']=[{wch:22},{wch:18},...Array(colCount-2).fill({wch:14})];
+  // セル結合（タイトル行、繰上返済情報行）
+  if(!ws['!merges'])ws['!merges']=[];
+  ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:Math.min(colCount-1,5)}});// タイトル行結合
+  // 繰上返済情報行の結合（B列以降を結合して文字が見切れないように）
+  types.forEach((t,ri)=>{
+    if(t==='ppHeader'||t==='ppInfo'||t==='ppResult'||t==='ppDetail'){
+      ws['!merges'].push({s:{r:ri,c:1},e:{r:ri,c:Math.min(colCount-1,3)}});
+    }
+    if(t==='info'){
+      ws['!merges'].push({s:{r:ri,c:1},e:{r:ri,c:Math.min(colCount-1,3)}});
+    }
+  });
   // スタイル
   rows.forEach((row,ri)=>{
     const t=types[ri];
