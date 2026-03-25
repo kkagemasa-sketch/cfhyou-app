@@ -4413,15 +4413,15 @@ function exportExcelMG(){
   const push=(data,type)=>{rows.push(data);types.push(type);};
   const ri=v=>Math.round(v);
 
-  // タイトル
-  push([`${clientName} 様【万が一】`,`${targetLabel}が${deathAge}歳で死亡した場合`,...Array(disp-1).fill(''),'',''],'title');
-  // 自己資金内訳
+  // タイトル（1行目）
+  push([`${clientName} 様【万が一】`,`ご主人様が${hAge}歳 / ${targetLabel}が${deathAge}歳で死亡した場合`,...Array(disp-1).fill(''),'',''],'title');
+  // 自己資金内訳（2行目）
   const housePrice3=fv('house-price')||0;const cashTotal3=(fv('cash-h')||0)+(fv('cash-w')||0)+(fv('cash-joint')||0);
   const downPay3=fv('down-payment')||0;const houseCost3=fv('house-cost')||0;const movCost3=(fv('moving-cost')||0)+(fv('furniture-init')||0);
-  push([`💰 自己資金の内訳`,`現預金合計 ${cashTotal3.toLocaleString()}万円`,`頭金 ${downPay3.toLocaleString()}万円`,`諸費用 ${houseCost3.toLocaleString()}万円`,`引越・家具 ${movCost3.toLocaleString()}万円`,...Array(Math.max(0,disp-3)).fill(''),''],'info');
-  // 住宅ローン条件
+  push([`💰 自己資金の内訳`,`現預金合計 ${cashTotal3.toLocaleString()}万円　頭金 ${downPay3.toLocaleString()}万円　諸費用 ${houseCost3.toLocaleString()}万円　引越・家具 ${movCost3.toLocaleString()}万円`,...Array(disp).fill(''),''],'info');
+  // 住宅ローン条件（3行目）
   const loanAmt3=fv('loan-amount')||0;const loanYrs3=fv('loan-period')||35;const loanRate3=fv('loan-rate')||fv('rate-base')||0.5;
-  push([`🏦 住宅ローン条件`,`住宅価格 ${housePrice3.toLocaleString()}万円`,`借入総額 ${loanAmt3.toLocaleString()}万円`,`金利 ${loanRate3}%`,`借入期間 ${loanYrs3}年`,...Array(Math.max(0,disp-3)).fill(''),''],'info');
+  push([`🏦 住宅ローン条件`,`住宅価格 ${housePrice3.toLocaleString()}万円　借入総額 ${loanAmt3.toLocaleString()}万円　金利 ${loanRate3}%　借入期間 ${loanYrs3}年`,...Array(disp).fill(''),''],'info');
   push(Array(disp+3).fill(''),'blank');
 
   // ヘッダー
@@ -4478,15 +4478,30 @@ function exportExcelMG(){
   // 収支・残高
   push(['年間収支','',...MR.bal.slice(0,disp).map(v=>ri(v)),ri(MR.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
   push(['預貯金残高','',...MR.sav.slice(0,disp).map(v=>ri(v)),ri(MR.sav[disp-1])],'savings');
-  // 免責事項
+  // 免責事項・使用者情報
   push(Array(disp+3).fill(''),'blank');
+  const pi=getPrintInfo();
+  if(pi.name||pi.company){
+    const piRow=Array(disp+3).fill('');
+    piRow[0]='■ 担当者情報';
+    push(piRow,'footer');
+    if(pi.company){const r2=Array(disp+3).fill('');r2[0]=pi.company;push(r2,'footer');}
+    if(pi.name){const r2=Array(disp+3).fill('');r2[0]=pi.name;if(pi.tel)r2[1]=`TEL: ${pi.tel}`;push(r2,'footer');}
+    if(pi.email){const r2=Array(disp+3).fill('');r2[0]=`Email: ${pi.email}`;push(r2,'footer');}
+    if(pi.address){const r2=Array(disp+3).fill('');r2[0]=pi.address;push(r2,'footer');}
+    push(Array(disp+3).fill(''),'blank');
+  }
+  if(pi.notes){
+    pi.notes.forEach(n=>{const r2=Array(disp+3).fill('');r2[0]=n;push(r2,'footer');});
+    push(Array(disp+3).fill(''),'blank');
+  }
   const discRow2=Array(disp+3).fill('');
   discRow2[0]='※本シミュレーションの住宅ローン控除額・税額は概算であり、実際の金額とは異なる場合があります。税務に関する詳細は税理士にご相談ください。';
   push(discRow2,'footer');
 
   // シート作成
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:16},{wch:18},...Array(disp).fill({wch:10}),{wch:12}];
+  ws['!cols']=[{wch:16},{wch:50},...Array(disp).fill({wch:10}),{wch:12}];
 
   // カラーマップ
   const C={
@@ -4504,7 +4519,7 @@ function exportExcelMG(){
   const styleDefs={
     title:{fill:C.mgTitle,font:{sz:12,bold:true,color:C.white}},
     info:{fill:C.mgBg,font:{sz:10,bold:true,color:C.mgTitle}},
-    blank:{fill:C.white,font:{sz:9,color:C.white}},
+    blank:{font:{sz:9,color:C.white}},
     header:{fill:C.navy,font:{sz:9,bold:true,color:C.white},align:'center'},
     elapsed:{fill:C.navyD,font:{sz:8,color:'FFa0b4c8'},align:'center'},
     age:{fill:C.ageBg,font:{sz:8,color:C.ageFg},align:'center'},
@@ -4514,8 +4529,9 @@ function exportExcelMG(){
     expCat:{fill:C.expCat,font:{sz:9,bold:true,color:C.white}},
     exp:{fill:C.expBg,font:{sz:9,color:C.black}},
     expTotal:{fill:C.redL,font:{sz:9,bold:true,color:C.white}},
-    balance:{fill:C.white,font:{sz:9,bold:true,color:C.black}},
+    balance:{font:{sz:9,bold:true,color:C.black}},
     savings:{fill:C.green,font:{sz:9,bold:true,color:C.white}},
+    footer:{font:{sz:9,color:C.black}},
   };
 
   const lastCol=disp+2;
@@ -4563,6 +4579,11 @@ function exportExcelMG(){
     });
   });
 
+  // 1-3行目のセル結合（B列以降を結合して文字が見えるように）
+  if(!ws['!merges'])ws['!merges']=[];
+  ws['!merges'].push({s:{r:0,c:1},e:{r:0,c:Math.min(disp+1,8)}});// タイトル行
+  ws['!merges'].push({s:{r:1,c:1},e:{r:1,c:Math.min(disp+1,10)}});// 自己資金
+  ws['!merges'].push({s:{r:2,c:1},e:{r:2,c:Math.min(disp+1,10)}});// ローン条件
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
   const fname=`万が一_${clientName}_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
   XLSX.writeFile(wb,fname);
