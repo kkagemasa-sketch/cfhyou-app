@@ -4624,8 +4624,8 @@ function exportExcelMG(){
   // title行(row0)のA+B結合、C+D結合（物件タイプ）
   ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:1}});
   ws['!merges'].push({s:{r:0,c:2},e:{r:0,c:3}});
-  // title行E列以降の万が一ラベル結合
-  ws['!merges'].push({s:{r:0,c:4},e:{r:0,c:Math.min(disp+1,8)}});
+  // title行E列の万が一ラベル結合（4セル分、中央揃え）
+  ws['!merges'].push({s:{r:0,c:4},e:{r:0,c:7}});
   // info行(row1,row2)のA+B結合
   const infoRowIndices=[];
   types.forEach((t,i)=>{if(t==='info')infoRowIndices.push(i);});
@@ -4825,6 +4825,7 @@ function exportExcelMG(){
       if(tp==='title'&&c===4&&String(cell.v||'').includes('万が一')){
         cellFill={patternType:'solid',fgColor:{rgb:'FFdc2626'}};
         fObj.color={rgb:'FFFFFFFF'};fObj.bold=true;fObj.sz=12;
+        cell._centerAlign=true;
       }
 
       // ★ 万が一特有：通常CF表との差分色分け（文字色を赤に変更）
@@ -4848,10 +4849,11 @@ function exportExcelMG(){
 
       // blank/footer行・範囲外セルは塗りつぶしなし
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
+      const finalAlign=cell._centerAlign?'center':hAlign;
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:hAlign,wrapText:false},
+        alignment:{vertical:'center',horizontal:finalAlign,wrapText:false},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
@@ -6717,7 +6719,8 @@ function renderContingency(){
       const cls=changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':'');
       r+=`<td class="${cls}">${v>0?ri(v).toLocaleString():(changed?'0':'-')}</td>`;
     }
-    return r+`<td>${ri(tot).toLocaleString()}</td></tr>`;
+    const lblSpan=`<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${lbl}</span>`;
+    return r+`<td>${ri(tot).toLocaleString()}${lblSpan}</td></tr>`;
   };
 
   h+=mgRow('ご主人手取年収',MR.hInc,N.hInc);
@@ -6745,7 +6748,7 @@ function renderContingency(){
   // 収入合計
   h+=`<tr class="rinct"><td>収入合計</td><td></td>`;
   for(let i=0;i<mgDisp;i++)h+=`<td>${ri(MR.incT[i]).toLocaleString()}</td>`;
-  h+=`<td>${ri(MR.incT.slice(0,mgDisp).reduce((a,b)=>a+b,0)).toLocaleString()}</td></tr>`;
+  h+=`<td>${ri(MR.incT.slice(0,mgDisp).reduce((a,b)=>a+b,0)).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">収入合計</span></td></tr>`;
 
   // ─ 支出 ─（通常との差分をハイライト）
   h+=`<tr class="rcat exp-cat"><td></td><td>支　　出</td>`;for(let i=0;i<mgDisp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
@@ -6760,7 +6763,8 @@ function renderContingency(){
       const cls=changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':'');
       r+=`<td class="${cls}">${v>0?ri(v).toLocaleString():(changed?'0':'-')}</td>`;
     }
-    return r+`<td>${ri(tot).toLocaleString()}</td></tr>`;
+    const eLblSpan=`<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${lbl}</span>`;
+    return r+`<td>${ri(tot).toLocaleString()}${eLblSpan}</td></tr>`;
   };
 
   h+=mgERow('生活費',MR.lc,N.lc);
@@ -6782,7 +6786,7 @@ function renderContingency(){
       let cls=v===0?'vz':'';
       if(v>0){if(ca>=1&&ca<=6)cls='edu-hoiku';else if(ca>=7&&ca<=12)cls='edu-elem';else if(ca>=13&&ca<=15)cls='edu-mid';else if(ca>=16&&ca<=18)cls='edu-high';else if(ca>=19&&ca<19+univLen)cls=un.startsWith('senmon')?'edu-senmon':'edu-univ';}
       h+=`<td class="${cls}">${v>0?ri(v).toLocaleString():'-'}</td>`;
-    }h+=`<td>${ri(tot).toLocaleString()}</td></tr>`;
+    }h+=`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${cLbls[ci]}教育費</span></td></tr>`;
   });
   h+=mgERow('駐車場代',MR.prk,N.prk);
   h+=mgERow('車両費（購入・車検）',MR.carTotal,N.carTotal);
@@ -6792,16 +6796,16 @@ function renderContingency(){
   // 支出合計
   h+=`<tr class="rexpt"><td>支出合計</td><td></td>`;
   for(let i=0;i<mgDisp;i++)h+=`<td>${ri(MR.expT[i]).toLocaleString()}</td>`;
-  h+=`<td>${ri(MR.expT.slice(0,mgDisp).reduce((a,b)=>a+b,0)).toLocaleString()}</td></tr>`;
+  h+=`<td>${ri(MR.expT.slice(0,mgDisp).reduce((a,b)=>a+b,0)).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">支出合計</span></td></tr>`;
 
   // ─ 収支・残高 ─
   h+=`<tr class="rbal"><td>年間収支</td><td></td>`;
   for(let i=0;i<mgDisp;i++){const v=ri(MR.bal[i]);h+=`<td class="${v<0?'vn':v>0?'vp':'vz'}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;}
-  h+=`<td></td></tr>`;
+  h+=`<td><br><span style="font-size:9px;color:var(--navy);font-weight:400">年間収支</span></td></tr>`;
 
   h+=`<tr class="rsav"><td>預貯金残高</td><td></td>`;
   for(let i=0;i<mgDisp;i++){const v=ri(MR.sav[i]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;}
-  h+=`<td>${ri(MR.sav[mgDisp-1]).toLocaleString()}</td></tr>`;
+  h+=`<td>${ri(MR.sav[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-weight:400">預貯金残高</span></td></tr>`;
 
   h+=`</table></div>`;
   h+=`</div>`;
