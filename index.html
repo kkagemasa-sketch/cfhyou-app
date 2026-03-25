@@ -3326,42 +3326,7 @@ function render(){
   const moveDeduct=(fv('moving-cost')||0)+(fv('furniture-init')||0);
   const initSav=cashH+cashW+cashJoint+zaikiHBal+zaikiWBal-downDeduct-costDeduct-moveDeduct;
   // ご主人収入設定
-  // 収入ステップを取得（年齢昇順でソート）
-  function getIncomeSteps(person){
-    const steps=[];
-    document.querySelectorAll(`[id^="${person}-is-"][id$="-from"]`).forEach(el=>{
-      if(!el.id.includes('-net-'))return;// net-fromは後で処理
-    });
-    // from/to形式で取得
-    const ids=new Set();
-    document.querySelectorAll(`[id^="${person}-is-"]`).forEach(el=>{
-      const m=el.id.match(new RegExp(`^${person}-is-(\\d+)-`));
-      if(m)ids.add(`${person}-is-${m[1]}`);
-    });
-    ids.forEach(base=>{
-      const ageFrom=parseInt(document.getElementById(`${base}-from`)?.value)||0;
-      const ageTo=parseInt(document.getElementById(`${base}-to`)?.value)||0;
-      const netFrom=parseFloat(document.getElementById(`${base}-net-from`)?.value)||0;
-      const netTo=parseFloat(document.getElementById(`${base}-net-to`)?.value)||netFrom;
-      if(netFrom>0||netTo>0){
-        steps.push({ageFrom,ageTo,netFrom,netTo});
-      }
-    });
-    return steps.sort((a,b)=>a.ageFrom-b.ageFrom);
-  }
-  function getIncomeAtAge(steps,age){
-    if(steps.length===0)return 0;
-    for(const s of steps){
-      if(age>=s.ageFrom&&age<=s.ageTo){
-        // 線形補間
-        const span=Math.max(1,s.ageTo-s.ageFrom);
-        const ratio=(age-s.ageFrom)/span;
-        return Math.round(s.netFrom+(s.netTo-s.netFrom)*ratio);
-      }
-    }
-    // 段階の終了年齢を超えたら収入0（収入段階で明示的に設定した期間のみ計上）
-    return 0;
-  }
+  // ※ getIncomeSteps / getIncomeAtAge はグローバル版を使用
   const hSteps=getIncomeSteps('h');
   const wSteps=getIncomeSteps('w');
   const retAge=iv('retire-age')||65, retPay=fv('retire-pay'), pSelf=fv('pension-h')||186;
@@ -4399,6 +4364,38 @@ function renderGraphs(R,disp,isM,total,hAge){
   }
 }
 
+// ===== Excel出力共通定数 =====
+const C={
+  navy:'FF1e3a5f', navyD:'FF0f2744', navyL:'FF2d5282', blue:'FF2d7dd2',
+  redL:'FFfc5b4a', red:'FFd63a2a', green:'FF14b027', white:'FFFFFFFF', black:'FF1a202c',
+  incBg:'FFfbfdff', incFg:'FF1a3a5f', incCat:'FF4a90d9',
+  expBg:'FFfffaf9', expFg:'FF8b1a10', expCat:'FFfc5b4a',
+  ageBg:'FFe8f4fc', ageBgL:'FFcce8f8', ageFg:'FF3a6a8a', ageFgD:'FF1a4a6a',
+  evBg:'FFfffcf7', evFg:'FF8a5a30', evHdr:'FFffe8cc', evHdrFg:'FF7a3a00',
+  finBg:'FFf0f8ff', finFg:'FF1a4a7a', finHdrBg:'FF1a4a7a',
+  loanBg:'FFf8fafb', muted:'FF5a6a7e', zero:'FFbec8d4',
+  border:'FFd0d8e4', borderH:'FF6b8cae',
+};
+const bdr={style:'thin',color:{rgb:C.border}};
+const bdrH={style:'thin',color:{rgb:C.borderH}};
+const baseBorder={top:bdr,right:bdr,bottom:bdr,left:bdr};
+
+const eduColors={
+  hoiku:{bg:'FFffedf6',fg:'FF880044'},
+  elem: {bg:'FFeaf6ea',fg:'FF1a5c20'},
+  mid:  {bg:'FFfffcda',fg:'FF5a4000'},
+  high: {bg:'FFf3eeff',fg:'FF3a008a'},
+  univ: {bg:'FFffd8a0',fg:'FF6b2000'},
+};
+function getEduStage(age){
+  if(age>=1&&age<=6)return 'hoiku';
+  if(age>=7&&age<=12)return 'elem';
+  if(age>=13&&age<=15)return 'mid';
+  if(age>=16&&age<=18)return 'high';
+  if(age>=19&&age<=22)return 'univ';
+  return null;
+}
+
 // ===== 万が一Excel出力 =====
 function exportExcelMG(){
   const mgKey=rTab==='mg-h'?'h':'w';
@@ -4416,22 +4413,6 @@ function exportExcelMG(){
   const wb=XLSX.utils.book_new();
   const rows=[], types=[];
   const push=(data,type)=>{rows.push(data);types.push(type);};
-
-  // ── カラーマップ（通常CFと同じ） ──
-  const C={
-    navy:'FF1e3a5f', navyD:'FF0f2744', navyL:'FF2d5282', blue:'FF2d7dd2',
-    redL:'FFfc5b4a', red:'FFd63a2a', green:'FF14b027', white:'FFFFFFFF', black:'FF1a202c',
-    incBg:'FFfbfdff', incFg:'FF1a3a5f', incCat:'FF4a90d9',
-    expBg:'FFfffaf9', expFg:'FF8b1a10', expCat:'FFfc5b4a',
-    ageBg:'FFe8f4fc', ageBgL:'FFcce8f8', ageFg:'FF3a6a8a', ageFgD:'FF1a4a6a',
-    evBg:'FFfffcf7', evFg:'FF8a5a30', evHdr:'FFffe8cc', evHdrFg:'FF7a3a00',
-    finBg:'FFf0f8ff', finFg:'FF1a4a7a', finHdrBg:'FF1a4a7a',
-    loanBg:'FFf8fafb', muted:'FF5a6a7e', zero:'FFbec8d4',
-    border:'FFd0d8e4', borderH:'FF6b8cae',
-  };
-  const bdr={style:'thin',color:{rgb:C.border}};
-  const bdrH={style:'thin',color:{rgb:C.borderH}};
-  const baseBorder={top:bdr,right:bdr,bottom:bdr,left:bdr};
 
   // ── 前提条件情報（通常CFと同じ形式） ──
   const housePrice=fv('house-price')||0;
@@ -4679,23 +4660,6 @@ function exportExcelMG(){
     savings:   {fill:C.green, font:{sz:9,bold:true,color:C.white}},
   };
 
-  // 教育段階カラーマップ（CF表CSSと同じ色）
-  const eduColors={
-    hoiku:{bg:'FFffedf6',fg:'FF880044'},
-    elem: {bg:'FFeaf6ea',fg:'FF1a5c20'},
-    mid:  {bg:'FFfffcda',fg:'FF5a4000'},
-    high: {bg:'FFf3eeff',fg:'FF3a008a'},
-    univ: {bg:'FFffd8a0',fg:'FF6b2000'},
-  };
-  function getEduStage(age){
-    if(age>=1&&age<=6)return 'hoiku';
-    if(age>=7&&age<=12)return 'elem';
-    if(age>=13&&age<=15)return 'mid';
-    if(age>=16&&age<=18)return 'high';
-    if(age>=19&&age<=22)return 'univ';
-    return null;
-  }
-
   // 子どもイベント行マップ
   const childEvMapMG={};
   childEvRows2.forEach(cr=>{childEvMapMG[cr.rowIdx]=cr.ages;});
@@ -4897,22 +4861,6 @@ function exportExcel(){
   // rows配列: [data, rowType] のペアで管理
   const rows=[], types=[];
   const push=(data,type)=>{rows.push(data);types.push(type);};
-
-  // カラーマップ（ARGB形式）
-  const C={
-    navy:'FF1e3a5f', navyD:'FF0f2744', navyL:'FF2d5282', blue:'FF2d7dd2',
-    redL:'FFfc5b4a', red:'FFd63a2a', green:'FF14b027', white:'FFFFFFFF', black:'FF1a202c',
-    incBg:'FFfbfdff', incFg:'FF1a3a5f', incCat:'FF4a90d9',
-    expBg:'FFfffaf9', expFg:'FF8b1a10', expCat:'FFfc5b4a',
-    ageBg:'FFe8f4fc', ageBgL:'FFcce8f8', ageFg:'FF3a6a8a', ageFgD:'FF1a4a6a',
-    evBg:'FFfffcf7', evFg:'FF8a5a30', evHdr:'FFffe8cc', evHdrFg:'FF7a3a00',
-    finBg:'FFf0f8ff', finFg:'FF1a4a7a', finHdrBg:'FF1a4a7a',
-    loanBg:'FFf8fafb', muted:'FF5a6a7e', zero:'FFbec8d4',
-    border:'FFd0d8e4', borderH:'FF6b8cae',
-  };
-  const bdr={style:'thin',color:{rgb:C.border}};
-  const bdrH={style:'thin',color:{rgb:C.borderH}};
-  const baseBorder={top:bdr,right:bdr,bottom:bdr,left:bdr};
 
   // ── 前提条件情報 ──
   const housePrice=fv('house-price')||0;
@@ -5128,22 +5076,6 @@ function exportExcel(){
     loan:      {fill:C.loanBg, font:{sz:9,color:C.muted}},
   };
 
-  // 教育段階カラーマップ（CF表CSSと同じ色）
-  const eduColors={
-    hoiku:{bg:'FFffedf6',fg:'FF880044'},
-    elem: {bg:'FFeaf6ea',fg:'FF1a5c20'},
-    mid:  {bg:'FFfffcda',fg:'FF5a4000'},
-    high: {bg:'FFf3eeff',fg:'FF3a008a'},
-    univ: {bg:'FFffd8a0',fg:'FF6b2000'},
-  };
-  function getEduStage(age){
-    if(age>=1&&age<=6)return 'hoiku';
-    if(age>=7&&age<=12)return 'elem';
-    if(age>=13&&age<=15)return 'mid';
-    if(age>=16&&age<=18)return 'high';
-    if(age>=19&&age<=22)return 'univ';
-    return null;
-  }
   // 子どもイベント行の行番号→年齢配列マップ
   const childEvMap={};
   childEvRows.forEach(cr=>{childEvMap[cr.rowIdx]=cr.ages;});
@@ -5338,9 +5270,6 @@ function scrollToCFRow(rowKey, fromAge, toAge){
 }
 function scrollToCFRowSelf(rowKey, el){
   scrollToCFRow(rowKey, parseInt(el.value) || null);
-}
-function scrollToCFRowFromInput(rowKey, inputId){
-  scrollToCFRow(rowKey, parseInt(document.getElementById(inputId)?.value) || null);
 }
 function scrollToCFRowRange(rowKey, fromId, toId){
   const f = parseInt(document.getElementById(fromId)?.value) || null;
@@ -6099,10 +6028,6 @@ function onBulkJSONImport(input){
   reader.readAsText(file);
 }
 
-// 後方互換
-function saveData(){openSlotPanel();}
-function loadData(){openSlotPanel();}
-
 // ===== 入力フィールド フォーカスハイライト（イベント委譲：1回だけ登録） =====
 function initInputHighlight(){
   const panel=document.querySelector('.panel-l');
@@ -6848,24 +6773,6 @@ function addPrepay(yrFrom='',yrTo='',amt=''){
   </div>`;
   return el;
 }
-function getPrepays(){
-  const items=[];
-  document.querySelectorAll('[id^="pp-yf-"]').forEach(el=>{
-    const id=el.id.split('-')[2];
-    const yrFrom=parseInt(el.value)||0;
-    const yrTo=parseInt(document.getElementById(`pp-yt-${id}`)?.value)||yrFrom;
-    const amt=parseFloat(document.getElementById(`pp-amt-${id}`)?.value)||0;
-    if(yrFrom>0&&amt>0){
-      for(let y=yrFrom;y<=(yrTo||yrFrom);y++){
-        items.push({yr:y,amt:amt*10000});
-      }
-    }
-  });
-  // 同年を合算
-  const merged={};
-  items.forEach(p=>{merged[p.yr]=(merged[p.yr]||0)+p.amt});
-  return Object.entries(merged).map(([yr,amt])=>({yr:parseInt(yr),amt})).sort((a,b)=>a.yr-b.yr);
-}
 function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule){
   // rateSchedule: [{yr:年目,rate:年利},...] 金利変更スケジュール（省略時は固定金利）
   const sched=rateSchedule||[];
@@ -7155,11 +7062,6 @@ function getLPRates(who){
     if(yr>0&&rate>=0)rates.push({yr,rate:rate/100});
   });
   return rates.sort((a,b)=>a.yr-b.yr);
-}
-function getEffRateForYear(baseRate,rateSchedule,yr){
-  let r=baseRate;
-  for(const s of rateSchedule){if(yr>=s.yr)r=s.rate;else break;}
-  return r;
 }
 function updateLPDedHint(){
   const yr=parseInt($('lp-ded-year')?.value)||2026;
@@ -7714,122 +7616,6 @@ function exportLoanExcel(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'返済計画');
   XLSX.writeFile(wb,`${clientName}_返済計画.xlsx`);
-}
-function drawLoanChart(normal,withPP){
-  const canvas=$('lp-chart');if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  const W=canvas.parentElement.offsetWidth||900;
-  canvas.width=W;canvas.height=250;
-  const H=canvas.height;
-  ctx.clearRect(0,0,W,H);
-  const pad={t:30,r:20,b:40,l:70};
-  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
-  const maxBal=normal[0]?.balance||1;
-  const maxYr=normal.length;
-  // Grid
-  ctx.strokeStyle='#e2e8f0';ctx.lineWidth=0.5;
-  for(let i=0;i<=5;i++){
-    const y=pad.t+ch*(1-i/5);
-    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();
-    ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.textAlign='right';
-    ctx.fillText(Math.round(maxBal/10000*i/5).toLocaleString()+'万',pad.l-6,y+3);
-  }
-  for(let yr=0;yr<=maxYr;yr+=5){
-    const x=pad.l+(yr/maxYr)*cw;
-    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ch);ctx.stroke();
-    ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.textAlign='center';
-    ctx.fillText(yr+'年',x,H-pad.b+15);
-  }
-  // Title
-  ctx.fillStyle='#1e3a5f';ctx.font='bold 13px sans-serif';ctx.textAlign='left';
-  ctx.fillText('元金残高推移',pad.l,18);
-  // Normal line
-  ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.setLineDash([4,3]);
-  ctx.beginPath();
-  normal.forEach((r,i)=>{
-    const x=pad.l+(r.yr/maxYr)*cw,y=pad.t+ch*(1-r.balance/maxBal);
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  });ctx.stroke();ctx.setLineDash([]);
-  // WithPP line
-  if(withPP){
-    ctx.strokeStyle='#2563eb';ctx.lineWidth=2.5;
-    ctx.beginPath();
-    withPP.forEach((r,i)=>{
-      const x=pad.l+(r.yr/maxYr)*cw,y=pad.t+ch*(1-r.balance/maxBal);
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    });ctx.stroke();
-    // Prepay markers
-    withPP.forEach(r=>{
-      if(r.prepay>0){
-        const x=pad.l+(r.yr/maxYr)*cw,y=pad.t+ch*(1-r.balance/maxBal);
-        ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle='#7c3aed';ctx.font='bold 9px sans-serif';ctx.textAlign='center';
-        ctx.fillText(Math.round(r.prepay/10000)+'万',x,y-10);
-      }
-    });
-  }
-  // Legend
-  const lx=W-180;
-  ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.textAlign='left';
-  ctx.setLineDash([4,3]);ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(lx,18);ctx.lineTo(lx+25,18);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillText('通常返済',lx+30,22);
-  if(withPP){
-    ctx.strokeStyle='#2563eb';ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.moveTo(lx,32);ctx.lineTo(lx+25,32);ctx.stroke();
-    ctx.fillStyle='#2563eb';ctx.fillText('繰上返済あり',lx+30,36);
-  }
-}
-function drawLoanBarChart(normal,withPP){
-  const canvas=$('lp-bar-chart');if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  const W=canvas.parentElement.offsetWidth||900;
-  canvas.width=W;canvas.height=200;
-  const H=canvas.height;
-  ctx.clearRect(0,0,W,H);
-  const pad={t:30,r:20,b:40,l:70};
-  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
-  const data=withPP||normal;
-  const maxPay=Math.max(...data.map(r=>r.pay+r.prepay));
-  const barW=Math.max(2,Math.min(20,(cw/data.length)-2));
-  ctx.fillStyle='#1e3a5f';ctx.font='bold 13px sans-serif';ctx.textAlign='left';
-  ctx.fillText('年間返済内訳（元金 vs 利息）',pad.l,18);
-  // Grid
-  ctx.strokeStyle='#e2e8f0';ctx.lineWidth=0.5;
-  for(let i=0;i<=4;i++){
-    const y=pad.t+ch*(1-i/4);
-    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();
-    ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.textAlign='right';
-    ctx.fillText(Math.round(maxPay/10000*i/4).toLocaleString()+'万',pad.l-6,y+3);
-  }
-  data.forEach((r,i)=>{
-    const x=pad.l+(i+0.5)/data.length*cw-barW/2;
-    // Interest
-    const intH=ch*(r.interest/maxPay);
-    ctx.fillStyle='#fca5a5';
-    ctx.fillRect(x,pad.t+ch-intH,barW,intH);
-    // Principal
-    const pH=ch*(r.principal/maxPay);
-    ctx.fillStyle='#93c5fd';
-    ctx.fillRect(x,pad.t+ch-intH-pH,barW,pH);
-    // Prepay
-    if(r.prepay>0){
-      const ppH=ch*(r.prepay/maxPay);
-      ctx.fillStyle='#c4b5fd';
-      ctx.fillRect(x,pad.t+ch-intH-pH-ppH,barW,ppH);
-    }
-    if(i%5===0){
-      ctx.fillStyle='#94a3b8';ctx.font='9px sans-serif';ctx.textAlign='center';
-      ctx.fillText(r.yr+'年',x+barW/2,H-pad.b+12);
-    }
-  });
-  // Legend
-  const lx=W-250;
-  [{c:'#93c5fd',l:'元金'},{c:'#fca5a5',l:'利息'},{c:'#c4b5fd',l:'繰上返済'}].forEach((it,i)=>{
-    ctx.fillStyle=it.c;ctx.fillRect(lx+i*70,H-15,12,10);
-    ctx.fillStyle='#64748b';ctx.font='10px sans-serif';ctx.textAlign='left';
-    ctx.fillText(it.l,lx+i*70+15,H-6);
-  });
 }
 </script>
 </body>
