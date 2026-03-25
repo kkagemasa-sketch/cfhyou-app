@@ -87,7 +87,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rtab{padding:9px 20px 8px;border:none;background:rgba(255,255,255,.1);font-family:inherit;font-size:12px;color:rgba(255,255,255,.65);cursor:pointer;border-radius:8px 8px 0 0;transition:.15s;font-weight:600;letter-spacing:.02em;border:1px solid transparent;border-bottom:none;margin-bottom:0;position:relative;top:1px}
 .rtab:hover{background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
 .rtab.on{background:var(--gray-bg);color:var(--navy);border-color:rgba(255,255,255,.15);font-weight:800;top:0;padding-top:10px}
-.r-body{flex:1;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px}
+.r-body{flex:1;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;padding:14px 16px}
 .r-body::-webkit-scrollbar{width:6px;height:6px}
 .r-body::-webkit-scrollbar-track{background:#f0f4f8}
 .r-body::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
@@ -102,7 +102,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .sh-tab{display:none}
 /* 固定ジャンプナビ（パネル下部） */
 .panel-l{display:flex;flex-direction:column}
-.panel-l>.fi{flex:1;overflow-y:auto}
+.panel-l>.fi{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
 .panel-l>.fi::-webkit-scrollbar{width:3px}
 .panel-l>.fi::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
 .sec-jump{flex-shrink:0;z-index:50;background:var(--navy);display:flex;gap:1px;padding:4px 6px;border-top:1px solid rgba(255,255,255,.15)}
@@ -217,7 +217,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* ============================================================
    CF表：テーブル共通
    ============================================================ */
-.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border)}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border)}
 .cf{border-collapse:collapse;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace}
 .cf th,.cf td{border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;padding:3px 6px;white-space:nowrap;min-width:48px;width:48px;text-align:right}
 
@@ -391,8 +391,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
    iPad / タブレット対応 (〜1366px) - 左右配置（PC風）
    ============================================================ */
 @media screen and (max-width:1366px){
-  /* 左右配置を維持、パネル幅を縮小 */
-  .panel-l{width:320px!important;min-width:280px!important}
+  /* 左右配置を維持、パネル幅を調整 */
+  .panel-l{width:370px!important;min-width:340px!important}
   .r-body{padding:10px 12px}
   /* ヘッダー */
   .hdr{flex-wrap:wrap;gap:4px;padding:6px 10px}
@@ -420,7 +420,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 }
 /* 縦向きiPad / 小型タブレット (〜820px) */
 @media screen and (max-width:820px){
-  .panel-l{width:280px!important;min-width:260px!important}
+  .panel-l{width:320px!important;min-width:300px!important}
   .cf th,.cf td{min-width:40px;width:40px;font-size:9px;padding:2px 3px}
   .cf th:first-child,.cf td:first-child{min-width:60px;max-width:60px;font-size:8px;position:sticky;left:0;z-index:4}
   .cf th:nth-child(2),.cf td:nth-child(2){min-width:78px;max-width:78px;font-size:8px;position:sticky;left:60px;z-index:4}
