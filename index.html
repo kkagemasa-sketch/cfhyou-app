@@ -3196,7 +3196,10 @@ function _loadPrintInfo(){
 
 // 出力前モーダル：印刷用情報を確認・編集してから出力
 function showExportModal(exportType){
-  if(!window.lastR){alert('先にCF表を生成してください');return;}
+  if(exportType==='mg'){
+    const mgKey=rTab==='mg-h'?'h':'w';
+    if(!window._mgMRStore||!window._mgMRStore[mgKey]){alert('先に万が一CF表を生成してください');return;}
+  }else if(!window.lastR){alert('先にCF表を生成してください');return;}
   document.getElementById('export-modal')?.remove();
   const pi=getPrintInfo();
   const modal=document.createElement('div');
@@ -3214,7 +3217,7 @@ function showExportModal(exportType){
   modal.innerHTML=`
     <div style="background:#fff;border-radius:14px;padding:24px;width:520px;max-width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:800;font-size:15px;color:#1e3a5f">${exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</div>
+        <div style="font-weight:800;font-size:15px;color:#1e3a5f">${exportType==='mg'?'📊 万が一CF表 Excel出力':exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</div>
         <button onclick="document.getElementById('export-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0 4px">✕</button>
       </div>
 
@@ -3240,7 +3243,7 @@ function showExportModal(exportType){
       <!-- 出力ボタン -->
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button onclick="document.getElementById('export-modal').remove()" style="font-size:12px;padding:8px 16px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-weight:600">キャンセル</button>
-        <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</button>
+        <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='mg'?'📊 Excel出力':exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</button>
       </div>
     </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -3263,6 +3266,7 @@ function _doExport(type){
   _applyExportModalValues();
   document.getElementById('export-modal')?.remove();
   if(type==='excel')exportExcel();
+  else if(type==='mg')exportExcelMG();
   else if(type==='pdf')exportPDF();
   else window.print();
 }
@@ -4413,8 +4417,10 @@ function exportExcelMG(){
   const push=(data,type)=>{rows.push(data);types.push(type);};
   const ri=v=>Math.round(v);
 
-  // タイトル（1行目）
-  push([`${clientName} 様【万が一】`,`ご主人様が${hAge}歳 / ${targetLabel}が${deathAge}歳で死亡した場合`,...Array(disp-1).fill(''),'',''],'title');
+  // タイトル（1行目）：通常CFと同形式 + E列に万が一ラベル
+  const mgLabel=`${targetLabel} 万が一`;
+  const titleRow=[`${clientName} 様`,'',`${isM?'🏢 マンション':'🏠 戸建て'}`,'',mgLabel,...Array(disp-2).fill(''),''];
+  push(titleRow,'title');
   // 自己資金内訳（2行目）
   const housePrice3=fv('house-price')||0;const cashTotal3=(fv('cash-h')||0)+(fv('cash-w')||0)+(fv('cash-joint')||0);
   const downPay3=fv('down-payment')||0;const houseCost3=fv('house-cost')||0;const movCost3=(fv('moving-cost')||0)+(fv('furniture-init')||0);
@@ -4436,6 +4442,31 @@ function exportExcelMG(){
   document.querySelectorAll('[id^="ca-"]').forEach(el=>{children.push({age:parseInt(el.value)||0});});
   children.forEach((c,ci)=>{
     push(['',cLbls[ci],...MR.yr.map((_,i)=>c.age+i),''],'age');
+  });
+
+  // イベント行（通常CFと同じ）
+  const childEvRows2=[];
+  push(['イベント',targetIsH?'奥様':'ご主人様',...MR.yr.map((_,i)=>{
+    const pAge=targetIsH?(wAge+i):(hAge+i);
+    if(!targetIsH&&MR._deathOffset&&i===0)return `${targetLabel}ご逝去`;
+    if(targetIsH&&MR._deathOffset&&i===0)return `${targetLabel}ご逝去`;
+    if(pAge===60)return '定年';
+    if(pAge===65)return '年金開始';
+    return '';
+  }),''],'event');
+  children.forEach((c,ci)=>{
+    const ages=MR.yr.map((_,i)=>c.age+i);
+    childEvRows2.push({rowIdx:rows.length,ages});
+    const un=_v(`cu-${ci+1}`)||'plit_h';
+    push(['',cLbls[ci],...ages.map(ca=>{
+      if(ca===0)return '誕生';
+      if(ca===1)return '保育所入園';
+      if(ca===7)return '小学入学';
+      if(ca===13)return '中学入学';
+      if(ca===16)return '高校入学';
+      if(ca===19)return un.startsWith('senmon')?'専門入学':'大学入学';
+      return '';
+    }),''],'event');
   });
 
   // 収入
@@ -4530,6 +4561,7 @@ function exportExcelMG(){
     header:{fill:C.navy,font:{sz:9,bold:true,color:C.white},align:'center'},
     elapsed:{fill:C.navyD,font:{sz:8,color:'FFa0b4c8'},align:'center'},
     age:{fill:C.ageBg,font:{sz:8,color:C.ageFg},align:'center'},
+    event:{fill:'FFf0f8ff',font:{sz:8,color:'FF3a6a8a'},align:'center'},
     incCat:{fill:C.incCat,font:{sz:9,bold:true,color:C.white}},
     inc:{fill:C.incBg,font:{sz:9,color:C.black}},
     incTotal:{fill:C.blue,font:{sz:9,bold:true,color:C.white}},
@@ -4557,6 +4589,9 @@ function exportExcelMG(){
     if(age>=19&&age<=22)return 'univ';
     return null;
   }
+  // イベント行マップ（万が一用）
+  const childEvMapMG={};
+  childEvRows2.forEach(cr=>{childEvMapMG[cr.rowIdx]=cr.ages;});
   // 教育費行マップ（万が一用）
   const eduRowMapMG={};
   types.forEach((tp,r)=>{
@@ -4587,6 +4622,18 @@ function exportExcelMG(){
       }
       const bgColor=def.fill;
       let fillObj=bgColor?{patternType:'solid',fgColor:{rgb:bgColor}}:undefined;
+      // 子どもイベント行：教育段階ごとの色分け
+      if(childEvMapMG[r]&&c>=2&&c<lastCol){
+        const ages=childEvMapMG[r];
+        const colIdx=c-2;
+        if(ages&&ages[colIdx]!==undefined){
+          const stage=getEduStage(ages[colIdx]);
+          if(stage&&eduColors[stage]){
+            fillObj={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
+            fObj.color={rgb:eduColors[stage].fg};fObj.bold=true;
+          }
+        }
+      }
       // 教育費行：子どもの年齢に応じた色分け
       if(eduRowMapMG[r]&&c>=2&&c<lastCol){
         const ages=eduRowMapMG[r];
@@ -4599,21 +4646,26 @@ function exportExcelMG(){
           }
         }
       }
-      // 通常CF表との差分色分け（収入・支出行で値が異なる場合）
+      // タイトル行E列：万が一ラベル（赤背景・白文字太字）
+      if(tp==='title'&&c===4&&String(cell.v||'').includes('万が一')){
+        fillObj={patternType:'solid',fgColor:{rgb:'FFdc2626'}};
+        fObj.color={rgb:'FFFFFFFF'};fObj.bold=true;fObj.sz=12;
+      }
+      // 通常CF表との差分色分け（文字色を赤に変更）
       if((tp==='inc'||tp==='exp'||tp==='balance'||tp==='savings')&&c>=2&&c<lastCol&&typeof cell.v==='number'){
         const normalRows=N;
         const colIdx=c-2;
         let normalVal=null;
-        // 行ラベルから通常データを参照
         const label=row[1]||row[0]||'';
         if(label==='ご主人手取年収'&&normalRows.hInc)normalVal=normalRows.hInc[colIdx];
         else if(label==='奥様手取年収'&&normalRows.wInc)normalVal=normalRows.wInc[colIdx];
         else if(label==='住宅ローン返済'&&normalRows.lRep)normalVal=normalRows.lRep[colIdx];
         else if(label==='生活費'&&normalRows.lc)normalVal=normalRows.lc[colIdx];
+        else if(label==='遺族年金'&&normalRows.survPension)normalVal=normalRows.survPension?normalRows.survPension[colIdx]:null;
         else if(tp==='balance'&&normalRows.bal)normalVal=normalRows.bal[colIdx];
         else if(tp==='savings'&&normalRows.sav)normalVal=normalRows.sav[colIdx];
         if(normalVal!==null&&Math.round(normalVal)!==Math.round(cell.v)){
-          fillObj={patternType:'solid',fgColor:{rgb:'FFFFF3E0'}};
+          fObj.color={rgb:C.red};fObj.bold=true;
         }
       }
       cell.s={font:fObj,border:baseBorder,alignment:{horizontal:def.align||(c>=2?'right':'left'),vertical:'center'}};
@@ -4622,9 +4674,10 @@ function exportExcelMG(){
     });
   });
 
-  // 1-3行目のセル結合（B列以降を結合して文字が見えるように）
+  // 1-3行目のセル結合
   if(!ws['!merges'])ws['!merges']=[];
-  ws['!merges'].push({s:{r:0,c:1},e:{r:0,c:Math.min(disp+1,8)}});// タイトル行
+  ws['!merges'].push({s:{r:0,c:1},e:{r:0,c:3}});// タイトル行B-D結合
+  ws['!merges'].push({s:{r:0,c:4},e:{r:0,c:Math.min(disp+1,8)}});// 万が一ラベルE-結合
   ws['!merges'].push({s:{r:1,c:1},e:{r:1,c:Math.min(disp+1,10)}});// 自己資金
   ws['!merges'].push({s:{r:2,c:1},e:{r:2,c:Math.min(disp+1,10)}});// ローン条件
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
@@ -4636,7 +4689,7 @@ function exportExcelMG(){
 function exportCurrentTab(){
   if(rTab==='cf')showExportModal('excel');
   else if(rTab==='loan')exportLoanExcel();
-  else if(rTab==='mg-h'||rTab==='mg-w')exportExcelMG();
+  else if(rTab==='mg-h'||rTab==='mg-w')showExportModal('mg');
   else if(rTab==='graph')showExportModal('excel'); // グラフはCF表と同じ
   else showExportModal('excel');
 }
