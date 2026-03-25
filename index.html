@@ -897,6 +897,11 @@ if(authExp&&Date.now()<Number(authExp)){
           <button class="btn-add" onclick="addIncomeStep('w')">＋ 収入段階を追加</button>
 
           <div class="divider"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🍼 産休・育休・時短</div>
+          <div id="leave-cont"></div>
+          <button class="btn-add" onclick="addLeave()">＋ 産休・育休・時短を追加</button>
+
+          <div class="divider"></div>
 
           <div class="g2" style="margin-bottom:10px">
             <div class="fg"><label class="lbl">退職年齢（奥様）</label>
@@ -3104,7 +3109,7 @@ function addLeave(){
         <div class="suf"><input class="inp amt-inp" id="lvi-${id}" onfocus="scrollToCFRow('wInc',null)" onblur="cfRowBlur()" type="number" value="0" min="0" placeholder="0=産休" oninput="live()"><span class="sl">万</span></div>
       </div>
     </div>`;
-  $('leave-cont').appendChild(el);live();
+  if($('leave-cont'))$('leave-cont').appendChild(el);live();
 }
 function rmLeave(id){$(`lv-${id}`)?.remove();live()}
 function getLeaves(){
@@ -5222,7 +5227,7 @@ function onJSONImport(input){
       }
       calcLoanAmt(); calcDelivery(); initLCComma(); live();
       alert(`「${d.fields?.['client-name'] || 'データ'}」を読み込みました`);
-    }catch(err){ alert('読み込みに失敗しました。正しいJSONファイルか確認してください。'); }
+    }catch(err){ alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n')); console.error('Import error:',err); }
     input.value = '';
   };
   reader.readAsText(file);
@@ -5352,7 +5357,7 @@ function _collectDynamic(){
 function _restoreDynamic(d){
   if(!d)return;
   // 子ども
-  $('children-cont').innerHTML=''; cCnt=0;
+  if($('children-cont'))$('children-cont').innerHTML=''; cCnt=0;
   (d.children||[]).forEach(c=>{
     addChild();
     const cid=cCnt;
@@ -5372,7 +5377,7 @@ function _restoreDynamic(d){
     if(c.wedOn&&$(`wed-age-${cid}`))$(`wed-age-${cid}`).value=c.wedAge;
   });
   // 収入ステップ
-  $('h-income-cont').innerHTML=''; $('w-income-cont').innerHTML='';
+  if($('h-income-cont'))$('h-income-cont').innerHTML=''; if($('w-income-cont'))$('w-income-cont').innerHTML='';
   hIncomeCnt=0; wIncomeCnt=0;
   ['h','w'].forEach(p=>{
     (d.incSteps?.[p]||[]).forEach(s=>{
@@ -5387,14 +5392,14 @@ function _restoreDynamic(d){
     });
   });
   // 金利ステップ
-  $('rate-cont').innerHTML=''; rCnt=0; $('btn-add-rate').style.display='';
+  if($('rate-cont'))$('rate-cont').innerHTML=''; rCnt=0; if($('btn-add-rate'))$('btn-add-rate').style.display='';
   (d.rateSteps||[]).forEach(s=>{
     addRate();
     if($(`rsf-${rCnt}`))$(`rsf-${rCnt}`).value=s.from;
     if($(`rsr-${rCnt}`))$(`rsr-${rCnt}`).value=s.rate;
   });
   // 生活費ステップ
-  $('lc-steps-cont').innerHTML=''; lsCnt=0;
+  if($('lc-steps-cont'))$('lc-steps-cont').innerHTML=''; lsCnt=0;
   (d.lcSteps||[]).forEach(s=>{
     addLCStep();const _lid=lsCnt;
     if($(`lsb-${_lid}`)&&s.base)$(`lsb-${_lid}`).value=s.base;
@@ -5403,7 +5408,7 @@ function _restoreDynamic(d){
     if($(`lst-${_lid}`)&&s.to)$(`lst-${_lid}`).value=s.to;
   });
   // 産休・育休・時短
-  $('leave-cont').innerHTML=''; lvCnt=0;
+  if($('leave-cont'))$('leave-cont').innerHTML=''; lvCnt=0;
   (d.leaves||[]).forEach(s=>{
     addLeave();
     if($(`lvt-${lvCnt}`))$(`lvt-${lvCnt}`).value=s.type;
@@ -5412,12 +5417,12 @@ function _restoreDynamic(d){
     if($(`lvi-${lvCnt}`))$(`lvi-${lvCnt}`).value=s.income;
   });
   // 特別支出
-  $('extra-cont').innerHTML=''; extraCnt=0;
+  if($('extra-cont'))$('extra-cont').innerHTML=''; extraCnt=0;
   (d.extras||[]).forEach(it=>addExtraItem(it.yr,it.amt,it.lbl,it.yr2||''));
   // 修繕積立金ステップ
-  $('rep-steps-cont').innerHTML=''; repStepCnt=0;
+  if($('rep-steps-cont'))$('rep-steps-cont').innerHTML=''; repStepCnt=0;
   (d.repSteps||[]).forEach(s=>{addRepStep();if($(`rpsy-${repStepCnt}`))$(`rpsy-${repStepCnt}`).value=s.yr;if($(`rpsa-${repStepCnt}`))$(`rpsa-${repStepCnt}`).value=s.amt;});
-  $('rep-auto-steps-cont').innerHTML=''; repAutoStepCnt=0;
+  if($('rep-auto-steps-cont'))$('rep-auto-steps-cont').innerHTML=''; repAutoStepCnt=0;
   (d.repAutoSteps||[]).forEach(s=>{addRepAutoStep();if($(`rpasy-${repAutoStepCnt}`))$(`rpasy-${repAutoStepCnt}`).value=s.yr;if($(`rpasu-${repAutoStepCnt}`))$(`rpasu-${repAutoStepCnt}`).value=s.unit;});
   // フラグ系
   if(d.repMode)setRepMode(d.repMode);
@@ -5528,10 +5533,15 @@ function _collectSaveData(){
   return d;
 }
 function _applyData(d){
-  setType(d.type||'mansion');
-  Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el)el.value=val});
-  _restoreDynamic(d.dynamic);
-  calcLoanAmt();calcDelivery();initLCComma();live();
+  try{
+    setType(d.type||'mansion');
+    Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el)el.value=val});
+    _restoreDynamic(d.dynamic);
+    calcLoanAmt();calcDelivery();initLCComma();live();
+  }catch(err){
+    alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n'));
+    console.error('Apply data error:',err);
+  }
 }
 function _fmtDate(d){
   if(!d)return '-';
