@@ -2009,11 +2009,23 @@ function ri(n){return Math.round(n)}// 整数丸め（小数点なし）
 
 // ===== ライブ更新 =====
 let indicatorTimer=null;
-function live(){
+let _lastInputHash='';
+function _getInputHash(){
+  let s='';
+  document.querySelectorAll('input,select').forEach(el=>{if(el.id)s+=el.id+'='+el.value+'|';});
+  return s;
+}
+function live(force){
   clearTimeout(timer);
   const ind=document.getElementById('update-indicator');
   if(ind){ind.style.display='inline';ind.textContent='● 更新中...';}
   timer=setTimeout(()=>{
+    const hash=_getInputHash();
+    if(!force&&hash===_lastInputHash){
+      if(ind)ind.style.display='none';
+      return;
+    }
+    _lastInputHash=hash;
     validate();updateHints();calcLC();updateEdu();render();
     document.querySelectorAll('.amt-inp').forEach(el=>{const v=el.value.trim();el.classList.toggle('is-zero',v===''||v==='0');});
     if(ind){
@@ -2021,7 +2033,7 @@ function live(){
       clearTimeout(indicatorTimer);
       indicatorTimer=setTimeout(()=>{ind.style.display='none';},1200);
     }
-  },250);
+  },600);
 }
 
 // ===== バリデーション =====
