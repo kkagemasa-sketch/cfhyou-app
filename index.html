@@ -4410,32 +4410,78 @@ function exportExcelMG(){
   const targetIsH=rTab==='mg-h';
   const targetLabel=targetIsH?'ご主人様':'奥様';
   const hAge=iv('ha')||30, wAge=iv('wa')||28;
-  const deathAge=targetIsH?(hAge+MR._deathOffset-1):(wAge+MR._deathOffset-1);
 
   const wb=XLSX.utils.book_new();
   const rows=[], types=[];
   const push=(data,type)=>{rows.push(data);types.push(type);};
-  const ri=v=>Math.round(v);
 
-  // タイトル（1行目）：通常CFと同形式 + E列に万が一ラベル
+  // ── カラーマップ（通常CFと同じ） ──
+  const C={
+    navy:'FF1e3a5f', navyD:'FF0f2744', navyL:'FF2d5282', blue:'FF2d7dd2',
+    redL:'FFfc5b4a', red:'FFd63a2a', green:'FF14b027', white:'FFFFFFFF', black:'FF1a202c',
+    incBg:'FFfbfdff', incFg:'FF1a3a5f', incCat:'FF4a90d9',
+    expBg:'FFfffaf9', expFg:'FF8b1a10', expCat:'FFfc5b4a',
+    ageBg:'FFe8f4fc', ageBgL:'FFcce8f8', ageFg:'FF3a6a8a', ageFgD:'FF1a4a6a',
+    evBg:'FFfffcf7', evFg:'FF8a5a30', evHdr:'FFffe8cc', evHdrFg:'FF7a3a00',
+    finBg:'FFf0f8ff', finFg:'FF1a4a7a', finHdrBg:'FF1a4a7a',
+    loanBg:'FFf8fafb', muted:'FF5a6a7e', zero:'FFbec8d4',
+    border:'FFd0d8e4', borderH:'FF6b8cae',
+  };
+  const bdr={style:'thin',color:{rgb:C.border}};
+  const bdrH={style:'thin',color:{rgb:C.borderH}};
+  const baseBorder={top:bdr,right:bdr,bottom:bdr,left:bdr};
+
+  // ── 前提条件情報（通常CFと同じ形式） ──
+  const housePrice=fv('house-price')||0;
+  const downPay=fv('down-payment')||0;
+  const houseCostV=fv('house-cost')||0;
+  const movingCostV=fv('moving-cost')||0;
+  const furnitureInitV=fv('furniture-init')||0;
+  const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
+  const cashTotal=cashH+cashW+cashJoint;
+  const downFromOwn=downType==='gift'?0:downPay;
+  const initialOut=downFromOwn+houseCostV+movingCostV+furnitureInitV;
+  const cashAfter=cashTotal-initialOut;
+  const loanAmtV=fv('loan-amt')||0;
+  const loanYrsV=iv('loan-yrs')||35;
+  const rateBaseV=fv('rate-base')||0.5;
+  const rates=getRates();
+  const rateDisp=rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`;
+  const deliveryYrV=iv('delivery-year')||0;
+
+  // ── タイトル行（通常CFと同形式 + E列に万が一ラベル） ──
   const mgLabel=`${targetLabel} 万が一`;
-  const titleRow=[`${clientName} 様`,'',`${isM?'🏢 マンション':'🏠 戸建て'}`,'',mgLabel,...Array(disp-2).fill(''),''];
+  const titleRow=[`${clientName} 様`,'',isM?'マンション':'戸建て','',mgLabel];
+  while(titleRow.length<disp+3)titleRow.push('');
   push(titleRow,'title');
-  // 自己資金内訳（2行目）
-  const housePrice3=fv('house-price')||0;const cashTotal3=(fv('cash-h')||0)+(fv('cash-w')||0)+(fv('cash-joint')||0);
-  const downPay3=fv('down-payment')||0;const houseCost3=fv('house-cost')||0;const movCost3=(fv('moving-cost')||0)+(fv('furniture-init')||0);
-  push([`💰 自己資金の内訳`,`現預金合計 ${cashTotal3.toLocaleString()}万円　頭金 ${downPay3.toLocaleString()}万円　諸費用 ${houseCost3.toLocaleString()}万円　引越・家具 ${movCost3.toLocaleString()}万円`,...Array(disp).fill(''),''],'info');
-  // 住宅ローン条件（3行目）
-  const loanAmt3=fv('loan-amount')||0;const loanYrs3=fv('loan-period')||35;const loanRate3=fv('loan-rate')||fv('rate-base')||0.5;
-  push([`🏦 住宅ローン条件`,`住宅価格 ${housePrice3.toLocaleString()}万円　借入総額 ${loanAmt3.toLocaleString()}万円　金利 ${loanRate3}%　借入期間 ${loanYrs3}年`,...Array(disp).fill(''),''],'info');
+
+  // ── 頭金の内訳（通常CFと同じ個別セル形式） ──
+  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,'',downType==='gift'?'頭金（贈与）':'頭金（自己資金）',`${downPay}万円`,'','諸費用',`${houseCostV}万円`,'','引越・家具',`${(movingCostV+furnitureInitV)}万円`,'','購入後残高',`${cashAfter}万円`];
+  const infoRow1Len=infoRow1.length;
+  while(infoRow1.length<disp+3)infoRow1.push('');
+  push(infoRow1,'info');
+
+  // ── 住宅ローン条件（通常CFと同じ個別セル形式） ──
+  const infoRow2=['🏦 住宅ローン条件','','住宅価格',`${housePrice}万円`,'','借入総額',`${loanAmtV}万円`,'','金利',rateDisp,'','借入期間',`${loanYrsV}年`];
+  if(deliveryYrV>0){infoRow2.push('','引き渡し',`${deliveryYrV}年`);}
+  const infoRow2Len=infoRow2.length;
+  while(infoRow2.length<disp+3)infoRow2.push('');
+  push(infoRow2,'info');
+
+  // 空行
   push(Array(disp+3).fill(''),'blank');
 
-  // ヘッダー
+  // info行のデータ長を記録
+  const infoDataLens=[infoRow1Len,infoRow2Len];
+
+  // ── ヘッダー ──
   push(['カテゴリ','項目',...MR.yr.map(String),'合計'],'header');
   // 経過年
   push(['経過年','',...MR.yr.map((_,i)=>i+1),'-'],'elapsed');
-  // 年齢
-  push(['年齢',targetIsH?'奥様':'ご主人様',...MR.yr.map((_,i)=>targetIsH?(wAge+i):(hAge+i)),''],'age');
+
+  // ── 年齢（ご主人様と奥様の両方を表示） ──
+  push(['年齢','ご主人様',...MR.hA.slice(0,disp),''],'age');
+  push(['','奥様',...MR.wA.slice(0,disp),''],'age');
 
   // 子ども年齢
   const children=[];
@@ -4444,16 +4490,26 @@ function exportExcelMG(){
     push(['',cLbls[ci],...MR.yr.map((_,i)=>c.age+i),''],'age');
   });
 
-  // イベント行（通常CFと同じ）
-  const childEvRows2=[];
-  push(['イベント',targetIsH?'奥様':'ご主人様',...MR.yr.map((_,i)=>{
-    const pAge=targetIsH?(wAge+i):(hAge+i);
-    if(!targetIsH&&MR._deathOffset&&i===0)return `${targetLabel}ご逝去`;
-    if(targetIsH&&MR._deathOffset&&i===0)return `${targetLabel}ご逝去`;
-    if(pAge===60)return '定年';
-    if(pAge===65)return '年金開始';
+  // ── イベント（ご主人様と奥様の両方を表示） ──
+  // ご主人様イベント
+  push(['イベント','ご主人様',...MR.yr.map((_,i)=>{
+    const ha=hAge+i;
+    if(targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return 'ご逝去';
+    if(ha===60)return '定年';
+    if(ha===65)return '年金開始';
     return '';
   }),''],'event');
+  // 奥様イベント
+  push(['','奥様',...MR.yr.map((_,i)=>{
+    const wa=wAge+i;
+    if(!targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return 'ご逝去';
+    if(wa===60)return '定年';
+    if(wa===65)return '年金開始';
+    return '';
+  }),''],'event');
+
+  // 子どもイベント
+  const childEvRows2=[];
   children.forEach((c,ci)=>{
     const ages=MR.yr.map((_,i)=>c.age+i);
     childEvRows2.push({rowIdx:rows.length,ages});
@@ -4469,26 +4525,25 @@ function exportExcelMG(){
     }),''],'event');
   });
 
-  // 収入
-  push(['','収　　入',...Array(disp).fill(''),''],'incCat');
+  // ── 収入 ──
+  push(['収　入','',...Array(disp).fill(''),''],'incCat');
   const addI=(lbl,arr)=>{
     if(!arr)return;const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
-  addI(targetIsH?'ご主人手取年収':'ご主人手取年収',MR.hInc);
-  addI(targetIsH?'奥様手取年収':'奥様手取年収',MR.wInc);
-  addI('遺族年金',MR.survPension);
+  addI('ご主人手取年収',MR.hInc);
+  addI('奥様手取年収',MR.wInc);
   addI('死亡保険金',MR.insPayArr);
+  addI('遺族年金',MR.survPension);
   addI('奨学金',MR.scholarship);
   addI('児童手当',N.teate);
   addI('住宅ローン控除',N.lCtrl);
-  addI('遺族年金',N.survPension);
   addI('保険満期金',N.insMat);
   push(['収入合計','',...MR.incT.slice(0,disp).map(v=>ri(v)),ri(MR.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
-  // 支出
-  push(['','支　　出',...Array(disp).fill(''),''],'expCat');
+  // ── 支出 ──
+  push(['支　出','',...Array(disp).fill(''),''],'expCat');
   const addE=(lbl,arr)=>{
     if(!arr)return;const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
     if(tot===0)return;
@@ -4513,64 +4568,97 @@ function exportExcelMG(){
   addE('特別支出',N.ext);
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
-  // 収支・残高
+  // ── 収支・残高 ──
   push(['年間収支','',...MR.bal.slice(0,disp).map(v=>ri(v)),ri(MR.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
   push(['預貯金残高','',...MR.sav.slice(0,disp).map(v=>ri(v)),ri(MR.sav[disp-1])],'savings');
-  // 免責事項・使用者情報
-  push(Array(disp+3).fill(''),'blank');
+
+  // ── 注意文章・使用者情報（通常CFと同じ形式） ──
   const pi=getPrintInfo();
-  if(pi.name||pi.company){
-    const piRow=Array(disp+3).fill('');
-    piRow[0]='■ 担当者情報';
-    push(piRow,'footer');
-    if(pi.company){const r2=Array(disp+3).fill('');r2[0]=pi.company;push(r2,'footer');}
-    if(pi.name){const r2=Array(disp+3).fill('');r2[0]=pi.name;if(pi.tel)r2[1]=`TEL: ${pi.tel}`;push(r2,'footer');}
-    if(pi.email){const r2=Array(disp+3).fill('');r2[0]=`Email: ${pi.email}`;push(r2,'footer');}
-    if(pi.address){const r2=Array(disp+3).fill('');r2[0]=pi.address;push(r2,'footer');}
-    push(Array(disp+3).fill(''),'blank');
-  }
-  if(pi.notes){
-    pi.notes.forEach(n=>{const r2=Array(disp+3).fill('');r2[0]=n;push(r2,'footer');});
-    push(Array(disp+3).fill(''),'blank');
-  }
-  const discRow2=Array(disp+3).fill('');
-  discRow2[0]='※本シミュレーションの住宅ローン控除額・税額は概算であり、実際の金額とは異なる場合があります。税務に関する詳細は税理士にご相談ください。';
-  push(discRow2,'footer');
+  const noteLines=pi.notes.filter(n=>n.trim()).map(n=>`・${n}`);
+  const piLines=[];
+  if(pi.name)piLines.push(pi.name);
+  if(pi.company)piLines.push(pi.company);
+  if(pi.address)piLines.push(pi.address);
+  const piContact=[pi.tel,pi.email].filter(v=>v).join('　');
+  if(piContact)piLines.push(piContact);
 
-  // シート作成
+  // 免責事項
+  push(Array(disp+3).fill(''),'blank');
+  const disclaimerRow=Array(disp+3).fill('');
+  disclaimerRow[0]='※本シミュレーションの住宅ローン控除額・税額は概算であり、実際の金額とは異なる場合があります。税務に関する詳細は税理士にご相談ください。';
+  push(disclaimerRow,'footer');
+  // 空行 + 注意文（左）と使用者情報（右隣）を横並びで配置
+  push(Array(disp+3).fill(''),'blank');
+  const footerStartRow=rows.length;
+  const footerRowCount=Math.max(noteLines.length,piLines.length,1);
+  const piEndCol=4;
+  const splitCol=5;
+  const noteEndCol=13;
+  for(let i=0;i<footerRowCount;i++){
+    const row=Array(disp+3).fill('');
+    if(i<piLines.length)row[0]=piLines[i];
+    if(i<noteLines.length)row[splitCol]=noteLines[i];
+    push(row,'footer');
+  }
+
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:16},{wch:50},...Array(disp).fill({wch:10}),{wch:12}];
 
-  // カラーマップ
-  const C={
-    navy:'FF1e3a5f',navyD:'FF0f2744',blue:'FF2d7dd2',
-    redL:'FFfc5b4a',red:'FFd63a2a',green:'FF14b027',white:'FFFFFFFF',black:'FF1a202c',
-    incBg:'FFfbfdff',incFg:'FF1a3a5f',incCat:'FF4a90d9',
-    expBg:'FFfffaf9',expFg:'FF8b1a10',expCat:'FFfc5b4a',
-    ageBg:'FFe8f4fc',ageFg:'FF3a6a8a',
-    border:'FFd0d8e4',zero:'FFbec8d4',
-    mgTitle:'FF8b0035',mgBg:'FFfff5f8',
-  };
-  const bdr={style:'thin',color:{rgb:C.border}};
-  const baseBorder={top:bdr,right:bdr,bottom:bdr,left:bdr};
+  // ── セル結合（通常CFと同じ + 万が一ラベル結合） ──
+  if(!ws['!merges'])ws['!merges']=[];
+  // title行(row0)のA+B結合、C+D結合（物件タイプ）
+  ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:1}});
+  ws['!merges'].push({s:{r:0,c:2},e:{r:0,c:3}});
+  // title行E列以降の万が一ラベル結合
+  ws['!merges'].push({s:{r:0,c:4},e:{r:0,c:Math.min(disp+1,8)}});
+  // info行(row1,row2)のA+B結合
+  const infoRowIndices=[];
+  types.forEach((t,i)=>{if(t==='info')infoRowIndices.push(i);});
+  infoRowIndices.forEach(ri=>{
+    ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}});
+  });
+  // 使用者情報（左）、注意文（右隣）
+  for(let i=0;i<footerRowCount;i++){
+    const r=footerStartRow+i;
+    ws['!merges'].push({s:{r,c:0},e:{r,c:piEndCol}});
+    ws['!merges'].push({s:{r,c:splitCol},e:{r,c:noteEndCol}});
+  }
 
+  // ── 列幅（通常CFと同じ） ──
+  ws['!cols']=[{wch:18},{wch:18},...Array(disp).fill({wch:9}),{wch:11}];
+
+  // 行固定＋左2列固定
+  const headerRowIdx=types.indexOf('header');
+  ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
+
+  // ── 印刷設定 ──
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:73};
+  ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
+  wb.Workbook=wb.Workbook||{};
+  wb.Workbook.Names=wb.Workbook.Names||[];
+  wb.Workbook.Names.push({
+    Name:'_xlnm.Print_Titles',
+    Ref:`'万が一CF表'!$1:$${headerRowIdx+1}`,
+    Sheet:0
+  });
+
+  // ── スタイル定義（通常CFと同じ + col0対応） ──
   const styleDefs={
-    title:{fill:C.mgTitle,font:{sz:12,bold:true,color:C.white}},
-    info:{fill:C.mgBg,font:{sz:10,bold:true,color:C.mgTitle}},
-    blank:{font:{sz:9,color:C.white}},
-    header:{fill:C.navy,font:{sz:9,bold:true,color:C.white},align:'center'},
-    elapsed:{fill:C.navyD,font:{sz:8,color:'FFa0b4c8'},align:'center'},
-    age:{fill:C.ageBg,font:{sz:8,color:C.ageFg},align:'center'},
-    event:{fill:'FFf0f8ff',font:{sz:8,color:'FF3a6a8a'},align:'center'},
-    incCat:{fill:C.incCat,font:{sz:9,bold:true,color:C.white}},
-    inc:{fill:C.incBg,font:{sz:9,color:C.black}},
-    incTotal:{fill:C.blue,font:{sz:9,bold:true,color:C.white}},
-    expCat:{fill:C.expCat,font:{sz:9,bold:true,color:C.white}},
-    exp:{fill:C.expBg,font:{sz:9,color:C.black}},
-    expTotal:{fill:C.redL,font:{sz:9,bold:true,color:C.white}},
-    balance:{font:{sz:9,bold:true,color:C.black}},
-    savings:{fill:C.green,font:{sz:9,bold:true,color:C.white}},
-    footer:{font:{sz:9,color:C.black}},
+    title:     {fill:C.navy, font:{sz:12,bold:true,color:C.white}},
+    info:      {fill:'FFeef5ff', font:{sz:9,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:9,bold:true,color:C.white}}},
+    blank:     {fill:null, font:{sz:9,color:C.white}, noBorder:true},
+    footer:    {fill:C.white, font:{sz:8,color:C.black}, noBorder:true},
+    header:    {fill:C.navy, font:{sz:9,bold:true,color:C.white}, align:'center'},
+    elapsed:   {fill:C.navyD, font:{sz:8,color:'FFa0b4c8'}, align:'center'},
+    age:       {fill:C.ageBg, font:{sz:8,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:8,bold:true,color:C.ageFgD}}},
+    event:     {fill:C.evBg, font:{sz:8,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:8,bold:true,color:C.evHdrFg}}},
+    incCat:    {fill:C.incCat, font:{sz:9,bold:true,color:C.white}},
+    inc:       {fill:C.incBg, font:{sz:9,color:C.black}, col0:{fill:'FFe8f2fc',font:{sz:9,bold:true,color:C.incFg}}},
+    incTotal:  {fill:C.blue, font:{sz:9,bold:true,color:C.white}},
+    expCat:    {fill:C.expCat, font:{sz:9,bold:true,color:C.white}},
+    exp:       {fill:C.expBg, font:{sz:9,color:C.black}, col0:{fill:'FFfdecea',font:{sz:9,bold:true,color:C.expFg}}},
+    expTotal:  {fill:C.redL, font:{sz:9,bold:true,color:C.white}},
+    balance:   {fill:C.white, font:{sz:9,bold:true,color:C.black}},
+    savings:   {fill:C.green, font:{sz:9,bold:true,color:C.white}},
   };
 
   // 教育段階カラーマップ（CF表CSSと同じ色）
@@ -4589,16 +4677,17 @@ function exportExcelMG(){
     if(age>=19&&age<=22)return 'univ';
     return null;
   }
-  // イベント行マップ（万が一用）
+
+  // 子どもイベント行マップ
   const childEvMapMG={};
   childEvRows2.forEach(cr=>{childEvMapMG[cr.rowIdx]=cr.ages;});
-  // 教育費行マップ（万が一用）
+  // 教育費行マップ
   const eduRowMapMG={};
   types.forEach((tp,r)=>{
     if(tp&&typeof tp==='object'&&tp.type==='edu'){eduRowMapMG[r]=tp.ages;}
   });
 
-  const lastCol=disp+2;
+  const lastCol=disp+2; // 合計列index
   rows.forEach((row,r)=>{
     const rawTp=types[r];
     const tp=(rawTp&&typeof rawTp==='object')?rawTp.type:rawTp;
@@ -4607,21 +4696,89 @@ function exportExcelMG(){
       const addr=XLSX.utils.encode_cell({r,c});
       if(!ws[addr])ws[addr]={t:'s',v:''};
       const cell=ws[addr];
-      const fDef=def.font||{};
-      const fObj={name:'Yu Gothic',sz:fDef.sz||9};
-      if(fDef.bold)fObj.bold=true;
-      if(fDef.color)fObj.color={rgb:fDef.color};
+      const isFixed=c<=1;
+      const isLastCol=c===lastCol;
+      // フォント（col0対応）
+      const fDef=(isFixed&&def.col0)?def.col0.font:def.font;
+      const fObj={name:'Yu Gothic',sz:fDef?.sz||9};
+      if(fDef?.bold)fObj.bold=true;
+      if(fDef?.color)fObj.color={rgb:fDef.color};
+      // info行：ラベルセルは太字、値セル（万円等）は強調
+      if(tp==='info'&&c===0){fObj.bold=true;fObj.sz=9;fObj.color={rgb:C.white};}
+      if(tp==='info'&&c>=2){
+        const infoIdx=infoRowIndices.indexOf(r);
+        const dataLen=infoIdx>=0&&infoIdx<infoDataLens.length?infoDataLens[infoIdx]:999;
+        if(c>=dataLen){
+          cell._noFill=true;
+        }else{
+          const v=String(cell.v||'');
+          if(v.includes('万円')||v.includes('%')||v.includes('年')){
+            fObj.bold=true;fObj.sz=10;fObj.color={rgb:C.navy};
+          }else if(v&&v!=='▶'){
+            fObj.bold=true;fObj.color={rgb:'FF5a6a7e'};
+          }
+          if(v.includes('購入後残高')){fObj.bold=true;fObj.color={rgb:'FF2d5282'};}
+          if(c>0&&String(rows[r][c-1]||'').includes('購入後残高')){
+            fObj.bold=true;fObj.sz=10;
+            fObj.color={rgb:cashAfter>=0?'FF0d8a20':C.red};
+          }
+        }
+      }
+      // title行：データ範囲外は塗りつぶしなし（E列の万が一ラベルは除く）
+      if(tp==='title'&&c>=3){
+        if(c!==4||!String(cell.v||'').includes('万が一')){
+          cell._noFill=true;
+        }
+      }
+      // title行の物件タイプ（C列）
+      if(tp==='title'&&c===2){fObj.sz=10;}
+      // title行：データ範囲外は罫線なし（万が一ラベル範囲を除く）
+      if(tp==='title'&&c>=4){
+        if(!String(cell.v||'').includes('万が一')){
+          cell._noBorder=true;cell._noFill=true;
+        }
+      }
+      // info行：データ範囲外は罫線なし
+      if(tp==='info'&&cell._noFill){cell._noBorder=true;}
+      // 年間収支の赤/緑
       if(tp==='balance'&&c>=2&&typeof cell.v==='number'){
         fObj.color={rgb:cell.v<0?C.red:'FF0d8a20'};
       }
+      // 預貯金残高の赤字（白文字）
       if(tp==='savings'&&c>=2&&typeof cell.v==='number'&&cell.v<0){
         fObj.color={rgb:C.white};
       }
+      // 0値はグレー
       if((tp==='inc'||tp==='exp')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
         fObj.color={rgb:C.zero};
       }
-      const bgColor=def.fill;
-      let fillObj=bgColor?{patternType:'solid',fgColor:{rgb:bgColor}}:undefined;
+      // 背景色（col0対応）
+      const bgColor=(isFixed&&def.col0)?def.col0.fill:def.fill;
+      const fillObj=bgColor?{patternType:'solid',fgColor:{rgb:bgColor}}:undefined;
+      // 合計列の特別背景
+      let lastFill=fillObj;
+      if(isLastCol){
+        if(tp==='header')lastFill={patternType:'solid',fgColor:{rgb:'FF1a2e4a'}};
+        else if(tp==='incTotal'||tp==='inc')lastFill={patternType:'solid',fgColor:{rgb:C.blue}};
+        else if(tp==='expTotal'||tp==='exp')lastFill={patternType:'solid',fgColor:{rgb:C.redL}};
+        else if(tp==='savings')lastFill={patternType:'solid',fgColor:{rgb:C.green}};
+        if(tp==='inc'||tp==='exp'||tp==='incTotal'||tp==='expTotal'||tp==='savings'){
+          fObj.color={rgb:C.white};fObj.bold=true;
+        }
+      }
+      // ボーダー（blank/footer行はボーダーなし）
+      const noBorder=def.noBorder||cell._noBorder||false;
+      const border=noBorder?{}:{...baseBorder};
+      if(!noBorder&&isFixed&&c===1){border.right=bdrH;}
+
+      // 水平揃え
+      let hAlign=(tp==='event'||tp==='age'||tp==='elapsed'||tp==='header')
+        ? 'center'
+        : (c>=2?'right':'left');
+      if(tp==='footer'){hAlign='left';}
+      if(tp==='title'&&c===2){hAlign='center';}
+      let cellFill=isLastCol&&lastFill?lastFill:fillObj;
+
       // 子どもイベント行：教育段階ごとの色分け
       if(childEvMapMG[r]&&c>=2&&c<lastCol){
         const ages=childEvMapMG[r];
@@ -4629,8 +4786,9 @@ function exportExcelMG(){
         if(ages&&ages[colIdx]!==undefined){
           const stage=getEduStage(ages[colIdx]);
           if(stage&&eduColors[stage]){
-            fillObj={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
-            fObj.color={rgb:eduColors[stage].fg};fObj.bold=true;
+            cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
+            fObj.color={rgb:eduColors[stage].fg};
+            fObj.bold=true;
           }
         }
       }
@@ -4641,45 +4799,52 @@ function exportExcelMG(){
         if(ages&&ages[colIdx]!==undefined){
           const stage=getEduStage(ages[colIdx]);
           if(stage&&eduColors[stage]){
-            fillObj={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
+            cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
           }
         }
       }
-      // タイトル行E列：万が一ラベル（赤背景・白文字太字）
+
+      // ★ 万が一特有：タイトル行E列の万が一ラベル（赤背景・白文字太字）
       if(tp==='title'&&c===4&&String(cell.v||'').includes('万が一')){
-        fillObj={patternType:'solid',fgColor:{rgb:'FFdc2626'}};
+        cellFill={patternType:'solid',fgColor:{rgb:'FFdc2626'}};
         fObj.color={rgb:'FFFFFFFF'};fObj.bold=true;fObj.sz=12;
       }
-      // 通常CF表との差分色分け（文字色を赤に変更）
+
+      // ★ 万が一特有：通常CF表との差分色分け（文字色を赤に変更）
       if((tp==='inc'||tp==='exp'||tp==='balance'||tp==='savings')&&c>=2&&c<lastCol&&typeof cell.v==='number'){
-        const normalRows=N;
         const colIdx=c-2;
         let normalVal=null;
         const label=row[1]||row[0]||'';
-        if(label==='ご主人手取年収'&&normalRows.hInc)normalVal=normalRows.hInc[colIdx];
-        else if(label==='奥様手取年収'&&normalRows.wInc)normalVal=normalRows.wInc[colIdx];
-        else if(label==='住宅ローン返済'&&normalRows.lRep)normalVal=normalRows.lRep[colIdx];
-        else if(label==='生活費'&&normalRows.lc)normalVal=normalRows.lc[colIdx];
-        else if(label==='遺族年金'&&normalRows.survPension)normalVal=normalRows.survPension?normalRows.survPension[colIdx]:null;
-        else if(tp==='balance'&&normalRows.bal)normalVal=normalRows.bal[colIdx];
-        else if(tp==='savings'&&normalRows.sav)normalVal=normalRows.sav[colIdx];
+        if(label==='ご主人手取年収'&&N.hInc)normalVal=N.hInc[colIdx];
+        else if(label==='奥様手取年収'&&N.wInc)normalVal=N.wInc[colIdx];
+        else if(label==='住宅ローン返済'&&N.lRep)normalVal=N.lRep[colIdx];
+        else if(label==='生活費'&&N.lc)normalVal=N.lc[colIdx];
+        else if(label==='遺族年金'&&N.survPension)normalVal=N.survPension[colIdx];
+        else if(label==='駐車場代'&&N.prk)normalVal=N.prk[colIdx];
+        else if(label==='車両費（購入・車検）'&&N.carTotal)normalVal=N.carTotal[colIdx];
+        else if(tp==='balance'&&N.bal)normalVal=N.bal[colIdx];
+        else if(tp==='savings'&&N.sav)normalVal=N.sav[colIdx];
         if(normalVal!==null&&Math.round(normalVal)!==Math.round(cell.v)){
           fObj.color={rgb:C.red};fObj.bold=true;
         }
       }
-      cell.s={font:fObj,border:baseBorder,alignment:{horizontal:def.align||(c>=2?'right':'left'),vertical:'center'}};
-      if(fillObj)cell.s.fill=fillObj;
-      if(typeof cell.v==='number')cell.s.numFmt='#,##0';
+
+      // blank/footer行・範囲外セルは塗りつぶしなし
+      const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
+      cell.s={
+        font:fObj,
+        fill:finalFill,
+        alignment:{vertical:'center',horizontal:hAlign,wrapText:false},
+        border:border,
+      };
+      // 数値フォーマット
+      if(typeof cell.v==='number'&&c>=2){
+        cell.z='#,##0;▲#,##0;"-"';
+      }
     });
   });
 
-  // 1-3行目のセル結合
-  if(!ws['!merges'])ws['!merges']=[];
-  ws['!merges'].push({s:{r:0,c:1},e:{r:0,c:3}});// タイトル行B-D結合
-  ws['!merges'].push({s:{r:0,c:4},e:{r:0,c:Math.min(disp+1,8)}});// 万が一ラベルE-結合
-  ws['!merges'].push({s:{r:1,c:1},e:{r:1,c:Math.min(disp+1,10)}});// 自己資金
-  ws['!merges'].push({s:{r:2,c:1},e:{r:2,c:Math.min(disp+1,10)}});// ローン条件
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
   const fname=`万が一_${clientName}_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
   XLSX.writeFile(wb,fname);
