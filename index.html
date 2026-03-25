@@ -4469,7 +4469,14 @@ function exportExcelMG(){
   addE('固定資産税',N.ptx);
   addE('家具家電買替',N.furn);
   addE(isM?'専有部分修繕費':'修繕費',N.senyu);
-  children.forEach((c,ci)=>{if(N.edu&&N.edu[ci])addE(`${cLbls[ci]}教育費`,N.edu[ci]);});
+  children.forEach((c,ci)=>{
+    if(N.edu&&N.edu[ci]){
+      const arr=N.edu[ci];
+      const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;
+      const ages=arr.map((_,i)=>c.age+i);
+      push(['',`${cLbls[ci]}教育費`,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
+    }
+  });
   addE('駐車場代',MR.prk);
   addE('車両費（購入・車検）',MR.carTotal);
   addE('特別支出',N.ext);
@@ -4534,9 +4541,33 @@ function exportExcelMG(){
     footer:{font:{sz:9,color:C.black}},
   };
 
+  // 教育段階カラーマップ（CF表CSSと同じ色）
+  const eduColors={
+    hoiku:{bg:'FFffedf6',fg:'FF880044'},
+    elem: {bg:'FFeaf6ea',fg:'FF1a5c20'},
+    mid:  {bg:'FFfffcda',fg:'FF5a4000'},
+    high: {bg:'FFf3eeff',fg:'FF3a008a'},
+    univ: {bg:'FFffd8a0',fg:'FF6b2000'},
+  };
+  function getEduStage(age){
+    if(age>=1&&age<=6)return 'hoiku';
+    if(age>=7&&age<=12)return 'elem';
+    if(age>=13&&age<=15)return 'mid';
+    if(age>=16&&age<=18)return 'high';
+    if(age>=19&&age<=22)return 'univ';
+    return null;
+  }
+  // 教育費行マップ（万が一用）
+  const eduRowMapMG={};
+  types.forEach((tp,r)=>{
+    if(tp&&typeof tp==='object'&&tp.type==='edu'){eduRowMapMG[r]=tp.ages;}
+  });
+
   const lastCol=disp+2;
   rows.forEach((row,r)=>{
-    const tp=types[r];const def=styleDefs[tp]||{};
+    const rawTp=types[r];
+    const tp=(rawTp&&typeof rawTp==='object')?rawTp.type:rawTp;
+    const def=styleDefs[tp]||styleDefs['exp']||{};
     row.forEach((_,c)=>{
       const addr=XLSX.utils.encode_cell({r,c});
       if(!ws[addr])ws[addr]={t:'s',v:''};
@@ -4556,6 +4587,18 @@ function exportExcelMG(){
       }
       const bgColor=def.fill;
       let fillObj=bgColor?{patternType:'solid',fgColor:{rgb:bgColor}}:undefined;
+      // 教育費行：子どもの年齢に応じた色分け
+      if(eduRowMapMG[r]&&c>=2&&c<lastCol){
+        const ages=eduRowMapMG[r];
+        const colIdx=c-2;
+        if(ages&&ages[colIdx]!==undefined){
+          const stage=getEduStage(ages[colIdx]);
+          if(stage&&eduColors[stage]){
+            fillObj={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
+            fObj.color={rgb:eduColors[stage].fg};
+          }
+        }
+      }
       // 通常CF表との差分色分け（収入・支出行で値が異なる場合）
       if((tp==='inc'||tp==='exp'||tp==='balance'||tp==='savings')&&c>=2&&c<lastCol&&typeof cell.v==='number'){
         const normalRows=N;
@@ -4724,7 +4767,13 @@ function exportExcel(){
   if(isM)addE('修繕積立金',R.rep);
   addE('固定資産税',R.ptx);addE('家具家電買替',R.furn);
   addE(isM?'専有部分修繕費':'修繕費',R.senyu);
-  children.forEach((c,ci)=>{addE(`${cLbls[ci]}教育費`,R.edu[ci]);});
+  children.forEach((c,ci)=>{
+    const arr=R.edu[ci];if(!arr)return;
+    const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;
+    // 子どもの年齢配列を作成（色分け用）
+    const ages=arr.slice(0,disp).map((_,i)=>c.age+i);
+    push(['',`${cLbls[ci]}教育費`,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
+  });
   addE('駐車場代',R.prk);addE('車両費（購入・車検）',R.carTotal);
   addE('結婚のお祝い',R.wedding);addE('特別支出',R.ext);
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
@@ -4857,10 +4906,17 @@ function exportExcel(){
   const childEvMap={};
   childEvRows.forEach(cr=>{childEvMap[cr.rowIdx]=cr.ages;});
 
+  // 教育費行マップ（行番号→年齢配列）
+  const eduRowMap={};
+  types.forEach((tp,r)=>{
+    if(tp&&typeof tp==='object'&&tp.type==='edu'){eduRowMap[r]=tp.ages;}
+  });
+
   const lastCol=disp+2; // 合計列index
   rows.forEach((row,r)=>{
-    const tp=types[r];
-    const def=styleDefs[tp]||{};
+    const rawTp=types[r];
+    const tp=(rawTp&&typeof rawTp==='object')?rawTp.type:rawTp;
+    const def=styleDefs[tp]||styleDefs['exp']||{};
     row.forEach((_,c)=>{
       const addr=XLSX.utils.encode_cell({r,c});
       if(!ws[addr])ws[addr]={t:'s',v:''};
@@ -4956,6 +5012,18 @@ function exportExcel(){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
             fObj.bold=true;
+          }
+        }
+      }
+      // 教育費行：子どもの年齢に応じた色分け（イベント行と連動）
+      if(eduRowMap[r]&&c>=2&&c<lastCol){
+        const ages=eduRowMap[r];
+        const colIdx=c-2;
+        if(ages&&ages[colIdx]!==undefined){
+          const stage=getEduStage(ages[colIdx]);
+          if(stage&&eduColors[stage]){
+            cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
+            fObj.color={rgb:eduColors[stage].fg};
           }
         }
       }
