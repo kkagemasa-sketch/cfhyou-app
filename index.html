@@ -87,12 +87,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rtab{padding:9px 20px 8px;border:none;background:rgba(255,255,255,.1);font-family:inherit;font-size:12px;color:rgba(255,255,255,.65);cursor:pointer;border-radius:8px 8px 0 0;transition:.15s;font-weight:600;letter-spacing:.02em;border:1px solid transparent;border-bottom:none;margin-bottom:0;position:relative;top:1px}
 .rtab:hover{background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
 .rtab.on{background:var(--gray-bg);color:var(--navy);border-color:rgba(255,255,255,.15);font-weight:800;top:0;padding-top:10px}
-.r-body{flex:1;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;will-change:scroll-position;transform:translateZ(0);padding:14px 16px}
-.r-body::-webkit-scrollbar{width:6px;height:6px}
-.r-body::-webkit-scrollbar-track{background:#f0f4f8}
-.r-body::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
-.r-body::-webkit-scrollbar-thumb:hover{background:#64748b}
-/* 横スクロールバーを常時表示 */
+.r-body{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0}
+.r-summary{padding:10px 16px 0;flex-shrink:0;overflow-y:auto;max-height:20%}
+.r-summary::-webkit-scrollbar{width:4px}
+.r-summary::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
+.tbl-wrap{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:0;margin:0 16px 8px;box-shadow:var(--sh);border:1px solid var(--border)}
+.tbl-wrap::-webkit-scrollbar{width:8px;height:8px}
+.tbl-wrap::-webkit-scrollbar-track{background:#f0f4f8}
+.tbl-wrap::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:4px}
+.tbl-wrap::-webkit-scrollbar-thumb:hover{background:#64748b}
 
 /* ============================================================
    入力フォーム共通
@@ -102,7 +105,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .sh-tab{display:none}
 /* 固定ジャンプナビ（パネル下部） */
 .panel-l{display:flex;flex-direction:column}
-.panel-l>.fi{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;will-change:scroll-position;transform:translateZ(0)}
+.panel-l>.fi{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .panel-l>.fi::-webkit-scrollbar{width:3px}
 .panel-l>.fi::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
 .sec-jump{flex-shrink:0;z-index:50;background:var(--navy);display:flex;gap:1px;padding:4px 6px;border-top:1px solid rgba(255,255,255,.15)}
@@ -217,7 +220,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* ============================================================
    CF表：テーブル共通
    ============================================================ */
-.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;will-change:scroll-position;transform:translateZ(0);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border)}
 .cf{border-collapse:collapse;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace}
 .cf th,.cf td{border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;padding:3px 6px;white-space:nowrap;min-width:48px;width:48px;text-align:right}
 
@@ -4033,7 +4035,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       ${sub?`<div style="font-size:9px;color:var(--muted);margin-top:1px">${sub}</div>`:''}
     </div>
   </div>`;
-  let h=`<div class="cf-summary" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+  let h=`<div class="r-summary"><div class="cf-summary" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
     ${sc('💰','総収入',ri(totI_s).toLocaleString(),'万円','#2d7dd2',`${disp}年間合計`)}
     ${sc('💸','総支出',ri(totE_s).toLocaleString(),'万円','#fc5b4a',`${disp}年間合計`)}
     ${sc('🏦','最終残高',ri(finSav_s).toLocaleString(),'万円',finSav_s>=0?'#0d8a20':'#d63a2a',`${hAge+disp-1}歳時点`)}
@@ -4092,7 +4094,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     </div>
   </div>`;
 
-  h+=`<div class="tbl-wrap"><table class="cf">`;
+  h+=`</div><div class="tbl-wrap"><table class="cf">`;
   // 年ヘッダー
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
   for(let i=0;i<disp;i++)h+=`<th>${R.yr[i]}</th>`;
@@ -4224,15 +4226,17 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
 
   // スクロール位置を保存してからDOM置換 → 復元（ユーザーの手動スクロールを守る）
   const _rb=$('right-body');
-  const _prevTop=_rb?_rb.scrollTop:0;
-  const _prevLeft=_rb?_rb.scrollLeft:0;
+  const _tw=_rb?_rb.querySelector('.tbl-wrap'):null;
+  const _prevTop=_tw?_tw.scrollTop:0;
+  const _prevLeft=_tw?_tw.scrollLeft:0;
   _rb.innerHTML=h;
 
   // 万が一タブが存在すればタブボタンを表示維持
   if(window._mgStore?.h)$('rt-mg-h').style.display='';
   if(window._mgStore?.w)$('rt-mg-w').style.display='';
 
-  if(_rb&&(_prevTop>0||_prevLeft>0)){_rb.scrollTop=_prevTop;_rb.scrollLeft=_prevLeft;}
+  const _twNew=_rb?_rb.querySelector('.tbl-wrap'):null;
+  if(_twNew&&(_prevTop>0||_prevLeft>0)){_twNew.scrollTop=_prevTop;_twNew.scrollLeft=_prevLeft;}
   _applyFinAssetVisibility();
   _reapplyHighlightAfterRender();
 }
@@ -6256,7 +6260,7 @@ function renderContingency(){
   // ── 表示 ──
   const isM=ST.type==='mansion';
   const targetLabel=targetIsH?'ご主人様':'奥様';
-  let h=`<div style="margin-top:30px;border-top:3px solid #c2185b;padding-top:16px">`;
+  let h=`<div class="r-summary" style="margin-top:30px;border-top:3px solid #c2185b;padding-top:16px">`;
   h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
     <span style="background:#c2185b;color:#fff;padding:5px 14px;border-radius:99px;font-size:13px;font-weight:700">🛡️ 万が一CF表</span>
     <span style="font-size:13px;font-weight:600;color:#1e3a5f">${nm} 様 ─ ${targetLabel}が${deathAge}歳で死亡した場合</span>
@@ -6299,7 +6303,7 @@ function renderContingency(){
   const cLbls=['第一子','第二子','第三子','第四子'];
   // N=normalR は上で定義済み
 
-  h+=`<div class="tbl-wrap"><table class="cf">`;
+  h+=`</div><div class="tbl-wrap"><table class="cf">`;
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
   for(let i=0;i<mgDisp;i++)h+=`<th>${MR.yr[i]}</th>`;
   h+=`<th>合計</th></tr>`;
