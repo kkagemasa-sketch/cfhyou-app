@@ -1216,7 +1216,7 @@ if(authExp&&Date.now()<Number(authExp)){
         <div class="divider"></div>
         <div class="g2">
           <div class="fg"><label class="lbl">当初金利</label>
-            <div class="suf"><input class="inp amt-inp" id="rate-base" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="0.5" min="0" max="15" step="0.01" oninput="live()"><span class="sl">%</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="rate-base" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="0.5" min="0" max="15" step="0.01" oninput="syncRateBase();live()"><span class="sl">%</span></div></div>
         </div>
         <div style="margin-top:6px">
           <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">金利変更スケジュール</div>
@@ -2594,6 +2594,11 @@ function setWedding(id,on){
 }
 
 // ===== 金利ステップ =====
+function syncRateBase(){
+  const v=document.getElementById('rate-base')?.value||'0.5';
+  const d=document.getElementById('rate-base-dummy');
+  if(d)d.value=v;
+}
 function addRate(){
   if(rCnt>=5){alert('最大5回まで');return}
   rCnt++;const id=rCnt;
