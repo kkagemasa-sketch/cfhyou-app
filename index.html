@@ -902,9 +902,12 @@ if(authExp&&Date.now()<Number(authExp)){
           <button class="btn-add" onclick="addIncomeStep('w')">＋ 収入段階を追加</button>
 
           <div class="divider"></div>
-          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🍼 産休・育休・時短</div>
-          <div id="leave-cont"></div>
-          <button class="btn-add" onclick="addLeave()">＋ 産休・育休・時短を追加</button>
+          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🍼 よくある収入変動</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:6px">ボタンを押すと収入段階に自動追加されます（後から変更可）</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <button onclick="addPresetIncome('maternity')" style="font-size:10px;padding:5px 10px;background:#fce7f3;color:#9d174d;border:1.5px solid #f9a8d4;border-radius:6px;cursor:pointer;font-weight:600;font-family:inherit">🤰 産休・育休（60%）</button>
+            <button onclick="addPresetIncome('short')" style="font-size:10px;padding:5px 10px;background:#ede9fe;color:#5b21b6;border:1.5px solid #c4b5fd;border-radius:6px;cursor:pointer;font-weight:600;font-family:inherit">⏰ 時短勤務（80%）</button>
+          </div>
 
           <div class="divider"></div>
 
@@ -3024,16 +3027,29 @@ function addIncomeStep(person){
         <div class="suf"><input class="inp age-inp" id="${id}-to" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defTo}" min="18" max="80" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">歳</span></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center">
-      <div class="fg">
-        <label class="lbl" style="font-size:9px">開始時の手取り年収</label>
-        <div class="suf"><input class="inp amt-inp" id="${id}-net-from" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:500" min="0" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">万円</span></div>
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <button class="btn-tog on" id="${id}-mode-amt" onclick="setStepMode('${id}','amt')" style="font-size:9px;padding:3px 8px;flex:1">金額で入力</button>
+      <button class="btn-tog" id="${id}-mode-pct" onclick="setStepMode('${id}','pct')" style="font-size:9px;padding:3px 8px;flex:1">割合で入力</button>
+    </div>
+    <div id="${id}-amt-body">
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center">
+        <div class="fg">
+          <label class="lbl" style="font-size:9px">開始時の手取り年収</label>
+          <div class="suf"><input class="inp amt-inp" id="${id}-net-from" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:500" min="0" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">万円</span></div>
+        </div>
+        <div style="font-size:13px;color:var(--muted);text-align:center;padding-top:18px">→</div>
+        <div class="fg">
+          <label class="lbl" style="font-size:9px">終了時の手取り年収</label>
+          <div class="suf"><input class="inp amt-inp" id="${id}-net-to" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:1000" min="0" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">万円</span></div>
+        </div>
       </div>
-      <div style="font-size:13px;color:var(--muted);text-align:center;padding-top:18px">→</div>
+    </div>
+    <div id="${id}-pct-body" style="display:none">
       <div class="fg">
-        <label class="lbl" style="font-size:9px">終了時の手取り年収</label>
-        <div class="suf"><input class="inp amt-inp" id="${id}-net-to" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:1000" min="0" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">万円</span></div>
+        <label class="lbl" style="font-size:9px">直前の手取りに対する割合</label>
+        <div class="suf"><input class="inp" id="${id}-pct" type="number" value="100" min="0" max="200" step="5" oninput="calcPctIncome('${id}')" style="font-size:14px;font-weight:700;width:80px"><span class="sl">%</span></div>
       </div>
+      <div id="${id}-pct-hint" style="font-size:10px;color:#2d7dd2;margin-top:4px"></div>
     </div>
     <div id="${id}-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">手取り：― 万円 → ― 万円</div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border)">
@@ -3075,6 +3091,84 @@ function calcStepHint(id){
     }
   }
   live();
+}
+
+// ── 収入段階：金額/割合モード切替 ──
+function setStepMode(id,mode){
+  const amtBtn=$(`${id}-mode-amt`),pctBtn=$(`${id}-mode-pct`);
+  const amtBody=$(`${id}-amt-body`),pctBody=$(`${id}-pct-body`);
+  if(amtBtn)amtBtn.classList.toggle('on',mode==='amt');
+  if(pctBtn)pctBtn.classList.toggle('on',mode==='pct');
+  if(amtBody)amtBody.style.display=mode==='amt'?'block':'none';
+  if(pctBody)pctBody.style.display=mode==='pct'?'block':'none';
+  if(mode==='pct')calcPctIncome(id);
+}
+function calcPctIncome(id){
+  const pct=parseFloat($(`${id}-pct`)?.value)||0;
+  // 直前の段階の終了時手取りを探す
+  const person=id.startsWith('h-')?'h':'w';
+  const cont=$(`${person}-income-cont`);
+  if(!cont)return;
+  const steps=cont.querySelectorAll('[id^="'+person+'-is-"]');
+  let prevIncome=0;
+  let foundSelf=false;
+  steps.forEach(el=>{
+    if(el.id===id){foundSelf=true;return;}
+    if(!foundSelf){
+      const nt=parseFloat($(`${el.id}-net-to`)?.value)||parseFloat($(`${el.id}-net-from`)?.value)||0;
+      if(nt>0)prevIncome=nt;
+    }
+  });
+  if(prevIncome===0){
+    // 段階が1つ目なら手取り計算機の値を参照
+    const calcResult=$(`${person}-calc-result`);
+    if(calcResult){
+      const txt=calcResult.textContent.replace(/[^0-9.]/g,'');
+      prevIncome=parseFloat(txt)||0;
+    }
+  }
+  const calcIncome=Math.round(prevIncome*pct/100);
+  const hint=$(`${id}-pct-hint`);
+  if(hint){
+    if(prevIncome>0){
+      hint.innerHTML=`直前の手取り <strong>${prevIncome}</strong>万円 × ${pct}% = <strong>${calcIncome}</strong>万円`;
+    }else{
+      hint.textContent='直前の段階を入力してください';
+    }
+  }
+  // 金額欄に自動反映
+  const nfEl=$(`${id}-net-from`);
+  const ntEl=$(`${id}-net-to`);
+  if(nfEl)nfEl.value=calcIncome;
+  if(ntEl)ntEl.value=calcIncome;
+  calcStepHint(id);
+}
+// ── プリセット追加 ──
+function addPresetIncome(type){
+  addIncomeStep('w');
+  const cont=$('w-income-cont');
+  if(!cont)return;
+  const steps=cont.querySelectorAll('[id^="w-is-"]');
+  const lastStep=steps[steps.length-1];
+  if(!lastStep)return;
+  const id=lastStep.id;
+  // 開始年齢：直前ステップの終了年齢
+  const fromEl=$(`${id}-from`),toEl=$(`${id}-to`);
+  if(type==='maternity'){
+    // 産休・育休: 1年間60%
+    if(toEl)toEl.value=parseInt(fromEl?.value||30)+1;
+    setStepMode(id,'pct');
+    const pctEl=$(`${id}-pct`);if(pctEl)pctEl.value=60;
+    const leaveEl=$(`${id}-leave`);if(leaveEl)leaveEl.value='産休・育休';
+    calcPctIncome(id);
+  }else if(type==='short'){
+    // 時短勤務: 3年間80%
+    if(toEl)toEl.value=parseInt(fromEl?.value||30)+3;
+    setStepMode(id,'pct');
+    const pctEl=$(`${id}-pct`);if(pctEl)pctEl.value=80;
+    const leaveEl=$(`${id}-leave`);if(leaveEl)leaveEl.value='時短勤務';
+    calcPctIncome(id);
+  }
 }
 
 let otherIncomeCnt=0;
