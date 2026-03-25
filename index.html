@@ -3390,12 +3390,13 @@ function render(){
   document.querySelectorAll('[id^="ca-"]').forEach(el=>{
     const cid=el.id.split('-')[1];children.push({age:parseInt(el.value)||0,costs:eduCosts(cid)});
   });
-  const totalYrs=Math.min(100-hAge,80), cYear=new Date().getFullYear();
+  const cYear=new Date().getFullYear();
   // ご逝去年齢から表示年数を自動計算（夫婦どちらか高い方まで）
   const hEndYr = hDeathAge>0 ? hDeathAge-hAge : 0;
   const wEndYr = wDeathAge>0 ? wDeathAge-wAge : 0;
   const autoDisp = Math.max(hEndYr, wEndYr);
-  const disp = Math.min(autoDisp>0 ? autoDisp : 60, totalYrs);
+  const totalYrs = Math.max(autoDisp, 60);
+  const disp = autoDisp>0 ? autoDisp : 60;
   const cLbls=['第一子','第二子','第三子','第四子'];
 
   let sav=initSav;
