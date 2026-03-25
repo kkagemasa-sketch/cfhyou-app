@@ -2614,7 +2614,9 @@ function rmRate(id){$(`rs-${id}`)?.remove();rCnt--;$('btn-add-rate').style.displ
 function getRates(){
   const s=[{from:0,rate:fv('rate-base')}];
   document.querySelectorAll('[id^="rsf-"]').forEach(el=>{
-    const id=el.id.split('-')[1];s.push({from:parseInt(el.value)||0,rate:parseFloat($(`rsr-${id}`)?.value)||0});
+    const id=el.id.split('-')[1];
+    const fromYr=(parseInt(el.value)||0)-1; // UI「○年目」→内部index（0始まり）に変換
+    s.push({from:fromYr,rate:parseFloat($(`rsr-${id}`)?.value)||0});
   });
   return s.sort((a,b)=>a.from-b.from);
 }
