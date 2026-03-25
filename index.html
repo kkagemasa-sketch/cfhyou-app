@@ -4527,34 +4527,50 @@ function exportExcelMG(){
 
   // ── 収入 ──
   push(['収　入','',...Array(disp).fill(''),''],'incCat');
+  // 万が一では消失項目も0で表示（通常CFと同じ項目構成）
   const addI=(lbl,arr)=>{
+    if(!arr){arr=Array(disp).fill(0);}
+    const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
+    push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
+  };
+  const addISkip=(lbl,arr)=>{
     if(!arr)return;const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
   addI('ご主人手取年収',MR.hInc);
   addI('奥様手取年収',MR.wInc);
-  addI('死亡保険金',MR.insPayArr);
+  addISkip('退職金（ご主人）',targetIsH?Array(disp).fill(0):N.rPay);
+  addISkip('退職金（奥様）',targetIsH?N.wRPay:Array(disp).fill(0));
+  addISkip('本人年金',targetIsH?Array(disp).fill(0):N.pS);
+  addISkip('配偶者年金',targetIsH?N.pW:Array(disp).fill(0));
   addI('遺族年金',MR.survPension);
-  addI('奨学金',MR.scholarship);
+  addISkip('死亡保険金',MR.insPayArr);
+  addISkip('奨学金',MR.scholarship);
   addI('児童手当',N.teate);
   addI('住宅ローン控除',N.lCtrl);
-  addI('保険満期金',N.insMat);
+  addISkip('保険満期金',N.insMat);
   push(['収入合計','',...MR.incT.slice(0,disp).map(v=>ri(v)),ri(MR.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
   // ── 支出 ──
   push(['支　出','',...Array(disp).fill(''),''],'expCat');
   const addE=(lbl,arr)=>{
+    if(!arr){arr=Array(disp).fill(0);}
+    const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
+    push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
+  };
+  const addESkip=(lbl,arr)=>{
     if(!arr)return;const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
   addE('生活費',MR.lc);
+  addESkip('家賃（引渡前）',N.rent);
   addE('住宅ローン返済',MR.lRep);
   if(isM)addE('修繕積立金',N.rep);
   addE('固定資産税',N.ptx);
-  addE('家具家電買替',N.furn);
-  addE(isM?'専有部分修繕費':'修繕費',N.senyu);
+  addESkip('家具家電買替',N.furn);
+  addESkip(isM?'専有部分修繕費':'修繕費',N.senyu);
   children.forEach((c,ci)=>{
     if(N.edu&&N.edu[ci]){
       const arr=N.edu[ci];
@@ -4838,9 +4854,13 @@ function exportExcelMG(){
         alignment:{vertical:'center',horizontal:hAlign,wrapText:false},
         border:border,
       };
-      // 数値フォーマット
+      // 数値フォーマット（年齢・経過年は通常数字）
       if(typeof cell.v==='number'&&c>=2){
-        cell.z='#,##0;▲#,##0;"-"';
+        if(tp==='age'||tp==='elapsed'){
+          cell.z='0';
+        }else{
+          cell.z='#,##0;▲#,##0;"-"';
+        }
       }
     });
   });
@@ -5254,9 +5274,13 @@ function exportExcel(){
         alignment:{vertical:'center',horizontal:hAlign,wrapText:false},
         border:border,
       };
-      // 数値フォーマット
+      // 数値フォーマット（年齢・経過年は通常数字）
       if(typeof cell.v==='number'&&c>=2){
-        cell.z='#,##0;▲#,##0;"-"';
+        if(tp==='age'||tp==='elapsed'){
+          cell.z='0';
+        }else{
+          cell.z='#,##0;▲#,##0;"-"';
+        }
       }
     });
   });
