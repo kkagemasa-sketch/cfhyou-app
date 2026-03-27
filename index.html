@@ -2879,13 +2879,8 @@ function addLCStep(){
       </div>
       <button class="btn-rm" onclick="rmLCStep(${id})">×</button>
     </div>
-    <div id="lsfree-wrap-${id}" style="padding-left:46px;display:flex;flex-direction:column;gap:4px">
+    <div id="lsfree-wrap-${id}" style="padding-left:46px">
       <div class="suf"><input class="inp amt-inp" id="lsb-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="${phBase}" min="0" step="1" oninput="live()"><span class="sl">万円/年</span></div>
-      <div style="display:flex;align-items:center;gap:5px">
-        <span style="font-size:10px;color:#92400e;flex-shrink:0;font-weight:600">前段階の基準額の</span>
-        <div class="suf" style="width:72px"><input class="inp amt-inp" id="lcp-pct-${id}" type="number" value="80" min="1" max="200" step="1" style="width:100%"><span class="sl">%</span></div>
-        <button style="font-size:10px;padding:5px 10px;border-radius:4px;border:1px solid #92400e;background:#fef3c7;color:#92400e;cursor:pointer;white-space:nowrap;font-weight:700" onclick="applyLCPrevPct(${id})">を基準額に設定</button>
-      </div>
     </div>
     <div id="lspct-wrap-${id}" style="padding-left:46px;display:none">
       <label style="font-size:10px;color:#92400e;font-weight:600;display:block;margin-bottom:3px">前段階の基準額の</label>
