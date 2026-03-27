@@ -1049,7 +1049,7 @@ if(authExp&&Date.now()<Number(authExp)){
           <div class="fg"><label class="lbl">車両価格</label>
             <div class="suf"><input class="inp amt-inp" id="car-price" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
           <div class="fg"><label class="lbl">初回購入（今から）</label>
-            <div class="suf"><input class="inp age-inp" id="car-first" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="0" min="0" max="30" oninput="live()"><span class="sl">年後</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="car-first" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="1" min="1" max="30" oninput="live()"><span class="sl">年目</span></div></div>
           <div class="fg"><label class="lbl">乗り換え周期</label>
             <div class="suf"><input class="inp age-inp" id="car-cycle" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="7" min="1" max="20" oninput="live()"><span class="sl">年ごと</span></div></div>
         </div>
@@ -4089,7 +4089,7 @@ function render(){
     let carBuyAmt=0, carInspAmt=0;
     if(carOwn){
       const carPrice=fv('car-price')||300;
-      const carFirst=iv('car-first')||0;
+      const carFirst=(iv('car-first')||1)-1;// 「N年目」→ 0-indexed変換
       const carCycle=iv('car-cycle')||7;
       const carInsp=fv('car-insp')||10;
       const carDown=fv('car-down')||50;
