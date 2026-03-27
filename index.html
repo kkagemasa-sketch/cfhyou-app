@@ -58,6 +58,26 @@ var XLSX={};function make_xlsx_lib(a){a.version="0.18.5",a.style_version="1.2.0"
 html,body{height:100%;overflow:hidden;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;background:var(--bg);color:var(--text);font-size:13px;display:flex;flex-direction:column}
 
+/* パネルリサイザー */
+.panel-resizer-grip{
+  width:14px;
+  cursor:col-resize;
+  flex-shrink:0;
+  position:relative;
+  z-index:10;
+  touch-action:none;
+  background-color:var(--border);
+  background-image:radial-gradient(circle,rgba(255,255,255,.75) 2px,transparent 2px);
+  background-size:8px 8px;
+  background-position:center center;
+  transition:background-color .15s;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.panel-resizer-grip:hover,.panel-resizer-grip.dragging{
+  background-color:var(--navy-l);
+}
+
 /* ============================================================
    ヘッダー
    ============================================================ */
@@ -546,7 +566,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
   div[style*="border:1.5px solid #c8d6e8"]{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
   /* リサイザー：タッチ操作用に幅を広げる */
-  #panel-resizer{width:20px!important;touch-action:none!important}
+  .panel-resizer-grip{width:22px!important;touch-action:none!important}
 
   /* iOS キーボード表示時の画面押し上げ防止 */
   html,body{position:fixed;width:100%;height:100%;overflow:hidden}
@@ -555,7 +575,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* --- iPad かつ パネル非表示時に全幅活用 --- */
 @media screen and (max-width:1024px){
   .panel-l.hidden{display:none!important}
-  .panel-l.hidden+#panel-resizer{display:none!important}
+  .panel-l.hidden+.panel-resizer-grip{display:none!important}
 }
 
 /* --- スマホ（〜480px） --- */
@@ -1710,15 +1730,7 @@ if(authExp&&Date.now()<Number(authExp)){
 </div><!-- /panel-l -->
 
 <!-- パネルリサイザー -->
-<div id="panel-resizer" style="width:16px;cursor:col-resize;flex-shrink:0;position:relative;z-index:10;touch-action:none;display:flex;align-items:center;justify-content:center;background:var(--border);transition:background .15s" onmouseenter="this.style.background='var(--navy-l)'" onmouseleave="this.style.background='var(--border)'">
-  <div style="display:flex;flex-direction:column;gap:3px;pointer-events:none">
-    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
-    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
-    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
-    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
-    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
-  </div>
-</div>
+<div id="panel-resizer" class="panel-resizer-grip"></div>
 
 <!-- ★ 右パネル：CF表 -->
 <div class="panel-r">
@@ -2035,7 +2047,7 @@ function showHelp(){
 }
 function togglePanel(){
   const pl=document.querySelector('.panel-l');
-  const resizer=document.getElementById('panel-resizer');
+  const resizer=document.querySelector('.panel-resizer-grip');
   const btn=document.getElementById('btn-toggle-panel');
   const hidden=pl.classList.toggle('hidden');
   if(resizer)resizer.style.display=hidden?'none':'';
@@ -2045,7 +2057,7 @@ function togglePanel(){
 
 function toggleCFPanel(){
   const pr=document.querySelector('.panel-r');
-  const resizer=document.getElementById('panel-resizer');
+  const resizer=document.querySelector('.panel-resizer-grip');
   const pl=document.querySelector('.panel-l');
   const btn=document.getElementById('btn-toggle-cf');
   const hiding=pr.style.display!=='none';
@@ -6454,7 +6466,7 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
 
 // パネルリサイザー
 (function(){
-  const resizer=document.getElementById('panel-resizer');
+  const resizer=document.querySelector('.panel-resizer-grip');
   if(!resizer)return;
   let isResizing=false,startX=0,startW=0;
   resizer.addEventListener('mousedown',e=>{
@@ -6463,7 +6475,7 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     startW=pl.offsetWidth;
     document.body.style.cursor='col-resize';
     document.body.style.userSelect='none';
-    resizer.style.background='var(--teal)';
+    resizer.classList.add('dragging');
     e.preventDefault();
   });
   document.addEventListener('mousemove',e=>{
@@ -6479,14 +6491,14 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     isResizing=false;
     document.body.style.cursor='';
     document.body.style.userSelect='';
-    resizer.style.background='';
+    resizer.classList.remove('dragging');
   });
   // タッチ対応
   resizer.addEventListener('touchstart',e=>{
     isResizing=true;startX=e.touches[0].clientX;
     const pl=document.querySelector('.panel-l');
     startW=pl.offsetWidth;
-    resizer.style.background='var(--teal)';
+    resizer.classList.add('dragging');
     e.preventDefault();
   },{passive:false});
   window.addEventListener('touchmove',e=>{
@@ -6499,7 +6511,7 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     pl.style.width=newW+'px';
     pl.style.minWidth=newW+'px';
   },{passive:false,capture:true});
-  window.addEventListener('touchend',()=>{isResizing=false;resizer.style.background='';},{passive:true});
+  window.addEventListener('touchend',()=>{isResizing=false;resizer.classList.remove('dragging');},{passive:true});
 })();
 
 // 数字入力欄：フォーカス時にカーソルを右端に配置
