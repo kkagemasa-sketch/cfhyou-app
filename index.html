@@ -2873,13 +2873,23 @@ function addLCStep(){
   el.innerHTML=`
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
       <span class="dlbl" style="min-width:40px;flex-shrink:0">段階${id}</span>
-      <div class="suf" style="flex:1"><input class="inp amt-inp" id="lsb-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="${phBase}" min="0" step="1" oninput="live()"><span class="sl">万円/年</span></div>
+      <div style="display:flex;gap:3px">
+        <button class="btn-tog on" id="lsmode-free-${id}" onclick="setLCMode(${id},'free')" style="font-size:10px;padding:3px 8px">自由入力</button>
+        <button class="btn-tog" id="lsmode-pct-${id}" onclick="setLCMode(${id},'pct')" style="font-size:10px;padding:3px 8px">割合</button>
+      </div>
       <button class="btn-rm" onclick="rmLCStep(${id})">×</button>
     </div>
-    <div style="display:flex;align-items:center;gap:5px;padding-left:46px;margin-bottom:2px">
-      <span style="font-size:10px;color:#92400e;flex-shrink:0;font-weight:600">前段階の基準額の</span>
-      <div class="suf" style="width:72px"><input class="inp amt-inp" id="lcp-pct-${id}" type="number" value="80" min="1" max="200" step="1" style="width:100%"><span class="sl">%</span></div>
-      <button style="font-size:10px;padding:5px 10px;border-radius:4px;border:1px solid #92400e;background:#fef3c7;color:#92400e;cursor:pointer;white-space:nowrap;font-weight:700" onclick="applyLCPrevPct(${id})">を基準額に設定</button>
+    <div id="lsfree-wrap-${id}" style="padding-left:46px;display:flex;flex-direction:column;gap:4px">
+      <div class="suf"><input class="inp amt-inp" id="lsb-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="${phBase}" min="0" step="1" oninput="live()"><span class="sl">万円/年</span></div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span style="font-size:10px;color:#92400e;flex-shrink:0;font-weight:600">前段階の基準額の</span>
+        <div class="suf" style="width:72px"><input class="inp amt-inp" id="lcp-pct-${id}" type="number" value="80" min="1" max="200" step="1" style="width:100%"><span class="sl">%</span></div>
+        <button style="font-size:10px;padding:5px 10px;border-radius:4px;border:1px solid #92400e;background:#fef3c7;color:#92400e;cursor:pointer;white-space:nowrap;font-weight:700" onclick="applyLCPrevPct(${id})">を基準額に設定</button>
+      </div>
+    </div>
+    <div id="lspct-wrap-${id}" style="padding-left:46px;display:none">
+      <label style="font-size:10px;color:#92400e;font-weight:600;display:block;margin-bottom:3px">前段階の基準額の</label>
+      <div class="suf" style="width:90px"><input class="inp amt-inp" id="lspct-${id}" type="number" value="80" min="1" max="200" step="1" oninput="live()"><span class="sl">%</span></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-left:46px;margin-bottom:3px">
       <div class="suf"><input class="inp" id="lsf-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="${defFrom}" min="2020" max="2100" step="1" oninput="live()" style="width:100%"><span class="sl">年〜</span></div>
@@ -2892,16 +2902,28 @@ function addLCStep(){
   $('lc-steps-cont').appendChild(el);live();
 }
 function rmLCStep(id){$(`ls-${id}`)?.remove();live()}
+function setLCMode(id,mode){
+  const isFree=mode==='free';
+  document.getElementById(`lsmode-free-${id}`)?.classList.toggle('on',isFree);
+  document.getElementById(`lsmode-pct-${id}`)?.classList.toggle('on',!isFree);
+  const fw=document.getElementById(`lsfree-wrap-${id}`);
+  const pw=document.getElementById(`lspct-wrap-${id}`);
+  if(fw)fw.style.display=isFree?'flex':'none';
+  if(pw)pw.style.display=isFree?'none':'block';
+  live();
+}
 function getLCSteps(){
   const s=[];
   document.querySelectorAll('#lc-steps-cont>[id^="ls-"]').forEach(el=>{
     const id=el.dataset.id;
-    const base=parseFloat(document.getElementById(`lsb-${id}`)?.value)||0;
+    const isPct=document.getElementById(`lsmode-pct-${id}`)?.classList.contains('on');
+    const base=isPct?0:(parseFloat(document.getElementById(`lsb-${id}`)?.value)||0);
+    const pct=isPct?(parseFloat(document.getElementById(`lspct-${id}`)?.value)||80):null;
     const rate=parseFloat($(`lsr-${id}`)?.value)||0;
     const from=parseInt(document.getElementById(`lsf-${id}`)?.value)||0;
     const toEl=document.getElementById(`lst-${id}`);
     const to=toEl&&toEl.value?parseInt(toEl.value)||null:null;
-    s.push({base,rate,from,to});
+    s.push({base,pct,rate,from,to,mode:isPct?'pct':'free'});
   });
   return s.sort((a,b)=>a.from-b.from);
 }
@@ -3995,7 +4017,7 @@ function render(){
         else{
           let runBase=baseLc;
           for(let i=0;i<=ai;i++){
-            const s=lcSteps[i],sb=s.base>0?s.base:runBase;
+            const s=lcSteps[i];const sb=s.mode==='pct'?runBase*(s.pct/100):(s.base>0?s.base:runBase);
             if(i<ai){// 前段階：終了年まで複利を累積（to指定があればその年数、なければ0）
               runBase=sb*Math.pow(1+s.rate/100,s.to!==null?Math.max(0,s.to-s.from):0);
             }else{// アクティブ段階：yr時点の値
@@ -5951,7 +5973,8 @@ function _collectDynamic(){
   d.lcSteps=[];
   document.querySelectorAll('#lc-steps-cont>[id^="ls-"]').forEach(el=>{
     const id=el.dataset.id;
-    d.lcSteps.push({base:document.getElementById(`lsb-${id}`)?.value||'',rate:$(`lsr-${id}`)?.value||'',from:document.getElementById(`lsf-${id}`)?.value||'',to:document.getElementById(`lst-${id}`)?.value||''});
+    const _isPct=document.getElementById(`lsmode-pct-${id}`)?.classList.contains('on');
+    d.lcSteps.push({base:document.getElementById(`lsb-${id}`)?.value||'',rate:$(`lsr-${id}`)?.value||'',from:document.getElementById(`lsf-${id}`)?.value||'',to:document.getElementById(`lst-${id}`)?.value||'',mode:_isPct?'pct':'free',pct:document.getElementById(`lspct-${id}`)?.value||'80'});
   });
   // 産休・育休・時短
   d.leaves=[];
@@ -6056,6 +6079,8 @@ function _restoreDynamic(d){
     if($(`lsr-${_lid}`)&&s.rate)$(`lsr-${_lid}`).value=s.rate;
     if($(`lsf-${_lid}`)&&s.from)$(`lsf-${_lid}`).value=s.from;
     if($(`lst-${_lid}`)&&s.to)$(`lst-${_lid}`).value=s.to;
+    if(s.mode==='pct')setLCMode(_lid,'pct');
+    if($(`lspct-${_lid}`)&&s.pct)$(`lspct-${_lid}`).value=s.pct;
   });
   // 産休・育休・時短
   if($('leave-cont'))$('leave-cont').innerHTML=''; lvCnt=0;
