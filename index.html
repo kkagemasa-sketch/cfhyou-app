@@ -2292,10 +2292,15 @@ function calcDelivery(){
   live();
 }
 
+function _updateStepHints(prefix){
+  const ids=new Set();
+  document.querySelectorAll(`[id^="${prefix}-is-"]`).forEach(el=>{const m=el.id.match(new RegExp(`^(${prefix}-is-\\d+)-`));if(m)ids.add(m[1]);});
+  ids.forEach(id=>calcStepHint(id));
+}
 function updateHints(){
   const hA=iv('husband-age');
   // 収入ステップのヒント更新（新形式）
-  const hStepIds=new Set();document.querySelectorAll('[id^="h-is-"]').forEach(el=>{const m=el.id.match(/^(h-is-\d+)-/);if(m)hStepIds.add(m[1]);});hStepIds.forEach(id=>calcStepHint(id));
+  _updateStepHints('h');
   const hRetA=iv('retire-age'),hRetP=fv('retire-pay'),hPens=fv('pension-h');
   const hr=document.getElementById('h-retire-hint');
   if(hr)hr.textContent=`✓ ${hRetA}歳で退職`;
@@ -2374,7 +2379,7 @@ function updateHints(){
   // ── 奥様ヒント更新 ──
   const wA=iv('wife-age');
   // 奥様収入ステップのヒント更新
-  const wStepIds=new Set();document.querySelectorAll('[id^="w-is-"]').forEach(el=>{const m=el.id.match(/^(w-is-\d+)-/);if(m)wStepIds.add(m[1]);});wStepIds.forEach(id=>calcStepHint(id));
+  _updateStepHints('w');
   const wRtA=iv('w-retire-age'), wPensV=fv('pension-w');
   const wrth=document.getElementById('w-retire-hint');
   if(wrth)wrth.textContent=`✓ ${wRtA}歳で退職`;
@@ -6561,7 +6566,7 @@ function formatAmtInputs(){
   });
 }
 // MutationObserverで動的要素にも適用
-const _amtObserverTimer=null;_amtObserver=new MutationObserver(()=>{clearTimeout(_amtObserverTimer);_amtObserverTimer=setTimeout(()=>{formatAmtInputs();setupAmtInputs();},200)});
+let _amtObserverTimer=null;_amtObserver=new MutationObserver(()=>{clearTimeout(_amtObserverTimer);_amtObserverTimer=setTimeout(()=>{formatAmtInputs();setupAmtInputs();},200)});
 document.addEventListener('DOMContentLoaded',()=>{
   _amtObserver.observe(document.body,{childList:true,subtree:true});
   formatAmtInputs();setupAmtInputs();
