@@ -127,9 +127,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 
 /* 物件タイプカード */
 .type-row{display:flex;gap:8px;margin-bottom:9px}
-.tc{flex:1;background:var(--card);border:2px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:8px}
-.tc:hover{border-color:var(--navy-l);background:#f0f4f8}
-.tc.on{border-color:var(--navy);background:#eef2f7}
+.tc{flex:1;background:var(--card);border:2px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:all .25s ease;display:flex;align-items:center;gap:8px;opacity:.6;transform:scale(.97)}
+.tc:hover{border-color:var(--navy-l);background:#f0f4f8;opacity:.85;transform:scale(.99)}
+.tc.on{border-color:var(--teal);background:linear-gradient(135deg,#e0f7fa,#eef6ff);opacity:1;transform:scale(1);box-shadow:0 0 0 2px rgba(8,145,178,.25),0 2px 8px rgba(8,145,178,.12)}
 .tc-icon{font-size:22px}
 .tc-lbl{font-size:12px;font-weight:700}
 .tc-desc{font-size:10px;color:var(--muted);margin-top:1px}
@@ -552,15 +552,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
   html,body{position:fixed;width:100%;height:100%;overflow:hidden}
 }
 
-/* --- iPad 縦持ち かつ パネル非表示時に全幅活用 --- */
+/* --- iPad かつ パネル非表示時に全幅活用 --- */
 @media screen and (max-width:1024px){
   .panel-l.hidden{display:none!important}
+  .panel-l.hidden+#panel-resizer{display:none!important}
 }
 
 /* --- スマホ（〜480px） --- */
 @media screen and (max-width:480px){
   .panel-l{width:280px;min-width:240px}
   .panel-l.hidden{display:none!important}
+  #panel-resizer{display:none!important}
   .r-body{padding:8px}
 
   /* グリッド：1列に */
