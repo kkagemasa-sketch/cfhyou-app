@@ -1281,17 +1281,16 @@ if(authExp&&Date.now()<Number(authExp)){
         </div>
       </div><!-- /loan-pair-body -->
 
-      <!-- 引っ越し・初期費用 -->
+      <!-- 引っ越し・家具家電 初期費用 -->
       <div class="divider"></div>
-      <div class="sub">🚚 引っ越し・初期費用</div>
+      <div class="sub">🚚 引っ越し・家具家電 初期費用</div>
       <div class="g2" style="margin-bottom:8px">
-        <div class="fg"><label class="lbl">引っ越し費用</label>
-          <div class="suf"><input class="inp amt-inp" id="moving-cost" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="30" min="0" oninput="live()"><span class="sl">万円</span></div>
-          <span class="hint">初期残高から差し引き</span></div>
-        <div class="fg"><label class="lbl">🛋️ 家具・家電 初期購入</label>
-          <div class="suf"><input class="inp amt-inp" id="furniture-init" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="100" min="0" oninput="live()"><span class="sl">万円</span></div>
-          <span class="hint">初期残高から差し引き</span></div>
+        <div class="fg"><label class="lbl">引越費用</label>
+          <div class="suf"><input class="inp amt-inp" id="moving-cost" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl">家具・家電</label>
+          <div class="suf"><input class="inp amt-inp" id="furniture-init" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="100" min="0" oninput="live()"><span class="sl">万円</span></div></div>
       </div>
+      <span class="hint">※ 初期残高から差し引かれます</span>
 
       <!-- マンション専用 -->
       <div id="m-fields">
@@ -1445,28 +1444,20 @@ if(authExp&&Date.now()<Number(authExp)){
 
       <!-- 修繕費（マンション：専有部分／戸建て：修繕費） -->
       <div class="sub" id="repair-sub">🔨 <span id="repair-sub-lbl">専有部分の修繕費</span></div>
-      <div style="background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px">
-        <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:5px">修繕① （例：15年周期）</div>
-        <div class="g3">
-          <div class="fg"><label class="lbl">修繕周期</label>
-            <div class="suf"><input class="inp age-inp" id="repair-cycle" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="15" min="1" max="50" oninput="live()"><span class="sl">年に1回</span></div></div>
-          <div class="fg"><label class="lbl">1回あたりの費用</label>
-            <div class="suf"><input class="inp amt-inp" id="repair-cost" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="100" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl">&nbsp;</label>
-            <span class="hint ok" id="repair-hint">✓ 15年ごとに100万円</span></div>
+      <div id="repair-cont">
+        <div style="background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px" id="rep-1">
+          <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:5px">修繕① （例：15年周期）</div>
+          <div class="g3">
+            <div class="fg"><label class="lbl">修繕周期</label>
+              <div class="suf"><input class="inp age-inp" id="repair-cycle" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="15" min="1" max="50" oninput="live()"><span class="sl">年に1回</span></div></div>
+            <div class="fg"><label class="lbl">1回あたりの費用</label>
+              <div class="suf"><input class="inp amt-inp" id="repair-cost" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="100" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+            <div class="fg"><label class="lbl">&nbsp;</label>
+              <span class="hint ok" id="repair-hint">✓ 15年ごとに100万円</span></div>
+          </div>
         </div>
       </div>
-      <div style="background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px">
-        <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:5px">修繕② （例：30年周期）</div>
-        <div class="g3">
-          <div class="fg"><label class="lbl">修繕周期</label>
-            <div class="suf"><input class="inp age-inp" id="repair-cycle2" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="30" min="1" max="50" oninput="live()"><span class="sl">年に1回</span></div></div>
-          <div class="fg"><label class="lbl">1回あたりの費用</label>
-            <div class="suf"><input class="inp amt-inp" id="repair-cost2" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="200" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl">&nbsp;</label>
-            <span class="hint ok" id="repair-hint2">✓ 30年ごとに200万円</span></div>
-        </div>
-      </div>
+      <button class="btn-add" onclick="addRepairCycle()" id="btn-add-repair" style="font-size:11px;margin-bottom:7px">＋ 修繕周期を追加</button>
 
     </div>
   </div>
@@ -2712,14 +2703,39 @@ function addRate(){
   if(rCnt>=5){alert('最大5回まで');return}
   rCnt++;const id=rCnt;
   const el=document.createElement('div');el.id=`rs-${id}`;el.className='drow drow-4';
+  // 前の段階の金利+1%をデフォルト値にする
+  let prevRate=fv('rate-base');
+  const prevEl=document.getElementById(`rsr-${id-1}`);
+  if(prevEl)prevRate=parseFloat(prevEl.value)||prevRate;
+  const newRate=(prevRate+1).toFixed(2);
+  const prevFrom=id>1?parseInt(document.getElementById(`rsf-${id-1}`)?.value)||5:0;
+  const newFrom=prevFrom+5;
   el.innerHTML=`<span class="dlbl" style="color:var(--amber)">変更${id}</span>
-    <div class="suf"><input class="inp" id="rsf-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${id*5}" min="1" max="50" oninput="live()" class="inp age-inp"><span class="sl">年目〜</span></div>
-    <div class="suf"><input class="inp" id="rsr-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${(fv('rate-base')+id*0.5).toFixed(2)}" min="0" max="15" step="0.01" oninput="live()" class="inp amt-inp"><span class="sl">%</span></div>
+    <div class="suf"><input class="inp" id="rsf-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${newFrom}" min="1" max="50" oninput="live()" class="inp age-inp"><span class="sl">年目〜</span></div>
+    <div class="suf"><input class="inp" id="rsr-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${newRate}" min="0" max="15" step="0.01" oninput="live()" class="inp amt-inp"><span class="sl">%</span></div>
     <button class="btn-rm" onclick="rmRate(${id})">×</button>`;
   $('rate-cont').appendChild(el);
   if(rCnt>=5)$('btn-add-rate').style.display='none';
 }
 function rmRate(id){$(`rs-${id}`)?.remove();rCnt--;$('btn-add-rate').style.display=''}
+// 修繕周期の動的追加
+let repairCnt=1;
+function addRepairCycle(cycle='',cost=''){
+  repairCnt++;const id=repairCnt;
+  if(repairCnt>=5)$('btn-add-repair').style.display='none';
+  const el=document.createElement('div');
+  el.id=`rep-${id}`;
+  el.style.cssText='background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px';
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><div style="font-size:10px;font-weight:600;color:var(--muted)">修繕${id}</div><button class="btn-rm" onclick="rmRepairCycle(${id})">×</button></div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">修繕周期</label>
+        <div class="suf"><input class="inp age-inp" id="repair-cycle${id}" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="${cycle||30}" min="1" max="50" oninput="live()"><span class="sl">年に1回</span></div></div>
+      <div class="fg"><label class="lbl">1回あたりの費用</label>
+        <div class="suf"><input class="inp amt-inp" id="repair-cost${id}" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="${cost||200}" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+    </div>`;
+  $('repair-cont').appendChild(el);live();
+}
+function rmRepairCycle(id){$(`rep-${id}`)?.remove();repairCnt--;$('btn-add-repair').style.display='';live()}
 function getRates(){
   const s=[{from:0,rate:fv('rate-base')}];
   document.querySelectorAll('[id^="rsf-"]').forEach(el=>{
@@ -3563,8 +3579,8 @@ function render(){
   });
   const cYear=new Date().getFullYear();
   // ご逝去年齢から表示年数を自動計算（夫婦どちらか高い方まで）
-  const hEndYr = hDeathAge>0 ? hDeathAge-hAge : 0;
-  const wEndYr = wDeathAge>0 ? wDeathAge-wAge : 0;
+  const hEndYr = hDeathAge>0 ? hDeathAge-hAge+1 : 0;
+  const wEndYr = wDeathAge>0 ? wDeathAge-wAge+1 : 0;
   const autoDisp = Math.max(hEndYr, wEndYr);
   const totalYrs = Math.max(autoDisp, 60);
   const disp = autoDisp>0 ? autoDisp : 60;
@@ -3927,15 +3943,22 @@ function render(){
     const furnCycle=iv('furn-cycle')||10;
     const furnCost=iv('furn-cost')||80;
     R.furn.push(active&&el2>0&&el2%furnCycle===0?furnCost:0);
-    const repairCycle=iv('repair-cycle')||15;
-    const repairCost=iv('repair-cost')||100;
-    const repairCycle2=iv('repair-cycle2')||30;
-    const repairCost2=iv('repair-cost2')||0;
-    const rep1=(active&&el2>0&&el2%repairCycle===0)?repairCost:0;
-    const rep2=(active&&el2>0&&repairCost2>0&&el2%repairCycle2===0)?repairCost2:0;
-    const sV=isM?(rep1+rep2):0;
-    const rfV=!isM?(rep1+rep2):0;
-    R.senyu.push(sV+rfV);
+    // 動的修繕周期の集計
+    let repTotal=0;
+    if(active&&el2>0){
+      // 修繕①（固定）
+      const rc1=iv('repair-cycle')||15, rco1=iv('repair-cost')||100;
+      if(rc1>0&&rco1>0&&el2%rc1===0)repTotal+=rco1;
+      // 動的に追加された修繕周期
+      document.querySelectorAll('[id^="repair-cycle"]').forEach(el=>{
+        const rid=el.id.replace('repair-cycle','');
+        if(rid===''||rid==='')return; // 修繕①はスキップ（上で処理済み）
+        const cyc=parseInt(el.value)||0;
+        const cost=iv('repair-cost'+rid)||0;
+        if(cyc>0&&cost>0&&el2%cyc===0)repTotal+=cost;
+      });
+    }
+    R.senyu.push(repTotal);
     children.forEach((c,ci)=>{const ca=c.age+i;R.edu[ci].push(ca>=0&&ca<c.costs.length?c.costs[ca]:0)});
     R.prk.push(parkOwn?ri(parking*12):0);
     // 車両購入・車検
