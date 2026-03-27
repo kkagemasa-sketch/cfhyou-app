@@ -3132,6 +3132,18 @@ function getStepsForPension(person){
 }
 
 let hIncomeCnt=0, wIncomeCnt=0;
+function syncNextStepFrom(id){
+  // id形式: h-is-1 → 次は h-is-2
+  const m=id.match(/^([hw]-is-)(\d+)$/);
+  if(!m)return;
+  const nextId=m[1]+(parseInt(m[2])+1);
+  const toEl=document.getElementById(id+'-to');
+  const fromEl=document.getElementById(nextId+'-from');
+  if(!toEl||!fromEl)return;
+  const toVal=parseInt(toEl.value)||0;
+  if(toVal>0)fromEl.value=toVal+1;
+  live();
+}
 function addIncomeStep(person){
   const cnt = person==='h' ? ++hIncomeCnt : ++wIncomeCnt;
   const id = `${person}-is-${cnt}`;
@@ -3160,7 +3172,7 @@ function addIncomeStep(person){
       <div style="font-size:13px;color:var(--muted);text-align:center;padding-top:18px">→</div>
       <div class="fg">
         <label class="lbl" style="font-size:9px">終了年齢</label>
-        <div class="suf"><input class="inp age-inp" id="${id}-to" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defTo}" min="18" max="80" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">歳</span></div>
+        <div class="suf"><input class="inp age-inp" id="${id}-to" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defTo}" min="18" max="80" oninput="calcStepHint('${id}');syncNextStepFrom('${id}')" style="font-size:12px"><span class="sl">歳</span></div>
       </div>
     </div>
     <div style="display:flex;gap:4px;margin-bottom:6px">
