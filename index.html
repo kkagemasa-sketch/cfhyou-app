@@ -645,6 +645,7 @@ if(authExp&&Date.now()<Number(authExp)){
     <span id="update-indicator" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;display:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif"></span>
     <button class="btn-h" onclick="window.location.href=window.location.pathname+'?v='+Date.now()" title="最新版に更新">↻ 更新</button>
     <button class="btn-h" onclick="togglePanel()" id="btn-toggle-panel" title="入力パネルを隠す">◀ 隠す</button>
+    <button class="btn-h" onclick="toggleCFPanel()" id="btn-toggle-cf" title="CF表を隠して入力画面を広げる">▶ 入力拡大</button>
     <button class="btn-h" onclick="resetOverrides()" title="CF表の手動上書きをすべてリセット">↺ 上書きリセット</button>
     <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="onJSONImport(this)">
     <input type="file" id="json-bulk-import-input" accept=".json" style="display:none" onchange="onBulkJSONImport(this)">
@@ -2033,6 +2034,29 @@ function togglePanel(){
   if(resizer)resizer.style.display=hidden?'none':'';
   btn.textContent=hidden?'▶ 表示':'◀ 隠す';
   btn.title=hidden?'入力パネルを表示する':'入力パネルを隠す';
+}
+
+function toggleCFPanel(){
+  const pr=document.querySelector('.panel-r');
+  const resizer=document.getElementById('panel-resizer');
+  const pl=document.querySelector('.panel-l');
+  const btn=document.getElementById('btn-toggle-cf');
+  const hiding=pr.style.display!=='none';
+  if(hiding){
+    pr.style.display='none';
+    if(resizer)resizer.style.display='none';
+    pl.style.width='100%';
+    pl.style.minWidth='100%';
+    btn.textContent='◀ CF表示';
+    btn.title='CF表を表示する';
+  } else {
+    pr.style.display='';
+    if(resizer)resizer.style.display='';
+    pl.style.width='';
+    pl.style.minWidth='';
+    btn.textContent='▶ 入力拡大';
+    btn.title='CF表を隠して入力画面を広げる';
+  }
 }
 
 // 元利均等：毎月同額
@@ -6509,7 +6533,7 @@ function formatAmtInputs(){
   });
 }
 // MutationObserverで動的要素にも適用
-const _amtObserver=new MutationObserver(()=>{formatAmtInputs();setupAmtInputs()});
+const _amtObserverTimer=null;_amtObserver=new MutationObserver(()=>{clearTimeout(_amtObserverTimer);_amtObserverTimer=setTimeout(()=>{formatAmtInputs();setupAmtInputs();},200)});
 document.addEventListener('DOMContentLoaded',()=>{
   _amtObserver.observe(document.body,{childList:true,subtree:true});
   formatAmtInputs();setupAmtInputs();
