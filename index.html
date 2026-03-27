@@ -546,7 +546,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
   div[style*="border:1.5px solid #c8d6e8"]{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
   /* リサイザー：タッチ操作用に幅を広げる */
-  #panel-resizer{width:24px!important;background:linear-gradient(90deg,transparent 40%,var(--border) 40%,var(--border) 60%,transparent 60%)!important;touch-action:none!important}
+  #panel-resizer{width:20px!important;touch-action:none!important}
 
   /* iOS キーボード表示時の画面押し上げ防止 */
   html,body{position:fixed;width:100%;height:100%;overflow:hidden}
@@ -1710,7 +1710,15 @@ if(authExp&&Date.now()<Number(authExp)){
 </div><!-- /panel-l -->
 
 <!-- パネルリサイザー -->
-<div id="panel-resizer" style="width:5px;cursor:col-resize;background:var(--border);flex-shrink:0;transition:background .2s;position:relative;z-index:10;touch-action:none" onmouseenter="this.style.background='var(--teal)'" onmouseleave="this.style.background='var(--border)'"></div>
+<div id="panel-resizer" style="width:16px;cursor:col-resize;flex-shrink:0;position:relative;z-index:10;touch-action:none;display:flex;align-items:center;justify-content:center;background:var(--border);transition:background .15s" onmouseenter="this.style.background='var(--navy-l)'" onmouseleave="this.style.background='var(--border)'">
+  <div style="display:flex;flex-direction:column;gap:3px;pointer-events:none">
+    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
+    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
+    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
+    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
+    <div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)"></div>
+  </div>
+</div>
 
 <!-- ★ 右パネル：CF表 -->
 <div class="panel-r">
@@ -6455,6 +6463,7 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     startW=pl.offsetWidth;
     document.body.style.cursor='col-resize';
     document.body.style.userSelect='none';
+    resizer.style.background='var(--teal)';
     e.preventDefault();
   });
   document.addEventListener('mousemove',e=>{
@@ -6470,12 +6479,14 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     isResizing=false;
     document.body.style.cursor='';
     document.body.style.userSelect='';
+    resizer.style.background='';
   });
   // タッチ対応
   resizer.addEventListener('touchstart',e=>{
     isResizing=true;startX=e.touches[0].clientX;
     const pl=document.querySelector('.panel-l');
     startW=pl.offsetWidth;
+    resizer.style.background='var(--teal)';
     e.preventDefault();
   },{passive:false});
   window.addEventListener('touchmove',e=>{
@@ -6488,7 +6499,7 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     pl.style.width=newW+'px';
     pl.style.minWidth=newW+'px';
   },{passive:false,capture:true});
-  window.addEventListener('touchend',()=>{isResizing=false},{passive:true});
+  window.addEventListener('touchend',()=>{isResizing=false;resizer.style.background='';},{passive:true});
 })();
 
 // 数字入力欄：フォーカス時にカーソルを右端に配置
