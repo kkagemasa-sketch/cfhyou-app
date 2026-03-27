@@ -1686,6 +1686,9 @@ if(authExp&&Date.now()<Number(authExp)){
 </div>
 </div><!-- /panel-l -->
 
+<!-- パネルリサイザー -->
+<div id="panel-resizer" style="width:5px;cursor:col-resize;background:var(--border);flex-shrink:0;transition:background .2s;position:relative;z-index:10" onmouseenter="this.style.background='var(--teal)'" onmouseleave="this.style.background='var(--border)'"></div>
+
 <!-- ★ 右パネル：CF表 -->
 <div class="panel-r">
   <div class="r-tabs" style="justify-content:space-between">
@@ -4201,13 +4204,17 @@ function render(){
 
     children.forEach((c,ci)=>{
       const ca=c.age+i;
+      const cid=ci+1;
+      const hoikuStartAge=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
+      const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
+      const hoikuLabel=hoikuType==='youchien'?'幼稚園入園':'保育園入園';
       let ev='';
       if(ca===0)ev='誕生';
-      else if(ca>=1&&ca<=6)ev=ca===1?'保育所入園':'';
+      else if(ca>=hoikuStartAge&&ca<=6)ev=ca===hoikuStartAge?hoikuLabel:'';
       else if(ca>=7&&ca<=12)ev=ca===7?'小学入学':'';
       else if(ca>=13&&ca<=15)ev=ca===13?'中学入学':'';
       else if(ca>=16&&ca<=18)ev=ca===16?'高校入学':'';
-      else if(ca>=19){const un2=_v(`cu-${ci+1}`)||'plit_h';const ul2=(EDU.univ[un2]||[]).length;if(ul2>0&&ca<19+ul2)ev=ca===19?(un2.startsWith('senmon')?'専門入学':'大学入学'):'';}
+      else if(ca>=19){const un2=_v(`cu-${cid}`)||'plit_h';const ul2=(EDU.univ[un2]||[]).length;if(ul2>0&&ca<19+ul2)ev=ca===19?(un2.startsWith('senmon')?'専門入学':'大学入学'):'';}
       R.evC[ci].push(ev);
     });
   }
@@ -4337,8 +4344,11 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       const ca=R.cA[ci][i];
       let cls='',label='';
       // 年度ベース（4月入学）：+1シフト
+      const hStartAge=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+      const hType=_v(`hoiku-type-${ci+1}`)||'hoikuen';
+      const hLabel=hType==='youchien'?'幼稚園入園':'保育園入園';
       if(ca===0)label='誕生';
-      else if(ca>=1&&ca<=6){cls='ev-hoiku';if(ca===1)label='保育所入園'}
+      else if(ca>=hStartAge&&ca<=6){cls='ev-hoiku';if(ca===hStartAge)label=hLabel}
       else if(ca>=7&&ca<=12){cls='ev-elem';if(ca===7)label='小学入学'}
       else if(ca>=13&&ca<=15){cls='ev-mid';if(ca===13)label='中学入学'}
       else if(ca>=16&&ca<=18){cls='ev-high';if(ca===16)label='高校入学'}
@@ -4720,9 +4730,12 @@ function exportExcelMG(){
     const ages=MR.yr.map((_,i)=>c.age+i);
     childEvRows2.push({rowIdx:rows.length,ages});
     const un=_v(`cu-${ci+1}`)||'plit_h';
+    const hSA=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+    const hTp=_v(`hoiku-type-${ci+1}`)||'hoikuen';
+    const hLb=hTp==='youchien'?'幼稚園入園':'保育園入園';
     push(['',cLbls[ci],...ages.map(ca=>{
       if(ca===0)return '誕生';
-      if(ca===1)return '保育所入園';
+      if(ca===hSA&&ca<=6)return hLb;
       if(ca===7)return '小学入学';
       if(ca===13)return '中学入学';
       if(ca===16)return '高校入学';
@@ -6316,6 +6329,51 @@ function initLCComma(){
 }
 
 // ===== 初期化 =====
+// パネルリサイザー
+(function(){
+  const resizer=document.getElementById('panel-resizer');
+  if(!resizer)return;
+  let isResizing=false,startX=0,startW=0;
+  resizer.addEventListener('mousedown',e=>{
+    isResizing=true;startX=e.clientX;
+    const pl=document.querySelector('.panel-l');
+    startW=pl.offsetWidth;
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!isResizing)return;
+    const pl=document.querySelector('.panel-l');
+    const dx=e.clientX-startX;
+    const newW=Math.max(250,Math.min(startW+dx,700));
+    pl.style.width=newW+'px';
+    pl.style.minWidth=newW+'px';
+  });
+  document.addEventListener('mouseup',()=>{
+    if(!isResizing)return;
+    isResizing=false;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+  });
+  // タッチ対応
+  resizer.addEventListener('touchstart',e=>{
+    isResizing=true;startX=e.touches[0].clientX;
+    const pl=document.querySelector('.panel-l');
+    startW=pl.offsetWidth;
+    e.preventDefault();
+  },{passive:false});
+  document.addEventListener('touchmove',e=>{
+    if(!isResizing)return;
+    const pl=document.querySelector('.panel-l');
+    const dx=e.touches[0].clientX-startX;
+    const newW=Math.max(250,Math.min(startW+dx,700));
+    pl.style.width=newW+'px';
+    pl.style.minWidth=newW+'px';
+  },{passive:true});
+  document.addEventListener('touchend',()=>{isResizing=false});
+})();
+
 // 数字入力欄：フォーカス時にカーソルを右端に配置
 function setupAmtInputs(){
   document.querySelectorAll('input[type="number"]').forEach(el=>{
