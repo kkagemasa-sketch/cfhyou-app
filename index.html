@@ -131,10 +131,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .panel-l>.fi{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .panel-l>.fi::-webkit-scrollbar{width:3px}
 .panel-l>.fi::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
-.sec-jump{flex-shrink:0;z-index:50;background:var(--navy);display:flex;gap:1px;padding:4px 6px;border-top:1px solid rgba(255,255,255,.15)}
-.sec-jump-btn{flex:1;min-width:0;background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);border:none;border-radius:4px;padding:5px 0;font-size:9px;cursor:pointer;font-family:inherit;font-weight:600;transition:.15s;text-align:center;line-height:1.2}
-.sec-jump-btn:hover{background:rgba(255,255,255,.25);color:#fff}
-.sec-jump-btn.active{background:rgba(255,255,255,.3);color:#fff}
+.sec-jump{flex-shrink:0;z-index:50;background:var(--navy);display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:8px;border-top:1px solid rgba(255,255,255,.15)}
+.sec-jump-btn{background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:9px;padding:10px 6px;cursor:pointer;font-family:inherit;font-weight:700;transition:.15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;line-height:1.2}
+.sec-jump-btn .sj-em{font-size:20px;line-height:1}
+.sec-jump-btn .sj-lbl{font-size:10.5px}
+.sec-jump-btn:hover{filter:brightness(1.2)}
+.sec-jump-btn.active{filter:brightness(1.3);box-shadow:0 0 0 2px rgba(255,255,255,.5)}
 
 /* セクション */
 .sec{background:var(--card);border-radius:var(--r);margin-bottom:12px;box-shadow:var(--sh);overflow:hidden;border:1px solid var(--border)}
@@ -426,7 +428,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
   .r-tabs{padding:0 8px;flex-wrap:wrap;gap:2px}
   .rtab{font-size:11px;padding:8px 12px 7px}
   /* セクションジャンプ */
-  .sec-jump-btn{font-size:8px;padding:4px 1px}
+  .sec-jump{gap:4px;padding:6px}
+  .sec-jump-btn .sj-em{font-size:18px}
+  .sec-jump-btn .sj-lbl{font-size:9.5px}
   /* CF表セル */
   .cf th,.cf td{padding:2px 4px;min-width:44px;width:44px;font-size:10px}
   .cf th:first-child,.cf td:first-child{min-width:70px;max-width:70px;font-size:9px;position:sticky;left:0;z-index:4}
@@ -1717,15 +1721,15 @@ if(authExp&&Date.now()<Number(authExp)){
   <div style="height:20px"></div>
 </div>
 <div class="sec-jump" id="sec-jump">
-  <button class="sec-jump-btn" onclick="scrollToSec(0)" style="border-bottom:2px solid #3a6a8a">①家族</button>
-  <button class="sec-jump-btn" onclick="scrollToSec(1)" style="border-bottom:2px solid #0d8a20">②資産</button>
-  <button class="sec-jump-btn" onclick="scrollToSec(2)" style="border-bottom:2px solid #2d7dd2">③収入</button>
-  <button class="sec-jump-btn" onclick="scrollToSec(3)" style="border-bottom:2px solid #6b5ea8">④車</button>
-  <button class="sec-jump-btn" onclick="scrollToSec(4)" style="border-bottom:2px solid #0e7490">⑤住宅</button>
-  <button class="sec-jump-btn" onclick="scrollToSec(5)" style="border-bottom:2px solid #b45309">⑥生活</button>
-  <button class="sec-jump-btn" onclick="scrollToSec(6)" style="border-bottom:2px solid #475569">⑦修繕</button>
-  <button class="sec-jump-btn" onclick="scrollToSec(7)" style="border-bottom:2px solid #7c3aed">⑧支出</button>
-  <button class="sec-jump-btn" onclick="scrollToSec(8)" style="border-bottom:2px solid #c2185b">⑨万一</button>
+  <button class="sec-jump-btn" onclick="scrollToSec(0)" style="background:#3a6a8a"><span class="sj-em">👨‍👩‍👧</span><span class="sj-lbl">①家族</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(1)" style="background:#0d8a20"><span class="sj-em">💰</span><span class="sj-lbl">②資産</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(2)" style="background:#2d7dd2"><span class="sj-em">💴</span><span class="sj-lbl">③収入</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(3)" style="background:#6b5ea8"><span class="sj-em">🚗</span><span class="sj-lbl">④車</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(4)" style="background:#0e7490"><span class="sj-em">🏠</span><span class="sj-lbl">⑤住宅</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(5)" style="background:#b45309"><span class="sj-em">🛒</span><span class="sj-lbl">⑥生活</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(6)" style="background:#475569"><span class="sj-em">✏️</span><span class="sj-lbl">⑦修繕</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(7)" style="background:#7c3aed"><span class="sj-em">💸</span><span class="sj-lbl">⑧支出</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(8)" style="background:#c2185b"><span class="sj-em">🛡️</span><span class="sj-lbl">⑨万一</span></button>
 </div>
 </div><!-- /panel-l -->
 
