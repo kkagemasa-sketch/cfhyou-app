@@ -5081,7 +5081,7 @@ function exportExcelMG(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
-  const fname=`万が一_${clientName}_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
+  const fname=`万が一_${clientName}様_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
   XLSX.writeFile(wb,fname);
 }
 
@@ -5469,7 +5469,7 @@ function exportExcel(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'CF表');
-  XLSX.writeFile(wb,`CF表_${clientName}_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`);
+  XLSX.writeFile(wb,`CF表_${clientName}様_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`);
 }
 
 // ===== PDF出力（印刷ダイアログ経由） =====
@@ -5725,7 +5725,7 @@ function _reapplyHighlightAfterRender(){
 async function exportJSON(){
   const nm = _v('client-name') || 'CF表データ';
   const json = JSON.stringify(_collectSaveData(), null, 2);
-  const fileName = `${nm}_CF表.json`;
+  const fileName = `${nm}様_CF表.json`;
   // File System Access API が使えれば保存先を選択できる（OneDriveフォルダ等）
   if(window.showSaveFilePicker){
     try{
