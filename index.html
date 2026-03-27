@@ -812,26 +812,8 @@ if(authExp&&Date.now()<Number(authExp)){
             <div></div>
           </div>
 
-          <!-- 年金 -->
-          <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
-            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🏦 老齢年金</div>
-            <div class="g3">
-              <div class="fg"><label class="lbl" style="font-size:9px">加入開始年齢</label>
-                <div class="suf"><input class="inp age-inp" id="pension-h-start" type="number" onfocus="scrollToCFRow('pS',65)" onblur="cfRowBlur()" value="22" min="18" max="40" oninput="calcPension('h')" style="font-size:11px"><span class="sl">歳</span></div></div>
-              <div class="fg"><label class="lbl" style="font-size:9px">受給開始年齢</label>
-                <div class="suf"><input class="inp age-inp" id="pension-h-receive" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="65" min="60" max="75" oninput="live()" style="font-size:11px"><span class="sl">歳</span></div></div>
-              <div class="fg"><label class="lbl" style="font-size:9px">老齢年金（手取/年）</label>
-                <div class="suf"><input class="inp amt-inp" id="pension-h" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="186" min="0" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
-            </div>
-            <div style="margin-top:6px">
-              <button onclick="calcPension('h')" style="background:#e8f2fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#1a4a6a;cursor:pointer;font-family:inherit;font-weight:600">🔄 概算計算</button>
-            </div>
-            <div id="h-pension-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">65歳〜 受給</div>
-            <div style="font-size:9px;color:var(--light);margin-top:3px">※ねんきん定期便の金額に上書きできます</div>
-          </div>
-
           <!-- 退職金 -->
-          <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px">
+          <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">💴 退職金</div>
             <div style="display:flex;gap:8px;margin-bottom:8px">
               <div class="tc on" id="rp-yes" onclick="setRetirePay(true)" style="flex:1;padding:6px 10px">
@@ -852,6 +834,24 @@ if(authExp&&Date.now()<Number(authExp)){
                   <span class="hint ok" id="h-retpay-hint">退職時に計上</span></div>
               </div>
             </div>
+          </div>
+
+          <!-- 年金 -->
+          <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🏦 老齢年金</div>
+            <div class="g3">
+              <div class="fg"><label class="lbl" style="font-size:9px">加入開始年齢</label>
+                <div class="suf"><input class="inp age-inp" id="pension-h-start" type="number" onfocus="scrollToCFRow('pS',65)" onblur="cfRowBlur()" value="22" min="18" max="40" oninput="calcPension('h')" style="font-size:11px"><span class="sl">歳</span></div></div>
+              <div class="fg"><label class="lbl" style="font-size:9px">受給開始年齢</label>
+                <div class="suf"><input class="inp age-inp" id="pension-h-receive" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="65" min="60" max="75" oninput="live()" style="font-size:11px"><span class="sl">歳</span></div></div>
+              <div class="fg"><label class="lbl" style="font-size:9px">老齢年金（手取/年）</label>
+                <div class="suf"><input class="inp amt-inp" id="pension-h" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="186" min="0" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+            </div>
+            <div style="margin-top:6px">
+              <button onclick="calcPension('h')" style="background:#e8f2fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#1a4a6a;cursor:pointer;font-family:inherit;font-weight:600">🔄 概算計算</button>
+            </div>
+            <div id="h-pension-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">65歳〜 受給</div>
+            <div style="font-size:9px;color:var(--light);margin-top:3px">※ねんきん定期便の金額に上書きできます</div>
           </div>
 
           <!-- 遺族年金の計算根拠 -->
@@ -2048,7 +2048,8 @@ function eduCosts(cid){
   const h3=fv(`hn-3-${cid}`), h4=fv(`hn-4-${cid}`), h5=fv(`hn-5-${cid}`), h6=fv(`hn-6-${cid}`);
   const startAge=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
   const hArr=[h0,h1,h2,h3,h4,h5,h6];
-  const defaults=[0,0,41,31,31,31,31]; // 年齢別デフォルト（0〜6歳）
+  const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
+  const defaults=hoikuType==='youchien'?[0,0,0,25,25,25,0]:[0,0,41,31,31,31,31]; // 年齢別デフォルト
   for(let a=0;a<=6;a++){
     if(a<startAge){c[a]=0;continue;} // 入園前は0
     const v=hArr[a];
@@ -2455,7 +2456,8 @@ function updateEdu(){
     const unv=_v(`cu-${cid}`)||'plit_h';const u='大:'+ul[unv];
     const hoikuStart=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
     const hoiku=[0,1,2,3,4,5,6].map(a=>a<hoikuStart?0:fv(`hn-${a}-${cid}`));
-    const hoikuDef=[0,0,41,31,31,31,31];
+    const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
+    const hoikuDef=hoikuType==='youchien'?[0,0,0,25,25,25,0]:[0,0,41,31,31,31,31];
     const hoikuTot=hoiku.reduce((s,v,i)=>i<hoikuStart?s:s+(v>0?v:hoikuDef[i]),0);
     const hoikuNote=hoiku.some(v=>v>0)?`　保育料合計：<strong style="color:#1a6b2e">${hoikuTot}万円</strong>`:'　保育料：デフォルト値使用';
     pv.innerHTML=`${e2}→${m}→${h}→${u}　教育費合計：<strong style="color:#2d7dd2">${tot}万円</strong>${hoikuNote}`;
@@ -2586,7 +2588,11 @@ function addChild(){
     <div style="padding-top:2px;border-top:1px solid #a7f3d0;margin-bottom:8px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div style="font-size:10px;font-weight:700;color:#1a6b2e">🍼 保育料（万円/年・実費入力）</div>
-        <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <select class="sel" id="hoiku-type-${id}" onchange="live()" style="font-size:10px;padding:3px 5px;width:auto">
+            <option value="hoikuen" selected>保育園</option>
+            <option value="youchien">幼稚園</option>
+          </select>
           <label style="font-size:10px;color:#5a6a7e;font-weight:600">入園年齢</label>
           <select class="sel" id="hoiku-start-${id}" onfocus="scrollToCFRowEduStage(${id},'hoiku')" onblur="cfRowBlur()" onchange="scrollToCFRowEduStage(${id},'hoiku');live()" style="font-size:11px;padding:3px 5px;width:auto">
             <option value="0">0歳</option>
@@ -6287,6 +6293,48 @@ function initLCComma(){
 }
 
 // ===== 初期化 =====
+// 数字入力欄：フォーカス時にカーソルを右端に配置
+function setupAmtInputs(){
+  document.querySelectorAll('input[type="number"]').forEach(el=>{
+    el.addEventListener('focus',function(){
+      setTimeout(()=>{
+        const len=String(this.value).length;
+        if(this.setSelectionRange){try{this.setSelectionRange(len,len)}catch(e){}}
+      },10);
+    });
+  });
+}
+// 金額入力欄にカンマ表示（フォーカス外した時に表示用に変換）
+function formatAmtInputs(){
+  document.querySelectorAll('.amt-inp').forEach(el=>{
+    if(el._commaSetup)return;
+    el._commaSetup=true;
+    // blur時：カンマ付きテキストに変換
+    el.addEventListener('blur',function(){
+      const v=parseFloat(this.value);
+      if(!isNaN(v)&&this.type==='number'){
+        this.type='text';
+        this.value=v.toLocaleString();
+        this._rawValue=v;
+      }
+    });
+    // focus時：数値に戻す
+    el.addEventListener('focus',function(){
+      if(this.type==='text'&&this._rawValue!==undefined){
+        this.type='number';
+        this.value=this._rawValue;
+        delete this._rawValue;
+      }
+    });
+  });
+}
+// MutationObserverで動的要素にも適用
+const _amtObserver=new MutationObserver(()=>{formatAmtInputs();setupAmtInputs()});
+document.addEventListener('DOMContentLoaded',()=>{
+  _amtObserver.observe(document.body,{childList:true,subtree:true});
+  formatAmtInputs();setupAmtInputs();
+});
+
 window.onload=()=>{
   addChild();addChild();
   // 収入ステップの初期値
