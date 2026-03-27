@@ -1048,7 +1048,7 @@ if(authExp&&Date.now()<Number(authExp)){
         <div class="g3" style="margin-bottom:10px">
           <div class="fg"><label class="lbl">車両価格</label>
             <div class="suf"><input class="inp amt-inp" id="car-price" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl">初回購入</label>
+          <div class="fg"><label class="lbl">初回購入（今から）</label>
             <div class="suf"><input class="inp age-inp" id="car-first" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="0" min="0" max="30" oninput="live()"><span class="sl">年後</span></div></div>
           <div class="fg"><label class="lbl">乗り換え周期</label>
             <div class="suf"><input class="inp age-inp" id="car-cycle" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="7" min="1" max="20" oninput="live()"><span class="sl">年ごと</span></div></div>
@@ -2872,15 +2872,16 @@ function addLCStep(){
       <button class="btn-rm" onclick="rmLCStep(${id})">×</button>
     </div>
     <div style="display:flex;align-items:center;gap:5px;padding-left:46px;margin-bottom:2px">
-      <span style="font-size:10px;color:var(--muted);flex-shrink:0">前年比</span>
-      <div class="suf" style="width:80px"><input class="inp amt-inp" id="lcp-pct-${id}" type="number" value="80" min="1" max="200" step="1" style="width:100%;font-size:12px"><span class="sl">%</span></div>
-      <button style="font-size:10px;padding:4px 10px;border-radius:4px;border:1px solid var(--blue);background:#eef5ff;color:var(--blue);cursor:pointer;white-space:nowrap;font-weight:600" onclick="applyLCPrevPct(${id})">前年比で設定</button>
+      <span style="font-size:10px;color:#92400e;flex-shrink:0;font-weight:600">前段階の基準額の</span>
+      <div class="suf" style="width:72px"><input class="inp amt-inp" id="lcp-pct-${id}" type="number" value="80" min="1" max="200" step="1" style="width:100%"><span class="sl">%</span></div>
+      <button style="font-size:10px;padding:5px 10px;border-radius:4px;border:1px solid #92400e;background:#fef3c7;color:#92400e;cursor:pointer;white-space:nowrap;font-weight:700" onclick="applyLCPrevPct(${id})">を基準額に設定</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-left:46px;margin-bottom:3px">
       <div class="suf"><input class="inp" id="lsf-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="${defFrom}" min="2020" max="2100" step="1" oninput="live()" style="width:100%"><span class="sl">年〜</span></div>
       <div class="suf"><input class="inp" id="lst-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="${defTo}" placeholder="空欄=ずっと" min="2020" max="2100" step="1" oninput="live()" style="width:100%"><span class="sl">年</span></div>
     </div>
     <div style="padding-left:46px">
+      <label class="lbl" style="font-size:10px">毎年の変化率（基準額を毎年〇%増減）</label>
       <div class="suf"><input class="inp amt-inp" id="lsr-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="${defRate}" min="-100" max="200" step="0.1" oninput="live()" style="width:70px"><span class="sl">%/年</span></div>
     </div>`;
   $('lc-steps-cont').appendChild(el);live();
@@ -3258,40 +3259,40 @@ function addIncomeStep(person){
     </div>
     <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:6px">
       <div class="fg">
-        <label class="lbl" style="font-size:9px">開始年齢</label>
-        <div class="suf"><input class="inp age-inp" id="${id}-from" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defFrom}" min="18" max="80" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">歳</span></div>
+        <label class="lbl">開始年齢</label>
+        <div class="suf"><input class="inp age-inp" id="${id}-from" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defFrom}" min="18" max="80" oninput="calcStepHint('${id}')"><span class="sl">歳</span></div>
       </div>
       <div style="font-size:13px;color:var(--muted);text-align:center;padding-top:18px">→</div>
       <div class="fg">
-        <label class="lbl" style="font-size:9px">終了年齢</label>
-        <div class="suf"><input class="inp age-inp" id="${id}-to" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defTo}" min="18" max="80" oninput="calcStepHint('${id}');syncNextStepFrom('${id}')" style="font-size:12px"><span class="sl">歳</span></div>
+        <label class="lbl">終了年齢</label>
+        <div class="suf"><input class="inp age-inp" id="${id}-to" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defTo}" min="18" max="80" oninput="calcStepHint('${id}');syncNextStepFrom('${id}')"><span class="sl">歳</span></div>
       </div>
     </div>
     <div style="display:flex;gap:4px;margin-bottom:6px">
-      <button class="btn-tog on" id="${id}-mode-amt" onclick="setStepMode('${id}','amt')" style="font-size:9px;padding:3px 8px;flex:1">金額で入力</button>
-      <button class="btn-tog" id="${id}-mode-pct" onclick="setStepMode('${id}','pct')" style="font-size:9px;padding:3px 8px;flex:1">割合で入力</button>
+      <button class="btn-tog on" id="${id}-mode-amt" onclick="setStepMode('${id}','amt')" style="flex:1;padding:6px 4px">金額で入力</button>
+      <button class="btn-tog" id="${id}-mode-pct" onclick="setStepMode('${id}','pct')" style="flex:1;padding:6px 4px">割合で入力</button>
     </div>
     <div id="${id}-amt-body">
       <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center">
         <div class="fg">
-          <label class="lbl" style="font-size:9px">開始時の手取り年収</label>
-          <div class="suf"><input class="inp amt-inp" id="${id}-net-from" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:500" min="0" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">万円</span></div>
+          <label class="lbl">開始時の手取り年収</label>
+          <div class="suf"><input class="inp amt-inp" id="${id}-net-from" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:500" min="0" oninput="calcStepHint('${id}')"><span class="sl">万円</span></div>
         </div>
         <div style="font-size:13px;color:var(--muted);text-align:center;padding-top:18px">→</div>
         <div class="fg">
-          <label class="lbl" style="font-size:9px">終了時の手取り年収</label>
-          <div class="suf"><input class="inp amt-inp" id="${id}-net-to" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:1000" min="0" oninput="calcStepHint('${id}')" style="font-size:12px"><span class="sl">万円</span></div>
+          <label class="lbl">終了時の手取り年収</label>
+          <div class="suf"><input class="inp amt-inp" id="${id}-net-to" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:1000" min="0" oninput="calcStepHint('${id}')"><span class="sl">万円</span></div>
         </div>
       </div>
     </div>
     <div id="${id}-pct-body" style="display:none">
       <div class="fg">
-        <label class="lbl" style="font-size:9px">直前の手取りに対する割合</label>
+        <label class="lbl">直前の手取りに対する割合</label>
         <div class="suf"><input class="inp" id="${id}-pct" type="number" value="100" min="0" max="200" step="5" oninput="calcPctIncome('${id}')" style="font-size:14px;font-weight:700;width:80px"><span class="sl">%</span></div>
       </div>
-      <div id="${id}-pct-hint" style="font-size:10px;color:#2d7dd2;margin-top:4px"></div>
+      <div id="${id}-pct-hint" style="font-size:11px;color:#2d7dd2;margin-top:4px"></div>
     </div>
-    <div id="${id}-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">手取り：― 万円 → ― 万円</div>
+    <div id="${id}-hint" style="font-size:11px;color:#3a8a3a;margin-top:6px;font-weight:600">手取り：― 万円 → ― 万円</div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border)">
       <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap">この期間のイベント</span>
       <input id="${id}-leave" class="inp" oninput="live()" style="font-size:11px;padding:4px 8px;border-radius:5px;flex:1" placeholder="例:産休・育休、時短、転職 等" value="">
@@ -4398,7 +4399,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const cashAfter=cashTotal-initialOut;
   const cashAfterColor=cashAfter>=0?'var(--green)':'var(--red)';
 
-  const chip=(icon,label,val,valColor)=>`<div style="display:flex;align-items:center;gap:5px;padding:6px 13px;border-right:1px solid #dce6f0;white-space:nowrap;flex-shrink:0"><span style="font-size:12px">${icon}</span><span style="color:var(--muted);font-size:10px">${label}</span><strong style="color:${valColor||'var(--navy)'};font-family:'Cascadia Code','Consolas','Menlo',monospace;font-size:11px">${val}</strong></div>`;
+  const chip=(icon,label,val,valColor)=>`<div style="display:flex;align-items:center;gap:5px;padding:6px 13px;border-right:1px solid #dce6f0;white-space:nowrap;flex-shrink:0"><span>${icon}</span><span style="color:var(--muted);font-size:10px">${label}</span><strong style="color:${valColor||'var(--navy)'};font-family:'Cascadia Code','Consolas','Menlo',monospace;font-size:11px">${val}</strong></div>`;
   const arrow=`<div style="color:#b0bec5;font-size:13px;padding:0 2px;display:flex;align-items:center">▶</div>`;
   const sep=`<div style="width:1px;background:#dce6f0;margin:4px 0"></div>`;
 
@@ -5893,7 +5894,7 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'lc-other-y','lc-other-y2','lc-other-y3',
   'lc-other-y-name','lc-other-y2-name','lc-other-y3-name',
   'parking','prop-tax','furn-cycle','furn-cost','repair-cycle','repair-cost','repair-cycle2','repair-cost2',
-  'moving-cost','furniture-init',
+  'cash-h','cash-w','cash-joint','moving-cost','furniture-init',
   'lctrl-year','lctrl-type','lctrl-household',
   'car-price','car-cycle','car-first','car-insp','car-down','car-loan-yrs','car-loan-rate','car-end-age',
   'pi-name','pi-company','pi-address','pi-tel','pi-email','pi-notes'];
@@ -5908,6 +5909,7 @@ function _collectDynamic(){
     d.children.push({
       age:el.value, gender:$(`cg-${cid}`)?.value||'m',
       hoikuStart:$(`hoiku-start-${cid}`)?.value||'1',
+      hoikuType:$(`hoiku-type-${cid}`)?.value||'hoikuen',
       hoiku:[0,1,2,3,4,5,6].map(a=>$(`hn-${a}-${cid}`)?.value||''),
       elem:$(`ce-${cid}`)?.value||'public', mid:$(`cm-${cid}`)?.value||'public',
       high:$(`ch-${cid}`)?.value||'public', univ:$(`cu-${cid}`)?.value||'plit_h',
@@ -6006,6 +6008,7 @@ function _restoreDynamic(d){
     if($(`ca-${cid}`))$(`ca-${cid}`).value=c.age;
     if($(`cg-${cid}`))$(`cg-${cid}`).value=c.gender||'m';
     if($(`hoiku-start-${cid}`))$(`hoiku-start-${cid}`).value=c.hoikuStart||'1';
+      if($(`hoiku-type-${cid}`))$(`hoiku-type-${cid}`).value=c.hoikuType||'hoikuen';
     (c.hoiku||[]).forEach((v,a)=>{const el=$(`hn-${a}-${cid}`);if(el)el.value=v;});
     if($(`ce-${cid}`))$(`ce-${cid}`).value=c.elem||'public';
     if($(`cm-${cid}`))$(`cm-${cid}`).value=c.mid||'public';
@@ -7029,7 +7032,7 @@ function renderContingency(){
   </div>`;
   // 自己資金の内訳（通常CF表と同じ）
   const N=normalR;
-  const mgChip=(icon,label,val,valColor)=>`<div style="display:flex;align-items:center;gap:5px;padding:6px 13px;border-right:1px solid #dce6f0;white-space:nowrap;flex-shrink:0"><span style="font-size:12px">${icon}</span><span style="color:var(--muted);font-size:10px">${label}</span><strong style="color:${valColor||'var(--navy)'};font-family:'Cascadia Code','Consolas','Menlo',monospace;font-size:11px">${val}</strong></div>`;
+  const mgChip=(icon,label,val,valColor)=>`<div style="display:flex;align-items:center;gap:5px;padding:6px 13px;border-right:1px solid #dce6f0;white-space:nowrap;flex-shrink:0"><span>${icon}</span><span style="color:var(--muted);font-size:10px">${label}</span><strong style="color:${valColor||'var(--navy)'};font-family:'Cascadia Code','Consolas','Menlo',monospace;font-size:11px">${val}</strong></div>`;
   const mgArrow=`<div style="color:#b0bec5;font-size:13px;padding:0 2px;display:flex;align-items:center">▶</div>`;
   const housePrice2=fv('house-price')||0;
   const cashTotal2=(fv('cash-h')||0)+(fv('cash-w')||0)+(fv('cash-joint')||0);
@@ -7234,9 +7237,9 @@ function addPrepay(yrFrom='',yrTo='',amt=''){
   el.id=`pp-${id}`;
   el.style.cssText='background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:8px;margin-bottom:5px';
   el.innerHTML=`<div style="display:flex;gap:6px;align-items:center">
-    <div class="suf" style="flex:1"><input type="number" class="inp age-inp" id="pp-yf-${id}" value="${yrFrom}" placeholder="開始" min="1" max="50" style="font-size:12px" onchange="renderLoanCalc()"><span class="sl">年目〜</span></div>
-    <div class="suf" style="flex:1"><input type="number" class="inp age-inp" id="pp-yt-${id}" value="${yrTo}" placeholder="終了" min="1" max="50" style="font-size:12px" onchange="renderLoanCalc()"><span class="sl">年目</span></div>
-    <div class="suf" style="flex:1"><input type="number" class="inp amt-inp" id="pp-amt-${id}" value="${amt}" placeholder="万円/年" min="0" style="font-size:12px" onchange="renderLoanCalc()"><span class="sl">万円/年</span></div>
+    <div class="suf" style="flex:1"><input type="number" class="inp age-inp" id="pp-yf-${id}" value="${yrFrom}" placeholder="開始" min="1" max="50" onchange="renderLoanCalc()"><span class="sl">年目〜</span></div>
+    <div class="suf" style="flex:1"><input type="number" class="inp age-inp" id="pp-yt-${id}" value="${yrTo}" placeholder="終了" min="1" max="50" onchange="renderLoanCalc()"><span class="sl">年目</span></div>
+    <div class="suf" style="flex:1"><input type="number" class="inp amt-inp" id="pp-amt-${id}" value="${amt}" placeholder="万円/年" min="0" onchange="renderLoanCalc()"><span class="sl">万円/年</span></div>
     <button class="btn-rm" onclick="document.getElementById('pp-${id}').remove();renderLoanCalc()">×</button>
   </div>`;
   return el;
