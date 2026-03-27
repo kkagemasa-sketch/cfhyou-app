@@ -6475,10 +6475,11 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
   resizer.addEventListener('mousedown',e=>{
     isResizing=true;startX=e.clientX;
     const pl=document.querySelector('.panel-l');
-    startW=pl.offsetWidth;
+    startW=pl.getBoundingClientRect().width;
     document.body.style.cursor='col-resize';
     document.body.style.userSelect='none';
     resizer.classList.add('dragging');
+    pl.style.transition='none';
     e.preventDefault();
   });
   document.addEventListener('mousemove',e=>{
@@ -6486,8 +6487,8 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     const pl=document.querySelector('.panel-l');
     const dx=e.clientX-startX;
     const maxW=Math.max(200,window.innerWidth-150);const newW=Math.max(200,Math.min(startW+dx,maxW));
-    pl.style.width=newW+'px';
-    pl.style.minWidth=newW+'px';
+    pl.style.setProperty('width',newW+'px','important');
+    pl.style.setProperty('min-width','0','important');
   });
   document.addEventListener('mouseup',()=>{
     if(!isResizing)return;
@@ -6495,13 +6496,15 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     document.body.style.cursor='';
     document.body.style.userSelect='';
     resizer.classList.remove('dragging');
+    pl.style.transition='';
   });
   // タッチ対応
   resizer.addEventListener('touchstart',e=>{
     isResizing=true;startX=e.touches[0].clientX;
     const pl=document.querySelector('.panel-l');
-    startW=pl.offsetWidth;
+    startW=pl.getBoundingClientRect().width;
     resizer.classList.add('dragging');
+    pl.style.transition='none';
     e.preventDefault();
   },{passive:false});
   window.addEventListener('touchmove',e=>{
@@ -6511,10 +6514,10 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
     const pl=document.querySelector('.panel-l');
     const dx=e.touches[0].clientX-startX;
     const maxW=Math.max(200,window.innerWidth-150);const newW=Math.max(200,Math.min(startW+dx,maxW));
-    pl.style.width=newW+'px';
-    pl.style.minWidth=newW+'px';
+    pl.style.setProperty('width',newW+'px','important');
+    pl.style.setProperty('min-width','0','important');
   },{passive:false,capture:true});
-  window.addEventListener('touchend',()=>{isResizing=false;resizer.classList.remove('dragging');},{passive:true});
+  window.addEventListener('touchend',()=>{isResizing=false;resizer.classList.remove('dragging');document.querySelector('.panel-l').style.transition='';},{passive:true});
 })();
 
 // 数字入力欄：フォーカス時にカーソルを右端に配置
