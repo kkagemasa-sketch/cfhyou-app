@@ -2776,6 +2776,36 @@ function getRates(){
 function effRate(yr,rates){let r=rates[0]?.rate??0.5;for(const s of rates)if(yr>=s.from)r=s.rate;return r}
 
 // ===== 生活費ステップ =====
+function applyLCPrevPct(id){
+  const pct=parseFloat(document.getElementById('lcp-pct-'+id)?.value)||80;
+  const steps=document.querySelectorAll('#lc-steps-cont>[id^="ls-"]');
+  let prevAmt=null;
+  for(let i=0;i<steps.length;i++){
+    if(steps[i].dataset.id===String(id)){
+      // 直前ステップの金額を取得
+      if(i>0){
+        const prevId=steps[i-1].dataset.id;
+        const prevBase=parseFloat(document.getElementById('lsb-'+prevId)?.value)||null;
+        if(prevBase!==null){prevAmt=prevBase;}
+        else{
+          // 直前ステップに金額未設定→全体生活費合計を使用
+          const totalEl=document.getElementById('lc-total-hint');
+          if(totalEl){const m=totalEl.textContent.match(/([\d,]+)/);if(m)prevAmt=parseFloat(m[1].replace(/,/g,''));}
+        }
+      }
+      break;
+    }
+  }
+  if(prevAmt===null){
+    // 段階1の場合は生活費合計（lc-total）を参照
+    const totalEl=document.getElementById('lc-month-total-hint')||document.getElementById('lc-total-hint');
+    if(totalEl){const m=totalEl.textContent.match(/([\d.]+)/);if(m)prevAmt=parseFloat(m[1]);}
+  }
+  if(prevAmt===null){alert('前段階の生活費が設定されていません');return;}
+  const newAmt=Math.round(prevAmt*pct/100*10)/10;
+  const el=document.getElementById('lsb-'+id);
+  if(el){el.value=newAmt;live();}
+}
 function addLCStep(){
   lsCnt++;const id=lsCnt;
   const thisYear=new Date().getFullYear();
@@ -2797,6 +2827,11 @@ function addLCStep(){
       <span class="dlbl" style="min-width:40px;flex-shrink:0">段階${id}</span>
       <div class="suf" style="flex:1"><input class="inp amt-inp" id="lsb-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="${phBase}" min="0" step="1" oninput="live()"><span class="sl">万円/年</span></div>
       <button class="btn-rm" onclick="rmLCStep(${id})">×</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;padding-left:46px;margin-bottom:2px">
+      <span style="font-size:10px;color:var(--muted);flex-shrink:0">前年比</span>
+      <div class="suf" style="width:80px"><input class="inp amt-inp" id="lcp-pct-${id}" type="number" value="80" min="1" max="200" step="1" style="width:100%;font-size:12px"><span class="sl">%</span></div>
+      <button style="font-size:10px;padding:4px 10px;border-radius:4px;border:1px solid var(--blue);background:#eef5ff;color:var(--blue);cursor:pointer;white-space:nowrap;font-weight:600" onclick="applyLCPrevPct(${id})">前年比で設定</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-left:46px;margin-bottom:3px">
       <div class="suf"><input class="inp" id="lsf-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="${defFrom}" min="2020" max="2100" step="1" oninput="live()" style="width:100%"><span class="sl">年〜</span></div>
