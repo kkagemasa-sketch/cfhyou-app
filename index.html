@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -6729,23 +6729,36 @@ function initLCComma(){
 
 // ===== 初期化 =====
 // iOS キーボード表示時の画面押し上げ防止
-if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
+if(/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&'ontouchend' in document)){
+  const _iosReset=()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0;window.scrollTo(0,0)};
   // visualViewport APIで画面サイズ変更を検知
   if(window.visualViewport){
+    let _vvTick=null;
     window.visualViewport.addEventListener('resize',()=>{
-      // キーボードが表示されてもbodyのスクロールを防止
-      document.documentElement.scrollTop=0;
-      document.body.scrollTop=0;
-      window.scrollTo(0,0);
+      _iosReset();
+      clearTimeout(_vvTick);
+      _vvTick=setTimeout(_iosReset,120);
+    });
+    window.visualViewport.addEventListener('scroll',()=>{
+      if(window.visualViewport.offsetTop>0)_iosReset();
     });
   }
-  // input/selectフォーカス時にbodyスクロールをリセット
+  // input/selectフォーカス時にbodyスクロールをリセット（連続リセットで確実に抑制）
   document.addEventListener('focusin',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA'){
-      setTimeout(()=>{window.scrollTo(0,0)},100);
-      setTimeout(()=>{window.scrollTo(0,0)},300);
+      _iosReset();
+      setTimeout(_iosReset,50);
+      setTimeout(_iosReset,150);
+      setTimeout(_iosReset,300);
+      setTimeout(_iosReset,600);
     }
   });
+  // スクロールイベントでもbody押し上げを検知して戻す
+  document.addEventListener('scroll',e=>{
+    if(e.target===document||e.target===document.documentElement||e.target===document.body){
+      if(document.documentElement.scrollTop>0||document.body.scrollTop>0)_iosReset();
+    }
+  },true);
 }
 
 // パネルリサイザー
