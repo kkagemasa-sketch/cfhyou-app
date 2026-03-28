@@ -2192,8 +2192,8 @@ function cellEdit(td){
 // ===== ユーティリティ =====
 function $(id){return document.getElementById(id)}
 function _v(id){return $(id)?.value||''}
-function iv(id){return parseInt($(id)?.value)||0}
-function fv(id){return parseFloat($(id)?.value)||0}
+function iv(id){return parseInt(String($(id)?.value||'').replace(/,/g,''))||0}
+function fv(id){return parseFloat(String($(id)?.value||'').replace(/,/g,''))||0}
 function tog(h){const b=h.nextElementSibling,t=h.querySelector('.stog'),o=!b.classList.contains('col');b.classList.toggle('col',o);t.classList.toggle('on',!o)}
 function ri(n){return Math.round(n)}// 整数丸め（小数点なし）
 
