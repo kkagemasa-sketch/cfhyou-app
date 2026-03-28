@@ -1762,6 +1762,7 @@ if(authExp&&Date.now()<Number(authExp)){
       <div class="scen-tabs" id="scen-tabs"></div>
       <button class="rtab" id="rt-graph" onclick="setRTab('graph')">📈 グラフ</button>
       <button class="rtab" id="rt-loan" onclick="setRTab('loan')">🏦 返済計画</button>
+      <button class="rtab" id="rt-memo" onclick="setRTab('memo')">📝 メモ</button>
       <button class="rtab" id="rt-mg-h" onclick="setRTab('mg-h')" style="display:none">🛡️ 万が一（ご主人様）</button>
       <button class="rtab" id="rt-mg-w" onclick="setRTab('mg-w')" style="display:none">🛡️ 万が一（奥様）</button>
     </div>
@@ -3526,16 +3527,32 @@ function getLeaves(){
 }
 
 // ===== 右タブ切替 =====
+function renderMemo(){
+  const scen=scenarios.find(s=>s.id===activeScenarioId);
+  const txt=scen?.memo||'';
+  const rb=$('right-body');
+  rb.innerHTML=`<div style="padding:16px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:12px;font-weight:700;color:var(--navy)">📝 メモ <span style="font-size:10px;font-weight:400;color:var(--muted)">${scen?.name||''}のメモ</span></div>
+    <textarea id="memo-area" placeholder="自由にメモを入力できます" oninput="saveMemo()"
+      style="flex:1;resize:none;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-family:inherit;color:var(--navy);outline:none;line-height:1.6">${txt}</textarea>
+  </div>`;
+}
+function saveMemo(){
+  const scen=scenarios.find(s=>s.id===activeScenarioId);
+  if(scen)scen.memo=$('memo-area')?.value||'';
+}
 function setRTab(t){
   rTab=t;
   $('rt-cf')?.classList.toggle('on',t==='cf');
   $('rt-graph')?.classList.toggle('on',t==='graph');
   $('rt-loan')?.classList.toggle('on',t==='loan');
+  $('rt-memo')?.classList.toggle('on',t==='memo');
   $('rt-mg-h')?.classList.toggle('on',t==='mg-h');
   $('rt-mg-w')?.classList.toggle('on',t==='mg-w');
   // CF表・万が一タブのみ金融資産ボタン表示
   const finBtn=$('btn-fin-toggle');
   if(finBtn)finBtn.style.display=(t==='cf'||t==='mg-h'||t==='mg-w')?'':'none';
+  if(t==='memo'){renderMemo();return;}
   if(t==='loan'){
     renderLoanTab();
     return;
@@ -7297,9 +7314,12 @@ function renderContingency(){
   window._mgMRStore[mgKey]=MR;
   window._mgHTML=null;
 
-  // タブボタンを表示
+  // タブボタンを表示（シナリオ名入り）
   const tabId=targetIsH?'rt-mg-h':'rt-mg-w';
   $(tabId).style.display='';
+  const _mgScenName=scenarios?.find(s=>s.id===activeScenarioId)?.name||'';
+  const _mgPersonLbl=targetIsH?'ご主人様':'奥様';
+  $(tabId).textContent=`🛡️ ${_mgScenName?_mgScenName+' ':''}万が一（${_mgPersonLbl}）`;
 
   // 自動でそのタブに切り替え
   setRTab(targetIsH?'mg-h':'mg-w');
@@ -8307,6 +8327,8 @@ function switchScenario(id){
   const target=scenarios.find(s=>s.id===id);
   if(target&&target.data)_applyData(target.data);
   renderScenarioTabs();
+  // メモタブが開いていれば再描画
+  if($('rt-memo')?.classList.contains('on'))renderMemo();
 }
 
 function deleteScenario(id){
