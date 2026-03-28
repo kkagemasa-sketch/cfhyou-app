@@ -108,7 +108,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rtab:hover{background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
 .rtab.on{background:var(--gray-bg);color:var(--navy);border-color:rgba(255,255,255,.15);font-weight:800;top:0;padding-top:10px}
 /* シナリオタブ */
-.scen-tabs{display:flex;align-items:flex-end;gap:3px;border-left:1px solid rgba(255,255,255,.2);padding-left:8px;margin-left:4px}
+.scen-tabs{display:flex;align-items:flex-end;gap:3px}
 .stab{display:inline-flex;align-items:center;gap:4px;padding:7px 10px 6px;border:1px solid transparent;border-bottom:none;background:rgba(255,255,255,.1);font-family:inherit;font-size:11px;color:rgba(255,255,255,.6);cursor:pointer;border-radius:8px 8px 0 0;transition:.15s;font-weight:600;position:relative;top:1px}
 .stab:hover{background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
 .stab.on{background:var(--gray-bg);color:#1d4ed8;border-color:rgba(255,255,255,.15);font-weight:800;top:0;padding-top:8px}
@@ -1753,15 +1753,13 @@ if(authExp&&Date.now()<Number(authExp)){
 <!-- ★ 右パネル：CF表 -->
 <div class="panel-r">
   <div class="r-tabs" style="justify-content:space-between">
-    <div style="display:flex;align-items:flex-end;gap:0">
-      <div style="display:flex;gap:4px">
-        <button class="rtab on" id="rt-cf" onclick="setRTab('cf')">📋 CF表</button>
-        <button class="rtab" id="rt-graph" onclick="setRTab('graph')">📈 グラフ</button>
-        <button class="rtab" id="rt-loan" onclick="setRTab('loan')">🏦 返済計画</button>
-        <button class="rtab" id="rt-mg-h" onclick="setRTab('mg-h')" style="display:none">🛡️ 万が一（ご主人様）</button>
-        <button class="rtab" id="rt-mg-w" onclick="setRTab('mg-w')" style="display:none">🛡️ 万が一（奥様）</button>
-      </div>
+    <div style="display:flex;align-items:flex-end;gap:4px">
+      <button class="rtab on" id="rt-cf" onclick="setRTab('cf')">📋 CF表</button>
       <div class="scen-tabs" id="scen-tabs"></div>
+      <button class="rtab" id="rt-graph" onclick="setRTab('graph')">📈 グラフ</button>
+      <button class="rtab" id="rt-loan" onclick="setRTab('loan')">🏦 返済計画</button>
+      <button class="rtab" id="rt-mg-h" onclick="setRTab('mg-h')" style="display:none">🛡️ 万が一（ご主人様）</button>
+      <button class="rtab" id="rt-mg-w" onclick="setRTab('mg-w')" style="display:none">🛡️ 万が一（奥様）</button>
     </div>
     <div style="display:flex;align-items:center;gap:6px;padding-right:10px;padding-bottom:4px">
       <button id="btn-fin-toggle" onclick="toggleFinAsset()"
