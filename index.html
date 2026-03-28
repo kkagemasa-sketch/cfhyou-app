@@ -212,7 +212,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .inp.amt-inp::-webkit-inner-spin-button,.inp.amt-inp::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 
 .suf{display:flex}
-.suf .inp{border-radius:var(--rs) 0 0 var(--rs)}
+.suf .inp{border-radius:var(--rs) 0 0 var(--rs);flex:1;min-width:0}
 .sl{background:var(--gray-bg);border:1.5px solid var(--border);border-left:none;padding:7px 9px;font-size:11px;font-weight:600;color:#5a6a7e;border-radius:0 var(--rs) var(--rs) 0;white-space:nowrap}
 .hint{font-size:10px;color:var(--muted);line-height:1.5}
 .hint.ok{color:#3a8a3a}
@@ -2568,11 +2568,11 @@ function setRepMode(m){
 function addRepStep(){
   repStepCnt++;const id=repStepCnt;
   const el=document.createElement('div');
-  el.id=`rps-${id}`;el.className='drow';el.style.gridTemplateColumns='50px 1fr 1fr auto';
-  el.innerHTML=`<span class="dlbl" style="color:var(--amber)">変更${id}</span>
-    <div class="suf"><input class="inp age-inp" id="rpsy-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" value="${id*5}" min="1" max="60" oninput="live()"><span class="sl">年目〜</span></div>
-    <div class="suf"><input class="inp amt-inp" id="rpsa-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" placeholder="例:20000" min="0" oninput="live()"><span class="sl">円/月</span></div>
-    <button class="btn-rm" onclick="document.getElementById('rps-${id}').remove();live()">×</button>`;
+  el.id=`rps-${id}`;el.className='drow';el.style.cssText='display:flex;align-items:center;gap:4px';
+  el.innerHTML=`<span class="dlbl" style="color:var(--amber);white-space:nowrap;font-size:9px;width:20px;text-align:center">変更<br>${id}</span>
+    <div class="suf" style="flex:1"><input class="inp age-inp" id="rpsy-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" value="${id*5}" min="1" max="60" oninput="live()"><span class="sl" style="padding:7px 5px;font-size:10px">年〜</span></div>
+    <div class="suf" style="flex:1.5"><input class="inp amt-inp" id="rpsa-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" placeholder="例:20000" min="0" oninput="live()"><span class="sl" style="padding:7px 5px;font-size:10px">円/月</span></div>
+    <button class="btn-rm" onclick="document.getElementById('rps-${id}').remove();live()" style="padding:2px 6px;font-size:11px">×</button>`;
   document.getElementById('rep-steps-cont').appendChild(el);live();
 }
 
@@ -2580,11 +2580,11 @@ let repAutoStepCnt=0;
 function addRepAutoStep(){
   repAutoStepCnt++;const id=repAutoStepCnt;
   const el=document.createElement('div');
-  el.id=`rpas-${id}`;el.className='drow';el.style.gridTemplateColumns='50px 1fr 1fr auto';
-  el.innerHTML=`<span class="dlbl" style="color:var(--amber)">変更${id}</span>
-    <div class="suf"><input class="inp age-inp" id="rpasy-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" value="${id*5}" min="1" max="70" oninput="live()"><span class="sl">年目〜</span></div>
-    <div class="suf"><input class="inp amt-inp" id="rpasu-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" placeholder="例:200" min="0" oninput="live()"><span class="sl">円/㎡/月</span></div>
-    <button class="btn-rm" onclick="document.getElementById('rpas-${id}').remove();live()">×</button>`;
+  el.id=`rpas-${id}`;el.className='drow';el.style.cssText='display:flex;align-items:center;gap:4px';
+  el.innerHTML=`<span class="dlbl" style="color:var(--amber);white-space:nowrap;font-size:9px;width:20px;text-align:center">変更<br>${id}</span>
+    <div class="suf" style="flex:1"><input class="inp age-inp" id="rpasy-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" value="${id*5}" min="1" max="70" oninput="live()"><span class="sl" style="padding:7px 5px;font-size:10px">年〜</span></div>
+    <div class="suf" style="flex:1.5"><input class="inp amt-inp" id="rpasu-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" placeholder="例:200" min="0" oninput="live()"><span class="sl" style="padding:7px 5px;font-size:10px">円/㎡</span></div>
+    <button class="btn-rm" onclick="document.getElementById('rpas-${id}').remove();live()" style="padding:2px 6px;font-size:11px">×</button>`;
   document.getElementById('rep-auto-steps-cont').appendChild(el);live();
 }
 // 修繕積立金を返す（万円/年）
