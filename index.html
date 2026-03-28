@@ -342,6 +342,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rttl td:first-child,.rttl td:nth-child(2){background:#1a4a7a!important;color:#fff!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;border-right:2px solid #6b8cae!important}
 .rttl td:last-child{background:#0d2a4a!important;color:#fff!important;font-weight:700}
 
+/* 逝去年・退職年ハイライト */
+td.col-death{background:rgba(150,150,150,.18)!important}
+td.col-retire{background:rgba(255,220,0,.16)!important}
+
 /* ============================================================
    教育費フェーズ色（イベント行・教育費明細行 共通）
    ============================================================ */
@@ -4401,6 +4405,16 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const rates=getRates();
   const rateDisp=rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`;
 
+  // 逝去・退職列インデックス計算
+  const wAge0=iv('wife-age');
+  const hDeathAge=iv('h-death-age'),wDeathAge=iv('w-death-age');
+  const wRetireAge=iv('w-retire-age');
+  const hDeathCol=hDeathAge>hAge?hDeathAge-hAge:-1;
+  const wDeathCol=wDeathAge>wAge0?wDeathAge-wAge0:-1;
+  const hRetireCol=retAge>hAge?retAge-hAge:-1;
+  const wRetireCol=wRetireAge>wAge0?wRetireAge-wAge0:-1;
+  const getColCls=i=>{let c='';if(i===hDeathCol||i===wDeathCol)c+=' col-death';if(i===hRetireCol||i===wRetireCol)c+=' col-retire';return c;};
+
   // サマリーカード（4枚）
   const totI_s=R.incT.slice(0,disp).reduce((a,b)=>a+b,0);
   const totE_s=R.expT.slice(0,disp).reduce((a,b)=>a+b,0);
@@ -4484,16 +4498,16 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   for(let i=0;i<disp;i++)h+=`<td>${i+1}</td>`;h+=`<td style="background:#0f2744;color:#8aa4bc">-</td></tr>`;
 
   // 年齢
-  h+=`<tr class="rage"><td data-row="hAge">年齢</td><td>ご主人様</td>`;for(let i=0;i<disp;i++)h+=`<td>${R.hA[i]}</td>`;h+=`<td></td></tr>`;
-  h+=`<tr class="rage"><td data-row="wAge"></td><td>奥様</td>`;for(let i=0;i<disp;i++)h+=`<td>${R.wA[i]}</td>`;h+=`<td></td></tr>`;
-  children.forEach((c,ci)=>{h+=`<tr class="rage"><td data-row="cAge${ci}"></td><td>${cLbls[ci]}</td>`;for(let i=0;i<disp;i++)h+=`<td>${R.cA[ci][i]}</td>`;h+=`<td></td></tr>`});
+  h+=`<tr class="rage"><td data-row="hAge">年齢</td><td>ご主人様</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.hA[i]}</td>`;h+=`<td></td></tr>`;
+  h+=`<tr class="rage"><td data-row="wAge"></td><td>奥様</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.wA[i]}</td>`;h+=`<td></td></tr>`;
+  children.forEach((c,ci)=>{h+=`<tr class="rage"><td data-row="cAge${ci}"></td><td>${cLbls[ci]}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.cA[ci][i]}</td>`;h+=`<td></td></tr>`});
 
   // イベント：ご主人様
   h+=`<tr class="rev-h"><td>イベント</td><td>ご主人様</td>`;
-  for(let i=0;i<disp;i++)h+=`<td>${R.evH[i]}</td>`;h+=`<td></td></tr>`;
+  for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.evH[i]}</td>`;h+=`<td></td></tr>`;
   // イベント：奥様
   h+=`<tr class="rev-w"><td></td><td>奥様</td>`;
-  for(let i=0;i<disp;i++)h+=`<td>${R.evW[i]}</td>`;h+=`<td></td></tr>`;
+  for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.evW[i]}</td>`;h+=`<td></td></tr>`;
   // イベント：子ども（フェーズ別色クラス付与）
   children.forEach((c,ci)=>{
     h+=`<tr class="rev-c"><td></td><td>${cLbls[ci]}</td>`;
@@ -4517,14 +4531,14 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
           if(ca===19)label=un.startsWith('senmon')?'専門入学':'大学入学';
         }
       }
-      h+=`<td class="${cls}">${label}</td>`;
+      h+=`<td class="${cls}${getColCls(i)}">${label}</td>`;
     }
     h+=`<td></td></tr>`;
   });
 
   // ─ 収入 ─
   h+=`<tr class="rcat inc-cat"><td></td><td>収　　入</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
-  const iRow=(lbl,arr,rowKey)=>{const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return'';let r=`<tr class="rinc"><td></td><td>${lbl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${lbl}</span></td></tr>`};
+  const iRow=(lbl,arr,rowKey)=>{const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return'';let r=`<tr class="rinc"><td></td><td>${lbl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${lbl}</span></td></tr>`};
   h+=iRow('ご主人手取年収',R.hInc,'hInc')+iRow('奥様手取年収',R.wInc,'wInc')+iRow('副業・その他収入',R.otherInc,'otherInc')+iRow('保険満期金',R.insMat,'insMat');
   // 有価証券解約：銘柄ごとに個別行で表示
   if(R.secRedeemRows){R.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
@@ -4533,7 +4547,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
 
   // ─ 支出 ─
   h+=`<tr class="rcat exp-cat"><td></td><td>支　　出</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
-  const eRow=(lbl,arr,rowKey)=>{const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return'';let r=`<tr class="rexp"><td></td><td>${lbl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${lbl}</span></td></tr>`};
+  const eRow=(lbl,arr,rowKey)=>{const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return'';let r=`<tr class="rexp"><td></td><td>${lbl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${lbl}</span></td></tr>`};
 
   // 教育費専用行レンダラー（年齢に応じて色分け・univコース受け取り）
   const eduRow=(lbl,arr,childAge0,univCourse,rowKey)=>{
@@ -4553,6 +4567,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         else if(ca>=19&&ca<19+univLen)cls=un.startsWith('senmon')?'edu-senmon':'edu-univ';
       } else {cls='vz';}
       if(isOvr)cls+=' cell-ovr';
+      cls+=getColCls(i);
       r+=`<td class="${cls}" contenteditable="true" data-row="${rowKey||''}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)">${dv>0?ri(dv).toLocaleString():'-'}</td>`;
     }
     return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${lbl}</span></td></tr>`;
@@ -4576,7 +4591,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       R.finAssetRows.forEach(row=>{
         if(!row.vals.slice(0,disp).some(v=>v>0))return;
         h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}</td>`;
-        for(let i=0;i<disp;i++){const v=ri(row.vals[i]||0);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
+        for(let i=0;i<disp;i++){const v=ri(row.vals[i]||0);h+=`<td class="${getColCls(i).trim()}">${v>0?v.toLocaleString():'-'}</td>`;}
         h+=`<td>${ri(row.vals[disp-1]||0).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${row.lbl}</span></td></tr>`;
       });
     }
