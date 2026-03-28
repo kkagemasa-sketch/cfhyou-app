@@ -6046,6 +6046,60 @@ function _collectDynamic(){
     const sid=el.id.split('-')[1];
     d.repAutoSteps.push({yr:el.value,unit:$(`rpasu-${sid}`)?.value||''});
   });
+  // 積み立て保険
+  d.insSavings=[];
+  ['h','w'].forEach(p=>{
+    document.querySelectorAll(`#ins-savings-cont-${p}>[id^="ins-${p}-"]`).forEach(el=>{
+      const id=el.id.split('-').pop();
+      d.insSavings.push({person:p,monthly:$(`ins-m-${p}-${id}`)?.value||'',matAge:$(`ins-age-${p}-${id}`)?.value||'',matAmt:$(`ins-mat-${p}-${id}`)?.value||'',redeemAge:$(`ins-redeem-${p}-${id}`)?.value||''});
+    });
+  });
+  // 有価証券
+  d.securities=[];
+  ['h','w'].forEach(p=>{
+    document.querySelectorAll(`#securities-cont-${p}>[id^="sec-${p}-"]`).forEach(el=>{
+      const id=el.id.split('-').pop();
+      const isNisa=$(`sec-nisa-${p}-${id}`)?.classList.contains('on')||false;
+      const isStock=$(`sec-stock-${p}-${id}`)?.classList.contains('on')||false;
+      d.securities.push({person:p,label:$(`sec-label-${p}-${id}`)?.value||'',taxType:isNisa?'nisa':'taxable',secType:isStock?'stock':'accum',
+        bal:$(`sec-bal-${p}-${id}`)?.value||'',monthly:$(`sec-monthly-${p}-${id}`)?.value||'',end:$(`sec-end-${p}-${id}`)?.value||'',rate:$(`sec-rate-${p}-${id}`)?.value||'',redeem:$(`sec-redeem-${p}-${id}`)?.value||'',
+        stkBal:$(`sec-stk-bal-${p}-${id}`)?.value||'',stkAge:$(`sec-stk-age-${p}-${id}`)?.value||'',div:$(`sec-div-${p}-${id}`)?.value||'',stkRedeem:$(`sec-stk-redeem-${p}-${id}`)?.value||''});
+    });
+  });
+  // その他収入
+  d.otherIncomes=[];
+  document.querySelectorAll('[id^="oin-"]').forEach(el=>{
+    const id=el.id.split('-')[1];
+    d.otherIncomes.push({name:el.value,amt:$(`oia-${id}`)?.value||'',endAge:$(`oie-${id}`)?.value||''});
+  });
+  // その他メンバー
+  d.otherMembers=[];
+  document.querySelectorAll('#other-members-cont>[id^="om-"]').forEach(el=>{
+    const id=el.id.split('-')[1];
+    d.otherMembers.push({label:$(`oml-${id}`)?.value||'',age:$(`oma-${id}`)?.value||'',notes:$(`omn-${id}`)?.value||''});
+  });
+  // 万が一シミュレーション
+  d.mg={target:mgTarget,dansin:mgDansin,dansinH:mgDansinH,dansinW:mgDansinW,survMode:mgSurvMode,
+    deathYear:$('mg-death-year')?.value||'',survAmt:$('mg-surv-amt')?.value||'',lcRatio:$('mg-lc-ratio')?.value||'',
+    lcMode:$('mg-lc-mode-step')?.classList.contains('act')?'step':'ratio',
+    scholarshipOn:$('mg-scholarship-yes')?.classList.contains('act')||false,
+    scholarshipAmt:$('mg-scholarship-amt')?.value||'',scholarshipAge:$('mg-scholarship-age')?.value||'',
+    carOn:$('mg-car-keep')?.classList.contains('act')!==false,
+    carPrice:$('mg-car-price')?.value||'',carCycle:$('mg-car-cycle')?.value||'',carInsp:$('mg-car-insp')?.value||'',carEndAge:$('mg-car-end-age')?.value||'',
+    parkOn:$('mg-park-keep')?.classList.contains('act')!==false,parking:$('mg-parking')?.value||'',
+    insurances:[],lcSteps:[]};
+  document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
+    const id=el.id.split('-').pop();
+    d.mg.insurances.push({name:$(`mg-ins-name-${id}`)?.value||'',amt:$(`mg-ins-amt-${id}`)?.value||''});
+  });
+  document.querySelectorAll('#mg-lc-steps-container>.mg-lc-step, #mg-lc-steps-container>[style]').forEach(el=>{
+    const inputs=el.querySelectorAll('input');
+    if(inputs.length>=4){
+      d.mg.lcSteps.push({base:inputs[0]?.value||'',rate:inputs[1]?.value||'',from:inputs[2]?.value||'',to:inputs[3]?.value||''});
+    }
+  });
+  // 万が一 生活費段階1（静的HTML）
+  d.mg.lcStep1={base:$('mg-lsb-1')?.value||'',rate:$('mg-lsr-1')?.value||'',from:$('mg-lsf-1')?.value||'',to:$('mg-lst-1')?.value||''};
   // フラグ系
   d.repMode=repMode; d.retirePayOn=retirePayOn; d.wRetirePayOn=wRetirePayOn;
   d.downType=downType; d.carOwn=carOwn; d.carType=carType; d.carPay=carPay; d.parkOwn=parkOwn;
@@ -6055,8 +6109,9 @@ function _collectDynamic(){
   // 返済計画タブ
   d.loanPlan={
     isPairLoan:_isPairLoan, ppType:_ppType,
-    amtA:$('lp-amt-a')?.value||'',rateA:$('lp-rate-a')?.value||'',yrsA:$('lp-yrs-a')?.value||'',
-    amtB:$('lp-amt-b')?.value||'',rateB:$('lp-rate-b')?.value||'',yrsB:$('lp-yrs-b')?.value||'',
+    amtA:$('lp-amt-a')?.value||'',rateA:$('lp-rate-a')?.value||'',yrsA:$('lp-yrs-a')?.value||'',methodA:$('lp-method-a')?.value||'',
+    amtB:$('lp-amt-b')?.value||'',rateB:$('lp-rate-b')?.value||'',yrsB:$('lp-yrs-b')?.value||'',methodB:$('lp-method-b')?.value||'',
+    ppTermFrom:$('pp-term-from')?.value||'',ppTermTo:$('pp-term-to')?.value||'',ppReduceYr:$('pp-reduce-yr')?.value||'',ppReduceMP:$('pp-reduce-mp')?.value||'',
     dedYear:$('lp-ded-year')?.value||'',dedType:$('lp-ded-type')?.value||'',dedHH:$('lp-ded-hh')?.value||'',
     grossH:$('lp-ded-gross-h')?.value||'',grossW:$('lp-ded-gross-w')?.value||'',
     dedMode:_lctrlDedMode,manualDed:_lctrlDedMode==='manual'?getLctrlManualValues():[],
@@ -6145,6 +6200,142 @@ function _restoreDynamic(d){
   (d.repSteps||[]).forEach(s=>{addRepStep();if($(`rpsy-${repStepCnt}`))$(`rpsy-${repStepCnt}`).value=s.yr;if($(`rpsa-${repStepCnt}`))$(`rpsa-${repStepCnt}`).value=s.amt;});
   if($('rep-auto-steps-cont'))$('rep-auto-steps-cont').innerHTML=''; repAutoStepCnt=0;
   (d.repAutoSteps||[]).forEach(s=>{addRepAutoStep();if($(`rpasy-${repAutoStepCnt}`))$(`rpasy-${repAutoStepCnt}`).value=s.yr;if($(`rpasu-${repAutoStepCnt}`))$(`rpasu-${repAutoStepCnt}`).value=s.unit;});
+  // 積み立て保険
+  ['h','w'].forEach(p=>{if($(`ins-savings-cont-${p}`))$(`ins-savings-cont-${p}`).innerHTML='';});
+  insSavCnt=0;
+  (d.insSavings||[]).forEach(s=>{
+    addInsSaving(s.person);
+    const id=insSavCnt;const p=s.person;
+    if($(`ins-m-${p}-${id}`))$(`ins-m-${p}-${id}`).value=s.monthly;
+    if($(`ins-age-${p}-${id}`))$(`ins-age-${p}-${id}`).value=s.matAge;
+    if($(`ins-mat-${p}-${id}`))$(`ins-mat-${p}-${id}`).value=s.matAmt;
+    if($(`ins-redeem-${p}-${id}`))$(`ins-redeem-${p}-${id}`).value=s.redeemAge;
+  });
+  // 有価証券
+  ['h','w'].forEach(p=>{if($(`securities-cont-${p}`))$(`securities-cont-${p}`).innerHTML='';});
+  secCnt=0;
+  (d.securities||[]).forEach(s=>{
+    addSecurity(s.person);
+    const id=secCnt;const p=s.person;
+    if($(`sec-label-${p}-${id}`))$(`sec-label-${p}-${id}`).value=s.label;
+    if(s.taxType==='nisa')setSecTax(p,id,'nisa');
+    if(s.secType==='stock')setSecType(p,id,'stock');
+    if($(`sec-bal-${p}-${id}`))$(`sec-bal-${p}-${id}`).value=s.bal;
+    if($(`sec-monthly-${p}-${id}`))$(`sec-monthly-${p}-${id}`).value=s.monthly;
+    if($(`sec-end-${p}-${id}`))$(`sec-end-${p}-${id}`).value=s.end;
+    if($(`sec-rate-${p}-${id}`))$(`sec-rate-${p}-${id}`).value=s.rate;
+    if($(`sec-redeem-${p}-${id}`))$(`sec-redeem-${p}-${id}`).value=s.redeem;
+    if($(`sec-stk-bal-${p}-${id}`))$(`sec-stk-bal-${p}-${id}`).value=s.stkBal;
+    if($(`sec-stk-age-${p}-${id}`))$(`sec-stk-age-${p}-${id}`).value=s.stkAge;
+    if($(`sec-div-${p}-${id}`))$(`sec-div-${p}-${id}`).value=s.div;
+    if($(`sec-stk-redeem-${p}-${id}`))$(`sec-stk-redeem-${p}-${id}`).value=s.stkRedeem;
+  });
+  // その他収入
+  if($('other-income-cont'))$('other-income-cont').innerHTML='';
+  otherIncomeCnt=0;
+  (d.otherIncomes||[]).forEach(s=>{
+    addOtherIncome(s.name);
+    const id=otherIncomeCnt;
+    if($(`oia-${id}`))$(`oia-${id}`).value=s.amt;
+    if($(`oie-${id}`))$(`oie-${id}`).value=s.endAge;
+  });
+  // その他メンバー
+  if($('other-members-cont'))$('other-members-cont').innerHTML='';
+  otherMemberCnt=0;
+  (d.otherMembers||[]).forEach(s=>{
+    addOther();
+    const id=otherMemberCnt;
+    if($(`oml-${id}`))$(`oml-${id}`).value=s.label;
+    if($(`oma-${id}`))$(`oma-${id}`).value=s.age;
+    if($(`omn-${id}`))$(`omn-${id}`).value=s.notes;
+  });
+  // 万が一シミュレーション
+  if(d.mg){
+    const mg=d.mg;
+    setMGTarget(mg.target||'h');
+    setMGDansin(mg.dansin!==false);
+    setMGDansinPair('h',mg.dansinH!==false);
+    setMGDansinPair('w',mg.dansinW!==false);
+    setMGSurvMode(mg.survMode||'auto');
+    if($('mg-death-year'))$('mg-death-year').value=mg.deathYear||'1';
+    if($('mg-surv-amt'))$('mg-surv-amt').value=mg.survAmt||'0';
+    if($('mg-lc-ratio'))$('mg-lc-ratio').value=mg.lcRatio||'70';
+    // 生活費モード
+    if(mg.lcMode==='step'){
+      $('mg-lc-mode-step')?.classList.add('act');$('mg-lc-mode-ratio')?.classList.remove('act');
+      if($('mg-lc-ratio-fields'))$('mg-lc-ratio-fields').style.display='none';
+      if($('mg-lc-step-fields'))$('mg-lc-step-fields').style.display='';
+    } else {
+      $('mg-lc-mode-ratio')?.classList.add('act');$('mg-lc-mode-step')?.classList.remove('act');
+      if($('mg-lc-ratio-fields'))$('mg-lc-ratio-fields').style.display='';
+      if($('mg-lc-step-fields'))$('mg-lc-step-fields').style.display='none';
+    }
+    // 段階1（静的HTML）
+    if(mg.lcStep1){
+      if($('mg-lsb-1'))$('mg-lsb-1').value=mg.lcStep1.base;
+      if($('mg-lsr-1'))$('mg-lsr-1').value=mg.lcStep1.rate;
+      if($('mg-lsf-1'))$('mg-lsf-1').value=mg.lcStep1.from;
+      if($('mg-lst-1'))$('mg-lst-1').value=mg.lcStep1.to;
+    }
+    // 追加段階
+    if($('mg-lc-steps-container')){
+      // 動的段階のみ削除（段階1は静的）
+      $('mg-lc-steps-container').querySelectorAll('.mg-lc-step').forEach(el=>el.remove());
+      _mgLCStepCount=1;
+      (mg.lcSteps||[]).forEach(s=>{
+        addMGLCStep();
+        const n=_mgLCStepCount;
+        if($(`mg-lsb-${n}`))$(`mg-lsb-${n}`).value=s.base;
+        if($(`mg-lsr-${n}`))$(`mg-lsr-${n}`).value=s.rate;
+        if($(`mg-lsf-${n}`))$(`mg-lsf-${n}`).value=s.from;
+        if($(`mg-lst-${n}`))$(`mg-lst-${n}`).value=s.to;
+      });
+    }
+    // 奨学金
+    if(mg.scholarshipOn){
+      $('mg-scholarship-yes')?.classList.add('act');$('mg-scholarship-none')?.classList.remove('act');
+      if($('mg-scholarship-fields'))$('mg-scholarship-fields').style.display='';
+    } else {
+      $('mg-scholarship-none')?.classList.add('act');$('mg-scholarship-yes')?.classList.remove('act');
+      if($('mg-scholarship-fields'))$('mg-scholarship-fields').style.display='none';
+    }
+    if($('mg-scholarship-amt'))$('mg-scholarship-amt').value=mg.scholarshipAmt||'0';
+    if($('mg-scholarship-age'))$('mg-scholarship-age').value=mg.scholarshipAge||'19';
+    // 車
+    if(mg.carOn!==false){
+      $('mg-car-keep')?.classList.add('act');$('mg-car-stop')?.classList.remove('act');
+      if($('mg-car-fields'))$('mg-car-fields').style.display='';
+    } else {
+      $('mg-car-stop')?.classList.add('act');$('mg-car-keep')?.classList.remove('act');
+      if($('mg-car-fields'))$('mg-car-fields').style.display='none';
+    }
+    if($('mg-car-price'))$('mg-car-price').value=mg.carPrice||'300';
+    if($('mg-car-cycle'))$('mg-car-cycle').value=mg.carCycle||'7';
+    if($('mg-car-insp'))$('mg-car-insp').value=mg.carInsp||'10';
+    if($('mg-car-end-age'))$('mg-car-end-age').value=mg.carEndAge||'';
+    // 駐車場
+    if(mg.parkOn!==false){
+      $('mg-park-keep')?.classList.add('act');$('mg-park-stop')?.classList.remove('act');
+      if($('mg-park-fields'))$('mg-park-fields').style.display='';
+    } else {
+      $('mg-park-stop')?.classList.add('act');$('mg-park-keep')?.classList.remove('act');
+      if($('mg-park-fields'))$('mg-park-fields').style.display='none';
+    }
+    if($('mg-parking'))$('mg-parking').value=mg.parking||'15000';
+    // 保険金
+    if($('mg-insurance-cont'))$('mg-insurance-cont').innerHTML='';
+    mgInsCnt=0;
+    if((mg.insurances||[]).length>0){
+      (mg.insurances).forEach(s=>{
+        addMGInsurance();
+        if($(`mg-ins-name-${mgInsCnt}`))$(`mg-ins-name-${mgInsCnt}`).value=s.name;
+        if($(`mg-ins-amt-${mgInsCnt}`))$(`mg-ins-amt-${mgInsCnt}`).value=s.amt;
+      });
+    } else {
+      addMGInsurance();
+    }
+    updateMGHints();
+  }
   // フラグ系
   if(d.repMode)setRepMode(d.repMode);
   if(typeof d.retirePayOn!=='undefined')setRetirePay(d.retirePayOn);
@@ -7545,9 +7736,15 @@ function renderLoanTab(){
     if(lp.amtA&&$('lp-amt-a'))$('lp-amt-a').value=lp.amtA;
     if(lp.rateA&&$('lp-rate-a'))$('lp-rate-a').value=lp.rateA;
     if(lp.yrsA&&$('lp-yrs-a'))$('lp-yrs-a').value=lp.yrsA;
+    if(lp.methodA&&$('lp-method-a'))$('lp-method-a').value=lp.methodA;
     if(lp.amtB&&$('lp-amt-b'))$('lp-amt-b').value=lp.amtB;
     if(lp.rateB&&$('lp-rate-b'))$('lp-rate-b').value=lp.rateB;
     if(lp.yrsB&&$('lp-yrs-b'))$('lp-yrs-b').value=lp.yrsB;
+    if(lp.methodB&&$('lp-method-b'))$('lp-method-b').value=lp.methodB;
+    if(lp.ppTermFrom&&$('pp-term-from'))$('pp-term-from').value=lp.ppTermFrom;
+    if(lp.ppTermTo&&$('pp-term-to'))$('pp-term-to').value=lp.ppTermTo;
+    if(lp.ppReduceYr&&$('pp-reduce-yr'))$('pp-reduce-yr').value=lp.ppReduceYr;
+    if(lp.ppReduceMP&&$('pp-reduce-mp'))$('pp-reduce-mp').value=lp.ppReduceMP;
     if(lp.dedYear&&$('lp-ded-year'))$('lp-ded-year').value=lp.dedYear;
     if(lp.dedType&&$('lp-ded-type'))$('lp-ded-type').value=lp.dedType;
     if(lp.dedHH&&$('lp-ded-hh'))$('lp-ded-hh').value=lp.dedHH;
