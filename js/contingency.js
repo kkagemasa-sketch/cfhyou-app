@@ -1,10 +1,5 @@
 // contingency.js — 万が一シミュレーション
 // ===== 万が一シミュレーション関数群 =====
-let mgTarget='h'; // h=ご主人, w=奥様
-let mgDansin=true, mgDansinH=true, mgDansinW=true;
-let mgSurvMode='auto';
-let mgInsCnt=1;
-
 function setMGTarget(t){
   mgTarget=t;
   $('mg-target-h').classList.toggle('on',t==='h');
@@ -45,7 +40,6 @@ function addMGInsurance(){
     <button onclick="this.parentElement.parentElement.parentElement.parentElement.remove()" style="background:#fee;color:#d63a2a;border:1px solid #fca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button></div></div>`;
   cont.appendChild(d);
 }
-let mgCarOn=true, mgParkOn=true;
 function getMGCarOn(){return document.getElementById('mg-car-keep')?.classList.contains('act')!==false;}
 function getMGParkOn(){return document.getElementById('mg-park-keep')?.classList.contains('act')!==false;}
 function updateMGHints(){
@@ -53,7 +47,6 @@ function updateMGHints(){
   $('mg-lc-hint').textContent=`✓ 死亡後は現在の${ratio}%で計算`;
 }
 // 万が一生活費の段階設定
-let _mgLCStepCount=1;
 function addMGLCStep(){
   _mgLCStepCount++;
   const n=_mgLCStepCount;

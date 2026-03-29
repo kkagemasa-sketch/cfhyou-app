@@ -1,9 +1,5 @@
 // scenario.js — シナリオ管理
 // ===== シナリオ管理 =====
-let scenarioCnt=1;
-let scenarios=[{id:1,name:'プラン1',data:null}];
-let activeScenarioId=1;
-
 function renderScenarioTabs(){
   const cont=document.getElementById('scen-tabs');
   if(!cont)return;

@@ -8,7 +8,6 @@ function syncStep1From(person, ageEl){
   if(el)el.value=age;
 }
 
-let retirePayOn=true;
 function setRetirePay(on){
   retirePayOn=on;
   document.getElementById('rp-yes').classList.toggle('on', on);
@@ -21,7 +20,6 @@ function setRetirePay(on){
   live();
 }
 
-let wRetirePayOn=true;
 function setWRetirePay(on){
   wRetirePayOn=on;
   document.getElementById('w-rp-yes').classList.toggle('on', on);
@@ -123,7 +121,6 @@ function getStepsForPension(person){
   return nets;
 }
 
-let hIncomeCnt=0, wIncomeCnt=0;
 function syncNextStepFrom(id){
   // id形式: h-is-1 → 次は h-is-2
   const m=id.match(/^([hw]-is-)(\d+)$/);

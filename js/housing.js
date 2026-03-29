@@ -28,7 +28,6 @@ function calcLoanAmt(){
 }
 
 // ===== 住宅：頭金の資金区分切替 =====
-let downType='own'; // 'own'=自己資金 / 'gift'=住宅資金贈与
 function setDownType(t){
   downType=t;
   document.getElementById('down-own').classList.toggle('on',t==='own');
@@ -191,7 +190,6 @@ function updateHints(){
 }
 
 // ===== 住宅ローン控除ヒント（独立関数・onchangeでも呼べる） =====
-let _lctrlDedMode='auto';
 function setLctrlDedMode(mode){
   _lctrlDedMode=mode;
   $('lctrl-mode-auto')?.classList.toggle('on',mode==='auto');
@@ -250,7 +248,6 @@ function updateLctrlHint(){
 }
 
 // ===== 修繕積立金モード =====
-let repMode='auto', repStepCnt=0;
 function setRepMode(m){
   repMode=m;
   document.getElementById('rep-auto').classList.toggle('on',m==='auto');
@@ -270,7 +267,6 @@ function addRepStep(){
   document.getElementById('rep-steps-cont').appendChild(el);live();
 }
 
-let repAutoStepCnt=0;
 function addRepAutoStep(){
   repAutoStepCnt++;const id=repAutoStepCnt;
   const el=document.createElement('div');
@@ -330,7 +326,6 @@ function setType(t){
 }
 
 // 修繕周期の動的追加
-let repairCnt=1;
 function addRepairCycle(cycle='',cost=''){
   repairCnt++;const id=repairCnt;
   if(repairCnt>=5)$('btn-add-repair').style.display='none';

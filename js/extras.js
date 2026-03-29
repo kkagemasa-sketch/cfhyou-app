@@ -1,6 +1,5 @@
 // extras.js — その他収入・産休育休・特別支出
 
-let otherIncomeCnt=0;
 function addOtherIncome(name=''){
   otherIncomeCnt++;const id=otherIncomeCnt;
   const el=document.createElement('div');
@@ -69,7 +68,6 @@ function getLeaves(){
 }
 
 // ===== 特別支出（複数件） =====
-let extraCnt = 0;
 function addExtraItem(yr='', amt='', lbl='', yrTo=''){
   extraCnt++;
   const id = extraCnt;

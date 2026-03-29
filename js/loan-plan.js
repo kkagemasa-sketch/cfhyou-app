@@ -1,6 +1,5 @@
 // loan-plan.js — 返済計画タブ
 // ===== 返済計画タブ =====
-let _loanPrepayId=0;
 function addPrepay(yrFrom='',yrTo='',amt=''){
   _loanPrepayId++;
   const id=_loanPrepayId;
@@ -250,7 +249,6 @@ function renderLoanTab(){
   updateLPDedHint();
   renderLoanCalc();
 }
-let _isPairLoan=false;
 function togglePairLoan(on){
   _isPairLoan=on;
   $('lp-single-btn')?.classList.toggle('on',!on);
@@ -288,7 +286,6 @@ function calcLPTaxFromGross(who){
   if($(`lp-ded-jtax${suffix}`))$(`lp-ded-jtax${suffix}`).value=t.jumin;
 }
 // 返済計画タブ用金利変更スケジュール
-let _lpRateCntA=0,_lpRateCntB=0;
 function addLPRate(who){
   const cont=$(`lp-rate-cont-${who}`);if(!cont)return;
   const cnt=who==='a'?++_lpRateCntA:++_lpRateCntB;
@@ -328,7 +325,6 @@ function updateLPDedHint(){
     hint.innerHTML=`<span style="color:#1a3a6a">📋 ${yr}年入居 / ${typeNames[tp]} / ${hhName}<br>借入上限：<strong>${lmt.toLocaleString()}万円</strong>　年最大控除：<strong>${maxCtrl}万円</strong>　控除期間：<strong>${yrs}年間</strong></span>`;
   }
 }
-let _ppType='term'; // 'term'=期間短縮型, 'reduce'=返済額軽減型
 function setPPType(t){
   _ppType=t;
   $('pp-type-term')?.classList.toggle('on',t==='term');

@@ -1,7 +1,5 @@
 // assets.js — 保険・有価証券・車両・ペアローン
 
-let insSavCnt=0, secCnt=0;
-
 function addInsSaving(person){
   person=person||'h';
   insSavCnt++;const id=insSavCnt;
@@ -131,7 +129,6 @@ function calcInsPreview(person, id){
   prev.innerHTML=txt;
   live();
 }
-let carOwn=true, carType='new', carPay='cash';
 function setAssetTab(p){
   document.getElementById('asset-tab-h').classList.toggle('on',p==='h');
   document.getElementById('asset-tab-w').classList.toggle('on',p==='w');
@@ -145,7 +142,6 @@ function setCarOwn(on){
   document.getElementById('car-fields').style.display=on?'':'none';
   live();
 }
-let parkOwn=true;
 function setParkOwn(on){
   parkOwn=on;
   document.getElementById('park-yes').classList.toggle('on',on);
@@ -176,7 +172,6 @@ function setCarPay(t){
   live();
 }
 
-let pairLoanMode=false;
 function setLoanMode(mode){
   pairLoanMode=mode==='pair';
   document.getElementById('loan-single-tab')?.classList.toggle('on',!pairLoanMode);

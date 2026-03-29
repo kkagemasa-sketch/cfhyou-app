@@ -1,6 +1,5 @@
 // family.js — 子ども・その他メンバー管理
 
-let otherMemberCnt=0;
 function addOther(){
   otherMemberCnt++;const id=otherMemberCnt;
   const el=document.createElement('div');

@@ -1,6 +1,5 @@
 // render.js — メイン計算・CF表描画・グラフ
 
-let finAssetVisible=true;
 function toggleFinAsset(){
   finAssetVisible=!finAssetVisible;
   _applyFinAssetVisibility();
@@ -131,8 +130,6 @@ function showHelp(){
 }
 
 // ===== ライブ更新 =====
-let indicatorTimer=null;
-let _lastInputHash='';
 function _getInputHash(){
   let s='';
   document.querySelectorAll('input,select').forEach(el=>{if(el.id)s+=el.id+'='+el.value+'|';});
@@ -216,7 +213,6 @@ function setRTab(t){
 }
 
 // ===== 印刷情報 =====
-const PI_STORAGE_KEY='cf_print_info';
 function getPrintInfo(){
   const notesRaw=($('pi-notes')?.value||'').split('\n').filter(l=>l.trim());
   return{name:_v('pi-name'),company:_v('pi-company'),address:_v('pi-address'),tel:_v('pi-tel'),email:_v('pi-email'),notes:notesRaw};

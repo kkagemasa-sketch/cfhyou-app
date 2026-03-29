@@ -52,27 +52,6 @@ function onJSONImport(input){
 
 // ===== 保存・読込（完全対応版：動的要素含む） =====
 
-// 静的フィールドIDリスト（input/selectで直接値を持つもの）
-const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-death-age',
-  'house-price','down-payment','house-cost','cost-type','loan-yrs','loan-type',
-  'loan-h-amt','loan-h-yrs','loan-h-type','rate-h-base','loan-w-amt','loan-w-yrs','loan-w-type','rate-w-base',
-  'delivery-year','rent-before',
-  'zaikei-h-bal','zaikei-h-monthly','zaikei-h-end','zaikei-w-bal','zaikei-w-monthly','zaikei-w-end',
-  'rate-base','sqm','mgmt-fee','mgmt-net','rep-unit','rep-manual-base','choki',
-  'retire-age','retire-pay','retire-pay-age','pension-h','pension-h-start','pension-h-receive',
-  'w-retire-age','w-retire-pay','w-retire-pay-age','pension-w','pension-w-start','pension-w-receive',
-  'lc-food','lc-water','lc-gas','lc-elec','lc-fuel','lc-comm','lc-misc',
-  'lc-pocket','lc-ins-m','lc-other-m','lc-other-m2','lc-other-m3',
-  'lc-other-m-name','lc-other-m2-name','lc-other-m3-name',
-  'lc-travel','lc-social','lc-clothes','lc-ins-y','lc-medical','lc-home','lc-car-tax',
-  'lc-other-y','lc-other-y2','lc-other-y3',
-  'lc-other-y-name','lc-other-y2-name','lc-other-y3-name',
-  'parking','prop-tax','furn-cycle','furn-cost','repair-cycle','repair-cost','repair-cycle2','repair-cost2',
-  'cash-h','cash-w','cash-joint','moving-cost','furniture-init',
-  'lctrl-year','lctrl-type','lctrl-household',
-  'car-price','car-cycle','car-first','car-insp','car-down','car-loan-yrs','car-loan-rate','car-end-age',
-  'pi-name','pi-company','pi-address','pi-tel','pi-email','pi-notes'];
-
 // 動的要素を収集してオブジェクトを返す
 function _collectDynamic(){
   const d={};
@@ -466,12 +445,6 @@ function _restoreDynamic(d){
 }
 
 // ===== IndexedDB データベース =====
-const DB_NAME='CFTableApp';
-const DB_VERSION=1;
-const STORE_NAME='slots';
-const AUTOSAVE_KEY='__autosave__';
-
-let _db=null;
 function openDB(){
   return new Promise((resolve,reject)=>{
     if(_db){resolve(_db);return;}
@@ -584,7 +557,6 @@ async function _migrateFromLocalStorage(){
 }
 
 // ===== 自動保存 =====
-let _autoSaveTimer=null;
 function scheduleAutoSave(){
   clearTimeout(_autoSaveTimer);
   _autoSaveTimer=setTimeout(async()=>{

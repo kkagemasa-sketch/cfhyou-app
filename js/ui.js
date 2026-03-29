@@ -224,7 +224,7 @@ function formatAmtInputs(){
   });
 }
 // MutationObserverで動的要素にも適用
-let _amtObserverTimer=null;_amtObserver=new MutationObserver(()=>{clearTimeout(_amtObserverTimer);_amtObserverTimer=setTimeout(()=>{formatAmtInputs();setupAmtInputs();},200)});
+_amtObserver=new MutationObserver(()=>{clearTimeout(_amtObserverTimer);_amtObserverTimer=setTimeout(()=>{formatAmtInputs();setupAmtInputs();},200)});
 document.addEventListener('DOMContentLoaded',()=>{
   _amtObserver.observe(document.body,{childList:true,subtree:true});
   formatAmtInputs();setupAmtInputs();

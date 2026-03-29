@@ -2,14 +2,6 @@
 
 // ===== CF表フォーカス連動スクロール＋ハイライト =====
 
-let _cfActive     = null; // {rowKey, fromAge, toAge, stepId?} | null
-let _cfBlurTimer  = null;
-let _cfScrollTimer= null;
-let _needsScrollAfterRender = false; // 次のrender後にスクロールが必要かどうか
-
-const _W_ROWS  = ['wInc','pW','wRPay','wAge'];
-const _ROW_CLS = { incT:'rinct', expT:'rexpt', bal:'rbal', sav:'rsav', lBal:'rloan', totalAsset:'rttl', finAsset:'rfin' };
-
 // ── 外部API ──
 function scrollToCFRow(rowKey, fromAge, toAge){
   const fa = (fromAge != null) ? Number(fromAge) : null;
