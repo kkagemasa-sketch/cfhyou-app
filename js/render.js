@@ -783,53 +783,49 @@ function render(){
     }
     R.senyu.push(repTotal);
     children.forEach((c,ci)=>{const ca=c.age+i;R.edu[ci].push(ca>=0&&ca<c.costs.length?c.costs[ca]:0)});
-    R.prk.push(parkOwn?ri(parking*12):0);
-    // 車両購入・車検
+    const parkEndAge=iv('park-end-age')||0;
+    const parkActive=parkEndAge<=0||ha<parkEndAge;
+    R.prk.push(parkOwn&&parkActive?ri(parking*12):0);
+    // 車両購入・車検（複数台対応）
     let carBuyAmt=0, carInspAmt=0;
     if(carOwn){
-      const carPrice=fv('car-price')||300;
-      const carFirst=(iv('car-first')||1)-1;// 「N年目」→ 0-indexed変換
-      const carCycle=iv('car-cycle')||7;
-      const carInsp=fv('car-insp')||10;
-      const carDown=fv('car-down')||50;
-      const carLoanYrs=iv('car-loan-yrs')||5;
-      const carLoanRate=(fv('car-loan-rate')||2.5)/100/12;
-      const carEndAge=iv('car-end-age')||0;
-      // 車の年齢制限チェック
-      const carActive=carEndAge<=0||ha<carEndAge;
-      // 直近の購入年を求める
-      let lastBuy=-1;
-      if(i>=carFirst){
-        const elapsed=i-carFirst;
-        lastBuy=carFirst+Math.floor(elapsed/carCycle)*carCycle;
-      }
-      const isBuyYear=carActive&&(i===carFirst||(i>carFirst&&(i-carFirst)%carCycle===0));
-      // 購入費用
-      if(isBuyYear){
-        if(carPay==='cash'){
-          carBuyAmt=carPrice;
-        } else {
-          carBuyAmt=carDown; // 頭金のみ購入年
+      for(let cIdx=1;cIdx<=carCnt;cIdx++){
+        const carEl=document.getElementById('car-'+cIdx);
+        if(!carEl)continue;
+        const carType=carEl.dataset.type||'new';
+        const carPay=carEl.dataset.pay||'cash';
+        const carPrice=fv('car-'+cIdx+'-price')||300;
+        const carFirst=(iv('car-'+cIdx+'-first')||1)-1;
+        const carCycle=iv('car-'+cIdx+'-cycle')||7;
+        const carInsp=fv('car-'+cIdx+'-insp')||10;
+        const carDown=fv('car-'+cIdx+'-down')||50;
+        const carLoanYrs=iv('car-'+cIdx+'-loan-yrs')||5;
+        const carLoanRate=(fv('car-'+cIdx+'-loan-rate')||2.5)/100/12;
+        const carEndAge=iv('car-'+cIdx+'-end-age')||0;
+        const carActive=carEndAge<=0||ha<carEndAge;
+        let lastBuy=-1;
+        if(i>=carFirst){
+          const elapsed=i-carFirst;
+          lastBuy=carFirst+Math.floor(elapsed/carCycle)*carCycle;
         }
-      }
-      // ローン月払い（購入年の翌年〜ローン期間）
-      if(carPay==='loan'&&carLoanYrs>0&&lastBuy>=0&&!isBuyYear&&carActive){
-        const principal=(carPrice-carDown)*10000;
-        const monthly=carLoanRate>0?principal*carLoanRate*Math.pow(1+carLoanRate,carLoanYrs*12)/(Math.pow(1+carLoanRate,carLoanYrs*12)-1):principal/carLoanYrs/12;
-        const yrsAfterBuy=i-lastBuy;
-        if(yrsAfterBuy>0&&yrsAfterBuy<=carLoanYrs){
-          carBuyAmt+=Math.round(monthly*12/10000);
+        const isBuyYear=carActive&&(i===carFirst||(i>carFirst&&(i-carFirst)%carCycle===0));
+        if(isBuyYear){
+          if(carPay==='cash'){carBuyAmt+=carPrice;}
+          else{carBuyAmt+=carDown;}
         }
-      }
-      // 車検タイミング：購入年はなし。購入年から数えて新車3年/以降2年、中古2年ごと
-      if(lastBuy>=0&&!isBuyYear&&carActive){
-        const yrFromBuy=i-lastBuy; // 購入年からの経過年数（1以上）
-        if(carType==='new'){
-          // 新車：3年後に初回、以降2年ごと
-          if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))carInspAmt=carInsp;
-        } else {
-          // 中古：2年ごと
-          if(yrFromBuy%2===0)carInspAmt=carInsp;
+        if(carPay==='loan'&&carLoanYrs>0&&lastBuy>=0&&!isBuyYear&&carActive){
+          const principal=(carPrice-carDown)*10000;
+          const monthly=carLoanRate>0?principal*carLoanRate*Math.pow(1+carLoanRate,carLoanYrs*12)/(Math.pow(1+carLoanRate,carLoanYrs*12)-1):principal/carLoanYrs/12;
+          const yrsAfterBuy=i-lastBuy;
+          if(yrsAfterBuy>0&&yrsAfterBuy<=carLoanYrs){carBuyAmt+=Math.round(monthly*12/10000);}
+        }
+        if(lastBuy>=0&&!isBuyYear&&carActive){
+          const yrFromBuy=i-lastBuy;
+          if(carType==='new'){
+            if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))carInspAmt+=carInsp;
+          } else {
+            if(yrFromBuy%2===0)carInspAmt+=carInsp;
+          }
         }
       }
     }

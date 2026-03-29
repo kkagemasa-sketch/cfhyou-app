@@ -9,6 +9,7 @@ window.onload=()=>{
   addExtraItem('','','');
   // 初期値を設定
   calcLoanAmt();
+  addCar();
   calcDelivery();
   setTimeout(()=>{
     const hA=parseInt($('husband-age')?.value)||30;

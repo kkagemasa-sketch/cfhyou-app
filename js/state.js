@@ -27,7 +27,8 @@ let repairCnt=1;
 
 let insSavCnt=0, secCnt=0;
 
-let carOwn=true, carType='new', carPay='cash';
+let carOwn=true;
+let carCnt=0;
 
 let parkOwn=true;
 

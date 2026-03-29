@@ -137,9 +137,9 @@ function setAssetTab(p){
 }
 function setCarOwn(on){
   carOwn=on;
-  document.getElementById('car-yes').classList.toggle('on',on);
-  document.getElementById('car-no').classList.toggle('on',!on);
-  document.getElementById('car-fields').style.display=on?'':'none';
+  document.getElementById('car-yes')?.classList.toggle('on',on);
+  document.getElementById('car-no')?.classList.toggle('on',!on);
+  document.getElementById('car-list-container').style.display=on?'':'none';
   live();
 }
 function setParkOwn(on){
@@ -149,27 +149,107 @@ function setParkOwn(on){
   document.getElementById('park-fields').style.display=on?'':'none';
   live();
 }
-function setCarType(t){
-  carType=t;
-  document.getElementById('car-new').classList.toggle('on',t==='new');
-  document.getElementById('car-used').classList.toggle('on',t==='used');
-  const hint=document.getElementById('car-insp-hint');
+function setCarType(id,t){
+  const el=document.getElementById('car-'+id);
+  if(!el)return;
+  el.dataset.type=t;
+  document.getElementById('car-'+id+'-new')?.classList.toggle('on',t==='new');
+  document.getElementById('car-'+id+'-used')?.classList.toggle('on',t==='used');
+  const hint=document.getElementById('car-'+id+'-insp-hint');
   if(hint)hint.textContent=t==='new'?'新車：初回3年後・以降2年ごと':'中古：2年ごと';
   live();
 }
-function setCarPay(t){
-  carPay=t;
-  document.getElementById('car-pay-cash').classList.toggle('on',t==='cash');
-  document.getElementById('car-pay-loan').classList.toggle('on',t==='loan');
-  document.getElementById('car-loan-fields').style.display=t==='loan'?'':'none';
-  // ローン月額更新
-  const price=fv('car-price')||300, down=fv('car-down')||50;
-  const yrs=iv('car-loan-yrs')||5, rate=(fv('car-loan-rate')||2.5)/100/12;
-  const principal=(price-down)*10000;
-  const monthly=rate>0?Math.round(principal*rate*Math.pow(1+rate,yrs*12)/(Math.pow(1+rate,yrs*12)-1))/10000:Math.round(principal/yrs/12)/10000;
-  const lhint=document.getElementById('car-loan-hint');
-  if(lhint)lhint.textContent=`月々：約${monthly.toFixed(1)}万円（${yrs}年）`;
+function setCarPay(id,t){
+  const el=document.getElementById('car-'+id);
+  if(!el)return;
+  el.dataset.pay=t;
+  document.getElementById('car-'+id+'-pay-cash')?.classList.toggle('on',t==='cash');
+  document.getElementById('car-'+id+'-pay-loan')?.classList.toggle('on',t==='loan');
+  const lf=document.getElementById('car-'+id+'-loan-fields');
+  if(lf)lf.style.display=t==='loan'?'':'none';
+  if(t==='loan'){
+    const price=fv('car-'+id+'-price')||300, down=fv('car-'+id+'-down')||50;
+    const yrs=iv('car-'+id+'-loan-yrs')||5, rate=(fv('car-'+id+'-loan-rate')||2.5)/100/12;
+    const principal=(price-down)*10000;
+    const monthly=rate>0?principal*rate*Math.pow(1+rate,yrs*12)/(Math.pow(1+rate,yrs*12)-1):principal/yrs/12;
+    const lhint=document.getElementById('car-'+id+'-loan-hint');
+    if(lhint)lhint.textContent='月々：'+Math.round(monthly/10000*10)/10+' 万円';
+  }
   live();
+}
+function addCar(defaults){
+  carCnt++;
+  const id=carCnt;
+  const d=defaults||{};
+  const cont=document.getElementById('car-list');
+  if(!cont)return;
+  const el=document.createElement('div');
+  el.id='car-'+id;
+  el.dataset.type=d.type||'new';
+  el.dataset.pay=d.pay||'cash';
+  el.style.cssText='background:#f5f0ff;border:1px solid #c4b0e8;border-radius:var(--rs);padding:10px;margin-bottom:10px';
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:700;color:#6b5ea8">🚗 ${id}台目</span>
+      <button class="btn-rm" onclick="rmCar(${id})" style="font-size:11px;padding:2px 8px">× 削除</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <div class="tc ${d.type!=='used'?'on':''}" id="car-${id}-new" onclick="setCarType(${id},'new')" style="flex:1;padding:6px;flex-direction:column;align-items:center;text-align:center;gap:2px">
+        <span style="font-size:16px">✨</span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検：初回3年・以降2年</div>
+      </div>
+      <div class="tc ${d.type==='used'?'on':''}" id="car-${id}-used" onclick="setCarType(${id},'used')" style="flex:1;padding:6px;flex-direction:column;align-items:center;text-align:center;gap:2px">
+        <span style="font-size:16px">🔄</span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検：2年ごと</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <div class="tc ${d.pay!=='loan'?'on':''}" id="car-${id}-pay-cash" onclick="setCarPay(${id},'cash')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">💴 現金一括</div></div>
+      <div class="tc ${d.pay==='loan'?'on':''}" id="car-${id}-pay-loan" onclick="setCarPay(${id},'loan')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">🏦 ローン</div></div>
+    </div>
+    <div class="g3" style="margin-bottom:8px">
+      <div class="fg"><label class="lbl" style="font-size:10px">車両価格</label>
+        <div class="suf"><input class="inp amt-inp" id="car-${id}-price" type="number" value="${d.price||300}" min="0" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:10px">初回購入（今から）</label>
+        <div class="suf"><input class="inp age-inp" id="car-${id}-first" type="number" value="${d.first||1}" min="1" max="30" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年目</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:10px">乗り換え周期</label>
+        <div class="suf"><input class="inp age-inp" id="car-${id}-cycle" type="number" value="${d.cycle||7}" min="1" max="20" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年ごと</span></div></div>
+    </div>
+    <div class="g2" style="margin-bottom:8px">
+      <div class="fg"><label class="lbl" style="font-size:10px">車を手放す年齢</label>
+        <div class="suf"><input class="inp age-inp" id="car-${id}-end-age" type="number" value="${d.endAge||''}" placeholder="空欄=ずっと" min="30" max="100" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="syncParkEndAge();live()"><span class="sl">歳</span></div>
+        <span class="hint ok" style="font-size:9px">空欄＝ずっと乗り続ける</span></div>
+      <div class="fg"><label class="lbl" style="font-size:10px">車検費用（1回）</label>
+        <div class="suf"><input class="inp amt-inp" id="car-${id}-insp" type="number" value="${d.insp||10}" min="0" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div>
+        <span class="hint" id="car-${id}-insp-hint" style="font-size:9px">${(d.type||'new')==='new'?'新車：初回3年後・以降2年ごと':'中古：2年ごと'}</span></div>
+    </div>
+    <div id="car-${id}-loan-fields" style="display:${d.pay==='loan'?'':'none'};background:#f0ecff;border:1px solid #c4b0e8;border-radius:var(--rs);padding:8px">
+      <div style="font-size:10px;font-weight:700;color:#6b5ea8;margin-bottom:6px">🏦 カーローン設定</div>
+      <div class="g3">
+        <div class="fg"><label class="lbl" style="font-size:9px">頭金</label>
+          <div class="suf"><input class="inp amt-inp" id="car-${id}-down" type="number" value="${d.down||50}" min="0" oninput="setCarPay(${id},'loan')"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">ローン期間</label>
+          <div class="suf"><input class="inp age-inp" id="car-${id}-loan-yrs" type="number" value="${d.loanYrs||5}" min="1" max="10" oninput="setCarPay(${id},'loan')"><span class="sl">年</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">金利</label>
+          <div class="suf"><input class="inp amt-inp" id="car-${id}-loan-rate" type="number" value="${d.loanRate||2.5}" min="0" max="10" step="0.1" oninput="setCarPay(${id},'loan')"><span class="sl">%</span></div></div>
+      </div>
+      <span class="hint ok" id="car-${id}-loan-hint" style="font-size:10px">月々：― 万円</span>
+    </div>`;
+  cont.appendChild(el);
+}
+function rmCar(id){
+  document.getElementById('car-'+id)?.remove();
+  live();
+}
+function syncParkEndAge(){
+  // 全台の「手放す年齢」の最大値を駐車場終了年齢に自動反映（空欄のときは空欄）
+  let maxAge=0;
+  for(let c=1;c<=carCnt;c++){
+    const v=iv('car-'+c+'-end-age')||0;
+    if(v>maxAge)maxAge=v;
+  }
+  const parkEl=document.getElementById('park-end-age');
+  if(parkEl&&!parkEl.dataset.manual){
+    parkEl.value=maxAge>0?maxAge:'';
+  }
 }
 
 function setLoanMode(mode){

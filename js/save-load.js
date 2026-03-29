@@ -182,7 +182,28 @@ function _collectDynamic(){
   d.mg.lcStep1={base:$('mg-lsb-1')?.value||'',rate:$('mg-lsr-1')?.value||'',from:$('mg-lsf-1')?.value||'',to:$('mg-lst-1')?.value||''};
   // フラグ系
   d.repMode=repMode; d.retirePayOn=retirePayOn; d.wRetirePayOn=wRetirePayOn;
-  d.downType=downType; d.carOwn=carOwn; d.carType=carType; d.carPay=carPay; d.parkOwn=parkOwn;
+  d.downType=downType; d.carOwn=carOwn; d.parkOwn=parkOwn;
+  d.parkEndAge=document.getElementById('park-end-age')?.value||'';
+  d.parkEndAgeManual=document.getElementById('park-end-age')?.dataset.manual||'';
+  d.carCnt=carCnt;
+  d.cars=[];
+  for(let c=1;c<=carCnt;c++){
+    const el=document.getElementById('car-'+c);
+    if(!el)continue;
+    d.cars.push({
+      id:c,
+      type:el.dataset.type||'new',
+      pay:el.dataset.pay||'cash',
+      price:document.getElementById('car-'+c+'-price')?.value||'300',
+      first:document.getElementById('car-'+c+'-first')?.value||'1',
+      cycle:document.getElementById('car-'+c+'-cycle')?.value||'7',
+      endAge:document.getElementById('car-'+c+'-end-age')?.value||'',
+      insp:document.getElementById('car-'+c+'-insp')?.value||'10',
+      down:document.getElementById('car-'+c+'-down')?.value||'50',
+      loanYrs:document.getElementById('car-'+c+'-loan-yrs')?.value||'5',
+      loanRate:document.getElementById('car-'+c+'-loan-rate')?.value||'2.5',
+    });
+  }
   d.pairLoanMode=pairLoanMode;
   d.lctrlDedMode=_lctrlDedMode;
   d.lctrlManualDed=_lctrlDedMode==='manual'?getLctrlManualValues():[];
@@ -423,9 +444,20 @@ function _restoreDynamic(d){
   if(d.downType)setDownType(d.downType);
   if(typeof d.pairLoanMode!=='undefined')setLoanMode(d.pairLoanMode?'pair':'single');
   if(typeof d.carOwn!=='undefined')setCarOwn(d.carOwn);
-  if(d.carType)setCarType(d.carType);
-  if(d.carPay)setCarPay(d.carPay);
   if(typeof d.parkOwn!=='undefined')setParkOwn(d.parkOwn);
+  const parkEndEl=document.getElementById('park-end-age');
+  if(parkEndEl&&d.parkEndAge!==undefined){
+    parkEndEl.value=d.parkEndAge;
+    if(d.parkEndAgeManual)parkEndEl.dataset.manual='1';
+  }
+  // 車の復元
+  if(d.cars&&d.cars.length>0){
+    document.getElementById('car-list').innerHTML='';
+    carCnt=0;
+    d.cars.forEach(c=>{
+      addCar({type:c.type,pay:c.pay,price:c.price,first:c.first,cycle:c.cycle,endAge:c.endAge,insp:c.insp,down:c.down,loanYrs:c.loanYrs,loanRate:c.loanRate});
+    });
+  }
   if(d.lctrlDedMode){
     _lctrlDedMode=d.lctrlDedMode;
     setLctrlDedMode(d.lctrlDedMode);
