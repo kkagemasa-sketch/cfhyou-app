@@ -229,3 +229,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   _amtObserver.observe(document.body,{childList:true,subtree:true});
   formatAmtInputs();setupAmtInputs();
 });
+
+// ===== Undo/Redo キーボードショートカット =====
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'){e.preventDefault();undoState();}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){e.preventDefault();redoState();}
+});

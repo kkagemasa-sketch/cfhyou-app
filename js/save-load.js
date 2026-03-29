@@ -558,24 +558,36 @@ function _collectSaveData(){
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=el.classList.contains('lc-m')||el.classList.contains('lc-y')?String(el.value).replace(/,/g,''):el.value});
   return d;
 }
+function _updateUndoRedoBtns(){
+  const u=document.getElementById('btn-undo');
+  const r=document.getElementById('btn-redo');
+  if(u)u.disabled=_undoStack.length<2;
+  if(r)r.disabled=_redoStack.length===0;
+}
 function pushUndoSnap(){
   const snap=_collectSaveData();
-  // 直前と同じなら積まない
   const snapStr=JSON.stringify(snap);
   if(_undoStack.length>0&&JSON.stringify(_undoStack[_undoStack.length-1])===snapStr)return;
   _undoStack.push(snap);
   if(_undoStack.length>30)_undoStack.shift();
-  // ボタンの有効/無効を更新
-  const btn=document.getElementById('btn-undo');
-  if(btn)btn.disabled=_undoStack.length<2;
+  _redoStack=[];// 新しい操作でRedoスタックをクリア
+  _updateUndoRedoBtns();
 }
 function undoState(){
-  if(_undoStack.length<2){return;}
-  _undoStack.pop();// 現在の状態を捨てる
+  if(_undoStack.length<2)return;
+  const cur=_undoStack.pop();
+  _redoStack.push(cur);
+  if(_redoStack.length>30)_redoStack.shift();
   const prev=_undoStack[_undoStack.length-1];
   _applyData(prev);
-  const btn=document.getElementById('btn-undo');
-  if(btn)btn.disabled=_undoStack.length<2;
+  _updateUndoRedoBtns();
+}
+function redoState(){
+  if(_redoStack.length===0)return;
+  const next=_redoStack.pop();
+  _undoStack.push(next);
+  _applyData(next);
+  _updateUndoRedoBtns();
 }
 function _applyData(d){
   try{

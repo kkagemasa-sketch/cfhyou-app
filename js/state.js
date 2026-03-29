@@ -77,3 +77,4 @@ let scenarios=[{id:1,name:'プラン1',data:null}];
 let activeScenarioId=1;
 
 let _undoStack=[];
+let _redoStack=[];
