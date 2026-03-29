@@ -75,21 +75,24 @@ function _collectDynamic(){
   // 収入ステップ
   d.incSteps={h:[],w:[]};
   ['h','w'].forEach(p=>{
-    const ids=new Set();
-    document.querySelectorAll(`[id^="${p}-is-"]`).forEach(el=>{
-      const m=el.id.match(new RegExp(`^${p}-is-(\\d+)-`));if(m)ids.add(`${p}-is-${m[1]}`);
+    const seen=new Set();const ids=[];
+    document.querySelectorAll(`#${p}-income-cont>[id^="${p}-is-"]`).forEach(el=>{
+      if(!seen.has(el.id)){seen.add(el.id);ids.push(el.id);}
     });
     ids.forEach(base=>{
+      const isPct=document.getElementById(`${base}-mode-pct`)?.classList.contains('on');
       d.incSteps[p].push({
         from:document.getElementById(`${base}-from`)?.value||'',
         to:document.getElementById(`${base}-to`)?.value||'',
         netFrom:document.getElementById(`${base}-net-from`)?.value||'',
         netTo:document.getElementById(`${base}-net-to`)?.value||'',
+        pct:document.getElementById(`${base}-pct`)?.value||'',
+        mode:isPct?'pct':'amt',
         leave:document.getElementById(`${base}-leave`)?.value||''
       });
     });
   });
-  // 金利ステップ
+    // 金利ステップ
   d.rateSteps=[];
   document.querySelectorAll('[id^="rsf-"]').forEach(el=>{
     const id=el.id.split('-')[1];
@@ -261,8 +264,12 @@ function _restoreDynamic(d){
       const base=`${p}-is-${cnt}`;
       if(document.getElementById(`${base}-from`))document.getElementById(`${base}-from`).value=s.from;
       if(document.getElementById(`${base}-to`))document.getElementById(`${base}-to`).value=s.to;
-      if(document.getElementById(`${base}-net-from`))document.getElementById(`${base}-net-from`).value=s.netFrom;
-      if(document.getElementById(`${base}-net-to`))document.getElementById(`${base}-net-to`).value=s.netTo;
+      if(document.getElementById(`${base}-net-from`))document.getElementById(`${base}-net-from`).value=s.netFrom||'';
+      if(document.getElementById(`${base}-net-to`))document.getElementById(`${base}-net-to`).value=s.netTo||'';
+      if(s.mode==='pct'&&typeof setStepMode==='function'){
+        setStepMode(base,'pct');
+        if(document.getElementById(`${base}-pct`))document.getElementById(`${base}-pct`).value=s.pct||'100';
+      }
       if(document.getElementById(`${base}-leave`))document.getElementById(`${base}-leave`).value=s.leave||'';
     });
   });
