@@ -1,0 +1,51 @@
+// utils.js — ユーティリティ関数
+
+function $(id){return document.getElementById(id)}
+function _v(id){return $(id)?.value||''}
+function iv(id){return parseInt(String($(id)?.value||'').replace(/,/g,''))||0}
+function fv(id){return parseFloat(String($(id)?.value||'').replace(/,/g,''))||0}
+function tog(h){const b=h.nextElementSibling,t=h.querySelector('.stog'),o=!b.classList.contains('col');b.classList.toggle('col',o);t.classList.toggle('on',!o)}
+function ri(n){return Math.round(n)}// 整数丸め（小数点なし）
+
+// 手取り補間
+function gn(g){if(!g||g<=0)return 0;for(let i=0;i<TAX.length-1;i++){if(g<=TAX[i][0])return TAX[i][1];if(g<TAX[i+1][0]){const r=(g-TAX[i][0])/(TAX[i+1][0]-TAX[i][0]);return Math.round(TAX[i][1]+r*(TAX[i+1][1]-TAX[i][1]))}}return TAX[TAX.length-1][1]}
+
+function getLCtrlRow(yr, tp, isKosodate){
+  const key = `${Math.min(Math.max(yr,2024),2030)}_${isKosodate?'kosodate':'general'}`;
+  const row = (LCTRL_TABLE[key]||LCTRL_TABLE['2025_general'])[tp]||[0,0];
+  return row;
+}
+
+function selectAll(el){
+  // contenteditable td のテキストを全選択
+  try{
+    const range=document.createRange();
+    range.selectNodeContents(el);
+    const sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }catch(e){}
+}
+function cellEdit(td){
+  const row=td.dataset.row, col=parseInt(td.dataset.col);
+  if(!row&&row!=='0')return;
+  const raw=td.textContent.replace(/,/g,'').trim();
+  const num=parseFloat(raw);
+  if(raw==='-'||raw===''){
+    // 上書き削除（自動計算に戻す）
+    if(cfOverrides[row])delete cfOverrides[row][col];
+    td.classList.remove('cell-ovr');
+  } else if(!isNaN(num)){
+    if(!cfOverrides[row])cfOverrides[row]={};
+    cfOverrides[row][col]=num;
+    td.classList.add('cell-ovr');
+    td.textContent=num.toLocaleString();
+  }
+}
+function resetOverrides(){cfOverrides={};render();}
+
+function _getInputHash(){
+  let s='';
+  document.querySelectorAll('input,select').forEach(el=>{if(el.id)s+=el.id+'='+el.value+'|';});
+  return s;
+}
