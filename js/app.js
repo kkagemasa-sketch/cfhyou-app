@@ -12,6 +12,7 @@ window.onload=()=>{
   addCar();
   calcDelivery();
   setTimeout(()=>{
+    if(_autoSaveRestored)return; // 自動保存復元済みならデフォルト値で上書きしない
     const hA=parseInt($('husband-age')?.value)||30;
     const wA=parseInt($('wife-age')?.value)||29;
     // ご主人様：30歳→50歳 700万→1000万

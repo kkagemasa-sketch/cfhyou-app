@@ -122,7 +122,6 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'parking','prop-tax','furn-cycle','furn-cost','repair-cycle','repair-cost','repair-cycle2','repair-cost2',
   'cash-h','cash-w','cash-joint','moving-cost','furniture-init',
   'lctrl-year','lctrl-type','lctrl-household',
-  'car-price','car-cycle','car-first','car-insp','car-down','car-loan-yrs','car-loan-rate','car-end-age',
   'pi-name','pi-company','pi-address','pi-tel','pi-email','pi-notes'];
 
 const PI_STORAGE_KEY='cf_print_info';

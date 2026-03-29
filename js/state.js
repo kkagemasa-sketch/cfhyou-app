@@ -78,3 +78,5 @@ let activeScenarioId=1;
 
 let _undoStack=[];
 let _redoStack=[];
+
+let _autoSaveRestored=false; // 自動保存の復元完了フラグ（app.jsのsetTimeoutと競合防止）

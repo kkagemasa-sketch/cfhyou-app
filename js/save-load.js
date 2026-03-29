@@ -190,11 +190,10 @@ function _collectDynamic(){
   d.parkEndAgeManual=document.getElementById('park-end-age')?.dataset.manual||'';
   d.carCnt=carCnt;
   d.cars=[];
-  for(let c=1;c<=carCnt;c++){
-    const el=document.getElementById('car-'+c);
-    if(!el)continue;
+  document.querySelectorAll('#car-list>[id^="car-"]').forEach(el=>{
+    const c=el.id.split('-')[1];
     d.cars.push({
-      id:c,
+      id:parseInt(c),
       type:el.dataset.type||'new',
       pay:el.dataset.pay||'cash',
       label:document.getElementById('car-'+c+'-label')?.value||'',
@@ -207,7 +206,7 @@ function _collectDynamic(){
       loanYrs:document.getElementById('car-'+c+'-loan-yrs')?.value||'5',
       loanRate:document.getElementById('car-'+c+'-loan-rate')?.value||'2.5',
     });
-  }
+  });
   d.pairLoanMode=pairLoanMode;
   d.lctrlDedMode=_lctrlDedMode;
   d.lctrlManualDed=_lctrlDedMode==='manual'?getLctrlManualValues():[];
@@ -554,7 +553,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:cfOverrides,version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=el.classList.contains('lc-m')||el.classList.contains('lc-y')?String(el.value).replace(/,/g,''):el.value});
   return d;
 }
@@ -593,6 +592,7 @@ function _applyData(d){
   try{
     setType(d.type||'mansion');
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el)el.value=val});
+    cfOverrides=d.cfOverrides||{};
     _restoreDynamic(d.dynamic);
     calcLoanAmt();calcDelivery();initLCComma();live();
   }catch(err){
@@ -641,6 +641,7 @@ async function restoreAutoSave(){
     const entry=await dbGet(AUTOSAVE_KEY);
     if(entry&&entry.data){
       _applyData(entry.data);
+      _autoSaveRestored=true;
     }
   }catch(e){}
 }
