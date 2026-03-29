@@ -414,7 +414,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],incT:[],
     lc:[],lRep:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],carBuy:[],carInsp:[],carTotal:[],prk:[],wedding:[],ext:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -788,6 +788,7 @@ function render(){
     const parkActive=parkEndAge<=0||ha<parkEndAge;
     R.prk.push(parkOwn&&parkActive?ri(parking*12):0);
     // 車両購入・車検（複数台対応）
+    if(!R.carRows)R.carRows=[];
     let carBuyAmt=0, carInspAmt=0;
     if(carOwn){
       document.querySelectorAll('#car-list>[id^="car-"]').forEach(carEl=>{
@@ -803,31 +804,46 @@ function render(){
         const carLoanRate=(fv('car-'+cIdx+'-loan-rate')||2.5)/100/12;
         const carEndAge=iv('car-'+cIdx+'-end-age')||0;
         const carActive=carEndAge<=0||ha<carEndAge;
+        // 台ごとの行を初期化
+        const rowKey='car-'+cIdx;
+        if(!R.carRows.find(r=>r.key===rowKey)){
+          const carLbl=document.getElementById('car-'+cIdx+'-price')?`${R.carRows.length+1}台目`:cIdx+'台目';
+          R.carRows.push({key:rowKey,lbl:`🚗 ${R.carRows.length+1}台目`,vals:new Array(i).fill(0)});
+        }
+        const carRow=R.carRows.find(r=>r.key===rowKey);
         let lastBuy=-1;
         if(i>=carFirst){
           const elapsed=i-carFirst;
           lastBuy=carFirst+Math.floor(elapsed/carCycle)*carCycle;
         }
         const isBuyYear=carActive&&(i===carFirst||(i>carFirst&&(i-carFirst)%carCycle===0));
+        let thisCarAmt=0, thisInspAmt=0;
         if(isBuyYear){
-          if(carPay==='cash'){carBuyAmt+=carPrice;}
-          else{carBuyAmt+=carDown;}
+          if(carPay==='cash'){thisCarAmt+=carPrice;}
+          else{thisCarAmt+=carDown;}
         }
         if(carPay==='loan'&&carLoanYrs>0&&lastBuy>=0&&!isBuyYear&&carActive){
           const principal=(carPrice-carDown)*10000;
           const monthly=carLoanRate>0?principal*carLoanRate*Math.pow(1+carLoanRate,carLoanYrs*12)/(Math.pow(1+carLoanRate,carLoanYrs*12)-1):principal/carLoanYrs/12;
           const yrsAfterBuy=i-lastBuy;
-          if(yrsAfterBuy>0&&yrsAfterBuy<=carLoanYrs){carBuyAmt+=Math.round(monthly*12/10000);}
+          if(yrsAfterBuy>0&&yrsAfterBuy<=carLoanYrs){thisCarAmt+=Math.round(monthly*12/10000);}
         }
         if(lastBuy>=0&&!isBuyYear&&carActive){
           const yrFromBuy=i-lastBuy;
           if(carType==='new'){
-            if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))carInspAmt+=carInsp;
+            if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))thisInspAmt+=carInsp;
           } else {
-            if(yrFromBuy%2===0)carInspAmt+=carInsp;
+            if(yrFromBuy%2===0)thisInspAmt+=carInsp;
           }
         }
+        const thisTotal=ri(thisCarAmt)+ri(thisInspAmt);
+        if(carRow)carRow.vals.push(thisTotal);
+        carBuyAmt+=thisCarAmt; carInspAmt+=thisInspAmt;
       });
+      // carRowsのうち今回ループしなかった行（削除済み台）にも0を追加
+      R.carRows.forEach(row=>{if(row.vals.length<=i)row.vals.push(0);});
+    } else {
+      R.carRows.forEach(row=>{if(row.vals.length<=i)row.vals.push(0);});
     }
     R.carBuy.push(ri(carBuyAmt));
     R.carInsp.push(ri(carInspAmt));
@@ -1270,7 +1286,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(isM)h+=eRow('修繕積立金',R.rep,'rep');
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
   children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`);});
-  h+=eRow('駐車場代',R.prk,'prk')+eRow('車両費（購入・車検）',R.carTotal,'carTotal')+eRow('結婚のお祝い',R.wedding,'wedding')+eRow('特別支出',R.ext,'ext');
+  h+=eRow('駐車場代',R.prk,'prk');
+  if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else{h+=eRow('車両費（購入・車検）',R.carTotal,'carTotal');}
+  h+=eRow('結婚のお祝い',R.wedding,'wedding')+eRow('特別支出',R.ext,'ext');
   h+=`<tr class="rexpt"><td>支出合計</td><td></td>`;for(let i=0;i<disp;i++)h+=`<td>${ri(R.expT[i]).toLocaleString()}</td>`;h+=`<td>${ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0)).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">支出合計</span></td></tr>`;
 
   // ─ 収支・残高 ─
