@@ -413,7 +413,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],incT:[],
     lc:[],lRep:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],carBuy:[],carInsp:[],carTotal:[],prk:[],wedding:[],ext:[],expT:[],bal:[],sav:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],carBuy:[],carInsp:[],carTotal:[],prk:[],wedding:[],ext:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -860,13 +860,14 @@ function render(){
     R.expT.push(ri(exp));
     const b=R.incT[i]-R.expT[i];R.bal.push(b);sav+=b;
     // 財形貯蓄の積立（支出には含めないが資産として加算）
+    let _savExtra=0;
     // 財形貯蓄（主人・奥様）
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
       const pRetAge=p==='h'?(iv('retire-age')||65):(iv('w-retire-age')||60);
       const zm=fv(`zaikei-${p}-monthly`)||0;
       const ze=iv(`zaikei-${p}-end`)||0;
-      if(zm>0&&(ze===0||pAge<(ze||pRetAge)))sav+=zm*12;
+      if(zm>0&&(ze===0||pAge<(ze||pRetAge))){sav+=zm*12;_savExtra+=zm*12;}
     });
     // 積み立て証券の資産増加（複利・主人・奥様）
     ['h','w'].forEach(p=>{
@@ -878,9 +879,10 @@ function render(){
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
         const rate=(fv(`sec-rate-${p}-${sid}`)||5)/100;
-        if(monthly>0&&(endAge===0||pAge<endAge))sav+=monthly*12*(1+rate*0.5);
+        if(monthly>0&&(endAge===0||pAge<endAge)){sav+=monthly*12*(1+rate*0.5);_savExtra+=monthly*12*(1+rate*0.5);}
       });
     });
+    R.savExtra.push(_savExtra);
     R.sav.push(ri(sav));
     // ─── その他金融資産（有価証券＋積立保険 - 個別追跡） ───
     if(!R.finAssetRows)R.finAssetRows=[];
@@ -1033,6 +1035,43 @@ function render(){
       else if(ca>=19){const un2=_v(`cu-${cid}`)||'plit_h';const ul2=(EDU.univ[un2]||[]).length;if(ul2>0&&ca<19+ul2)ev=ca===19?(un2.startsWith('senmon')?'専門入学':'大学入学'):'';}
       R.evC[ci].push(ev);
     });
+  }
+
+  // ─── cfOverrides後処理: サブ行上書きを合計・収支・残高に反映 ───
+  if(Object.keys(cfOverrides).length>0){
+    const incKeys=['hInc','wInc','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl'];
+    const expKeys=['lc','secInvest','secBuy','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext'];
+    [...incKeys,...expKeys].forEach(key=>{
+      if(!cfOverrides[key])return;
+      Object.entries(cfOverrides[key]).forEach(([col,val])=>{
+        const c2=parseInt(col);
+        if(R[key]&&c2<R[key].length)R[key][c2]=val;
+      });
+    });
+    children.forEach((_ch,ci)=>{
+      const key='edu'+ci;
+      if(!cfOverrides[key])return;
+      Object.entries(cfOverrides[key]).forEach(([col,val])=>{
+        const c2=parseInt(col);
+        if(R.edu[ci]&&c2<R.edu[ci].length)R.edu[ci][c2]=val;
+      });
+    });
+    if(R.secRedeemRows){
+      R.secRedeemRows.forEach(row=>{
+        if(!cfOverrides[row.key])return;
+        Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
+      });
+    }
+    let newSav=initSav;
+    for(let i=0;i<R.incT.length;i++){
+      if(cfOverrides['incT']?.[i]!==undefined){R.incT[i]=cfOverrides['incT'][i];}
+      else{let t=incKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);if(R.secRedeemRows)R.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));R.incT[i]=t;}
+      if(cfOverrides['expT']?.[i]!==undefined){R.expT[i]=cfOverrides['expT'][i];}
+      else{let t=expKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(R.edu[ci]?.[i]||0));R.expT[i]=t;}
+      R.bal[i]=R.incT[i]-R.expT[i];
+      newSav+=R.bal[i]+(R.savExtra[i]||0);
+      R.sav[i]=ri(newSav);
+    }
   }
 
   // Excel出力用にグローバル保存

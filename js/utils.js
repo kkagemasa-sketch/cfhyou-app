@@ -41,6 +41,7 @@ function cellEdit(td){
     td.classList.add('cell-ovr');
     td.textContent=num.toLocaleString();
   }
+  render();
 }
 function resetOverrides(){cfOverrides={};render();}
 
