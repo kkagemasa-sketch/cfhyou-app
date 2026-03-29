@@ -13,16 +13,16 @@ const LCTRL_TABLE = {
   '2024_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[4000,13], new_general:[0,0],    used_eco:[2000,10], used_other:[2000,10] },
   '2025_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[3000,13], new_general:[0,0],    used_eco:[2000,10], used_other:[2000,10] },
   '2025_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[4000,13], new_general:[0,0],    used_eco:[2000,10], used_other:[2000,10] },
-  // 2026〜2030年入居（令和8年度税制改正 ※大綱段階・法案確定後要確認）
-  '2026_general': { new_long:[4500,13], new_zeh:[3000,13], new_eco:[2000,13], new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
+  // 2026〜2030年入居（令和8年度税制改正 閣議決定済み・法案審議中（2026年3月末成立見込み））
+  '2026_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[2000,13], new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
   '2026_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[3000,13], new_general:[0,0],    used_eco:[4500,13], used_other:[2000,10] },
-  '2027_general': { new_long:[4500,13], new_zeh:[3000,13], new_eco:[2000,13], new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
+  '2027_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[2000,13], new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
   '2027_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[3000,13], new_general:[0,0],    used_eco:[4500,13], used_other:[2000,10] },
-  '2028_general': { new_long:[4500,13], new_zeh:[3000,13], new_eco:[2000,10], new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
+  '2028_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[2000,10], new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
   '2028_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[2000,10], new_general:[0,0],    used_eco:[4500,13], used_other:[2000,10] },
-  '2029_general': { new_long:[4500,13], new_zeh:[3000,13], new_eco:[0,0],     new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
+  '2029_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[0,0],     new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
   '2029_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[0,0],     new_general:[0,0],    used_eco:[4500,13], used_other:[2000,10] },
-  '2030_general': { new_long:[4500,13], new_zeh:[3000,13], new_eco:[0,0],     new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
+  '2030_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[0,0],     new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
   '2030_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[0,0],     new_general:[0,0],    used_eco:[4500,13], used_other:[2000,10] },
 };
 
