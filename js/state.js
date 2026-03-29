@@ -75,3 +75,5 @@ let _ppType='term'; // 'term'=期間短縮型, 'reduce'=返済額軽減型
 let scenarioCnt=1;
 let scenarios=[{id:1,name:'プラン1',data:null}];
 let activeScenarioId=1;
+
+let _undoStack=[];

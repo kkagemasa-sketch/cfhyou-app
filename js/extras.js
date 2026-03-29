@@ -76,25 +76,31 @@ function addExtraItem(yr='', amt='', lbl='', yrTo=''){
   el.style.cssText='background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px';
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-      <span style="font-size:10px;font-weight:600;color:var(--muted)">特別支出${id}</span>
+      <span id="ex-title-${id}" style="font-size:10px;font-weight:600;color:var(--muted)">特別支出</span>
       <button class="btn-rm" onclick="document.getElementById('ex-${id}').remove();live()">×</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:5px">
-      <div class="fg"><label class="lbl" style="font-size:9px">開始（引渡から何年後）</label>
-        <div class="suf"><input class="inp age-inp" id="ex-yr-${id}" type="number" onfocus="scrollToCFRow('ext')" onblur="cfRowBlur()" value="${yr}" placeholder="例:5" min="1" max="70" oninput="updateExtraHint(${id});live()"><span class="sl">年後</span></div></div>
-      <div class="fg"><label class="lbl" style="font-size:9px">終了（空欄=1回のみ）</label>
-        <div class="suf"><input class="inp age-inp" id="ex-yr2-${id}" type="number" onfocus="scrollToCFRow('ext')" onblur="cfRowBlur()" value="${yrTo}" placeholder="空欄=単年" min="1" max="70" oninput="updateExtraHint(${id});live()"><span class="sl">年後</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:9px">開始年</label>
+        <div class="suf"><input class="inp age-inp" id="ex-yr-${id}" type="number" onfocus="scrollToCFRow('ext')" onblur="cfRowBlur()" value="${yr}" placeholder="例:2030" min="2000" max="2100" oninput="updateExtraHint(${id});live()"><span class="sl">年</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:9px">終了年（空欄=1回のみ）</label>
+        <div class="suf"><input class="inp age-inp" id="ex-yr2-${id}" type="number" onfocus="scrollToCFRow('ext')" onblur="cfRowBlur()" value="${yrTo}" placeholder="空欄=単年" min="2000" max="2100" oninput="updateExtraHint(${id});live()"><span class="sl">年</span></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <div class="fg"><label class="lbl" style="font-size:9px">金額（毎年）</label>
         <div class="suf"><input class="inp amt-inp" id="ex-amt-${id}" type="number" onfocus="scrollToCFRow('ext')" onblur="cfRowBlur()" value="${amt}" placeholder="例:100" min="0" oninput="updateExtraHint(${id});live()"><span class="sl">万円/年</span></div></div>
       <div class="fg"><label class="lbl" style="font-size:9px">内容</label>
-        <input class="inp" id="ex-lbl-${id}" onfocus="scrollToCFRow('ext')" onblur="cfRowBlur()" value="${lbl}" placeholder="例:リフォーム" oninput="updateExtraHint(${id});live()"></div>
+        <input class="inp" id="ex-lbl-${id}" onfocus="scrollToCFRow('ext')" onblur="cfRowBlur()" value="${lbl}" placeholder="例:リフォーム" oninput="updateExtraTitle(${id});updateExtraHint(${id});live()"></div>
     </div>
     <div id="ex-hint-${id}" style="font-size:10px;color:#3a8a3a;margin-top:4px"></div>`;
   document.getElementById('extra-cont').appendChild(el);
+  updateExtraTitle(id);
   updateExtraHint(id);
   live();
+}
+function updateExtraTitle(id){
+  const lbl=$(`ex-lbl-${id}`)?.value||'';
+  const title=$(`ex-title-${id}`);
+  if(title)title.textContent=lbl||'特別支出';
 }
 function updateExtraHint(id){
   const yr=parseInt($(`ex-yr-${id}`)?.value)||0;
@@ -105,9 +111,9 @@ function updateExtraHint(id){
   if(!h)return;
   if(!yr||!amt){h.textContent='';return}
   if(yr2>0&&yr2>yr){
-    h.textContent=`✓ ${yr}年後〜${yr2}年後 ${amt}万円/年 ${lbl}（${yr2-yr+1}年間 計${amt*(yr2-yr+1)}万円）`;
+    h.textContent=`✓ ${yr}年〜${yr2}年 ${amt}万円/年 ${lbl}（${yr2-yr+1}年間 計${amt*(yr2-yr+1)}万円）`;
   }else{
-    h.textContent=`✓ ${yr}年後 ${amt}万円 ${lbl}`;
+    h.textContent=`✓ ${yr}年 ${amt}万円 ${lbl}`;
   }
 }
 function getExtraItems(){
@@ -120,7 +126,7 @@ function getExtraItems(){
     const yr2 = parseInt(document.getElementById(`ex-yr2-${id}`)?.value) || 0;
     const amt = parseFloat(document.getElementById(`ex-amt-${id}`)?.value) || 0;
     const lbl = document.getElementById(`ex-lbl-${id}`)?.value || '特別支出';
-    if(yr > 0 && amt > 0) items.push({ yr, yr2: yr2 > yr ? yr2 : yr, amt, lbl });
+    if(yr > 0 && amt > 0) items.push({ yr, yr2: yr2 >= yr ? yr2 : yr, amt, lbl });
   });
   return items;
 }

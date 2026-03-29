@@ -550,6 +550,25 @@ function _collectSaveData(){
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=el.classList.contains('lc-m')||el.classList.contains('lc-y')?String(el.value).replace(/,/g,''):el.value});
   return d;
 }
+function pushUndoSnap(){
+  const snap=_collectSaveData();
+  // 直前と同じなら積まない
+  const snapStr=JSON.stringify(snap);
+  if(_undoStack.length>0&&JSON.stringify(_undoStack[_undoStack.length-1])===snapStr)return;
+  _undoStack.push(snap);
+  if(_undoStack.length>30)_undoStack.shift();
+  // ボタンの有効/無効を更新
+  const btn=document.getElementById('btn-undo');
+  if(btn)btn.disabled=_undoStack.length<2;
+}
+function undoState(){
+  if(_undoStack.length<2){return;}
+  _undoStack.pop();// 現在の状態を捨てる
+  const prev=_undoStack[_undoStack.length-1];
+  _applyData(prev);
+  const btn=document.getElementById('btn-undo');
+  if(btn)btn.disabled=_undoStack.length<2;
+}
 function _applyData(d){
   try{
     setType(d.type||'mansion');

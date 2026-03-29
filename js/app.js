@@ -6,7 +6,7 @@ window.onload=()=>{
   addIncomeStep('h');addIncomeStep('h');
   addIncomeStep('w');addIncomeStep('w');
   // 特別支出の初期値（1件）
-  addExtraItem('','','');
+  addExtraItem(new Date().getFullYear(),'','');
   // 初期値を設定
   calcLoanAmt();
   addCar();

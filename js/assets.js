@@ -242,10 +242,11 @@ function rmCar(id){
 function syncParkEndAge(){
   // 全台の「手放す年齢」の最大値を駐車場終了年齢に自動反映（空欄のときは空欄）
   let maxAge=0;
-  for(let c=1;c<=carCnt;c++){
-    const v=iv('car-'+c+'-end-age')||0;
+  document.querySelectorAll('#car-list>[id^="car-"]').forEach(carEl=>{
+    const cid=carEl.id.replace('car-','');
+    const v=iv('car-'+cid+'-end-age')||0;
     if(v>maxAge)maxAge=v;
-  }
+  });
   const parkEl=document.getElementById('park-end-age');
   if(parkEl&&!parkEl.dataset.manual){
     parkEl.value=maxAge>0?maxAge:'';

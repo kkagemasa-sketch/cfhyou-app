@@ -146,6 +146,7 @@ function live(force){
       return;
     }
     _lastInputHash=hash;
+    pushUndoSnap();
     validate();updateHints();calcLC();updateEdu();render();
     document.querySelectorAll('.amt-inp').forEach(el=>{const v=el.value.trim();el.classList.toggle('is-zero',v===''||v==='0');});
     if(ind){
@@ -789,9 +790,8 @@ function render(){
     // 車両購入・車検（複数台対応）
     let carBuyAmt=0, carInspAmt=0;
     if(carOwn){
-      for(let cIdx=1;cIdx<=carCnt;cIdx++){
-        const carEl=document.getElementById('car-'+cIdx);
-        if(!carEl)continue;
+      document.querySelectorAll('#car-list>[id^="car-"]').forEach(carEl=>{
+        const cIdx=carEl.id.replace('car-','');
         const carType=carEl.dataset.type||'new';
         const carPay=carEl.dataset.pay||'cash';
         const carPrice=fv('car-'+cIdx+'-price')||300;
@@ -827,15 +827,15 @@ function render(){
             if(yrFromBuy%2===0)carInspAmt+=carInsp;
           }
         }
-      }
+      });
     }
     R.carBuy.push(ri(carBuyAmt));
     R.carInsp.push(ri(carInspAmt));
     R.carTotal.push(ri(carBuyAmt)+ri(carInspAmt));
     // 特別支出（複数対応・期間対応）
-    const yrFromDelivery=i+1;
+    const curYr=cYear+i;
     const extSum=extraItems.reduce((s,it)=>{
-      if(it.yr>0&&yrFromDelivery>=it.yr&&yrFromDelivery<=it.yr2)return s+ri(it.amt);
+      if(it.yr>0&&curYr>=it.yr&&curYr<=it.yr2)return s+ri(it.amt);
       return s;
     },0);
     R.ext.push(extSum);
