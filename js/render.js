@@ -807,8 +807,9 @@ function render(){
         // 台ごとの行を初期化
         const rowKey='car-'+cIdx;
         if(!R.carRows.find(r=>r.key===rowKey)){
-          const carLbl=document.getElementById('car-'+cIdx+'-price')?`${R.carRows.length+1}台目`:cIdx+'台目';
-          R.carRows.push({key:rowKey,lbl:`🚗 ${R.carRows.length+1}台目`,vals:new Array(i).fill(0)});
+          const carLblEl=document.getElementById('car-'+cIdx+'-label');
+          const carLblTxt=carLblEl?.value?.trim()||`${R.carRows.length+1}台目`;
+          R.carRows.push({key:rowKey,lbl:'🚗 '+carLblTxt,vals:new Array(i).fill(0)});
         }
         const carRow=R.carRows.find(r=>r.key===rowKey);
         let lastBuy=-1;
