@@ -1008,10 +1008,10 @@ function render(){
 
     // ─── イベント文字列 ───
     let evH='';
-    if(hDeathAge>0&&ha===hDeathAge)evH='🕊️ ご主人ご逝去';
+    if(hDeathAge>0&&ha===hDeathAge)evH='ご主人ご逝去';
     else if(hDeathAge>0&&ha>hDeathAge)evH='';
-    else if(i===delivery&&delivery>0)evH='🏠引き渡し';
-    else if(ha===retAge)evH='定年退職';
+    else if(i===delivery&&delivery>0)evH='引き渡し';
+    else if(ha===retAge)evH='退職';
     else if(ha===retPayAge&&retPayAge!==retAge)evH='退職金受取';
     else if(ha===pHReceive)evH='年金開始';
     // 収入段階の産休・育休（他イベントがない年のみ表示）
@@ -1026,9 +1026,9 @@ function render(){
     const wLeaveEnd=leaves.find(l=>wa===l.endAge);
     if(wLeave){const lm={maternity:'産休',parental:'育休',reduced:'時短'};evW=lm[wLeave.type]+'開始';}
     else if(wLeaveEnd)evW='職場復帰';
-    else if(wa===wRetAge)evW='退職（奥様）';
+    else if(wa===wRetAge)evW='退職';
     else if(wa===pWReceive)evW='年金開始';
-    if(wDeathAge>0&&wa===wDeathAge)evW='🕊️ 奥様ご逝去';
+    if(wDeathAge>0&&wa===wDeathAge)evW='奥様ご逝去';
     else if(wDeathAge>0&&wa>wDeathAge)evW='';
     // 収入段階の産休・育休（他イベントがない年のみ表示）
     if(!evW&&!(wDeathAge>0&&wa>wDeathAge)){
