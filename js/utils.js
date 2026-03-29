@@ -43,7 +43,7 @@ function cellEdit(td){
   }
   render();
 }
-function resetOverrides(){cfOverrides={};render();}
+function resetOverrides(){if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;cfOverrides={};render();}
 
 function _getInputHash(){
   let s='';

@@ -8,7 +8,13 @@ function exportExcelMG(){
   const disp=MR.yr.length;
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
-  const clientName=_v('client-name')||'CF表';
+  const clientName=(_v('client-name')||'').trim()||'CF表';
+  if(!(_v('client-name')||'').trim()){
+    if(!confirm('お客様氏名が未入力です。このまま出力しますか？')){
+      document.getElementById('client-name')?.focus();
+      return;
+    }
+  }
   const targetIsH=rTab==='mg-h';
   const targetLabel=targetIsH?'ご主人様':'奥様';
   const hAge=iv('ha')||30, wAge=iv('wa')||28;
@@ -461,7 +467,13 @@ function exportExcel(){
   const R=window.lastR, disp=window.lastDisp, cYear=window.lastCYear;
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
-  const clientName=_v('client-name')||'CF表';
+  const clientName=_v('client-name')||'';
+  if(!clientName.trim()){
+    if(!confirm('お客様氏名が未入力です。このまま出力しますか？')){
+      document.getElementById('client-name')?.focus();
+      return;
+    }
+  }
 
   const wb=XLSX.utils.book_new();
   // rows配列: [data, rowType] のペアで管理

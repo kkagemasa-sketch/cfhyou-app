@@ -88,8 +88,9 @@ function calcPension(person){
   // 収入ステップから平均手取り年収を推計
   const steps = getStepsForPension(person);
   const avgNet = steps.length > 0 ? steps.reduce((s,v)=>s+v,0)/steps.length : (isH?541:322);
-  // 手取りから額面年収を逆算（手取り÷0.77）
-  const avgGrossYear = Math.round(avgNet / 0.77);
+  // 手取りから額面年収を逆算（所得帯別係数）
+  const _coeff=avgNet<300?0.84:avgNet<500?0.80:avgNet<700?0.77:avgNet<900?0.74:avgNet<1100?0.71:0.68;
+  const avgGrossYear = Math.round(avgNet / _coeff);
   // 平均標準報酬額（月額）= 額面年収 ÷ 12
   const avgMonthly = Math.round(avgGrossYear / 12);
   // 老齢厚生年金（本来水準）= 平均標準報酬月額 × 5.481/1000 × 加入月数
