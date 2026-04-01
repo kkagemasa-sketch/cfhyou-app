@@ -1,5 +1,92 @@
 // export.js — Excel・PDF出力
 
+// ===== 印刷用情報 =====
+function getPrintInfo(){
+  const notesRaw=($('pi-notes')?.value||'').split('\n').filter(l=>l.trim());
+  return{name:_v('pi-name'),company:_v('pi-company'),address:_v('pi-address'),tel:_v('pi-tel'),email:_v('pi-email'),notes:notesRaw};
+}
+function _savePrintInfo(){
+  const info=getPrintInfo();
+  try{localStorage.setItem(PI_STORAGE_KEY,JSON.stringify(info));}catch(e){}
+}
+function _loadPrintInfo(){
+  try{
+    const s=localStorage.getItem(PI_STORAGE_KEY);
+    if(!s)return;
+    const info=JSON.parse(s);
+    if(info.name)$('pi-name').value=info.name;
+    if(info.company)$('pi-company').value=info.company;
+    if(info.address)$('pi-address').value=info.address;
+    if(info.tel)$('pi-tel').value=info.tel;
+    if(info.email)$('pi-email').value=info.email;
+    if(info.notes&&info.notes.length)$('pi-notes').value=info.notes.join('\n');
+  }catch(e){}
+}
+
+// ===== 出力前モーダル =====
+function showExportModal(exportType){
+  if(exportType==='mg'){
+    const mgKey=rTab==='mg-h'?'h':'w';
+    if(!window._mgMRStore||!window._mgMRStore[mgKey]){alert('先に万が一CF表を生成してください');return;}
+  }else if(!window.lastR){alert('先にCF表を生成してください');return;}
+  document.getElementById('export-modal')?.remove();
+  const pi=getPrintInfo();
+  const modal=document.createElement('div');
+  modal.id='export-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(15,39,68,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
+  const fld=(id,lbl,val,ph,span)=>`
+    <div class="fg" ${span?'style="grid-column:span 2"':''}>
+      <label style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px;display:block">${lbl}</label>
+      <input id="em-${id}" value="${(val||'').replace(/"/g,'&quot;')}" placeholder="${ph}"
+        style="width:100%;font-size:12px;padding:6px 8px;border:1.5px solid #cbd5e1;border-radius:6px;font-family:inherit;outline:none;box-sizing:border-box"
+        onfocus="this.style.borderColor='#2d7dd2'" onblur="this.style.borderColor='#cbd5e1'">
+    </div>`;
+  const notesText=pi.notes.join('\n');
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:14px;padding:24px;width:520px;max-width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800;font-size:15px;color:#1e3a5f">${exportType==='mg'?'📊 万が一CF表 Excel出力':exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</div>
+        <button onclick="document.getElementById('export-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0 4px">✕</button>
+      </div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:10px;letter-spacing:.04em">👤 使用者情報</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${fld('name','氏名・役職',pi.name,'')}
+          ${fld('company','会社名',pi.company,'')}
+          ${fld('address','住所・支社',pi.address,'',true)}
+          ${fld('tel','電話番号',pi.tel,'')}
+          ${fld('email','メールアドレス',pi.email,'')}
+        </div>
+      </div>
+      <div style="background:#fffbf5;border:1px solid #fed7aa;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:8px;letter-spacing:.04em">📋 注意文章（1行ずつ表示されます）</div>
+        <textarea id="em-notes" rows="5" style="width:100%;font-size:11px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;outline:none;color:#475569;resize:vertical;line-height:1.6;box-sizing:border-box"
+          onfocus="this.style.borderColor='#2d7dd2'" onblur="this.style.borderColor='#e2e8f0'">${notesText}</textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button onclick="document.getElementById('export-modal').remove()" style="font-size:12px;padding:8px 16px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-weight:600">キャンセル</button>
+        <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='mg'?'📊 Excel出力':exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
+function _applyExportModalValues(){
+  const ids=['name','company','address','tel','email'];
+  ids.forEach(id=>{const el=document.getElementById(`em-${id}`);if(el)$(`pi-${id}`).value=el.value;});
+  const notesEl=document.getElementById('em-notes');
+  if(notesEl)$('pi-notes').value=notesEl.value;
+  _savePrintInfo();
+}
+function _doExport(type){
+  _applyExportModalValues();
+  document.getElementById('export-modal')?.remove();
+  if(type==='excel')exportExcel();
+  else if(type==='mg')exportExcelMG();
+  else if(type==='pdf')exportPDF();
+  else window.print();
+}
+
 function exportExcelMG(){
   const mgKey=rTab==='mg-h'?'h':'w';
   const MR=window._mgMRStore&&window._mgMRStore[mgKey];
