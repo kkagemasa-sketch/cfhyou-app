@@ -1302,7 +1302,15 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   for(let i=0;i<disp;i++){const v=ri(R.bal[i]);h+=`<td class="${v<0?'vn':v>0?'vp':'vz'}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`}
   const bt=R.bal.slice(0,disp).reduce((a,b)=>a+b,0);
   h+=`<td class="${bt<0?'vn':'vp'}">${bt>=0?ri(bt).toLocaleString():'▲'+Math.abs(ri(bt)).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">年間収支</span></td></tr>`;
-  const _initSavV=ri(initSav);const _initSavTxt=_initSavV>=0?_initSavV.toLocaleString():'▲'+Math.abs(_initSavV).toLocaleString();const _initSavStyle=_initSavV<0?'color:#ffaaaa':'';
+  const _cashH=fv('cash-h')||0,_cashW=fv('cash-w')||0,_cashJ=fv('cash-joint')||0;
+  const _zkH=fv('zaikei-h-bal')||0,_zkW=fv('zaikei-w-bal')||0;
+  const _downType0=downType||'own';const _downPay=fv('down-payment')||0;
+  const _downDeduct0=(_downType0==='gift')?0:_downPay;
+  const _costType0=document.getElementById('cost-type')?.value||'cash';
+  const _costDeduct0=(_costType0==='cash')?(fv('house-cost')||0):0;
+  const _moveDeduct0=(fv('moving-cost')||0)+(fv('furniture-init')||0);
+  const _initSav=_cashH+_cashW+_cashJ+_zkH+_zkW-_downDeduct0-_costDeduct0-_moveDeduct0;
+  const _initSavV=ri(_initSav);const _initSavTxt=_initSavV>=0?_initSavV.toLocaleString():'▲'+Math.abs(_initSavV).toLocaleString();const _initSavStyle=_initSavV<0?'color:#ffaaaa':'';
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:9px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:10px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;for(let i=0;i<disp;i++){const v=ri(R.sav[i]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`}const savLast=ri(R.sav[disp-1]);h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
   if(R.finAsset.some(v=>v>0)){
     // 個別行を表示
