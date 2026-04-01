@@ -957,39 +957,7 @@ function render(){
         finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
       });
     });
-    // 【積立保険】（主人・奥様両方）払込累計ベースで返戻率を線形補間
-    ['h','w'].forEach(p=>{
-      const pAge2=p==='h'?ha:wa;
-      const pBaseAge2=p==='h'?hAge:wAge;
-      document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
-        const parts=el.id.split('-');const iid=parts[parts.length-1];
-        const monthly=fv(`ins-m-${p}-${iid}`)||0;
-        const matAge=iv(`ins-age-${p}-${iid}`)||0;
-        const matAmt=fv(`ins-mat-${p}-${iid}`)||0;
-        if(monthly<=0&&matAmt<=0)return;
-        const redeemAgeI=iv(`ins-redeem-${p}-${iid}`)||0;
-        if(redeemAgeI>0&&pAge2>=redeemAgeI)return;
-        const lbl='積立保険';
-        if(matAge>0&&pAge2>=matAge){
-          // 満期以降：満期受取金額を固定表示
-          finRowMap[lbl]=(finRowMap[lbl]||0)+matAmt;
-        } else if(matAge>0&&monthly>0){
-          const totalPayYrs=matAge-pBaseAge2;
-          const paidYrs2=Math.min(i+1,totalPayYrs);
-          // 払込累計
-          const cumPay=monthly*12*paidYrs2;
-          // 払込終了時の満期受取予定（線形補間）
-          const ratio=paidYrs2/totalPayYrs;
-          // 解約返戻金 = 払込累計×(1 - 解約控除率) + 満期金×進捗率×返戻ボーナス
-          // 解約控除率：前半は高く後半は低い（最大30%→0%）
-          const surrenderCharge=Math.max(0,0.3*(1-ratio));
-          const estVal=Math.round(cumPay*(1-surrenderCharge)+matAmt*ratio*ratio);
-          finRowMap[lbl]=(finRowMap[lbl]||0)+estVal;
-        } else if(monthly>0){
-          finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(monthly*12*(i+1));
-        }
-      });
-    });
+    // 【積立保険】はその他金融資産行から除外（推計精度が低いため）
     // finAssetRowsに追記（毎年動的にキーを管理）
     Object.keys(finRowMap).forEach(k=>{
       if(!R.finAssetRows.find(r=>r.lbl===k)){
