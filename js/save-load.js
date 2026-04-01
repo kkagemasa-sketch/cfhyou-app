@@ -554,7 +554,7 @@ async function dbEstimateSize(){
 
 function _collectSaveData(){
   const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:cfOverrides,version:'9'};
-  _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=el.classList.contains('lc-m')||el.classList.contains('lc-y')?String(el.value).replace(/,/g,''):el.value});
+  _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value});
   return d;
 }
 function _updateUndoRedoBtns(){
