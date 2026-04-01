@@ -1159,9 +1159,11 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const houseCostV=fv('house-cost')||0;
   const movingCostV=fv('moving-cost')||0;
   const furnitureInitV=fv('furniture-init')||0;
-  // 頭金が贈与の場合は自己資金から差し引かない
+  const _costTypeDisp=document.getElementById('cost-type')?.value||'cash';
+  // 頭金が贈与の場合は自己資金から差し引かない・諸費用ローン組込の場合も差し引かない
   const downFromOwn=downType==='gift'?0:downPay;
-  const initialOut=downFromOwn+houseCostV+movingCostV+furnitureInitV;
+  const houseCostDeduct=_costTypeDisp==='loan'?0:houseCostV;
+  const initialOut=downFromOwn+houseCostDeduct+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
   const cashAfterColor=cashAfter>=0?'var(--green)':'var(--red)';
 
@@ -1179,7 +1181,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         ? chip('🎁','頭金（贈与）',`${downPay.toLocaleString()}万円`,'#2d7dd2')
         : chip('💴','頭金（自己資金）',`${downPay.toLocaleString()}万円`,'var(--red)')
       }
-      ${chip('📋','諸費用',`${houseCostV.toLocaleString()}万円`,'var(--red)')}
+      ${_costTypeDisp==='loan'
+        ? chip('📋','諸費用（ローン組込）',`${houseCostV.toLocaleString()}万円`,'#2d7dd2')
+        : chip('📋','諸費用',`${houseCostV.toLocaleString()}万円`,'var(--red)')
+      }
       ${chip('🚚','引越・家具',`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'var(--red)')}
       ${arrow}
       ${chip('✅','購入後残高',`${cashAfter.toLocaleString()}万円`,cashAfterColor)}

@@ -97,10 +97,21 @@ function updateHints(){
   if(sinfo)sinfo.style.display=hDa>0?'':'none';
   const d=iv('delivery'),y=new Date().getFullYear();
   // delivery-hint は calcDelivery() で管理（calcLoanAmtはoninputで管理）
-  // 現預金合計ヒント
+  // 現預金合計ヒント＋購入後残高
   const chH=fv('cash-h')||0,chW=fv('cash-w')||0,chJ=fv('cash-joint')||0;
+  const chTot=chH+chW+chJ;
   const cashTotEl=document.getElementById('cash-total-hint');
-  if(cashTotEl)cashTotEl.textContent=`合計：${(chH+chW+chJ).toLocaleString()}万円`;
+  if(cashTotEl)cashTotEl.textContent=`合計：${chTot.toLocaleString()}万円`;
+  const _costType0=document.getElementById('cost-type')?.value||'cash';
+  const _downDeduct=(downType==='own')?(fv('down-payment')||0):0;
+  const _costDeduct=(_costType0==='cash')?(fv('house-cost')||0):0;
+  const _moveDeduct=(fv('moving-cost')||0)+(fv('furniture-init')||0);
+  const _cashAfter=chTot-_downDeduct-_costDeduct-_moveDeduct;
+  const cashAfterEl=document.getElementById('cash-after-hint');
+  if(cashAfterEl){
+    cashAfterEl.textContent=`→ 購入後残高：${_cashAfter.toLocaleString()}万円`;
+    cashAfterEl.style.color=_cashAfter>=0?'var(--green)':'var(--red)';
+  }
   const fc=iv('furn-cycle')||10, fco=iv('furn-cost')||80;
   const fh=document.getElementById('furn-hint');
   if(fh)fh.textContent=`✓ ${fc}年ごとに${fco}万円`;
