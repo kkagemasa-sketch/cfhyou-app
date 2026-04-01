@@ -73,9 +73,13 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
 }
 function renderLoanTab(){
   const rb=$('right-body');
-  const loanAmt=(parseFloat($('loan-amount')?.value)||4500)*10000;
-  const loanRate=(parseFloat($('loan-rate')?.value)||0.5)/100;
-  const loanYrs=parseInt($('loan-period')?.value)||35;
+  // ペアローン時はH側、単独時は共通の値を使用
+  const loanAmt=(pairLoanMode?(parseFloat($('loan-h-amt')?.value)||0):(parseFloat($('loan-amt')?.value)||4500))*10000;
+  const loanRate=(pairLoanMode?(parseFloat($('rate-h-base')?.value)||0.5):(parseFloat($('rate-base')?.value)||0.5))/100;
+  const loanYrs=pairLoanMode?(parseInt($('loan-h-yrs')?.value)||35):(parseInt($('loan-yrs')?.value)||35);
+  const loanAmtB=(parseFloat($('loan-w-amt')?.value)||0)*10000;
+  const loanRateB=(parseFloat($('rate-w-base')?.value)||loanRate*100)/100;
+  const loanYrsB=parseInt($('loan-w-yrs')?.value)||loanYrs;
   let h=`<div style="padding:16px;max-width:1400px">
     <h2 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px">🏦 返済計画シミュレーション</h2>
     <!-- ペアローン切替 -->
@@ -109,11 +113,11 @@ function renderLoanTab(){
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px;display:none" id="lp-card-b">
         <div style="font-size:12px;font-weight:700;color:#e67e22;margin-bottom:6px">ペアローン（配偶者）</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">
-          <div class="fg"><label class="lbl">借入額</label><div class="suf"><input class="inp amt-inp" id="lp-amt-b" type="number" value="0" min="0" onchange="renderLoanCalc()"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl">金利（年）</label><div class="suf"><input class="inp" id="lp-rate-b" type="number" value="${loanRate*100}" min="0" max="15" step="0.01" onchange="renderLoanCalc()"><span class="sl">%</span></div></div>
+          <div class="fg"><label class="lbl">借入額</label><div class="suf"><input class="inp amt-inp" id="lp-amt-b" type="number" value="${loanAmtB/10000}" min="0" onchange="renderLoanCalc()"><span class="sl">万円</span></div></div>
+          <div class="fg"><label class="lbl">金利（年）</label><div class="suf"><input class="inp" id="lp-rate-b" type="number" value="${loanRateB*100}" min="0" max="15" step="0.01" onchange="renderLoanCalc()"><span class="sl">%</span></div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">
-          <div class="fg"><label class="lbl">返済期間</label><div class="suf"><input class="inp age-inp" id="lp-yrs-b" type="number" value="${loanYrs}" min="1" max="50" onchange="renderLoanCalc()"><span class="sl">年</span></div></div>
+          <div class="fg"><label class="lbl">返済期間</label><div class="suf"><input class="inp age-inp" id="lp-yrs-b" type="number" value="${loanYrsB}" min="1" max="50" onchange="renderLoanCalc()"><span class="sl">年</span></div></div>
           <div class="fg"><label class="lbl">返済方法</label><select class="sel" id="lp-method-b" onchange="renderLoanCalc()"><option value="equal">元利均等</option></select></div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
