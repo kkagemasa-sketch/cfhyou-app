@@ -669,13 +669,16 @@ function exportExcel(){
     const ages=arr.slice(0,disp).map((_,i)=>c.age+i);
     push(['',`${cLbls[ci]}教育費`,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
   });
-  addE('駐車場代',R.prk);addE('車両費（購入・車検）',R.carTotal);
+  addE('駐車場代',R.prk);
+  if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  else{addE('車両費（購入・車検）',R.carTotal);}
   addE('結婚のお祝い',R.wedding);addE('特別支出',R.ext);
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
   // ── 収支・残高 ──
   push(['年間収支','',...R.bal.slice(0,disp).map(v=>ri(v)),ri(R.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
-  push(['預貯金残高','',...R.sav.slice(0,disp).map(v=>ri(v)),ri(R.sav[disp-1])],'savings');
+  const _initSavForXls=ri(window._purchaseInitSav||0);
+  push(['預貯金残高',_initSavForXls,...R.sav.slice(0,disp).map(v=>ri(v)),ri(R.sav[disp-1])],'savings');
   // 金融資産
   if(R.finAssetRows)R.finAssetRows.forEach(row=>{
     if(row.vals.slice(0,disp).some(v=>v>0))push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
@@ -843,9 +846,9 @@ function exportExcel(){
       if(tp==='balance'&&c>=2&&typeof cell.v==='number'){
         fObj.color={rgb:cell.v<0?C.red:'FF0d8a20'};
       }
-      // 預貯金残高の赤字
-      if(tp==='savings'&&c>=2&&typeof cell.v==='number'&&cell.v<0){
-        fObj.color={rgb:C.white};cell.s={...cell.s};
+      // 預貯金残高の赤字（第2列＝購入直後残高を含む）
+      if(tp==='savings'&&c>=1&&typeof cell.v==='number'&&cell.v<0){
+        fObj.color={rgb:'FFffaaaa'};cell.s={...cell.s};
       }
       // 0値はグレー
       if((tp==='inc'||tp==='exp')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
