@@ -30,6 +30,7 @@ function showExportModal(exportType){
     if(!window._mgMRStore||!window._mgMRStore[mgKey]){alert('先に万が一CF表を生成してください');return;}
   }else if(!window.lastR){alert('先にCF表を生成してください');return;}
   document.getElementById('export-modal')?.remove();
+  _loadPrintInfo();
   const pi=getPrintInfo();
   const modal=document.createElement('div');
   modal.id='export-modal';
