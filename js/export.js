@@ -119,8 +119,10 @@ function exportExcelMG(){
   const furnitureInitV=fv('furniture-init')||0;
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
   const cashTotal=cashH+cashW+cashJoint;
+  const costTypeV_mg=document.getElementById('cost-type')?.value||'cash';
   const downFromOwn=downType==='gift'?0:downPay;
-  const initialOut=downFromOwn+houseCostV+movingCostV+furnitureInitV;
+  const houseCostDeductMG=costTypeV_mg==='loan'?0:houseCostV;
+  const initialOut=downFromOwn+houseCostDeductMG+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
   const loanAmtV=fv('loan-amt')||0;
   const loanYrsV=iv('loan-yrs')||35;
@@ -136,7 +138,7 @@ function exportExcelMG(){
   push(titleRow,'title');
 
   // ── 頭金の内訳（通常CFと同じ個別セル形式） ──
-  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,'',downType==='gift'?'頭金（贈与）':'頭金（自己資金）',`${downPay}万円`,'','諸費用',`${houseCostV}万円`,'','引越・家具',`${(movingCostV+furnitureInitV)}万円`,'','購入後残高',`${cashAfter}万円`];
+  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,'',downType==='gift'?'頭金（贈与）':'頭金（自己資金）',`${downPay}万円`,'',costTypeV_mg==='loan'?'諸費用（ローン組込）':'諸費用',`${houseCostV}万円`,'','引越・家具',`${(movingCostV+furnitureInitV)}万円`,'','購入後残高',`${cashAfter}万円`];
   const infoRow1Len=infoRow1.length;
   while(infoRow1.length<disp+3)infoRow1.push('');
   push(infoRow1,'info');
@@ -576,8 +578,10 @@ function exportExcel(){
   const furnitureInitV=fv('furniture-init')||0;
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
   const cashTotal=cashH+cashW+cashJoint;
+  const costTypeV=document.getElementById('cost-type')?.value||'cash';
   const downFromOwn=downType==='gift'?0:downPay;
-  const initialOut=downFromOwn+houseCostV+movingCostV+furnitureInitV;
+  const houseCostDeductE=costTypeV==='loan'?0:houseCostV;
+  const initialOut=downFromOwn+houseCostDeductE+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
   const loanAmtV=fv('loan-amt')||0;
   const loanYrsV=iv('loan-yrs')||35;
@@ -593,7 +597,7 @@ function exportExcel(){
   push(titleRow,'title');
 
   // 頭金の内訳 - A+B結合
-  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,'',downType==='gift'?'頭金（贈与）':'頭金（自己資金）',`${downPay}万円`,'','諸費用',`${houseCostV}万円`,'','引越・家具',`${(movingCostV+furnitureInitV)}万円`,'','購入後残高',`${cashAfter}万円`];
+  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,'',downType==='gift'?'頭金（贈与）':'頭金（自己資金）',`${downPay}万円`,'',costTypeV==='loan'?'諸費用（ローン組込）':'諸費用',`${houseCostV}万円`,'','引越・家具',`${(movingCostV+furnitureInitV)}万円`,'','購入後残高',`${cashAfter}万円`];
   // infoRowの実データ長を記録（これ以降は塗りつぶしなし）
   const infoRow1Len=infoRow1.length;
   while(infoRow1.length<disp+3)infoRow1.push('');
