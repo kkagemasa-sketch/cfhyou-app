@@ -472,7 +472,7 @@ function exportExcelMG(){
           const age=ages[colIdx];
           let stage=null;
           if(age>=hStartAge&&age<=6)stage='hoiku';
-          else stage=getEduStage(age);
+          else if(age>=7)stage=getEduStage(age);
           if(stage&&eduColors[stage]){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
@@ -902,7 +902,7 @@ function exportExcel(){
           const age=ages[colIdx];
           let stage=null;
           if(age>=hStartAge&&age<=6)stage='hoiku';
-          else stage=getEduStage(age);
+          else if(age>=7)stage=getEduStage(age);
           if(stage&&eduColors[stage]){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
