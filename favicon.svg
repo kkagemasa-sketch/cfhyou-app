@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 白背景 -->
+  <rect width="64" height="64" fill="#ffffff"/>
   <!-- 屋根（紺色三角） -->
   <polygon points="32,4 4,28 60,28" fill="#2d3d8a"/>
   <!-- 煙突 -->
