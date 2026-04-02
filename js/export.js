@@ -194,7 +194,8 @@ function exportExcelMG(){
   const childEvRows2=[];
   children.forEach((c,ci)=>{
     const ages=MR.yr.map((_,i)=>c.age+i);
-    childEvRows2.push({rowIdx:rows.length,ages});
+    const hStartAge_mg=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+    childEvRows2.push({rowIdx:rows.length,ages,hStartAge:hStartAge_mg});
     const un=_v(`cu-${ci+1}`)||'plit_h';
     const hSA=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
     const hTp=_v(`hoiku-type-${ci+1}`)||'hoikuen';
@@ -362,9 +363,9 @@ function exportExcelMG(){
     savings:   {fill:C.green, font:{sz:9,bold:true,color:C.white}},
   };
 
-  // 子どもイベント行マップ
+  // 子どもイベント行マップ（入園年齢を含む）
   const childEvMapMG={};
-  childEvRows2.forEach(cr=>{childEvMapMG[cr.rowIdx]=cr.ages;});
+  childEvRows2.forEach(cr=>{childEvMapMG[cr.rowIdx]={ages:cr.ages,hStartAge:cr.hStartAge};});
   // 教育費行マップ
   const eduRowMapMG={};
   types.forEach((tp,r)=>{
@@ -463,12 +464,15 @@ function exportExcelMG(){
       if(tp==='title'&&c===2){hAlign='center';}
       let cellFill=isLastCol&&lastFill?lastFill:fillObj;
 
-      // 子どもイベント行：教育段階ごとの色分け
+      // 子どもイベント行：教育段階ごとの色分け（入園年齢を考慮）
       if(childEvMapMG[r]&&c>=2&&c<lastCol){
-        const ages=childEvMapMG[r];
+        const {ages,hStartAge=1}=childEvMapMG[r];
         const colIdx=c-2;
         if(ages&&ages[colIdx]!==undefined){
-          const stage=getEduStage(ages[colIdx]);
+          const age=ages[colIdx];
+          let stage=null;
+          if(age>=hStartAge&&age<=6)stage='hoiku';
+          else stage=getEduStage(age);
           if(stage&&eduColors[stage]){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
@@ -476,8 +480,8 @@ function exportExcelMG(){
           }
         }
       }
-      // 教育費行：子どもの年齢に応じた色分け
-      if(eduRowMapMG[r]&&c>=2&&c<lastCol){
+      // 教育費行：費用>0のセルのみ年齢に応じた色分け（入園前の0円セルは色なし）
+      if(eduRowMapMG[r]&&c>=2&&c<lastCol&&typeof cell.v==='number'&&cell.v>0){
         const ages=eduRowMapMG[r];
         const colIdx=c-2;
         if(ages&&ages[colIdx]!==undefined){
@@ -636,7 +640,8 @@ function exportExcel(){
   // 子どもイベント行の行番号と年齢配列を記録（教育段階色分け用）
   const childEvRows=[];
   if(R.evC)R.evC.forEach((ev,ci)=>{
-    childEvRows.push({rowIdx:rows.length, ages:R.cA?R.cA[ci]:null});
+    const hStartAge=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+    childEvRows.push({rowIdx:rows.length, ages:R.cA?R.cA[ci]:null, hStartAge});
     push(['',cLbls[ci],...ev.slice(0,disp),''],'event');
   });
 
@@ -789,9 +794,9 @@ function exportExcel(){
     loan:      {fill:C.loanBg, font:{sz:9,color:C.muted}},
   };
 
-  // 子どもイベント行の行番号→年齢配列マップ
+  // 子どもイベント行の行番号→{ages, hStartAge}マップ
   const childEvMap={};
-  childEvRows.forEach(cr=>{childEvMap[cr.rowIdx]=cr.ages;});
+  childEvRows.forEach(cr=>{childEvMap[cr.rowIdx]={ages:cr.ages,hStartAge:cr.hStartAge};});
 
   // 教育費行マップ（行番号→年齢配列）
   const eduRowMap={};
@@ -889,12 +894,15 @@ function exportExcel(){
       if(tp==='title'&&c===2){hAlign='center';}
       let cellFill=isLastCol&&lastFill?lastFill:fillObj;
 
-      // 子どもイベント行：教育段階ごとの色分け
+      // 子どもイベント行：教育段階ごとの色分け（入園年齢を考慮）
       if(childEvMap[r]&&c>=2&&c<lastCol){
-        const ages=childEvMap[r];
+        const {ages,hStartAge=1}=childEvMap[r];
         const colIdx=c-2;
         if(ages&&ages[colIdx]!==undefined){
-          const stage=getEduStage(ages[colIdx]);
+          const age=ages[colIdx];
+          let stage=null;
+          if(age>=hStartAge&&age<=6)stage='hoiku';
+          else stage=getEduStage(age);
           if(stage&&eduColors[stage]){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
@@ -902,8 +910,8 @@ function exportExcel(){
           }
         }
       }
-      // 教育費行：子どもの年齢に応じた色分け（イベント行と連動）
-      if(eduRowMap[r]&&c>=2&&c<lastCol){
+      // 教育費行：費用>0のセルのみ年齢に応じた色分け（入園前の0円セルは色なし）
+      if(eduRowMap[r]&&c>=2&&c<lastCol&&typeof cell.v==='number'&&cell.v>0){
         const ages=eduRowMap[r];
         const colIdx=c-2;
         if(ages&&ages[colIdx]!==undefined){
