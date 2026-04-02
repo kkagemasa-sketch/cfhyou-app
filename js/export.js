@@ -433,7 +433,7 @@ function exportExcelMG(){
         fObj.color={rgb:C.white};
       }
       // 0値はグレー
-      if((tp==='inc'||tp==='exp')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
+      if((tp==='inc'||tp==='exp'||tp==='edu')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
         fObj.color={rgb:C.zero};
       }
       // 背景色（col0対応）
@@ -444,9 +444,9 @@ function exportExcelMG(){
       if(isLastCol){
         if(tp==='header')lastFill={patternType:'solid',fgColor:{rgb:'FF1a2e4a'}};
         else if(tp==='incTotal'||tp==='inc')lastFill={patternType:'solid',fgColor:{rgb:C.blue}};
-        else if(tp==='expTotal'||tp==='exp')lastFill={patternType:'solid',fgColor:{rgb:C.redL}};
+        else if(tp==='expTotal'||tp==='exp'||tp==='edu')lastFill={patternType:'solid',fgColor:{rgb:C.redL}};
         else if(tp==='savings')lastFill={patternType:'solid',fgColor:{rgb:C.green}};
-        if(tp==='inc'||tp==='exp'||tp==='incTotal'||tp==='expTotal'||tp==='savings'){
+        if(tp==='inc'||tp==='exp'||tp==='edu'||tp==='incTotal'||tp==='expTotal'||tp==='savings'){
           fObj.color={rgb:C.white};fObj.bold=true;
         }
       }
@@ -851,12 +851,12 @@ function exportExcel(){
       if(tp==='balance'&&c>=2&&typeof cell.v==='number'){
         fObj.color={rgb:cell.v<0?C.red:'FF0d8a20'};
       }
-      // 預貯金残高の赤字（第2列＝購入直後残高を含む）
+      // 預貯金残高の赤字・購入直後残高（第2列含む）は緑背景なので白文字
       if(tp==='savings'&&c>=1&&typeof cell.v==='number'&&cell.v<0){
-        fObj.color={rgb:'FFffaaaa'};cell.s={...cell.s};
+        fObj.color={rgb:C.white};cell.s={...cell.s};
       }
       // 0値はグレー
-      if((tp==='inc'||tp==='exp')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
+      if((tp==='inc'||tp==='exp'||tp==='edu')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
         fObj.color={rgb:C.zero};
       }
       // 背景色
@@ -867,10 +867,10 @@ function exportExcel(){
       if(isLastCol){
         if(tp==='header')lastFill={patternType:'solid',fgColor:{rgb:'FF1a2e4a'}};
         else if(tp==='incTotal'||tp==='inc')lastFill={patternType:'solid',fgColor:{rgb:C.blue}};
-        else if(tp==='expTotal'||tp==='exp')lastFill={patternType:'solid',fgColor:{rgb:C.redL}};
+        else if(tp==='expTotal'||tp==='exp'||tp==='edu')lastFill={patternType:'solid',fgColor:{rgb:C.redL}};
         else if(tp==='savings')lastFill={patternType:'solid',fgColor:{rgb:C.green}};
         else if(tp==='totalAsset')lastFill={patternType:'solid',fgColor:{rgb:'FF0d2a4a'}};
-        if(tp==='inc'||tp==='exp'||tp==='incTotal'||tp==='expTotal'||tp==='savings'||tp==='totalAsset'){
+        if(tp==='inc'||tp==='exp'||tp==='edu'||tp==='incTotal'||tp==='expTotal'||tp==='savings'||tp==='totalAsset'){
           fObj.color={rgb:C.white};fObj.bold=true;
         }
       }
