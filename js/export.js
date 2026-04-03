@@ -142,10 +142,10 @@ function exportExcelMG(){
   // info行：ラベル:値を1セルに統合しinfoSpan列分統合（隠れ防止）
   const _pad=(n)=>Array(n-1).fill('');
   const infoRow1=['💰 頭金の内訳','',
-    `現預金合計: ${cashTotal}万円`,..._pad(infoSpan),
-    `${downType==='gift'?'頭金（贈与）':'頭金（自己資金）'}: ${downPay}万円`,..._pad(infoSpan),
-    `${costTypeV_mg==='loan'?'諸費用（ローン組込）':'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
-    `引越・家具: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
+    `現預金: ${cashTotal}万円`,..._pad(infoSpan),
+    `${downType==='gift'?'頭金(贈与)':'頭金'}: ${downPay}万円`,..._pad(infoSpan),
+    `${costTypeV_mg==='loan'?'諸費用(込)':'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
+    `引越家具: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
     `購入後残高: ${cashAfter}万円`,..._pad(infoSpan),
   ];
   const infoRow1Len=infoRow1.length;
@@ -154,12 +154,12 @@ function exportExcelMG(){
 
   // ── 住宅ローン条件 ──
   const infoRow2=['🏦 住宅ローン条件','',
-    `住宅価格: ${housePrice}万円`,..._pad(infoSpan),
-    `借入総額: ${loanAmtV}万円`,..._pad(infoSpan),
+    `物件価格: ${housePrice}万円`,..._pad(infoSpan),
+    `借入額: ${loanAmtV}万円`,..._pad(infoSpan),
     `金利: ${rateDisp}`,..._pad(infoSpan),
-    `借入期間: ${loanYrsV}年`,..._pad(infoSpan),
+    `期間: ${loanYrsV}年`,..._pad(infoSpan),
   ];
-  if(deliveryYrV>0){infoRow2.push(`引き渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+  if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
   push(infoRow2,'info');
@@ -352,7 +352,7 @@ function exportExcelMG(){
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
   // ── 印刷設定：A4横・全行1ページに収める ──
-  ws['!pageSetup']={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0};
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:1};
   ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
   wb.Workbook=wb.Workbook||{};
   wb.Workbook.Names=wb.Workbook.Names||[];
@@ -628,10 +628,10 @@ function exportExcel(){
   // info行：ラベル:値を1セルに統合しinfoSpan列分統合（隠れ防止）
   const _pad=(n)=>Array(n-1).fill('');
   const infoRow1=['💰 頭金の内訳','',
-    `現預金合計: ${cashTotal}万円`,..._pad(infoSpan),
-    `${downType==='gift'?'頭金（贈与）':'頭金（自己資金）'}: ${downPay}万円`,..._pad(infoSpan),
-    `${costTypeV==='loan'?'諸費用（ローン組込）':'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
-    `引越・家具: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
+    `現預金: ${cashTotal}万円`,..._pad(infoSpan),
+    `${downType==='gift'?'頭金(贈与)':'頭金'}: ${downPay}万円`,..._pad(infoSpan),
+    `${costTypeV==='loan'?'諸費用(込)':'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
+    `引越家具: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
     `購入後残高: ${cashAfter}万円`,..._pad(infoSpan),
   ];
   // infoRowの実データ長を記録（これ以降は塗りつぶしなし）
@@ -641,12 +641,12 @@ function exportExcel(){
 
   // 住宅ローン条件
   const infoRow2=['🏦 住宅ローン条件','',
-    `住宅価格: ${housePrice}万円`,..._pad(infoSpan),
-    `借入総額: ${loanAmtV}万円`,..._pad(infoSpan),
+    `物件価格: ${housePrice}万円`,..._pad(infoSpan),
+    `借入額: ${loanAmtV}万円`,..._pad(infoSpan),
     `金利: ${rateDisp}`,..._pad(infoSpan),
-    `借入期間: ${loanYrsV}年`,..._pad(infoSpan),
+    `期間: ${loanYrsV}年`,..._pad(infoSpan),
   ];
-  if(deliveryYrV>0){infoRow2.push(`引き渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+  if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
   push(infoRow2,'info');
@@ -796,7 +796,7 @@ function exportExcel(){
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
   // ── 印刷設定：A4横・全行1ページに収める ──
-  ws['!pageSetup']={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0};
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:1};
   ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
 
   // 印刷タイトル行：前提条件＋ヘッダー行を各ページ上部に繰り返し
