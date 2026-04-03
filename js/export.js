@@ -352,7 +352,10 @@ function exportExcelMG(){
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
   // ── 印刷設定：A4横・全行1ページに収める ──
-  ws['!pageSetup']={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:1};
+  // A4横の印刷可能高さ≒6.77inch、デフォルト行高15pt=0.208inch → 100%で約32行
+  // 行数に応じてscaleを自動計算（ライブラリはfitToPageを非対応のためscaleで代替）
+  const _printScale=Math.min(100,Math.max(45,Math.floor(3200/rows.length)));
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale};
   ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
   wb.Workbook=wb.Workbook||{};
   wb.Workbook.Names=wb.Workbook.Names||[];
@@ -796,7 +799,8 @@ function exportExcel(){
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
   // ── 印刷設定：A4横・全行1ページに収める ──
-  ws['!pageSetup']={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:1};
+  const _printScale=Math.min(100,Math.max(45,Math.floor(3200/rows.length)));
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale};
   ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
 
   // 印刷タイトル行：前提条件＋ヘッダー行を各ページ上部に繰り返し
