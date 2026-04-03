@@ -151,7 +151,7 @@ function renderContingency(){
 
   let sav=initSav;
   const MR={yr:[],hA:[],wA:[],
-    hInc:[],wInc:[],survPension:[],insPayArr:[],otherInc:[],scholarship:[],incT:[],
+    hInc:[],wInc:[],survPension:[],insPayArr:[],otherInc:[],scholarship:[],lCtrl:[],incT:[],
     lc:[],lRep:[],carTotal:[],prk:[],expT:[],bal:[],sav:[],lBal:[],
     needCoverage:0};
 
@@ -225,7 +225,32 @@ function renderContingency(){
     // その他収入（通常と同じ分を引用）
     const oiVal=i<normalR.otherInc.length?normalR.otherInc[i]:0;
     const teateVal=i<normalR.teate.length?normalR.teate[i]:0;
-    const lctrlVal=i<normalR.lCtrl.length?normalR.lCtrl[i]:0;
+    // 住宅ローン控除（団信・ペアローン調整）
+    const baseCtrl=i<normalR.lCtrl.length?normalR.lCtrl[i]:0;
+    let lctrlVal;
+    if(!isDead){
+      lctrlVal=baseCtrl;
+    }else if(!pairLoanMode){
+      // 単独ローン：H死亡＋団信 → 控除消滅
+      lctrlVal=(targetIsH&&mgDansin)?0:baseCtrl;
+    }else{
+      // ペアローン：死亡者の団信適用分を除外、残存ローン残高比率で按分
+      if((targetIsH&&mgDansinH)||(!targetIsH&&mgDansinW)){
+        if(active&&lcYr>=0){
+          const hBal=(isDead&&targetIsH&&mgDansinH)?0:(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,rHBase,lcYr):0);
+          const wBal=(isDead&&!targetIsH&&mgDansinW)?0:(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,rWBase,lcYr):0);
+          const origHBal=lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,rHBase,lcYr):0;
+          const origWBal=lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,rWBase,lcYr):0;
+          const origTotal=origHBal+origWBal;
+          lctrlVal=origTotal>0?Math.round(baseCtrl*(hBal+wBal)/origTotal):0;
+        }else{
+          lctrlVal=0;
+        }
+      }else{
+        lctrlVal=baseCtrl;
+      }
+    }
+    MR.lCtrl.push(lctrlVal);
     // 本人年金
     let pSelfVal=0, pWifeVal=0;
     if(targetIsH){
@@ -507,7 +532,7 @@ function renderContingency(){
   h+=mgRow('遺族年金',MR.survPension,N.survPension);
   h+=mgRow('奨学金',MR.scholarship,N.scholarship);
   h+=mgRow('児童手当',N.teate);
-  h+=mgRow('住宅ローン控除',N.lCtrl);
+  h+=mgRow('住宅ローン控除',MR.lCtrl,N.lCtrl);
   // 収入合計
   h+=`<tr class="rinct"><td>収入合計</td><td></td>`;
   for(let i=0;i<mgDisp;i++)h+=`<td>${ri(MR.incT[i]).toLocaleString()}</td>`;

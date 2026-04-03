@@ -234,7 +234,7 @@ function exportExcelMG(){
   addISkip('死亡保険金',MR.insPayArr);
   addISkip('奨学金',MR.scholarship);
   addI('児童手当',N.teate);
-  addI('住宅ローン控除',N.lCtrl);
+  addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
   addISkip('保険満期金',N.insMat);
   push(['収入合計','',...MR.incT.slice(0,disp).map(v=>ri(v)),ri(MR.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -332,8 +332,8 @@ function exportExcelMG(){
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
-  // ── 印刷設定 ──
-  ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:73};
+  // ── 印刷設定：A4横・全行1ページに収める ──
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0};
   ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
   wb.Workbook=wb.Workbook||{};
   wb.Workbook.Names=wb.Workbook.Names||[];
@@ -753,12 +753,8 @@ function exportExcel(){
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
-  // ── 印刷設定：A4・横向き・全行1ページ・拡大73% ──
-  ws['!pageSetup']={
-    paperSize:9,
-    orientation:'landscape',
-    scale:73
-  };
+  // ── 印刷設定：A4横・全行1ページに収める ──
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0};
   ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
 
   // 印刷タイトル行：前提条件＋ヘッダー行を各ページ上部に繰り返し
