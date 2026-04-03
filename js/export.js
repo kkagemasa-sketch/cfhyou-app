@@ -17,26 +17,29 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName) {
     const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
     let xml = await zip.file(xmlPath).async('string');
 
-    // 「すべての行を1ページに印刷」= fitToPage+fitToHeight:1
-    // sheetPrにpageSetUpPr fitToPage="1"が必要
-    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="0"/>`;
-    if(/<pageSetup/.test(xml)){
-      xml = xml.replace(/<pageSetup[^>]*\/>/,setupTag);
-    } else if(/<pageMargins/.test(xml)){
-      xml = xml.replace(/(<pageMargins[^>]*\/>)/,'$1'+setupTag);
-    } else {
-      xml = xml.replace(/<\/worksheet>/,setupTag+'</worksheet>');
-    }
-    // sheetPrにfitToPage="1"を設定（なければ追加）
+    // 「すべての行を1ページに印刷」
+    // ① sheetPrにpageSetUpPr fitToPage="1"を挿入
+    const sheetPrTag = '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>';
     if(/<sheetPr/.test(xml)){
+      // 既存sheetPrにpageSetUpPrを追加/置換
       if(/<pageSetUpPr/.test(xml)){
-        xml = xml.replace(/<pageSetUpPr[^>]*\/>/,'<pageSetUpPr fitToPage="1"/>');
+        xml = xml.replace(/<pageSetUpPr[^/]*\/>/,'<pageSetUpPr fitToPage="1"/>');
       } else {
-        xml = xml.replace(/(<sheetPr[^>]*>)/,'$1<pageSetUpPr fitToPage="1"/>');
-        xml = xml.replace(/(<sheetPr[^>]*\/>)/,'<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
+        xml = xml.replace(/<sheetPr\s*\/>/,sheetPrTag);
+        xml = xml.replace(/(<sheetPr(?:\s[^>]*)?>)(?!<pageSetUpPr)/,'$1<pageSetUpPr fitToPage="1"/>');
       }
     } else {
-      xml = xml.replace(/<worksheet /,'<worksheet ').replace(/(<worksheet[^>]*>)/,'$1<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
+      // sheetPrがない場合: worksheetの直後に挿入
+      xml = xml.replace(/(<worksheet[^>]*>)/,'$1'+sheetPrTag);
+    }
+    // ② pageSetupタグを挿入/置換
+    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="0"/>`;
+    if(/<pageSetup/.test(xml)){
+      xml = xml.replace(/<pageSetup[^/]*\/>/,setupTag);
+    } else if(/<pageMargins/.test(xml)){
+      xml = xml.replace(/(<pageMargins[^/]*\/>)/,'$1'+setupTag);
+    } else {
+      xml = xml.replace(/<\/worksheet>/,setupTag+'</worksheet>');
     }
     zip.file(xmlPath, xml);
 
