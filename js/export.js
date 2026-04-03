@@ -325,8 +325,9 @@ function exportExcelMG(){
     ws['!merges'].push({s:{r,c:splitCol},e:{r,c:noteEndCol}});
   }
 
-  // ── 列幅（通常CFと同じ） ──
-  ws['!cols']=[{wch:18},{wch:18},...Array(disp).fill({wch:9}),{wch:11}];
+  // ── 列幅 ──
+  ws['!cols']=[{wch:13},{wch:13},...Array(disp).fill({wch:7}),{wch:8}];
+  ws['!rows']=types.map(t=>t==='info'?{hpt:30}:{});
 
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
@@ -525,7 +526,7 @@ function exportExcelMG(){
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:finalAlign,wrapText:false},
+        alignment:{vertical:'center',horizontal:finalAlign,wrapText:tp==='info'&&c>=2},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
@@ -747,8 +748,9 @@ function exportExcel(){
     ws['!merges'].push({s:{r,c:splitCol},e:{r,c:noteEndCol}});
   }
 
-  // 列幅（購入後残高が見切れないよう調整）
-  ws['!cols']=[{wch:18},{wch:18},...Array(disp).fill({wch:9}),{wch:11}];
+  // 列幅
+  ws['!cols']=[{wch:13},{wch:13},...Array(disp).fill({wch:7}),{wch:8}];
+  ws['!rows']=types.map(t=>t==='info'?{hpt:30}:{});
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
@@ -924,7 +926,7 @@ function exportExcel(){
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:hAlign,wrapText:false},
+        alignment:{vertical:'center',horizontal:hAlign,wrapText:tp==='info'&&c>=2},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
