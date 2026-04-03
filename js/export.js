@@ -329,7 +329,7 @@ function exportExcelMG(){
   }
 
   // ── 列幅 ──
-  ws['!cols']=[{wch:13},{wch:13},...Array(disp).fill({wch:7}),{wch:8}];
+  ws['!cols']=[{wch:10},{wch:18},...Array(disp).fill({wch:7}),{wch:8}];
 
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
@@ -753,7 +753,7 @@ function exportExcel(){
   }
 
   // 列幅
-  ws['!cols']=[{wch:13},{wch:13},...Array(disp).fill({wch:7}),{wch:8}];
+  ws['!cols']=[{wch:10},{wch:18},...Array(disp).fill({wch:7}),{wch:8}];
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
