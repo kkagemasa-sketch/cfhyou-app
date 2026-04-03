@@ -213,7 +213,7 @@ function renderContingency(){
         // 自動計算（遺族厚生年金 = 老齢厚生年金部分のみ × 3/4）
         if(targetIsH){
           let kiso=0, childUnder18=0;
-          children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
+          children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
           if(wa>=pWReceive){
             const opt1=kisoW_mg+Math.max(ri(koseiH_mg*0.75),ri(koseiW_mg));
@@ -225,7 +225,7 @@ function renderContingency(){
         }else{
           // 奥様死亡→ご主人への遺族年金（55歳以上かつ年収850万未満）
           let kiso=0, childUnder18=0;
-          children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
+          children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
           const hIncome=getIncomeAtAge(getIncomeSteps('h'),ha);
           if(childUnder18>0||(ha>=55&&hIncome<850)){survP=ri(koseiW_mg*0.75)+kiso;}

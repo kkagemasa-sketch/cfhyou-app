@@ -401,7 +401,7 @@ function render(){
         //   ②2/3+1/2特例   = 妻の基礎 + 夫の厚生×2/3 + 妻の厚生×1/2
         //   → いずれか高い方
         let kiso=0,childUnder18=0;
-        children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
+        children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
         if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
         if(wa>=pWReceive){
           // pW=0にしているため妻の老齢基礎年金もsurvPに含める
@@ -421,7 +421,7 @@ function render(){
         // 原則：ご主人が55歳以上かつ年収850万未満の場合のみ
         const hIncome=getIncomeAtAge(hSteps,ha);
         let kiso=0,childUnder18=0;
-        children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
+        children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
         if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
         if(childUnder18>0||(ha>=55&&hIncome<850)){
           survP=ri(koseiW*0.75)+kiso;
@@ -971,7 +971,7 @@ function render(){
     const i0=hDeathAge-hAge+1;
     const wa0=wAge+i0;
     let childUnder18=0;
-    children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<18)childUnder18++;});
+    children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<=18)childUnder18++;});
     const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
     let autoH;
     if(wa0>=pWReceive){
@@ -988,7 +988,7 @@ function render(){
     const i0=wDeathAge-wAge+1;
     const ha0=hAge+i0;
     let childUnder18=0;
-    children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<18)childUnder18++;});
+    children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<=18)childUnder18++;});
     const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
     const hIncome0=getIncomeAtAge(hSteps,ha0);
     const autoW=(childUnder18>0||(ha0>=55&&hIncome0<850))?ri(koseiW*0.75)+kiso0:kiso0;
