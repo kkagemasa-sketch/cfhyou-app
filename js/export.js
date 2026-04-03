@@ -6,22 +6,32 @@
 async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
   const u8 = XLSX.write(wb, {bookType:'xlsx', type:'array'});
   const zip = await JSZip.loadAsync(u8);
-  // シート番号を特定
   const sheetIdx = wb.SheetNames.indexOf(sheetName);
   const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
-  const xmlStr = await zip.file(xmlPath).async('string');
-  // <pageSetup> タグを <pageMargins の直前に挿入（既存があれば置換）
-  const pageSetupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}"/>`;
-  let newXml;
-  if(xmlStr.includes('<pageSetup')) {
-    // 既存のpageSetupタグを置換
-    newXml = xmlStr.replace(/<pageSetup[^>]*\/>/,pageSetupTag);
+  let xml = await zip.file(xmlPath).async('string');
+
+  // デバッグ: 実際のXML末尾300文字をコンソールに出力
+  console.log('[pageSetup] sheet XML tail:', xml.slice(-400));
+
+  const setupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}"/>`;
+
+  if(/<pageSetup/.test(xml)) {
+    // 既存pageSetupを置換（自己終了・通常終了どちらでも対応）
+    xml = xml.replace(/<pageSetup[^>]*(?:\/>|>[\s\S]*?<\/pageSetup>)/, setupTag);
+  } else if(/<pageMargins/.test(xml)) {
+    // pageMargins（自己終了・通常終了どちらでも対応）の直後に挿入
+    xml = xml
+      .replace(/<pageMargins([^>]*)><\/pageMargins>/, '<pageMargins$1/>')
+      .replace(/(<pageMargins[^>]*\/>)/, '$1' + setupTag);
   } else {
-    // pageSetupはpageMarginsの直後に挿入（OOXML仕様の順序）
-    newXml = xmlStr.replace(/(<pageMargins[^>]*\/>)/, '$1'+pageSetupTag);
+    // pageMarginsが存在しない場合: </worksheet>の直前に挿入
+    xml = xml.replace(/<\/worksheet>/, setupTag + '</worksheet>');
   }
-  zip.file(xmlPath, newXml);
-  const blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+
+  console.log('[pageSetup] injected XML tail:', xml.slice(-400));
+
+  zip.file(xmlPath, xml);
+  const blob = await zip.generateAsync({type:'blob'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = fname;
