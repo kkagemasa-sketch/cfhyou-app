@@ -251,6 +251,14 @@ function render(){
   const pWife=fv('pension-w')||66;
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=iv('pension-w-receive')||65;
+  // 老齢基礎年金概算（2024年度満額81.6万円 × 加入年数/40年）
+  const KISO_FULL=81.6;
+  const pHStart=iv('pension-h-start')||22;
+  const pWStart=iv('pension-w-start')||22;
+  const kisoH=ri(KISO_FULL*Math.min(retAge-pHStart,40)/40);   // ご主人の老齢基礎年金
+  const kisoW=ri(KISO_FULL*Math.min(wRetAge-pWStart,40)/40);  // 奥様の老齢基礎年金
+  const koseiH=Math.max(0,pSelf-kisoH);  // ご主人の老齢厚生年金
+  const koseiW=Math.max(0,pWife-kisoW);  // 奥様の老齢厚生年金
   const leaves=getLeaves();
   // 生活費
   const baseLc=calcLC();
@@ -387,12 +395,15 @@ function render(){
       if(overrideH>0){
         survP=overrideH;
       }else{
-        const kosei=ri(pSelf*0.75);
+        // 遺族厚生年金 = 夫の老齢厚生年金 × 3/4
+        // 65歳以降かつ妻自身に厚生年金がある場合：max(夫の厚生×3/4, 夫の厚生×2/3 + 妻の厚生×1/2)
         let kiso=0,childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
         if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
-        const wOwnPension=wa>=pWReceive?ri(pWife):0;
-        survP=Math.max(kosei,wOwnPension)+kiso;
+        const wKosei=wa>=pWReceive?koseiW:0;
+        const optA=ri(koseiH*0.75);
+        const optB=ri(koseiH*2/3)+ri(wKosei*0.5);
+        survP=(wa>=pWReceive?Math.max(optA,optB):optA)+kiso;
       }
     }else if(wDeathAge>0&&wa>wDeathAge){
       // 奥様ご逝去後：ご主人への遺族年金
@@ -406,7 +417,7 @@ function render(){
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
         if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
         if(childUnder18>0||(ha>=55&&hIncome<850)){
-          survP=ri(pWife*0.75)+kiso;
+          survP=ri(koseiW*0.75)+kiso;
         }
       }
     }
@@ -955,9 +966,11 @@ function render(){
     let childUnder18=0;
     children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<18)childUnder18++;});
     const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
-    const kosei0=ri(pSelf*0.75);
-    const wOwn0=wa0>=pWReceive?ri(pWife):0;
-    survHSpan.textContent=(Math.max(kosei0,wOwn0)+kiso0).toLocaleString();
+    const wKosei0=wa0>=pWReceive?koseiW:0;
+    const optA0=ri(koseiH*0.75);
+    const optB0=ri(koseiH*2/3)+ri(wKosei0*0.5);
+    const autoH=(wa0>=pWReceive?Math.max(optA0,optB0):optA0)+kiso0;
+    survHSpan.textContent=autoH.toLocaleString();
   }
   const survWSpan=document.getElementById('surv-w-auto-val');
   if(survWSpan&&wDeathAge>0){
@@ -967,7 +980,7 @@ function render(){
     children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<18)childUnder18++;});
     const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
     const hIncome0=getIncomeAtAge(hSteps,ha0);
-    const autoW=(childUnder18>0||(ha0>=55&&hIncome0<850))?ri(pWife*0.75)+kiso0:kiso0;
+    const autoW=(childUnder18>0||(ha0>=55&&hIncome0<850))?ri(koseiW*0.75)+kiso0:kiso0;
     survWSpan.textContent=autoW.toLocaleString();
   }
 
