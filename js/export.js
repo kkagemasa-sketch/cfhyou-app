@@ -410,9 +410,9 @@ async function exportExcelMG(){
   // ── スタイル定義（通常CFと同じ + col0対応） ──
   const styleDefs={
     title:     {fill:C.navy, font:{sz:12,bold:true,color:C.white}},
-    info:      {fill:'FFeef5ff', font:{sz:10,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:10,bold:true,color:C.white}}},
+    info:      {fill:'FFeef5ff', font:{sz:12,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:12,bold:true,color:C.white}}},
     blank:     {fill:null, font:{sz:10,color:C.white}, noBorder:true},
-    footer:    {fill:C.white, font:{sz:10,color:C.black}, noBorder:true},
+    footer:    {fill:C.white, font:{sz:8,color:C.black}, noBorder:true},
     header:    {fill:C.navy, font:{sz:10,bold:true,color:C.white}, align:'center'},
     elapsed:   {fill:C.navyD, font:{sz:10,color:'FFa0b4c8'}, align:'center'},
     age:       {fill:C.ageBg, font:{sz:10,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:10,bold:true,color:C.ageFgD}}},
@@ -462,13 +462,13 @@ async function exportExcelMG(){
         }else{
           const v=String(cell.v||'');
           if(v.includes('万円')||v.includes('%')||v.includes('年')){
-            fObj.bold=true;fObj.sz=10;fObj.color={rgb:C.navy};
+            fObj.bold=true;fObj.sz=12;fObj.color={rgb:C.navy};
           }else if(v&&v!=='▶'){
             fObj.bold=true;fObj.color={rgb:'FF5a6a7e'};
           }
           if(v.includes('購入後残高')){
             if(v.includes('万円')){
-              fObj.bold=true;fObj.sz=10;
+              fObj.bold=true;fObj.sz=12;
               fObj.color={rgb:cashAfter>=0?'FF0d8a20':C.red};
             }else{
               fObj.bold=true;fObj.color={rgb:'FF2d5282'};
@@ -864,9 +864,9 @@ async function exportExcel(){
   // ── スタイル適用 ──
   const styleDefs={
     title:     {fill:C.navy, font:{sz:12,bold:true,color:C.white}},
-    info:      {fill:'FFeef5ff', font:{sz:10,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:10,bold:true,color:C.white}}},
+    info:      {fill:'FFeef5ff', font:{sz:12,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:12,bold:true,color:C.white}}},
     blank:     {fill:null, font:{sz:10,color:C.white}, noBorder:true},
-    footer:    {fill:C.white, font:{sz:10,color:C.black}, noBorder:true},
+    footer:    {fill:C.white, font:{sz:8,color:C.black}, noBorder:true},
     header:    {fill:C.navy, font:{sz:10,bold:true,color:C.white}, align:'center'},
     elapsed:   {fill:C.navyD, font:{sz:10,color:'FFa0b4c8'}, align:'center'},
     age:       {fill:C.ageBg, font:{sz:10,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:10,bold:true,color:C.ageFgD}}},
@@ -923,14 +923,14 @@ async function exportExcel(){
         }else{
           const v=String(cell.v||'');
           if(v.includes('万円')||v.includes('%')||v.includes('年')){
-            fObj.bold=true;fObj.sz=10;fObj.color={rgb:C.navy};
+            fObj.bold=true;fObj.sz=12;fObj.color={rgb:C.navy};
           }else if(v&&v!=='▶'){
             fObj.bold=true;fObj.color={rgb:'FF5a6a7e'};
           }
           // 購入後残高の色分け
           if(v.includes('購入後残高')){
             if(v.includes('万円')){
-              fObj.bold=true;fObj.sz=10;
+              fObj.bold=true;fObj.sz=12;
               fObj.color={rgb:cashAfter>=0?'FF0d8a20':C.red};
             }else{
               fObj.bold=true;fObj.color={rgb:'FF2d5282'};
