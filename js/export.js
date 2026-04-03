@@ -393,7 +393,7 @@ async function exportExcelMG(){
   // 行数に応じてscaleを自動計算（ライブラリはfitToPageを非対応のためscaleで代替）
   const _printScale=Math.min(100,Math.max(45,Math.floor(3200/rows.length)));
   ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale};
-  ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
+  ws['!margins']={left:0.2,right:0.2,top:0.15,bottom:0.15,header:0.1,footer:0.1};
   wb.Workbook=wb.Workbook||{};
   wb.Workbook.Names=wb.Workbook.Names||[];
   wb.Workbook.Names.push({
@@ -838,7 +838,7 @@ async function exportExcel(){
   // ── 印刷設定：A4横・全行1ページに収める ──
   const _printScale=Math.min(100,Math.max(45,Math.floor(3200/rows.length)));
   ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale};
-  ws['!margins']={left:0.3,right:0.3,top:0.4,bottom:0.6,header:0.2,footer:0.3};
+  ws['!margins']={left:0.2,right:0.2,top:0.15,bottom:0.15,header:0.1,footer:0.1};
 
   // 印刷タイトル行：前提条件＋ヘッダー行を各ページ上部に繰り返し
   wb.Workbook=wb.Workbook||{};
