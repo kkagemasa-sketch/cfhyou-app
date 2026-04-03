@@ -30,13 +30,17 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
 
     zip.file(xmlPath, xml);
     const blob = await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = fname;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    // async内のa.click()はブラウザにブロックされるためFileReaderでdataURL経由でダウンロード
+    const reader = new FileReader();
+    reader.onload = function(){
+      const a = document.createElement('a');
+      a.href = reader.result;
+      a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+    reader.readAsDataURL(blob);
   } catch(e) {
     alert('印刷設定エラー（通常保存で代替）:\n'+e.message);
     XLSX.writeFile(wb, fname);
