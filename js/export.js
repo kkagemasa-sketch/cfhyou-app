@@ -374,6 +374,9 @@ async function exportExcelMG(){
       if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
     }
   });
+  // 免責事項行の結合（全列にわたって結合）
+  const disclaimerRowIdx=types.indexOf('footer');
+  if(disclaimerRowIdx>=0)ws['!merges'].push({s:{r:disclaimerRowIdx,c:0},e:{r:disclaimerRowIdx,c:disp+2}});
   // 使用者情報（左）、注意文（右隣）
   for(let i=0;i<footerRowCount;i++){
     const r=footerStartRow+i;
@@ -766,12 +769,14 @@ async function exportExcel(){
   push(['年間収支','',...R.bal.slice(0,disp).map(v=>ri(v)),ri(R.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
   const _initSavForXls=ri(window._purchaseInitSav||0);
   push(['預貯金残高',_initSavForXls,...R.sav.slice(0,disp).map(v=>ri(v)),ri(R.sav[disp-1])],'savings');
-  // 金融資産
-  if(R.finAssetRows)R.finAssetRows.forEach(row=>{
-    if(row.vals.slice(0,disp).some(v=>v>0))push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
-  });
-  if(R.finAsset.some(v=>v>0))push(['その他金融資産','',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
-  push(['総金融資産','',...R.totalAsset.slice(0,disp).map(v=>ri(v)),ri(R.totalAsset[disp-1])],'totalAsset');
+  // 金融資産（finAssetVisibleがfalseの場合は出力しない）
+  if(window.finAssetVisible!==false){
+    if(R.finAssetRows)R.finAssetRows.forEach(row=>{
+      if(row.vals.slice(0,disp).some(v=>v>0))push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
+    });
+    if(R.finAsset.some(v=>v>0))push(['その他金融資産','',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
+    push(['総金融資産','',...R.totalAsset.slice(0,disp).map(v=>ri(v)),ri(R.totalAsset[disp-1])],'totalAsset');
+  }
   if(fv('loan-amt')>0)push(['ローン残高','',...R.lBal.slice(0,disp).map(v=>ri(v)),''],'loan');
 
   // ── 注意文章・使用者情報 ──
@@ -822,6 +827,9 @@ async function exportExcel(){
       if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
     }
   });
+  // 免責事項行の結合（全列にわたって結合）
+  const disclaimerRowIdx=types.indexOf('footer');
+  if(disclaimerRowIdx>=0)ws['!merges'].push({s:{r:disclaimerRowIdx,c:0},e:{r:disclaimerRowIdx,c:disp+2}});
   // 使用者情報（左）、注意文（右隣）
   for(let i=0;i<footerRowCount;i++){
     const r=footerStartRow+i;
