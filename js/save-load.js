@@ -364,11 +364,10 @@ function _restoreDynamic(d){
   // 万が一シミュレーション
   if(d.mg){
     const mg=d.mg;
-    setMGTarget(mg.target||'h');
-    setMGDansin(mg.dansin!==false);
-    setMGDansinPair('h',mg.dansinH!==false);
-    setMGDansinPair('w',mg.dansinW!==false);
-    setMGSurvMode(mg.survMode||'auto');
+    if(typeof setMGTarget==='function')setMGTarget(mg.target||'h');
+    if(typeof setMGDansin==='function')setMGDansin(mg.dansin!==false);
+    if(typeof setMGDansinPair==='function'){setMGDansinPair('h',mg.dansinH!==false);setMGDansinPair('w',mg.dansinW!==false);}
+    if(typeof setMGSurvMode==='function')setMGSurvMode(mg.survMode||'auto');
     if($('mg-h-gross')&&mg.hGross)$('mg-h-gross').value=mg.hGross;
     if($('mg-w-gross')&&mg.wGross)$('mg-w-gross').value=mg.wGross;
     if($('mg-death-year'))$('mg-death-year').value=mg.deathYear||'1';
