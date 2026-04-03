@@ -17,7 +17,7 @@ function setSurvMode(who, mode){
     document.getElementById('surv-w-manual-btn').style.background=mode==='manual'?'#2d7dd2':'#fff';
     document.getElementById('surv-w-manual-btn').style.color=mode==='manual'?'#fff':'#2d7dd2';
   }
-  live();
+  live(true);
 }
 
 function togglePanel(){
