@@ -396,7 +396,7 @@ function _restoreDynamic(d){
       $('mg-lc-steps-container').querySelectorAll('.mg-lc-step').forEach(el=>el.remove());
       _mgLCStepCount=1;
       (mg.lcSteps||[]).forEach(s=>{
-        addMGLCStep();
+        if(typeof addMGLCStep==='function')addMGLCStep();
         const n=_mgLCStepCount;
         if($(`mg-lsb-${n}`))$(`mg-lsb-${n}`).value=s.base;
         if($(`mg-lsr-${n}`))$(`mg-lsr-${n}`).value=s.rate;
@@ -440,12 +440,12 @@ function _restoreDynamic(d){
     mgInsCnt=0;
     if((mg.insurances||[]).length>0){
       (mg.insurances).forEach(s=>{
-        addMGInsurance();
+        if(typeof addMGInsurance==='function')addMGInsurance();
         if($(`mg-ins-name-${mgInsCnt}`))$(`mg-ins-name-${mgInsCnt}`).value=s.name;
         if($(`mg-ins-amt-${mgInsCnt}`))$(`mg-ins-amt-${mgInsCnt}`).value=s.amt;
       });
     } else {
-      addMGInsurance();
+      if(typeof addMGInsurance==='function')addMGInsurance();
     }
     updateMGHints();
   }
