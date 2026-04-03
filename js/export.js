@@ -387,6 +387,14 @@ async function exportExcelMG(){
   // ── 列幅 ──
   ws['!cols']=[{wch:10},{wch:18},...Array(disp).fill({wch:7}),{wch:8}];
 
+  // ── 行高さ（イベント/年齢/経過年は低め、データ行は高め）──
+  ws['!rows']=types.map(t=>{
+    if(t==='event'||t==='age'||t==='elapsed')return{hpt:14};
+    if(t==='blank')return{hpt:6};
+    if(t==='footer')return{hpt:13};
+    return{hpt:18};
+  });
+
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
@@ -414,9 +422,9 @@ async function exportExcelMG(){
     blank:     {fill:null, font:{sz:10,color:C.white}, noBorder:true},
     footer:    {fill:C.white, font:{sz:8,color:C.black}, noBorder:true},
     header:    {fill:C.navy, font:{sz:10,bold:true,color:C.white}, align:'center'},
-    elapsed:   {fill:C.navyD, font:{sz:10,color:'FFa0b4c8'}, align:'center'},
-    age:       {fill:C.ageBg, font:{sz:10,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:10,bold:true,color:C.ageFgD}}},
-    event:     {fill:C.evBg, font:{sz:10,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:10,bold:true,color:C.evHdrFg}}},
+    elapsed:   {fill:C.navyD, font:{sz:8,color:'FFa0b4c8'}, align:'center'},
+    age:       {fill:C.ageBg, font:{sz:8,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:8,bold:true,color:C.ageFgD}}},
+    event:     {fill:C.evBg, font:{sz:8,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:8,bold:true,color:C.evHdrFg}}},
     incCat:    {fill:C.incCat, font:{sz:10,bold:true,color:C.white}},
     inc:       {fill:C.incBg, font:{sz:10,color:C.black}, col0:{fill:'FFe8f2fc',font:{sz:10,bold:true,color:C.incFg}}},
     incTotal:  {fill:C.blue, font:{sz:10,bold:true,color:C.white}},
@@ -841,6 +849,15 @@ async function exportExcel(){
 
   // 列幅
   ws['!cols']=[{wch:10},{wch:18},...Array(disp).fill({wch:7}),{wch:8}];
+
+  // 行高さ（イベント/年齢/経過年は低め、データ行は高め）
+  ws['!rows']=types.map(t=>{
+    if(t==='event'||t==='age'||t==='elapsed')return{hpt:14};
+    if(t==='blank')return{hpt:6};
+    if(t==='footer')return{hpt:13};
+    return{hpt:18};
+  });
+
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
@@ -868,9 +885,9 @@ async function exportExcel(){
     blank:     {fill:null, font:{sz:10,color:C.white}, noBorder:true},
     footer:    {fill:C.white, font:{sz:8,color:C.black}, noBorder:true},
     header:    {fill:C.navy, font:{sz:10,bold:true,color:C.white}, align:'center'},
-    elapsed:   {fill:C.navyD, font:{sz:10,color:'FFa0b4c8'}, align:'center'},
-    age:       {fill:C.ageBg, font:{sz:10,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:10,bold:true,color:C.ageFgD}}},
-    event:     {fill:C.evBg, font:{sz:10,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:10,bold:true,color:C.evHdrFg}}},
+    elapsed:   {fill:C.navyD, font:{sz:8,color:'FFa0b4c8'}, align:'center'},
+    age:       {fill:C.ageBg, font:{sz:8,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:8,bold:true,color:C.ageFgD}}},
+    event:     {fill:C.evBg, font:{sz:8,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:8,bold:true,color:C.evHdrFg}}},
     incCat:    {fill:C.incCat, font:{sz:10,bold:true,color:C.white}},
     inc:       {fill:C.incBg, font:{sz:10,color:C.black}, col0:{fill:'FFe8f2fc',font:{sz:10,bold:true,color:C.incFg}}},
     incTotal:  {fill:C.blue, font:{sz:10,bold:true,color:C.white}},
