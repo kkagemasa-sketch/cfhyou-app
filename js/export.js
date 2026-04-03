@@ -30,8 +30,13 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
 
   console.log('[pageSetup] injected XML tail:', xml.slice(-400));
 
-  zip.file(xmlPath, xml);
-  const blob = await zip.generateAsync({type:'blob'});
+  zip.file(xmlPath, xml, {compression:'DEFLATE'});
+  const blob = await zip.generateAsync({
+    type:'blob',
+    mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    compression:'DEFLATE',
+    compressionOptions:{level:4}
+  });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = fname;
