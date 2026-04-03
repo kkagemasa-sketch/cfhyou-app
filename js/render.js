@@ -379,24 +379,34 @@ function render(){
     }
     R.teate.push(t);
 
-    // ─── 遺族年金（ご主人ご逝去後） ───
-    // 遺族厚生年金：ご主人の老齢厚生年金の3/4
-    // 遺族基礎年金：子が18歳未満の間のみ（約100万＋子1人あたり加算）
+    // ─── 遺族年金（ご主人ご逝去後 or 奥様ご逝去後） ───
     let survP=0;
     if(hDeathAge>0&&ha>hDeathAge){
-      // 遺族厚生年金：ご主人の年金の3/4（奥様65歳未満でも支給）
-      const kosei=ri(pSelf*0.75);
-      // 遺族基礎年金：子が18歳未満の間のみ
-      let kiso=0;
-      let childUnder18=0;
-      children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
-      if(childUnder18>0){
-        // 1人目100万、2人目+23万、3人目以降+7.6万（概算）
-        kiso=childUnder18===1?100:childUnder18===2?123:Math.round(123+(childUnder18-2)*7.6);
+      // ご主人ご逝去後：奥様への遺族年金
+      if(window._survHMode==='manual'){
+        survP=fv('surv-h-amt')||0;
+      }else{
+        const kosei=ri(pSelf*0.75);
+        let kiso=0,childUnder18=0;
+        children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
+        if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+        const wOwnPension=wa>=pWReceive?ri(pWife):0;
+        survP=Math.max(kosei,wOwnPension)+kiso;
       }
-      // 奥様に自身の厚生年金がある場合は高い方を適用（65歳以降）
-      const wOwnPension=wa>=pWReceive?ri(pWife):0;
-      survP=Math.max(kosei,wOwnPension)+kiso;
+    }else if(wDeathAge>0&&wa>wDeathAge){
+      // 奥様ご逝去後：ご主人への遺族年金
+      if(window._survWMode==='manual'){
+        survP=fv('surv-w-amt')||0;
+      }else{
+        // 原則：ご主人が55歳以上かつ年収850万未満の場合のみ
+        const hIncome=getIncomeAtAge(hSteps,ha);
+        let kiso=0,childUnder18=0;
+        children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
+        if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+        if(childUnder18>0||(ha>=55&&hIncome<850)){
+          survP=ri(pWife*0.75)+kiso;
+        }
+      }
     }
     R.survPension.push(survP);
 
