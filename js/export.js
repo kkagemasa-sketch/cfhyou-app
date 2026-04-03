@@ -11,10 +11,10 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
   const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
   const xmlStr = await zip.file(xmlPath).async('string');
   // <pageSetup> タグを <pageMargins の直前に挿入（既存があれば置換）
-  const pageSetupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}" r:id="rId1"/>`;
+  const pageSetupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}"/>`;
   let newXml;
   if(xmlStr.includes('<pageSetup')) {
-    newXml = xmlStr.replace(/<pageSetup[^/]*\/>/,pageSetupTag);
+    newXml = xmlStr.replace(/<pageSetup[^>]*\/>/,pageSetupTag);
   } else {
     newXml = xmlStr.replace('<pageMargins', pageSetupTag+'<pageMargins');
   }
