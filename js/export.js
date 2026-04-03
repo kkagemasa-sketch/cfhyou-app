@@ -6,8 +6,11 @@
 async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
   try {
     if(typeof JSZip === 'undefined') throw new Error('JSZip未ロード');
-    const u8 = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-    if(!u8 || !u8.length) throw new Error('XLSX.write失敗');
+    const bin = XLSX.write(wb, {bookType:'xlsx', type:'binary'});
+    if(!bin || !bin.length) throw new Error('XLSX.write失敗');
+    // binary string → Uint8Array
+    const u8 = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i)&0xFF;
 
     const zip = await JSZip.loadAsync(u8);
     const sheetIdx = wb.SheetNames.indexOf(sheetName);
