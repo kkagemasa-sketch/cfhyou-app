@@ -27,17 +27,10 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
     }
     zip.file(xmlPath, xml);
 
-    // Uint8Arrayとして生成し、BlobをXLSX.writeFile相当の方法でダウンロード
     const out = await zip.generateAsync({type:'uint8array'});
     const blob = new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = fname;
-    document.body.appendChild(a);
-    a.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
-    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},60000);
+    // FileSaver.jsを使ってダウンロード（async内でも確実に動作）
+    saveAs(blob, fname);
   } catch(e) {
     console.error('_writeXlsxWithPageSetup error:', e);
     XLSX.writeFile(wb, fname);
