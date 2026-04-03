@@ -94,7 +94,7 @@ function exportExcelMG(){
   if(!MR){alert('先に万が一CF表を生成してください');return;}
   const N=window.lastR;
   const disp=MR.yr.length;
-  const infoSpan=Math.max(5,Math.ceil(disp/6)); // info行1項目あたりの列数（min35wch確保）
+  const infoSpan=Math.max(4,Math.ceil(disp/7)); // info行1項目あたりの列数（min28wch確保）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=(_v('client-name')||'').trim()||'CF表';
@@ -582,7 +582,7 @@ function exportExcel(){
   }
   if(!window.lastR){alert('先にCF表を生成してください');return;}
   const R=window.lastR, disp=window.lastDisp, cYear=window.lastCYear;
-  const infoSpan=Math.max(5,Math.ceil(disp/6)); // info行1項目あたりの列数（min35wch確保）
+  const infoSpan=Math.max(4,Math.ceil(disp/7)); // info行1項目あたりの列数（min28wch確保）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=_v('client-name')||'';
