@@ -1,24 +1,5 @@
 // ui.js — UI制御・パネル・iOS対策・初期化ヘルパー
 
-// 遺族年金モード切替（通常CF表用）
-function setSurvMode(who, mode){
-  if(who==='h'){
-    window._survHMode=mode;
-    document.getElementById('surv-h-manual-wrap').style.display=mode==='manual'?'':'none';
-    document.getElementById('surv-h-auto-btn').style.background=mode==='auto'?'#2d7dd2':'#fff';
-    document.getElementById('surv-h-auto-btn').style.color=mode==='auto'?'#fff':'#2d7dd2';
-    document.getElementById('surv-h-manual-btn').style.background=mode==='manual'?'#2d7dd2':'#fff';
-    document.getElementById('surv-h-manual-btn').style.color=mode==='manual'?'#fff':'#2d7dd2';
-  }else{
-    window._survWMode=mode;
-    document.getElementById('surv-w-manual-wrap').style.display=mode==='manual'?'':'none';
-    document.getElementById('surv-w-auto-btn').style.background=mode==='auto'?'#2d7dd2':'#fff';
-    document.getElementById('surv-w-auto-btn').style.color=mode==='auto'?'#fff':'#2d7dd2';
-    document.getElementById('surv-w-manual-btn').style.background=mode==='manual'?'#2d7dd2':'#fff';
-    document.getElementById('surv-w-manual-btn').style.color=mode==='manual'?'#fff':'#2d7dd2';
-  }
-  live(true);
-}
 
 function togglePanel(){
   const pl=document.querySelector('.panel-l');

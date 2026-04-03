@@ -183,11 +183,9 @@ function _collectDynamic(){
   });
   // 万が一 生活費段階1（静的HTML）
   d.mg.lcStep1={base:$('mg-lsb-1')?.value||'',rate:$('mg-lsr-1')?.value||'',from:$('mg-lsf-1')?.value||'',to:$('mg-lst-1')?.value||''};
-  // 通常CF表 遺族年金手動入力
-  d.survHMode=window._survHMode||'auto';
-  d.survWMode=window._survWMode||'auto';
-  d.survHAmt=$('surv-h-amt')?.value||'0';
-  d.survWAmt=$('surv-w-amt')?.value||'0';
+  // 通常CF表 遺族年金上書き金額
+  d.survHAmt=$('surv-h-amt')?.value||'';
+  d.survWAmt=$('surv-w-amt')?.value||'';
   // フラグ系
   d.repMode=repMode; d.retirePayOn=retirePayOn; d.wRetirePayOn=wRetirePayOn;
   d.downType=downType; d.carOwn=carOwn; d.parkOwn=parkOwn;
@@ -470,9 +468,7 @@ function _restoreDynamic(d){
       addCar({label:c.label||'',type:c.type,pay:c.pay,price:c.price,first:c.first,cycle:c.cycle,endAge:c.endAge,insp:c.insp,down:c.down,loanYrs:c.loanYrs,loanRate:c.loanRate});
     });
   }
-  // 通常CF表 遺族年金手動入力復元
-  if(d.survHMode)setSurvMode('h',d.survHMode);
-  if(d.survWMode)setSurvMode('w',d.survWMode);
+  // 通常CF表 遺族年金上書き金額復元
   if($('surv-h-amt')&&d.survHAmt!==undefined)$('surv-h-amt').value=d.survHAmt;
   if($('surv-w-amt')&&d.survWAmt!==undefined)$('surv-w-amt').value=d.survWAmt;
   if(d.lctrlDedMode){

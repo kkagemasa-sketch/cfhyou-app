@@ -238,8 +238,8 @@ if(authExp&&Date.now()<Number(authExp)){
       </div>
 
       <!-- 👔 ご主人様カード -->
-      <div style="border:2px solid #b8d4f8;border-radius:var(--r);overflow:hidden;margin-bottom:12px">
-        <div style="background:#2d7dd2;padding:8px 12px;display:flex;align-items:center;gap:8px">
+      <div style="border:2px solid #a0b8d0;border-radius:var(--r);overflow:hidden;margin-bottom:12px">
+        <div style="background:#1e3a5f;padding:8px 12px;display:flex;align-items:center;gap:8px">
           <span style="font-size:18px">👔</span>
           <span style="font-size:13px;font-weight:700;color:#fff">ご主人様</span>
         </div>
@@ -311,24 +311,24 @@ if(authExp&&Date.now()<Number(authExp)){
             </div>
           </div>
 
-          <!-- 遺族年金 手入力 -->
-          <div style="margin-top:8px;background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px">
-            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🪦 遺族年金（ご主人ご逝去後）</div>
-            <div style="display:flex;gap:6px;margin-bottom:6px">
-              <button id="surv-h-auto-btn" onclick="setSurvMode('h','auto')" style="flex:1;padding:4px 0;font-size:11px;border-radius:5px;border:1.5px solid #2d7dd2;background:#2d7dd2;color:#fff;cursor:pointer;font-weight:700">自動計算</button>
-              <button id="surv-h-manual-btn" onclick="setSurvMode('h','manual')" style="flex:1;padding:4px 0;font-size:11px;border-radius:5px;border:1.5px solid #b8d4f8;background:#fff;color:#2d7dd2;cursor:pointer;font-weight:600">手入力</button>
+          <!-- 遺族年金 案B（ご主人ご逝去後・奥様が受取） -->
+          <div id="surv-h-box" style="display:none;margin-top:8px;background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px">
+            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🪦 遺族年金（ご逝去後・奥様が受取）</div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
+              自動計算の概算：<span id="surv-h-auto-val" style="color:#1e3a5f;font-weight:700">─</span> 万円/年
             </div>
-            <div id="surv-h-manual-wrap" style="display:none">
-              <div class="fg"><label class="lbl" style="font-size:9px">遺族年金額（年額）</label>
-                <div class="suf"><input class="inp amt-inp" id="surv-h-amt" type="number" value="0" min="0" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+            <div class="fg">
+              <label class="lbl" style="font-size:9px">上書き金額（空欄 or 0 = 自動計算を使用）</label>
+              <div class="suf"><input class="inp amt-inp" id="surv-h-amt" type="number" value="" min="0" placeholder="空欄=自動" oninput="live()" style="font-size:11px"><span class="sl">万円/年</span></div>
             </div>
           </div>
+
         </div>
       </div>
 
       <!-- 👗 奥様カード -->
-      <div style="border:2px solid #b8d4f8;border-radius:var(--r);overflow:hidden;margin-bottom:16px">
-        <div style="background:#2d7dd2;padding:8px 12px;display:flex;align-items:center;gap:8px">
+      <div style="border:2px solid #e0a0b8;border-radius:var(--r);overflow:hidden;margin-bottom:16px">
+        <div style="background:#8e2050;padding:8px 12px;display:flex;align-items:center;gap:8px">
           <span style="font-size:18px">👗</span>
           <span style="font-size:13px;font-weight:700;color:#fff">奥様</span>
         </div>
@@ -411,18 +411,18 @@ if(authExp&&Date.now()<Number(authExp)){
             <div style="font-size:9px;color:var(--light);margin-top:3px">※ねんきん定期便の金額に上書きできます</div>
           </div>
 
-          <!-- 遺族年金 手入力（奥様死亡後） -->
-          <div style="margin-top:8px;background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px">
-            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🪦 遺族年金（奥様ご逝去後）</div>
-            <div style="display:flex;gap:6px;margin-bottom:6px">
-              <button id="surv-w-auto-btn" onclick="setSurvMode('w','auto')" style="flex:1;padding:4px 0;font-size:11px;border-radius:5px;border:1.5px solid #2d7dd2;background:#2d7dd2;color:#fff;cursor:pointer;font-weight:700">自動計算</button>
-              <button id="surv-w-manual-btn" onclick="setSurvMode('w','manual')" style="flex:1;padding:4px 0;font-size:11px;border-radius:5px;border:1.5px solid #b8d4f8;background:#fff;color:#2d7dd2;cursor:pointer;font-weight:600">手入力</button>
+          <!-- 遺族年金 案B（奥様ご逝去後・ご主人様が受取） -->
+          <div id="surv-w-box" style="display:none;margin-top:8px;background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px">
+            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🪦 遺族年金（ご逝去後・ご主人様が受取）</div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
+              自動計算の概算：<span id="surv-w-auto-val" style="color:#8e2050;font-weight:700">─</span> 万円/年
             </div>
-            <div id="surv-w-manual-wrap" style="display:none">
-              <div class="fg"><label class="lbl" style="font-size:9px">遺族年金額（年額）</label>
-                <div class="suf"><input class="inp amt-inp" id="surv-w-amt" type="number" value="0" min="0" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+            <div class="fg">
+              <label class="lbl" style="font-size:9px">上書き金額（空欄 or 0 = 自動計算を使用）</label>
+              <div class="suf"><input class="inp amt-inp" id="surv-w-amt" type="number" value="" min="0" placeholder="空欄=自動" oninput="live()" style="font-size:11px"><span class="sl">万円/年</span></div>
             </div>
           </div>
+
         </div>
       </div>
 

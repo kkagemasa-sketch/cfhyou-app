@@ -383,8 +383,9 @@ function render(){
     let survP=0;
     if(hDeathAge>0&&ha>hDeathAge){
       // ご主人ご逝去後：奥様への遺族年金
-      if(window._survHMode==='manual'){
-        survP=fv('surv-h-amt')||0;
+      const overrideH=parseFloat(document.getElementById('surv-h-amt')?.value)||0;
+      if(overrideH>0){
+        survP=overrideH;
       }else{
         const kosei=ri(pSelf*0.75);
         let kiso=0,childUnder18=0;
@@ -395,8 +396,9 @@ function render(){
       }
     }else if(wDeathAge>0&&wa>wDeathAge){
       // 奥様ご逝去後：ご主人への遺族年金
-      if(window._survWMode==='manual'){
-        survP=fv('surv-w-amt')||0;
+      const overrideW=parseFloat(document.getElementById('surv-w-amt')?.value)||0;
+      if(overrideW>0){
+        survP=overrideW;
       }else{
         // 原則：ご主人が55歳以上かつ年収850万未満の場合のみ
         const hIncome=getIncomeAtAge(hSteps,ha);
@@ -939,6 +941,34 @@ function render(){
       newSav+=R.bal[i]+(R.savExtra[i]||0);
       R.sav[i]=ri(newSav);
     }
+  }
+
+  // 遺族年金ボックス表示/非表示＋自動値スパン更新
+  const survHBox=document.getElementById('surv-h-box');
+  const survWBox=document.getElementById('surv-w-box');
+  if(survHBox)survHBox.style.display=hDeathAge>0?'':'none';
+  if(survWBox)survWBox.style.display=wDeathAge>0?'':'none';
+  const survHSpan=document.getElementById('surv-h-auto-val');
+  if(survHSpan&&hDeathAge>0){
+    const i0=hDeathAge-hAge+1;
+    const wa0=wAge+i0;
+    let childUnder18=0;
+    children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<18)childUnder18++;});
+    const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+    const kosei0=ri(pSelf*0.75);
+    const wOwn0=wa0>=pWReceive?ri(pWife):0;
+    survHSpan.textContent=(Math.max(kosei0,wOwn0)+kiso0).toLocaleString();
+  }
+  const survWSpan=document.getElementById('surv-w-auto-val');
+  if(survWSpan&&wDeathAge>0){
+    const i0=wDeathAge-wAge+1;
+    const ha0=hAge+i0;
+    let childUnder18=0;
+    children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<18)childUnder18++;});
+    const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+    const hIncome0=getIncomeAtAge(hSteps,ha0);
+    const autoW=(childUnder18>0||(ha0>=55&&hIncome0<850))?ri(pWife*0.75)+kiso0:kiso0;
+    survWSpan.textContent=autoW.toLocaleString();
   }
 
   // Excel出力用にグローバル保存
