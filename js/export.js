@@ -3,7 +3,7 @@
 // ===== Excel印刷設定XML注入（xlsx-js-styleはpageSetup非対応のため） =====
 // A4横: 印刷可能領域 = 幅:267mm 高:190mm（余白0.3inch左右, 0.4inch上下）
 // scale=行数から自動計算してfitToPage相当を実現する
-async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
+async function _writeXlsxWithPageSetup(wb, fname, sheetName) {
   try {
     if(typeof JSZip === 'undefined') throw new Error('JSZip未ロード');
     // xlsx-js-styleはtype:'binary'対応
@@ -17,13 +17,26 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
     const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
     let xml = await zip.file(xmlPath).async('string');
 
-    const setupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}"/>`;
+    // 「すべての行を1ページに印刷」= fitToPage+fitToHeight:1
+    // sheetPrにpageSetUpPr fitToPage="1"が必要
+    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="0"/>`;
     if(/<pageSetup/.test(xml)){
       xml = xml.replace(/<pageSetup[^>]*\/>/,setupTag);
     } else if(/<pageMargins/.test(xml)){
       xml = xml.replace(/(<pageMargins[^>]*\/>)/,'$1'+setupTag);
     } else {
       xml = xml.replace(/<\/worksheet>/,setupTag+'</worksheet>');
+    }
+    // sheetPrにfitToPage="1"を設定（なければ追加）
+    if(/<sheetPr/.test(xml)){
+      if(/<pageSetUpPr/.test(xml)){
+        xml = xml.replace(/<pageSetUpPr[^>]*\/>/,'<pageSetUpPr fitToPage="1"/>');
+      } else {
+        xml = xml.replace(/(<sheetPr[^>]*>)/,'$1<pageSetUpPr fitToPage="1"/>');
+        xml = xml.replace(/(<sheetPr[^>]*\/>)/,'<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
+      }
+    } else {
+      xml = xml.replace(/<worksheet /,'<worksheet ').replace(/(<worksheet[^>]*>)/,'$1<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
     }
     zip.file(xmlPath, xml);
 
@@ -618,7 +631,7 @@ async function exportExcelMG(){
 
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
   const fname=`万が一_${clientName}様_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
-  await _writeXlsxWithPageSetup(wb,fname,'万が一CF表',_printScale);
+  await _writeXlsxWithPageSetup(wb,fname,'万が一CF表');
 }
 
 // ===== Excel出力 =====
@@ -1056,7 +1069,7 @@ async function exportExcel(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'CF表');
-  await _writeXlsxWithPageSetup(wb,`CF表_${clientName}様_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表',_printScale);
+  await _writeXlsxWithPageSetup(wb,`CF表_${clientName}様_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表');
 }
 
 // ===== PDF出力（印刷ダイアログ経由） =====
