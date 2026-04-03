@@ -1,5 +1,32 @@
 // export.js — Excel・PDF出力
 
+// ===== Excel印刷設定XML注入（xlsx-js-styleはpageSetup非対応のため） =====
+// A4横: 印刷可能領域 = 幅:267mm 高:190mm（余白0.3inch左右, 0.4inch上下）
+// scale=行数から自動計算してfitToPage相当を実現する
+async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
+  const u8 = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const zip = await JSZip.loadAsync(u8);
+  // シート番号を特定
+  const sheetIdx = wb.SheetNames.indexOf(sheetName);
+  const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
+  const xmlStr = await zip.file(xmlPath).async('string');
+  // <pageSetup> タグを <pageMargins の直前に挿入（既存があれば置換）
+  const pageSetupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}" r:id="rId1"/>`;
+  let newXml;
+  if(xmlStr.includes('<pageSetup')) {
+    newXml = xmlStr.replace(/<pageSetup[^/]*\/>/,pageSetupTag);
+  } else {
+    newXml = xmlStr.replace('<pageMargins', pageSetupTag+'<pageMargins');
+  }
+  zip.file(xmlPath, newXml);
+  const blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fname;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+}
+
 // ===== 印刷用情報 =====
 function getPrintInfo(){
   const notesRaw=($('pi-notes')?.value||'').split('\n').filter(l=>l.trim());
@@ -88,7 +115,7 @@ function _doExport(type){
   else window.print();
 }
 
-function exportExcelMG(){
+async function exportExcelMG(){
   const mgKey=rTab==='mg-h'?'h':'w';
   const MR=window._mgMRStore&&window._mgMRStore[mgKey];
   if(!MR){alert('先に万が一CF表を生成してください');return;}
@@ -568,7 +595,7 @@ function exportExcelMG(){
 
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
   const fname=`万が一_${clientName}様_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
-  XLSX.writeFile(wb,fname);
+  await _writeXlsxWithPageSetup(wb,fname,'万が一CF表',_printScale);
 }
 
 // ===== Excel出力 =====
@@ -579,7 +606,7 @@ function exportCurrentTab(){
   else if(rTab==='graph')showExportModal('excel'); // グラフはCF表と同じ
   else showExportModal('excel');
 }
-function exportExcel(){
+async function exportExcel(){
   // 万が一タブが開いている場合は万が一用Excel出力
   if((rTab==='mg-h'||rTab==='mg-w')&&window.lastMR){
     exportExcelMG();return;
@@ -990,7 +1017,7 @@ function exportExcel(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'CF表');
-  XLSX.writeFile(wb,`CF表_${clientName}様_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`);
+  await _writeXlsxWithPageSetup(wb,`CF表_${clientName}様_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表',_printScale);
 }
 
 // ===== PDF出力（印刷ダイアログ経由） =====
