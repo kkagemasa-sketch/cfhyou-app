@@ -30,7 +30,9 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = fname;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(a.href),5000);
   } catch(e) {
     alert('印刷設定エラー（通常保存で代替）:\n'+e.message);
