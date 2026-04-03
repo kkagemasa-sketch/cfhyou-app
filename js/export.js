@@ -484,6 +484,7 @@ function exportExcelMG(){
         : (c>=2?'right':'left');
       if(tp==='footer'){hAlign='left';}
       if(tp==='title'&&c===2){hAlign='center';}
+      if(tp==='info'&&c>=2){hAlign='left';}
       let cellFill=isLastCol&&lastFill?lastFill:fillObj;
 
       // 子どもイベント行：教育段階ごとの色分け（入園年齢を考慮）
@@ -931,6 +932,7 @@ function exportExcel(){
       if(tp==='footer'){hAlign='left';}
       // title行C列（マンション/戸建て）：中央揃え
       if(tp==='title'&&c===2){hAlign='center';}
+      if(tp==='info'&&c>=2){hAlign='left';}
       let cellFill=isLastCol&&lastFill?lastFill:fillObj;
 
       // 子どもイベント行：教育段階ごとの色分け（入園年齢を考慮）
