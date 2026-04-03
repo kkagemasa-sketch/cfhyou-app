@@ -214,6 +214,14 @@ function setRTab(t){
 }
 
 // ===== 印刷情報 =====
+// 遺族基礎年金（2024年度）: 基本816,000円＋加算234,800円(1・2子)／78,300円(3子以降)
+function calcKiso(n){
+  if(n===0)return 0;
+  if(n===1)return ri(81.6+23.48);
+  if(n===2)return ri(81.6+23.48*2);
+  return ri(81.6+23.48*2+7.83*(n-2));
+}
+
 // ===== メイン計算 =====
 function render(){
   if(rTab==='loan'){renderLoanCalc();return}
@@ -395,21 +403,19 @@ function render(){
       if(overrideH>0){
         survP=overrideH;
       }else{
-        // 65歳未満：遺族厚生年金 = 夫の厚生×3/4 のみ
-        // 65歳以降：妻自身の年金を優先受給し、遺族厚生年金の差額を上乗せ（差額方式）
-        //   ①差額方式合計  = 妻の基礎 + max(夫の厚生×3/4, 妻の厚生)
-        //   ②2/3+1/2特例   = 妻の基礎 + 夫の厚生×2/3 + 妻の厚生×1/2
-        //   → いずれか高い方
-        let kiso=0,childUnder18=0;
+        // 65歳未満：遺族厚生年金 = 夫の厚生×3/4
+        // 65歳以降：差額方式 と 2/3+1/2特例 の高い方
+        let childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
-        if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+        const kiso=calcKiso(childUnder18);
+        // 中高齢寡婦加算: 遺族基礎年金なし かつ 妻40〜64歳
+        const chukorei=(kiso===0&&wa>=40&&wa<65)?ri(61.43):0;
         if(wa>=pWReceive){
-          // pW=0にしているため妻の老齢基礎年金もsurvPに含める
           const opt1=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW));
           const opt2=kisoW+ri(koseiH*2/3)+ri(koseiW*0.5);
-          survP=Math.max(opt1,opt2)+kiso;
+          survP=Math.max(opt1,opt2)+kiso+chukorei;
         }else{
-          survP=ri(koseiH*0.75)+kiso;
+          survP=ri(koseiH*0.75)+kiso+chukorei;
         }
       }
     }else if(wDeathAge>0&&wa>wDeathAge){
@@ -418,11 +424,10 @@ function render(){
       if(overrideW>0){
         survP=overrideW;
       }else{
-        // 原則：ご主人が55歳以上かつ年収850万未満の場合のみ
         const hIncome=getIncomeAtAge(hSteps,ha);
-        let kiso=0,childUnder18=0;
+        let childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
-        if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+        const kiso=calcKiso(childUnder18);
         if(childUnder18>0||(ha>=55&&hIncome<850)){
           survP=ri(koseiW*0.75)+kiso;
         }
@@ -972,14 +977,15 @@ function render(){
     const wa0=wAge+i0;
     let childUnder18=0;
     children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<=18)childUnder18++;});
-    const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+    const kiso0=calcKiso(childUnder18);
+    const chukorei0=(kiso0===0&&wa0>=40&&wa0<65)?ri(61.43):0;
     let autoH;
     if(wa0>=pWReceive){
       const opt1=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW));
       const opt2=kisoW+ri(koseiH*2/3)+ri(koseiW*0.5);
-      autoH=Math.max(opt1,opt2)+kiso0;
+      autoH=Math.max(opt1,opt2)+kiso0+chukorei0;
     }else{
-      autoH=ri(koseiH*0.75)+kiso0;
+      autoH=ri(koseiH*0.75)+kiso0+chukorei0;
     }
     survHSpan.textContent=autoH.toLocaleString();
   }
@@ -989,7 +995,7 @@ function render(){
     const ha0=hAge+i0;
     let childUnder18=0;
     children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<=18)childUnder18++;});
-    const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+    const kiso0=calcKiso(childUnder18);
     const hIncome0=getIncomeAtAge(hSteps,ha0);
     const autoW=(childUnder18>0||(ha0>=55&&hIncome0<850))?ri(koseiW*0.75)+kiso0:kiso0;
     survWSpan.textContent=autoW.toLocaleString();

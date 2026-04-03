@@ -24,10 +24,21 @@ function updateMGDansinUI(){
 }
 function setMGSurvMode(m){
   mgSurvMode=m;
-  $('mg-surv-auto').classList.toggle('on',m==='auto');
-  $('mg-surv-manual').classList.toggle('on',m==='manual');
-  $('mg-surv-manual-wrap').style.display=m==='manual'?'':'none';
-  $('mg-surv-hint').textContent=m==='auto'?'遺族厚生年金＋遺族基礎年金を自動計算します':'手入力した金額を使用します';
+  $('mg-surv-auto')?.classList.toggle('on',m==='auto');
+  $('mg-surv-detail')?.classList.toggle('on',m==='detail');
+  $('mg-surv-manual')?.classList.toggle('on',m==='manual');
+  if($('mg-surv-detail-wrap'))$('mg-surv-detail-wrap').style.display=m==='detail'?'':'none';
+  if($('mg-surv-manual-wrap'))$('mg-surv-manual-wrap').style.display=m==='manual'?'':'none';
+  const hints={auto:'年金収入設定から自動計算します',detail:'額面月収から遺族厚生年金を計算します',manual:'手入力した金額を使用します'};
+  if($('mg-surv-hint'))$('mg-surv-hint').textContent=hints[m]||hints.auto;
+  live(true);
+}
+// 遺族基礎年金計算（2024年度）: 基本816,000円＋加算234,800円(1・2子)／78,300円(3子以降)
+function calcKiso(n){
+  if(n===0)return 0;
+  if(n===1)return ri(81.6+23.48);
+  if(n===2)return ri(81.6+23.48*2);
+  return ri(81.6+23.48*2+7.83*(n-2));
 }
 function addMGInsurance(){
   mgInsCnt++;
@@ -137,6 +148,7 @@ function renderContingency(){
   const KISO_FULL=81.6;
   const retAge_mg=iv('retire-age')||65, wRetAge_mg=iv('w-retire-age')||60;
   const pHStart_mg=iv('pension-h-start')||22, pWStart_mg=iv('pension-w-start')||22;
+  const pWStart_mg=iv('pension-w-start')||22;
   const kisoH_mg=ri(KISO_FULL*Math.min(retAge_mg-pHStart_mg,40)/40);
   const kisoW_mg=ri(KISO_FULL*Math.min(wRetAge_mg-pWStart_mg,40)/40);
   const koseiH_mg=Math.max(0,pSelf-kisoH_mg);
@@ -210,25 +222,43 @@ function renderContingency(){
       if(mgSurvMode==='manual'){
         survP=survManualAmt;
       }else{
-        // 自動計算（遺族厚生年金 = 老齢厚生年金部分のみ × 3/4）
+        // 自動 or 詳細計算
+        // 詳細モードの場合: 額面月収から遺族厚生年金を直接計算
+        let kH=koseiH_mg, kW=koseiW_mg;
+        if(mgSurvMode==='detail'){
+          const hGross=fv('mg-h-gross')||0;
+          const wGross=fv('mg-w-gross')||0;
+          if(hGross>0){
+            const joinM=Math.max((deathAge-pHStart_mg)*12,300);
+            // 月額（万円）→ 年額（万円）: gross × 5.481/1000 × joinM × 3/4 = 遺族厚生年金
+            // koseiH として使うには ÷0.75 して戻す
+            kH=hGross*5.481/1000*joinM; // = 遺族厚生年金 / 0.75 相当
+          }
+          if(wGross>0){
+            const wJoinM=Math.max((deathAge-pWStart_mg)*12,300);
+            kW=wGross*5.481/1000*wJoinM;
+          }
+        }
         if(targetIsH){
-          let kiso=0, childUnder18=0;
+          let childUnder18=0;
           children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
-          if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+          const kiso=calcKiso(childUnder18);
+          // 中高齢寡婦加算（遺族基礎年金なし かつ 妻40〜64歳）
+          const chukorei=(kiso===0&&wa>=40&&wa<65)?ri(61.43):0;
           if(wa>=pWReceive){
-            const opt1=kisoW_mg+Math.max(ri(koseiH_mg*0.75),ri(koseiW_mg));
-            const opt2=kisoW_mg+ri(koseiH_mg*2/3)+ri(koseiW_mg*0.5);
-            survP=Math.max(opt1,opt2)+kiso;
+            const opt1=kisoW_mg+Math.max(ri(kH*0.75),ri(kW));
+            const opt2=kisoW_mg+ri(kH*2/3)+ri(kW*0.5);
+            survP=Math.max(opt1,opt2)+kiso+chukorei;
           }else{
-            survP=ri(koseiH_mg*0.75)+kiso;
+            survP=ri(kH*0.75)+kiso+chukorei;
           }
         }else{
           // 奥様死亡→ご主人への遺族年金（55歳以上かつ年収850万未満）
-          let kiso=0, childUnder18=0;
+          let childUnder18=0;
           children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
-          if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
+          const kiso=calcKiso(childUnder18);
           const hIncome=getIncomeAtAge(getIncomeSteps('h'),ha);
-          if(childUnder18>0||(ha>=55&&hIncome<850)){survP=ri(koseiW_mg*0.75)+kiso;}
+          if(childUnder18>0||(ha>=55&&hIncome<850)){survP=ri(kW*0.75)+kiso;}
           else{survP=kiso;}
         }
       }

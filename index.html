@@ -959,18 +959,31 @@ if(authExp&&Date.now()<Number(authExp)){
 
       <!-- 遺族年金 -->
       <div class="sub">📋 遺族年金</div>
-      <div class="g2">
-        <div class="fg"><label class="lbl">遺族年金の設定</label>
-          <div style="display:flex;gap:6px">
-            <button class="btn-tog on" id="mg-surv-auto" onclick="setMGSurvMode('auto')">自動計算</button>
-            <button class="btn-tog" id="mg-surv-manual" onclick="setMGSurvMode('manual')">手入力</button>
-          </div>
+      <div class="fg" style="margin-bottom:8px"><label class="lbl">計算方法</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn-tog on" id="mg-surv-auto" onclick="setMGSurvMode('auto')">自動（年金額から）</button>
+          <button class="btn-tog" id="mg-surv-detail" onclick="setMGSurvMode('detail')">詳細（額面月収から）</button>
+          <button class="btn-tog" id="mg-surv-manual" onclick="setMGSurvMode('manual')">手入力</button>
         </div>
-        <div class="fg" id="mg-surv-manual-wrap" style="display:none"><label class="lbl">遺族年金額（年額）</label>
-          <div class="suf"><input class="inp amt-inp" id="mg-surv-amt" type="number" value="0" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
       </div>
+      <!-- 詳細モード：額面月収入力 -->
+      <div id="mg-surv-detail-wrap" style="display:none;background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:8px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
+          遺族厚生年金 ＝ 額面月収 × 5.481‰ × max(加入月数, 300ヶ月) × 3/4<br>
+          <span style="font-size:9px">就職年齢は収入設定の「加入開始年齢」を使用します</span>
+        </div>
+        <div class="g2">
+          <div class="fg"><label class="lbl" style="font-size:9px">👔 ご主人様 額面月収</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-h-gross" type="number" min="0" placeholder="例:40" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">👗 奥様 額面月収</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-w-gross" type="number" min="0" placeholder="例:30" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+        </div>
+      </div>
+      <!-- 手入力モード -->
+      <div class="fg" id="mg-surv-manual-wrap" style="display:none"><label class="lbl">遺族年金額（年額）</label>
+        <div class="suf"><input class="inp amt-inp" id="mg-surv-amt" type="number" value="0" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
       <div class="fg" style="margin-top:4px">
-        <span class="hint ok" id="mg-surv-hint">遺族厚生年金＋遺族基礎年金を自動計算します</span>
+        <span class="hint ok" id="mg-surv-hint">年金収入設定から自動計算します</span>
       </div>
 
       <div class="divider"></div>

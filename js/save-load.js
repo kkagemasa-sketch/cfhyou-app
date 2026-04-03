@@ -163,6 +163,7 @@ function _collectDynamic(){
   });
   // 万が一シミュレーション
   d.mg={target:mgTarget,dansin:mgDansin,dansinH:mgDansinH,dansinW:mgDansinW,survMode:mgSurvMode,
+    hGross:$('mg-h-gross')?.value||'',wGross:$('mg-w-gross')?.value||'',
     deathYear:$('mg-death-year')?.value||'',survAmt:$('mg-surv-amt')?.value||'',lcRatio:$('mg-lc-ratio')?.value||'',
     lcMode:$('mg-lc-mode-step')?.classList.contains('act')?'step':'ratio',
     scholarshipOn:$('mg-scholarship-yes')?.classList.contains('act')||false,
@@ -368,6 +369,8 @@ function _restoreDynamic(d){
     setMGDansinPair('h',mg.dansinH!==false);
     setMGDansinPair('w',mg.dansinW!==false);
     setMGSurvMode(mg.survMode||'auto');
+    if($('mg-h-gross')&&mg.hGross)$('mg-h-gross').value=mg.hGross;
+    if($('mg-w-gross')&&mg.wGross)$('mg-w-gross').value=mg.wGross;
     if($('mg-death-year'))$('mg-death-year').value=mg.deathYear||'1';
     if($('mg-surv-amt'))$('mg-surv-amt').value=mg.survAmt||'0';
     if($('mg-lc-ratio'))$('mg-lc-ratio').value=mg.lcRatio||'70';
