@@ -6,8 +6,8 @@
 async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
   try {
     if(typeof JSZip === 'undefined') throw new Error('JSZip未ロード');
+    // xlsx-js-styleはtype:'binary'対応
     const bin = XLSX.write(wb, {bookType:'xlsx', type:'binary'});
-    if(!bin || !bin.length) throw new Error('XLSX.write失敗');
     // binary string → Uint8Array
     const u8 = new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i)&0xFF;
@@ -15,9 +15,7 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
     const zip = await JSZip.loadAsync(u8);
     const sheetIdx = wb.SheetNames.indexOf(sheetName);
     const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
-    const xmlFile = zip.file(xmlPath);
-    if(!xmlFile) throw new Error(`シートXMLが見つかりません: ${xmlPath}`);
-    let xml = await xmlFile.async('string');
+    let xml = await zip.file(xmlPath).async('string');
 
     const setupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}"/>`;
     if(/<pageSetup/.test(xml)){
@@ -27,22 +25,21 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
     } else {
       xml = xml.replace(/<\/worksheet>/,setupTag+'</worksheet>');
     }
-
     zip.file(xmlPath, xml);
-    const blob = await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    // async内のa.click()はブラウザにブロックされるためFileReaderでdataURL経由でダウンロード
-    const reader = new FileReader();
-    reader.onload = function(){
-      const a = document.createElement('a');
-      a.href = reader.result;
-      a.download = fname;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    };
-    reader.readAsDataURL(blob);
+
+    // Uint8Arrayとして生成し、BlobをXLSX.writeFile相当の方法でダウンロード
+    const out = await zip.generateAsync({type:'uint8array'});
+    const blob = new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},60000);
   } catch(e) {
-    alert('印刷設定エラー（通常保存で代替）:\n'+e.message);
+    console.error('_writeXlsxWithPageSetup error:', e);
     XLSX.writeFile(wb, fname);
   }
 }
