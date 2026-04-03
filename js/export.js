@@ -410,21 +410,21 @@ async function exportExcelMG(){
   // ── スタイル定義（通常CFと同じ + col0対応） ──
   const styleDefs={
     title:     {fill:C.navy, font:{sz:12,bold:true,color:C.white}},
-    info:      {fill:'FFeef5ff', font:{sz:9,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:9,bold:true,color:C.white}}},
-    blank:     {fill:null, font:{sz:9,color:C.white}, noBorder:true},
-    footer:    {fill:C.white, font:{sz:8,color:C.black}, noBorder:true},
-    header:    {fill:C.navy, font:{sz:9,bold:true,color:C.white}, align:'center'},
-    elapsed:   {fill:C.navyD, font:{sz:8,color:'FFa0b4c8'}, align:'center'},
-    age:       {fill:C.ageBg, font:{sz:8,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:8,bold:true,color:C.ageFgD}}},
-    event:     {fill:C.evBg, font:{sz:8,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:8,bold:true,color:C.evHdrFg}}},
-    incCat:    {fill:C.incCat, font:{sz:9,bold:true,color:C.white}},
-    inc:       {fill:C.incBg, font:{sz:9,color:C.black}, col0:{fill:'FFe8f2fc',font:{sz:9,bold:true,color:C.incFg}}},
-    incTotal:  {fill:C.blue, font:{sz:9,bold:true,color:C.white}},
-    expCat:    {fill:C.expCat, font:{sz:9,bold:true,color:C.white}},
-    exp:       {fill:C.expBg, font:{sz:9,color:C.black}, col0:{fill:'FFfdecea',font:{sz:9,bold:true,color:C.expFg}}},
-    expTotal:  {fill:C.redL, font:{sz:9,bold:true,color:C.white}},
-    balance:   {fill:C.white, font:{sz:9,bold:true,color:C.black}},
-    savings:   {fill:C.green, font:{sz:9,bold:true,color:C.white}},
+    info:      {fill:'FFeef5ff', font:{sz:10,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:10,bold:true,color:C.white}}},
+    blank:     {fill:null, font:{sz:10,color:C.white}, noBorder:true},
+    footer:    {fill:C.white, font:{sz:10,color:C.black}, noBorder:true},
+    header:    {fill:C.navy, font:{sz:10,bold:true,color:C.white}, align:'center'},
+    elapsed:   {fill:C.navyD, font:{sz:10,color:'FFa0b4c8'}, align:'center'},
+    age:       {fill:C.ageBg, font:{sz:10,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:10,bold:true,color:C.ageFgD}}},
+    event:     {fill:C.evBg, font:{sz:10,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:10,bold:true,color:C.evHdrFg}}},
+    incCat:    {fill:C.incCat, font:{sz:10,bold:true,color:C.white}},
+    inc:       {fill:C.incBg, font:{sz:10,color:C.black}, col0:{fill:'FFe8f2fc',font:{sz:10,bold:true,color:C.incFg}}},
+    incTotal:  {fill:C.blue, font:{sz:10,bold:true,color:C.white}},
+    expCat:    {fill:C.expCat, font:{sz:10,bold:true,color:C.white}},
+    exp:       {fill:C.expBg, font:{sz:10,color:C.black}, col0:{fill:'FFfdecea',font:{sz:10,bold:true,color:C.expFg}}},
+    expTotal:  {fill:C.redL, font:{sz:10,bold:true,color:C.white}},
+    balance:   {fill:C.white, font:{sz:10,bold:true,color:C.black}},
+    savings:   {fill:C.green, font:{sz:10,bold:true,color:C.white}},
   };
 
   // 子どもイベント行マップ（入園年齢を含む）
@@ -449,7 +449,7 @@ async function exportExcelMG(){
       const isLastCol=c===lastCol;
       // フォント（col0対応）
       const fDef=(isFixed&&def.col0)?def.col0.font:def.font;
-      const fObj={name:'Yu Gothic',sz:fDef?.sz||9};
+      const fObj={name:'Yu Gothic',sz:fDef?.sz||10};
       if(fDef?.bold)fObj.bold=true;
       if(fDef?.color)fObj.color={rgb:fDef.color};
       // info行：ラベルセルは太字、値セル（万円等）は強調
@@ -462,13 +462,13 @@ async function exportExcelMG(){
         }else{
           const v=String(cell.v||'');
           if(v.includes('万円')||v.includes('%')||v.includes('年')){
-            fObj.bold=true;fObj.sz=9;fObj.color={rgb:C.navy};
+            fObj.bold=true;fObj.sz=10;fObj.color={rgb:C.navy};
           }else if(v&&v!=='▶'){
             fObj.bold=true;fObj.color={rgb:'FF5a6a7e'};
           }
           if(v.includes('購入後残高')){
             if(v.includes('万円')){
-              fObj.bold=true;fObj.sz=9;
+              fObj.bold=true;fObj.sz=10;
               fObj.color={rgb:cashAfter>=0?'FF0d8a20':C.red};
             }else{
               fObj.bold=true;fObj.color={rgb:'FF2d5282'};
@@ -864,25 +864,25 @@ async function exportExcel(){
   // ── スタイル適用 ──
   const styleDefs={
     title:     {fill:C.navy, font:{sz:12,bold:true,color:C.white}},
-    info:      {fill:'FFeef5ff', font:{sz:9,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:9,bold:true,color:C.white}}},
-    blank:     {fill:null, font:{sz:9,color:C.white}, noBorder:true},
-    footer:    {fill:C.white, font:{sz:8,color:C.black}, noBorder:true},
-    header:    {fill:C.navy, font:{sz:9,bold:true,color:C.white}, align:'center'},
-    elapsed:   {fill:C.navyD, font:{sz:8,color:'FFa0b4c8'}, align:'center'},
-    age:       {fill:C.ageBg, font:{sz:8,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:8,bold:true,color:C.ageFgD}}},
-    event:     {fill:C.evBg, font:{sz:8,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:8,bold:true,color:C.evHdrFg}}},
-    incCat:    {fill:C.incCat, font:{sz:9,bold:true,color:C.white}},
-    inc:       {fill:C.incBg, font:{sz:9,color:C.black}, col0:{fill:'FFe8f2fc',font:{sz:9,bold:true,color:C.incFg}}},
-    incTotal:  {fill:C.blue, font:{sz:9,bold:true,color:C.white}},
-    expCat:    {fill:C.expCat, font:{sz:9,bold:true,color:C.white}},
-    exp:       {fill:C.expBg, font:{sz:9,color:C.black}, col0:{fill:'FFfdecea',font:{sz:9,bold:true,color:C.expFg}}},
-    expTotal:  {fill:C.redL, font:{sz:9,bold:true,color:C.white}},
-    balance:   {fill:C.white, font:{sz:9,bold:true,color:C.black}},
-    savings:   {fill:C.green, font:{sz:9,bold:true,color:C.white}},
-    fin:       {fill:C.finBg, font:{sz:9,bold:true,color:C.finFg}},
-    finTotal:  {fill:'FFdbeeff', font:{sz:9,bold:true,color:C.finFg}},
-    totalAsset:{fill:C.finHdrBg, font:{sz:9,bold:true,color:C.white}},
-    loan:      {fill:C.loanBg, font:{sz:9,color:C.muted}},
+    info:      {fill:'FFeef5ff', font:{sz:10,color:'FF2d5282'}, col0:{fill:'FF2d5282',font:{sz:10,bold:true,color:C.white}}},
+    blank:     {fill:null, font:{sz:10,color:C.white}, noBorder:true},
+    footer:    {fill:C.white, font:{sz:10,color:C.black}, noBorder:true},
+    header:    {fill:C.navy, font:{sz:10,bold:true,color:C.white}, align:'center'},
+    elapsed:   {fill:C.navyD, font:{sz:10,color:'FFa0b4c8'}, align:'center'},
+    age:       {fill:C.ageBg, font:{sz:10,color:C.ageFg}, align:'center', col0:{fill:C.ageBgL,font:{sz:10,bold:true,color:C.ageFgD}}},
+    event:     {fill:C.evBg, font:{sz:10,color:C.evFg}, align:'center', col0:{fill:C.evHdr,font:{sz:10,bold:true,color:C.evHdrFg}}},
+    incCat:    {fill:C.incCat, font:{sz:10,bold:true,color:C.white}},
+    inc:       {fill:C.incBg, font:{sz:10,color:C.black}, col0:{fill:'FFe8f2fc',font:{sz:10,bold:true,color:C.incFg}}},
+    incTotal:  {fill:C.blue, font:{sz:10,bold:true,color:C.white}},
+    expCat:    {fill:C.expCat, font:{sz:10,bold:true,color:C.white}},
+    exp:       {fill:C.expBg, font:{sz:10,color:C.black}, col0:{fill:'FFfdecea',font:{sz:10,bold:true,color:C.expFg}}},
+    expTotal:  {fill:C.redL, font:{sz:10,bold:true,color:C.white}},
+    balance:   {fill:C.white, font:{sz:10,bold:true,color:C.black}},
+    savings:   {fill:C.green, font:{sz:10,bold:true,color:C.white}},
+    fin:       {fill:C.finBg, font:{sz:10,bold:true,color:C.finFg}},
+    finTotal:  {fill:'FFdbeeff', font:{sz:10,bold:true,color:C.finFg}},
+    totalAsset:{fill:C.finHdrBg, font:{sz:10,bold:true,color:C.white}},
+    loan:      {fill:C.loanBg, font:{sz:10,color:C.muted}},
   };
 
   // 子どもイベント行の行番号→{ages, hStartAge}マップ
@@ -908,7 +908,7 @@ async function exportExcel(){
       const isLastCol=c===lastCol;
       // フォント
       const fDef=(isFixed&&def.col0)?def.col0.font:def.font;
-      const fObj={name:'Yu Gothic',sz:fDef?.sz||9};
+      const fObj={name:'Yu Gothic',sz:fDef?.sz||10};
       if(fDef?.bold)fObj.bold=true;
       if(fDef?.color)fObj.color={rgb:fDef.color};
       // info行：ラベルセルは太字、値セル（万円等）は強調
@@ -923,14 +923,14 @@ async function exportExcel(){
         }else{
           const v=String(cell.v||'');
           if(v.includes('万円')||v.includes('%')||v.includes('年')){
-            fObj.bold=true;fObj.sz=9;fObj.color={rgb:C.navy};
+            fObj.bold=true;fObj.sz=10;fObj.color={rgb:C.navy};
           }else if(v&&v!=='▶'){
             fObj.bold=true;fObj.color={rgb:'FF5a6a7e'};
           }
           // 購入後残高の色分け
           if(v.includes('購入後残高')){
             if(v.includes('万円')){
-              fObj.bold=true;fObj.sz=9;
+              fObj.bold=true;fObj.sz=10;
               fObj.color={rgb:cashAfter>=0?'FF0d8a20':C.red};
             }else{
               fObj.bold=true;fObj.color={rgb:'FF2d5282'};
