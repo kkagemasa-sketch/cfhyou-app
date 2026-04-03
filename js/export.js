@@ -780,7 +780,7 @@ async function exportExcel(){
   const _initSavForXls=ri(window._purchaseInitSav||0);
   push(['預貯金残高',_initSavForXls,...R.sav.slice(0,disp).map(v=>ri(v)),ri(R.sav[disp-1])],'savings');
   // 金融資産（finAssetVisibleがfalseの場合は出力しない）
-  if(window.finAssetVisible!==false){
+  if(typeof finAssetVisible==='undefined'||finAssetVisible!==false){
     if(R.finAssetRows)R.finAssetRows.forEach(row=>{
       if(row.vals.slice(0,disp).some(v=>v>0))push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
     });
