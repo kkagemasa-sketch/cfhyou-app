@@ -94,7 +94,7 @@ function exportExcelMG(){
   if(!MR){alert('先に万が一CF表を生成してください');return;}
   const N=window.lastR;
   const disp=MR.yr.length;
-  const infoSpan=Math.max(4,Math.ceil(disp/7)); // info行1項目あたりの列数（min28wch確保）
+  const infoSpan=3; // info行1項目あたりの列数（shrinkToFitで収める）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=(_v('client-name')||'').trim()||'CF表';
@@ -545,10 +545,11 @@ function exportExcelMG(){
       // blank/footer行・範囲外セルは塗りつぶしなし
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const finalAlign=cell._centerAlign?'center':hAlign;
+      const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:finalAlign,wrapText:false},
+        alignment:{vertical:'center',horizontal:finalAlign,wrapText:false,shrinkToFit},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
@@ -582,7 +583,7 @@ function exportExcel(){
   }
   if(!window.lastR){alert('先にCF表を生成してください');return;}
   const R=window.lastR, disp=window.lastDisp, cYear=window.lastCYear;
-  const infoSpan=Math.max(4,Math.ceil(disp/7)); // info行1項目あたりの列数（min28wch確保）
+  const infoSpan=3; // info行1項目あたりの列数（shrinkToFitで収める）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=_v('client-name')||'';
@@ -966,10 +967,11 @@ function exportExcel(){
 
       // blank/footer行・範囲外セルは塗りつぶしなし
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
+      const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:hAlign,wrapText:false},
+        alignment:{vertical:'center',horizontal:hAlign,wrapText:false,shrinkToFit},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
