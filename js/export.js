@@ -14,9 +14,11 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
   const pageSetupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}"/>`;
   let newXml;
   if(xmlStr.includes('<pageSetup')) {
+    // 既存のpageSetupタグを置換
     newXml = xmlStr.replace(/<pageSetup[^>]*\/>/,pageSetupTag);
   } else {
-    newXml = xmlStr.replace('<pageMargins', pageSetupTag+'<pageMargins');
+    // pageSetupはpageMarginsの直後に挿入（OOXML仕様の順序）
+    newXml = xmlStr.replace(/(<pageMargins[^>]*\/>)/, '$1'+pageSetupTag);
   }
   zip.file(xmlPath, newXml);
   const blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
