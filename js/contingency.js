@@ -215,10 +215,13 @@ function renderContingency(){
           let kiso=0, childUnder18=0;
           children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
           if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
-          const wKosei=wa>=pWReceive?koseiW_mg:0;
-          const optA=ri(koseiH_mg*0.75);
-          const optB=ri(koseiH_mg*2/3)+ri(wKosei*0.5);
-          survP=(wa>=pWReceive?Math.max(optA,optB):optA)+kiso;
+          if(wa>=pWReceive){
+            const opt1=kisoW_mg+Math.max(ri(koseiH_mg*0.75),ri(koseiW_mg));
+            const opt2=kisoW_mg+ri(koseiH_mg*2/3)+ri(koseiW_mg*0.5);
+            survP=Math.max(opt1,opt2)+kiso;
+          }else{
+            survP=ri(koseiH_mg*0.75)+kiso;
+          }
         }else{
           // 奥様死亡→ご主人への遺族年金（55歳以上かつ年収850万未満）
           let kiso=0, childUnder18=0;

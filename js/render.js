@@ -395,15 +395,22 @@ function render(){
       if(overrideH>0){
         survP=overrideH;
       }else{
-        // 遺族厚生年金 = 夫の老齢厚生年金 × 3/4
-        // 65歳以降かつ妻自身に厚生年金がある場合：max(夫の厚生×3/4, 夫の厚生×2/3 + 妻の厚生×1/2)
+        // 65歳未満：遺族厚生年金 = 夫の厚生×3/4 のみ
+        // 65歳以降：妻自身の年金を優先受給し、遺族厚生年金の差額を上乗せ（差額方式）
+        //   ①差額方式合計  = 妻の基礎 + max(夫の厚生×3/4, 妻の厚生)
+        //   ②2/3+1/2特例   = 妻の基礎 + 夫の厚生×2/3 + 妻の厚生×1/2
+        //   → いずれか高い方
         let kiso=0,childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<18)childUnder18++;});
         if(childUnder18>0)kiso=childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
-        const wKosei=wa>=pWReceive?koseiW:0;
-        const optA=ri(koseiH*0.75);
-        const optB=ri(koseiH*2/3)+ri(wKosei*0.5);
-        survP=(wa>=pWReceive?Math.max(optA,optB):optA)+kiso;
+        if(wa>=pWReceive){
+          // pW=0にしているため妻の老齢基礎年金もsurvPに含める
+          const opt1=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW));
+          const opt2=kisoW+ri(koseiH*2/3)+ri(koseiW*0.5);
+          survP=Math.max(opt1,opt2)+kiso;
+        }else{
+          survP=ri(koseiH*0.75)+kiso;
+        }
       }
     }else if(wDeathAge>0&&wa>wDeathAge){
       // 奥様ご逝去後：ご主人への遺族年金
@@ -966,10 +973,14 @@ function render(){
     let childUnder18=0;
     children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<18)childUnder18++;});
     const kiso0=childUnder18===0?0:childUnder18===1?102:childUnder18===2?124:Math.round(124+(childUnder18-2)*6.9);
-    const wKosei0=wa0>=pWReceive?koseiW:0;
-    const optA0=ri(koseiH*0.75);
-    const optB0=ri(koseiH*2/3)+ri(wKosei0*0.5);
-    const autoH=(wa0>=pWReceive?Math.max(optA0,optB0):optA0)+kiso0;
+    let autoH;
+    if(wa0>=pWReceive){
+      const opt1=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW));
+      const opt2=kisoW+ri(koseiH*2/3)+ri(koseiW*0.5);
+      autoH=Math.max(opt1,opt2)+kiso0;
+    }else{
+      autoH=ri(koseiH*0.75)+kiso0;
+    }
     survHSpan.textContent=autoH.toLocaleString();
   }
   const survWSpan=document.getElementById('surv-w-auto-val');
