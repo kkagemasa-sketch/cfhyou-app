@@ -4,44 +4,38 @@
 // A4横: 印刷可能領域 = 幅:267mm 高:190mm（余白0.3inch左右, 0.4inch上下）
 // scale=行数から自動計算してfitToPage相当を実現する
 async function _writeXlsxWithPageSetup(wb, fname, sheetName, scale) {
-  const u8 = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-  const zip = await JSZip.loadAsync(u8);
-  const sheetIdx = wb.SheetNames.indexOf(sheetName);
-  const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
-  let xml = await zip.file(xmlPath).async('string');
+  try {
+    if(typeof JSZip === 'undefined') throw new Error('JSZip未ロード');
+    const u8 = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    if(!u8 || !u8.length) throw new Error('XLSX.write失敗');
 
-  // デバッグ: 実際のXML末尾300文字をコンソールに出力
-  console.log('[pageSetup] sheet XML tail:', xml.slice(-400));
+    const zip = await JSZip.loadAsync(u8);
+    const sheetIdx = wb.SheetNames.indexOf(sheetName);
+    const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
+    const xmlFile = zip.file(xmlPath);
+    if(!xmlFile) throw new Error(`シートXMLが見つかりません: ${xmlPath}`);
+    let xml = await xmlFile.async('string');
 
-  const setupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}"/>`;
+    const setupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${scale}"/>`;
+    if(/<pageSetup/.test(xml)){
+      xml = xml.replace(/<pageSetup[^>]*\/>/,setupTag);
+    } else if(/<pageMargins/.test(xml)){
+      xml = xml.replace(/(<pageMargins[^>]*\/>)/,'$1'+setupTag);
+    } else {
+      xml = xml.replace(/<\/worksheet>/,setupTag+'</worksheet>');
+    }
 
-  if(/<pageSetup/.test(xml)) {
-    // 既存pageSetupを置換（自己終了・通常終了どちらでも対応）
-    xml = xml.replace(/<pageSetup[^>]*(?:\/>|>[\s\S]*?<\/pageSetup>)/, setupTag);
-  } else if(/<pageMargins/.test(xml)) {
-    // pageMargins（自己終了・通常終了どちらでも対応）の直後に挿入
-    xml = xml
-      .replace(/<pageMargins([^>]*)><\/pageMargins>/, '<pageMargins$1/>')
-      .replace(/(<pageMargins[^>]*\/>)/, '$1' + setupTag);
-  } else {
-    // pageMarginsが存在しない場合: </worksheet>の直前に挿入
-    xml = xml.replace(/<\/worksheet>/, setupTag + '</worksheet>');
+    zip.file(xmlPath, xml);
+    const blob = await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  } catch(e) {
+    alert('印刷設定エラー（通常保存で代替）:\n'+e.message);
+    XLSX.writeFile(wb, fname);
   }
-
-  console.log('[pageSetup] injected XML tail:', xml.slice(-400));
-
-  zip.file(xmlPath, xml, {compression:'DEFLATE'});
-  const blob = await zip.generateAsync({
-    type:'blob',
-    mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    compression:'DEFLATE',
-    compressionOptions:{level:4}
-  });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = fname;
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
 }
 
 // ===== 印刷用情報 =====
