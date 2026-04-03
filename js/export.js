@@ -138,14 +138,15 @@ function exportExcelMG(){
   push(titleRow,'title');
 
   // ── 頭金の内訳（通常CFと同じ個別セル形式） ──
-  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,'',downType==='gift'?'頭金（贈与）':'頭金（自己資金）',`${downPay}万円`,'',costTypeV_mg==='loan'?'諸費用（ローン組込）':'諸費用',`${houseCostV}万円`,'','引越・家具',`${(movingCostV+furnitureInitV)}万円`,'','購入後残高',`${cashAfter}万円`];
+  // ラベルを先行スペーサー位置に移動（セル統合で2列幅確保）
+  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,downType==='gift'?'頭金（贈与）':'頭金（自己資金）','',`${downPay}万円`,costTypeV_mg==='loan'?'諸費用（ローン組込）':'諸費用','',`${houseCostV}万円`,'引越・家具','',`${(movingCostV+furnitureInitV)}万円`,'購入後残高','',`${cashAfter}万円`];
   const infoRow1Len=infoRow1.length;
   while(infoRow1.length<disp+3)infoRow1.push('');
   push(infoRow1,'info');
 
   // ── 住宅ローン条件（通常CFと同じ個別セル形式） ──
-  const infoRow2=['🏦 住宅ローン条件','','住宅価格',`${housePrice}万円`,'','借入総額',`${loanAmtV}万円`,'','金利',rateDisp,'','借入期間',`${loanYrsV}年`];
-  if(deliveryYrV>0){infoRow2.push('','引き渡し',`${deliveryYrV}年`);}
+  const infoRow2=['🏦 住宅ローン条件','','住宅価格',`${housePrice}万円`,'借入総額','',`${loanAmtV}万円`,'金利','',rateDisp,'借入期間','',`${loanYrsV}年`];
+  if(deliveryYrV>0){infoRow2.push('引き渡し','',`${deliveryYrV}年`);}
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
   push(infoRow2,'info');
@@ -317,6 +318,8 @@ function exportExcelMG(){
   types.forEach((t,i)=>{if(t==='info')infoRowIndices.push(i);});
   infoRowIndices.forEach(ri=>{
     ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}});
+    // ラベルセルを2列統合（c:4+5, c:7+8, c:10+11, c:13+14）
+    [4,7,10,13].forEach(c=>ws['!merges'].push({s:{r:ri,c},e:{r:ri,c:c+1}}));
   });
   // 使用者情報（左）、注意文（右隣）
   for(let i=0;i<footerRowCount;i++){
@@ -327,7 +330,6 @@ function exportExcelMG(){
 
   // ── 列幅 ──
   ws['!cols']=[{wch:13},{wch:13},...Array(disp).fill({wch:7}),{wch:8}];
-  ws['!rows']=types.map(t=>t==='info'?{hpt:30}:{});
 
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
@@ -404,7 +406,7 @@ function exportExcelMG(){
             fObj.bold=true;fObj.color={rgb:'FF5a6a7e'};
           }
           if(v.includes('購入後残高')){fObj.bold=true;fObj.color={rgb:'FF2d5282'};}
-          if(c>0&&String(rows[r][c-1]||'').includes('購入後残高')){
+          if(c>0&&(String(rows[r][c-1]||'').includes('購入後残高')||(c>1&&String(rows[r][c-2]||'').includes('購入後残高')))){
             fObj.bold=true;fObj.sz=10;
             fObj.color={rgb:cashAfter>=0?'FF0d8a20':C.red};
           }
@@ -526,7 +528,7 @@ function exportExcelMG(){
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:finalAlign,wrapText:tp==='info'&&c>=2},
+        alignment:{vertical:'center',horizontal:finalAlign,wrapText:false},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
@@ -601,16 +603,16 @@ function exportExcel(){
   while(titleRow.length<disp+3)titleRow.push('');
   push(titleRow,'title');
 
-  // 頭金の内訳 - A+B結合
-  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,'',downType==='gift'?'頭金（贈与）':'頭金（自己資金）',`${downPay}万円`,'',costTypeV==='loan'?'諸費用（ローン組込）':'諸費用',`${houseCostV}万円`,'','引越・家具',`${(movingCostV+furnitureInitV)}万円`,'','購入後残高',`${cashAfter}万円`];
+  // 頭金の内訳 - ラベルを先行スペーサー位置に移動（セル統合で2列幅確保）
+  const infoRow1=['💰 頭金の内訳','','現預金合計',`${cashTotal}万円`,downType==='gift'?'頭金（贈与）':'頭金（自己資金）','',`${downPay}万円`,costTypeV==='loan'?'諸費用（ローン組込）':'諸費用','',`${houseCostV}万円`,'引越・家具','',`${(movingCostV+furnitureInitV)}万円`,'購入後残高','',`${cashAfter}万円`];
   // infoRowの実データ長を記録（これ以降は塗りつぶしなし）
   const infoRow1Len=infoRow1.length;
   while(infoRow1.length<disp+3)infoRow1.push('');
   push(infoRow1,'info');
 
-  // 住宅ローン条件 - A+B結合
-  const infoRow2=['🏦 住宅ローン条件','','住宅価格',`${housePrice}万円`,'','借入総額',`${loanAmtV}万円`,'','金利',rateDisp,'','借入期間',`${loanYrsV}年`];
-  if(deliveryYrV>0){infoRow2.push('','引き渡し',`${deliveryYrV}年`);}
+  // 住宅ローン条件 - ラベルを先行スペーサー位置に移動
+  const infoRow2=['🏦 住宅ローン条件','','住宅価格',`${housePrice}万円`,'借入総額','',`${loanAmtV}万円`,'金利','',rateDisp,'借入期間','',`${loanYrsV}年`];
+  if(deliveryYrV>0){infoRow2.push('引き渡し','',`${deliveryYrV}年`);}
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
   push(infoRow2,'info');
@@ -740,6 +742,8 @@ function exportExcel(){
   types.forEach((t,i)=>{if(t==='info')infoRowIndices.push(i);});
   infoRowIndices.forEach(ri=>{
     ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}});
+    // ラベルセルを2列統合（c:4+5, c:7+8, c:10+11, c:13+14）
+    [4,7,10,13].forEach(c=>ws['!merges'].push({s:{r:ri,c},e:{r:ri,c:c+1}}));
   });
   // 使用者情報（左）、注意文（右隣）
   for(let i=0;i<footerRowCount;i++){
@@ -750,7 +754,6 @@ function exportExcel(){
 
   // 列幅
   ws['!cols']=[{wch:13},{wch:13},...Array(disp).fill({wch:7}),{wch:8}];
-  ws['!rows']=types.map(t=>t==='info'?{hpt:30}:{});
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
@@ -836,7 +839,7 @@ function exportExcel(){
           }
           // 購入後残高の色分け
           if(v.includes('購入後残高')){fObj.bold=true;fObj.color={rgb:'FF2d5282'};}
-          if(c>0&&String(rows[r][c-1]||'').includes('購入後残高')){
+          if(c>0&&(String(rows[r][c-1]||'').includes('購入後残高')||(c>1&&String(rows[r][c-2]||'').includes('購入後残高')))){
             fObj.bold=true;fObj.sz=10;
             fObj.color={rgb:cashAfter>=0?'FF0d8a20':C.red};
           }
@@ -926,7 +929,7 @@ function exportExcel(){
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:hAlign,wrapText:tp==='info'&&c>=2},
+        alignment:{vertical:'center',horizontal:hAlign,wrapText:false},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
