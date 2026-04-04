@@ -62,5 +62,5 @@ window.onload=()=>{
   document.querySelector('.panel-l')?.addEventListener('change',()=>scheduleAutoSave());
 
   // ペアローン状態に応じて団信UIを切り替え
-  updateMGDansinUI();
+  if(typeof updateMGDansinUI==='function')updateMGDansinUI();
 };
