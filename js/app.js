@@ -321,7 +321,7 @@ document.addEventListener('keydown',function(e){
     }
   },true); // ← captureフェーズ
 
-  // Delete/Backspace で選択範囲の上書きを一括削除
+  // Delete/Backspace で選択範囲を0にする（cfOverridesに0をセット）
   document.addEventListener('keydown',function(e){
     if(_selected.length<=1)return;
     if(e.key!=='Delete'&&e.key!=='Backspace')return;
@@ -329,7 +329,8 @@ document.addEventListener('keydown',function(e){
     _selected.forEach(function(td){
       var rowKey=td.dataset.row;
       var col=parseInt(td.dataset.col);
-      if(cfOverrides[rowKey])delete cfOverrides[rowKey][col];
+      if(!cfOverrides[rowKey])cfOverrides[rowKey]={};
+      cfOverrides[rowKey][col]=0;
     });
     _clearSel();
     _anchorTd=null;
