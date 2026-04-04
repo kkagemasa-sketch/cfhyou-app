@@ -1,0 +1,51 @@
+============================================================
+  Housing FP HouseFit — ファイル一覧
+============================================================
+
+【ルートフォルダ】
+  index.html          … メインページ（入力パネル＋CF表）
+  sw.js               … PWA用キャッシュ管理（オフライン対応）
+  manifest.json       … PWAインストール設定（アイコン・名前）
+  v11-archive.html    … 旧バージョン保管用（編集しない）
+  仕様書.md           … アプリの仕様書
+  アドバイス.md       … FPアドバイス文例集
+  ファイル一覧.txt    … このファイル
+
+【アイコン画像】
+  favicon.svg         … ブラウザタブのアイコン
+  icon-192.png        … PWA用アイコン（小）
+  icon-512.png        … PWA用アイコン（大）
+  apple-touch-icon.png … iPhone用アイコン
+
+【css フォルダ】
+  style.css           … 全体のデザイン・色・レイアウト
+
+【js フォルダ — 自作コード】
+  state.js            … 全体の変数置き場（設定値・CF表上書きデータ・カスタム行）
+  constants.js        … 固定値（税率・社保率・教育費テーブルなど）
+  utils.js            … 共通の便利関数（セル編集・カスタム行操作・入力ハッシュ）
+  family.js           … 家族構成（お子様追加・削除・年齢計算）
+  income.js           … 収入設定（手取り年収ステップ・退職金・年金）
+  education.js        … 教育費（幼稚園〜大学の費用計算）
+  housing.js          … 住宅設定（マンション/戸建て切替・自己資金・修繕費）
+  loan-calc.js        … 住宅ローン計算（返済額・金利・繰上返済）
+  living-cost.js      … 生活費（月額×12の年額計算・インフレ対応）
+  assets.js           … 資産管理（車の追加削除・保険・有価証券）
+  extras.js           … 特別支出（結婚祝い・旅行など年単位の臨時支出）
+  contingency.js      … 万が一シミュレーション（死亡時の遺族年金・保険金）
+  render.js           … CF表の計算と描画（メインのロジック・カスタム行表示）
+  cf-highlight.js     … CF表の行ハイライト（マウスオーバー時の強調表示）
+  graphs.js           … グラフ描画（収支推移・資産推移のチャート）
+  export.js           … Excel出力（CF表・万が一シミュレーションをxlsx形式で保存）
+  loan-plan.js        … 返済計画表（ローンの年別残高・利息・元金内訳）
+  handbook.js         … FP手帳（税率・社保・控除・年金の早見表）
+  scenario.js         … シナリオ管理（プラン1〜3の切替・比較）
+  save-load.js        … 保存/読込（お客様データの保存・復元・自動保存・Undo/Redo）
+  ui.js               … 画面操作（パネル開閉・タブ切替・スクロール連動・キーボード）
+  app.js              … アプリ起動（初期化・セル操作・ドラッグ選択・フィルハンドル）
+
+【js/vendors フォルダ — 外部ライブラリ（変更しない）】
+  chart.min.js        … Chart.js（グラフ描画ライブラリ）
+  jszip.min.js        … JSZip（ZIP圧縮）
+  xlsx-style.min.js   … SheetJS（Excel出力ライブラリ）
+  FileSaver.min.js    … FileSaver（ファイルダウンロード）
