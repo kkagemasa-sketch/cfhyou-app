@@ -61,10 +61,13 @@ if(authExp&&Date.now()<Number(authExp)){
     <span id="update-indicator" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;display:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif"></span>
     <button class="btn-h" onclick="window.location.href=window.location.pathname+'?v='+Date.now()" title="最新版に更新">↻ 更新</button>
     <button class="btn-h" onclick="togglePanel()" id="btn-toggle-panel" title="入力パネルを隠す">◀ 隠す</button>
+    <button class="btn-h" id="btn-undo" onclick="undoState()" title="元に戻す (Ctrl+Z)">◀ 戻る</button>
+    <button class="btn-h" id="btn-redo" onclick="redoState()" title="やり直す (Ctrl+Y)">進む ▶</button>
     <button class="btn-h" onclick="resetOverrides()" title="CF表の手動上書きをすべてリセット">↺ 上書きリセット</button>
     <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="onJSONImport(this)">
     <input type="file" id="json-bulk-import-input" accept=".json" style="display:none" onchange="onBulkJSONImport(this)">
     <button class="btn-h" onclick="openSlotPanel()" title="お客様データの保存・読込・バックアップ" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">💾 保存 / 読込</button>
+    <button class="btn-h" onclick="toggleHandbook()" title="FP手帳（税率・制度早見表）" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">📖 FP手帳</button>
     <button class="btn-h" onclick="showHelp()" title="使い方ガイド" style="background:rgba(37,99,235,.4);border-color:rgba(96,165,250,.6);font-weight:800;font-size:14px;width:34px;padding:0">？</button>
   </div>
 </header>
@@ -1128,7 +1131,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/scenario.js"></script>
 <script src="js/save-load.js"></script>
 <script src="js/ui.js"></script>
-<script src="js/app.js?v=13"></script>
+<script src="js/app.js?v=14"></script>
 <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>
 </body>
 </html>

@@ -268,6 +268,8 @@ document.addEventListener('keydown',function(e){
       }else{
         // ドラッグ選択完了 → 直後のclickで解除されないようにガード
         _skipNextClick=true;
+        // bodyにフォーカスを移してキーボードイベント（Delete等）を受け取れるようにする
+        document.body.focus();
       }
     };
     document.addEventListener('mouseover',onOver,true);
