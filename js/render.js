@@ -294,8 +294,10 @@ function render(){
   const hEndYr = hDeathAge>0 ? hDeathAge-hAge+1 : 0;
   const wEndYr = wDeathAge>0 ? wDeathAge-wAge+1 : 0;
   const autoDisp = Math.max(hEndYr, wEndYr);
-  const totalYrs = Math.max(autoDisp, 60);
-  const disp = autoDisp>0 ? autoDisp : 60;
+  // ローン全期間が収まるよう totalYrs を確保（delivery + loanYrs が60年を超える場合に対応）
+  const loanEnd = delivery + loanYrs + 1;
+  const totalYrs = Math.max(autoDisp, 60, loanEnd);
+  const disp = Math.max(autoDisp>0 ? autoDisp : 60, loanEnd - 1);
   const cLbls=['第一子','第二子','第三子','第四子'];
 
   let sav=initSav;
