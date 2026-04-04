@@ -179,3 +179,117 @@ document.addEventListener('keydown',function(e){
     _srcTd=null;
   }
 })();
+
+// ===== 範囲選択 + 一括削除 =====
+(function(){
+  var _selected=[];
+  var _anchorTd=null; // 最初にクリックしたセル
+
+  function _clearSel(){
+    _selected.forEach(function(td){td.classList.remove('cell-selected');});
+    _selected=[];
+  }
+  // グローバルからアクセス可能にする
+  window._cfClearSel=_clearSel;
+  window._cfGetSelected=function(){return _selected;};
+
+  function _selectRange(startTd,endTd){
+    _clearSel();
+    var tbl=startTd.closest('table');
+    if(!tbl)return;
+    var rows=Array.from(tbl.querySelectorAll('tr'));
+    var r1=rows.indexOf(startTd.parentElement);
+    var r2=rows.indexOf(endTd.parentElement);
+    var c1=Array.from(startTd.parentElement.children).indexOf(startTd);
+    var c2=Array.from(endTd.parentElement.children).indexOf(endTd);
+    var rMin=Math.min(r1,r2), rMax=Math.max(r1,r2);
+    var cMin=Math.min(c1,c2), cMax=Math.max(c1,c2);
+    for(var r=rMin;r<=rMax;r++){
+      var cells=rows[r].children;
+      for(var c=cMin;c<=cMax;c++){
+        var td=cells[c];
+        if(td&&td.hasAttribute('contenteditable')){
+          td.classList.add('cell-selected');
+          _selected.push(td);
+        }
+      }
+    }
+  }
+
+  // クリック → アンカー記憶、Shift+クリック → 範囲選択
+  document.addEventListener('click',function(e){
+    var td=e.target;
+    if(!td.hasAttribute||!td.hasAttribute('contenteditable')||!td.dataset.row){
+      // セル外クリック → 選択解除
+      if(_selected.length>0&&!td.closest('.fill-handle'))_clearSel();
+      return;
+    }
+    if(e.shiftKey&&_anchorTd){
+      e.preventDefault();
+      _selectRange(_anchorTd,td);
+      // フォーカスを外して編集モードにしない
+      td.blur();
+    }else{
+      _clearSel();
+      _anchorTd=td;
+    }
+  });
+
+  // Shift+矢印キーで範囲拡張
+  document.addEventListener('keydown',function(e){
+    if(!e.shiftKey)return;
+    var td=document.activeElement;
+    if(!td||!td.hasAttribute||!td.hasAttribute('contenteditable')||!td.dataset.row)return;
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key)===-1)return;
+
+    e.preventDefault();
+    if(!_anchorTd)_anchorTd=td;
+
+    // 移動先を見つける
+    var row=td.parentElement;
+    var table=td.closest('table');
+    if(!row||!table)return;
+    var cells=Array.from(row.children);
+    var ci=cells.indexOf(td);
+    var rows=Array.from(table.querySelectorAll('tr'));
+    var ri=rows.indexOf(row);
+    var nextTd=null;
+
+    if(e.key==='ArrowRight'){
+      for(var i=ci+1;i<cells.length;i++){if(cells[i].hasAttribute('contenteditable')){nextTd=cells[i];break;}}
+    }else if(e.key==='ArrowLeft'){
+      for(var i=ci-1;i>=0;i--){if(cells[i].hasAttribute('contenteditable')){nextTd=cells[i];break;}}
+    }else if(e.key==='ArrowDown'){
+      for(var i=ri+1;i<rows.length;i++){var c=rows[i].children[ci];if(c&&c.hasAttribute('contenteditable')){nextTd=c;break;}}
+    }else if(e.key==='ArrowUp'){
+      for(var i=ri-1;i>=0;i--){var c=rows[i].children[ci];if(c&&c.hasAttribute('contenteditable')){nextTd=c;break;}}
+    }
+    if(nextTd){
+      nextTd.focus();
+      _selectRange(_anchorTd,nextTd);
+    }
+  });
+
+  // Delete/Backspace で選択範囲の上書きを一括削除
+  document.addEventListener('keydown',function(e){
+    if(_selected.length<=1)return;
+    if(e.key!=='Delete'&&e.key!=='Backspace')return;
+    e.preventDefault();
+    _selected.forEach(function(td){
+      var rowKey=td.dataset.row;
+      var col=parseInt(td.dataset.col);
+      if(cfOverrides[rowKey])delete cfOverrides[rowKey][col];
+    });
+    _clearSel();
+    _anchorTd=null;
+    render();
+  });
+
+  // Escで選択解除
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&_selected.length>0){
+      _clearSel();
+      _anchorTd=null;
+    }
+  });
+})();

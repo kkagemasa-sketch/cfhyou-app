@@ -349,6 +349,7 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
 [contenteditable="true"]{position:relative}
 .fill-handle{position:absolute;right:-3px;bottom:-3px;width:7px;height:7px;background:var(--navy);border:1px solid #fff;cursor:crosshair;z-index:5;pointer-events:auto}
 .fill-preview{background:#d0e8ff!important;outline:1.5px dashed #3b82f6!important}
+.cell-selected{background:#cce0ff!important;outline:1.5px solid #3b82f6!important}
 
 /* ============================================================
    グラフ
