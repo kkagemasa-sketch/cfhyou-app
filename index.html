@@ -418,63 +418,9 @@ if(authExp&&Date.now()<Number(authExp)){
         </div>
       </div>
 
-      <div id="car-fields">
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <div class="tc on" id="car-new" onclick="setCarType('new')" style="flex:1;padding:8px;flex-direction:column;align-items:center;text-align:center;gap:3px">
-            <span style="font-size:20px">✨</span>
-            <div class="tc-lbl" style="font-size:11px">新車</div>
-            <div class="tc-desc">車検：初回3年・以降2年</div>
-          </div>
-          <div class="tc" id="car-used" onclick="setCarType('used')" style="flex:1;padding:8px;flex-direction:column;align-items:center;text-align:center;gap:3px">
-            <span style="font-size:20px">🔄</span>
-            <div class="tc-lbl" style="font-size:11px">中古車</div>
-            <div class="tc-desc">車検：2年ごと</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <div class="tc on" id="car-pay-cash" onclick="setCarPay('cash')" style="flex:1;padding:6px 8px;gap:4px">
-            <div class="tc-lbl" style="font-size:11px">💴 現金一括</div>
-          </div>
-          <div class="tc" id="car-pay-loan" onclick="setCarPay('loan')" style="flex:1;padding:6px 8px;gap:4px">
-            <div class="tc-lbl" style="font-size:11px">🏦 ローン</div>
-          </div>
-        </div>
-
-        <div class="g3" style="margin-bottom:10px">
-          <div class="fg"><label class="lbl">車両価格</label>
-            <div class="suf"><input class="inp amt-inp" id="car-price" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl">初回購入（今から）</label>
-            <div class="suf"><input class="inp age-inp" id="car-first" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="1" min="1" max="30" oninput="live()"><span class="sl">年目</span></div></div>
-          <div class="fg"><label class="lbl">乗り換え周期</label>
-            <div class="suf"><input class="inp age-inp" id="car-cycle" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="7" min="1" max="20" oninput="live()"><span class="sl">年ごと</span></div></div>
-        </div>
-        <div class="g2" style="margin-bottom:10px">
-          <div class="fg"><label class="lbl">車を手放す年齢</label>
-            <div class="suf"><input class="inp age-inp" id="car-end-age" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="" placeholder="空欄=ずっと" min="30" max="100" oninput="live()"><span class="sl">歳</span></div>
-            <span class="hint ok" id="car-end-hint">空欄＝ずっと乗り続ける</span></div>
-          <div></div>
-        </div>
-
-        <div class="g2" style="margin-bottom:10px">
-          <div class="fg"><label class="lbl">車検費用（1回）</label>
-            <div class="suf"><input class="inp amt-inp" id="car-insp" type="number" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" value="10" min="0" oninput="live()"><span class="sl">万円</span></div>
-            <span class="hint" id="car-insp-hint" style="font-size:9px">新車：初回3年後・以降2年ごと</span></div>
-          <div></div>
-        </div>
-
-        <div id="car-loan-fields" style="display:none;background:#f8f0ff;border:1px solid #d0b8f8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:700;color:#6b5ea8;margin-bottom:8px">🏦 カーローン設定</div>
-          <div class="g3">
-            <div class="fg"><label class="lbl" style="font-size:9px">頭金</label>
-              <div class="suf"><input class="inp amt-inp" id="car-down" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" type="number" value="50" min="0" oninput="setCarPay('loan')"><span class="sl">万円</span></div></div>
-            <div class="fg"><label class="lbl" style="font-size:9px">ローン期間</label>
-              <div class="suf"><input class="inp age-inp" id="car-loan-yrs" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" type="number" value="5" min="1" max="10" oninput="setCarPay('loan')"><span class="sl">年</span></div></div>
-            <div class="fg"><label class="lbl" style="font-size:9px">金利</label>
-              <div class="suf"><input class="inp amt-inp" id="car-loan-rate" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" type="number" value="2.5" min="0" max="10" step="0.1" oninput="setCarPay('loan')"><span class="sl">%</span></div></div>
-          </div>
-          <span class="hint ok" id="car-loan-hint" style="font-size:10px">月々：― 万円</span>
-        </div>
+      <div id="car-list-container">
+        <div id="car-list"></div>
+        <button type="button" onclick="addCar()" style="width:100%;padding:10px;background:#f0ecff;border:2px dashed #c4b0e8;border-radius:var(--rs);color:#6b5ea8;font-weight:700;font-size:12px;cursor:pointer;margin-bottom:10px;font-family:inherit">＋ 車を追加</button>
       </div>
 
       <!-- 駐車場代 -->
