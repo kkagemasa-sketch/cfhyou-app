@@ -67,7 +67,7 @@ if(authExp&&Date.now()<Number(authExp)){
     <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="onJSONImport(this)">
     <input type="file" id="json-bulk-import-input" accept=".json" style="display:none" onchange="onBulkJSONImport(this)">
     <button class="btn-h" onclick="openSlotPanel()" title="お客様データの保存・読込・バックアップ" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">💾 保存 / 読込</button>
-    <button class="btn-h" onclick="toggleHandbook()" title="FP手帳（税率・制度早見表）" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">📖 FP手帳</button>
+    <button class="btn-h" onclick="openHandbook()" title="FP手帳（税率・制度早見表）" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">📖 FP手帳</button>
     <button class="btn-h" onclick="showHelp()" title="使い方ガイド" style="background:rgba(37,99,235,.4);border-color:rgba(96,165,250,.6);font-weight:800;font-size:14px;width:34px;padding:0">？</button>
   </div>
 </header>
