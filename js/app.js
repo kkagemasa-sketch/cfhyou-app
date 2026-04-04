@@ -234,35 +234,39 @@ document.addEventListener('keydown',function(e){
       return;
     }
 
+    // ブラウザのテキスト選択ドラッグを防止（これがないとmousemoveが奪われる）
+    e.preventDefault();
+
     // ドラッグ選択開始
     _clearSel();
     _anchorTd=td;
     _draggingSel=true;
     _dragMoved=false;
 
-    var onMove=function(ev){
-      var el=document.elementFromPoint(ev.clientX,ev.clientY);
-      var target=el?el.closest?el.closest('td[contenteditable]'):null:null;
+    // mouseover（イベント委譲）でセル検出 — elementFromPointはスクロールコンテナ内で失敗するため
+    var onOver=function(ev){
+      if(!_draggingSel)return;
+      var target=ev.target.closest?ev.target.closest('td[contenteditable]'):null;
       if(target&&target.dataset.row&&target!==_anchorTd){
         if(!_dragMoved){
-          // 初めて動いた → フォーカスを外して選択モードに
           _dragMoved=true;
-          _anchorTd.blur();
         }
         _selectRange(_anchorTd,target);
       }
     };
     var onUp=function(){
-      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseover',onOver,true);
       document.removeEventListener('mouseup',onUp);
       _draggingSel=false;
-      // ドラッグしなかった場合は通常クリック（編集モード）
       if(!_dragMoved){
+        // クリックのみ → 通常の編集モード（フォーカスを手動で当てる）
         _clearSel();
         _anchorTd=td;
+        td.focus();
+        selectAll(td);
       }
     };
-    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseover',onOver,true);
     document.addEventListener('mouseup',onUp);
   },true); // captureフェーズ
 
