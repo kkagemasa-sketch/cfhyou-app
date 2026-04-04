@@ -450,7 +450,7 @@ function _restoreDynamic(d){
     } else {
       if(typeof addMGInsurance==='function')addMGInsurance();
     }
-    updateMGHints();
+    if(typeof updateMGHints==='function')updateMGHints();
   }
   // フラグ系
   if(d.repMode)setRepMode(d.repMode);
