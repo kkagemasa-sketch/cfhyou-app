@@ -176,7 +176,7 @@ document.addEventListener('keydown',function(e){
       cfOverrides[rowKey][col]=_srcVal;
     });
     _preview=[];
-    if(_srcTd)render();
+    if(_srcTd){pushUndoSnap();render();}
     _srcTd=null;
   }
 })();
@@ -334,6 +334,7 @@ document.addEventListener('keydown',function(e){
     });
     _clearSel();
     _anchorTd=null;
+    pushUndoSnap();
     render();
   });
 

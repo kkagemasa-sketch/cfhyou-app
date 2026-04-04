@@ -41,6 +41,7 @@ function cellEdit(td){
     td.classList.add('cell-ovr');
     td.textContent=num.toLocaleString();
   }
+  pushUndoSnap();
   render();
 }
 function resetOverrides(){if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;cfOverrides={};render();}

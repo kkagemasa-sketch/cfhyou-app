@@ -580,7 +580,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:cfOverrides,version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value});
   return d;
 }
@@ -621,7 +621,7 @@ function _applyData(d){
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el)el.value=val});
     cfOverrides=d.cfOverrides||{};
     _restoreDynamic(d.dynamic);
-    calcLoanAmt();calcDelivery();initLCComma();live();
+    calcLoanAmt();calcDelivery();initLCComma();live();render();
   }catch(err){
     alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n'));
     console.error('Apply data error:',err);
