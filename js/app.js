@@ -217,22 +217,60 @@ document.addEventListener('keydown',function(e){
     }
   }
 
-  // クリック → アンカー記憶、Shift+クリック → 範囲選択
-  document.addEventListener('click',function(e){
-    var td=e.target;
-    if(!td.hasAttribute||!td.hasAttribute('contenteditable')||!td.dataset.row){
-      // セル外クリック → 選択解除
-      if(_selected.length>0&&!td.closest('.fill-handle'))_clearSel();
+  var _draggingSel=false;
+  var _dragMoved=false;
+
+  // mousedown → ドラッグ選択開始（captureフェーズ）
+  document.addEventListener('mousedown',function(e){
+    var td=e.target.closest?e.target.closest('td[contenteditable]'):null;
+    if(!td||!td.dataset.row){
+      if(_selected.length>0&&!(e.target.closest&&e.target.closest('.fill-handle')))_clearSel();
       return;
     }
+
     if(e.shiftKey&&_anchorTd){
       e.preventDefault();
       _selectRange(_anchorTd,td);
-      // フォーカスを外して編集モードにしない
-      td.blur();
-    }else{
+      return;
+    }
+
+    // ドラッグ選択開始
+    _clearSel();
+    _anchorTd=td;
+    _draggingSel=true;
+    _dragMoved=false;
+
+    var onMove=function(ev){
+      var el=document.elementFromPoint(ev.clientX,ev.clientY);
+      var target=el?el.closest?el.closest('td[contenteditable]'):null:null;
+      if(target&&target.dataset.row&&target!==_anchorTd){
+        if(!_dragMoved){
+          // 初めて動いた → フォーカスを外して選択モードに
+          _dragMoved=true;
+          _anchorTd.blur();
+        }
+        _selectRange(_anchorTd,target);
+      }
+    };
+    var onUp=function(){
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      _draggingSel=false;
+      // ドラッグしなかった場合は通常クリック（編集モード）
+      if(!_dragMoved){
+        _clearSel();
+        _anchorTd=td;
+      }
+    };
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  },true); // captureフェーズ
+
+  // セル外クリックで選択解除
+  document.addEventListener('click',function(e){
+    var td=e.target.closest?e.target.closest('td[contenteditable]'):null;
+    if(!td&&_selected.length>0&&!(e.target.closest&&e.target.closest('.fill-handle'))){
       _clearSel();
-      _anchorTd=td;
     }
   });
 
