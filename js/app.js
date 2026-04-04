@@ -66,10 +66,41 @@ window.onload=()=>{
   if(typeof updateMGDansinUI==='function')updateMGDansinUI();
 };
 
-// CF表セル: Enterキーで改行ではなく確定（document委譲・onload外で確実に登録）
+// CF表セル: キーボード操作（document委譲・onload外で確実に登録）
 document.addEventListener('keydown',function(e){
-  if(e.key==='Enter'&&e.target.hasAttribute&&e.target.hasAttribute('contenteditable')){
+  var td=e.target;
+  if(!td.hasAttribute||!td.hasAttribute('contenteditable'))return;
+
+  // Enter → 確定（改行防止）
+  if(e.key==='Enter'){
     e.preventDefault();
-    e.target.blur();
+    td.blur();
+    return;
   }
+
+  // 矢印キー → セル移動
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key)===-1)return;
+  e.preventDefault();
+  td.blur(); // 現在のセルを確定
+
+  var row=td.parentElement;
+  var table=td.closest('table');
+  if(!row||!table)return;
+  var cells=Array.from(row.children);
+  var ci=cells.indexOf(td);
+  var rows=Array.from(table.querySelectorAll('tr'));
+  var ri=rows.indexOf(row);
+
+  var nextTd=null;
+  if(e.key==='ArrowRight'){
+    // 同じ行で右の編集可能セルを探す
+    for(var i=ci+1;i<cells.length;i++){if(cells[i].hasAttribute('contenteditable')){nextTd=cells[i];break;}}
+  }else if(e.key==='ArrowLeft'){
+    for(var i=ci-1;i>=0;i--){if(cells[i].hasAttribute('contenteditable')){nextTd=cells[i];break;}}
+  }else if(e.key==='ArrowDown'){
+    for(var i=ri+1;i<rows.length;i++){var c=rows[i].children[ci];if(c&&c.hasAttribute('contenteditable')){nextTd=c;break;}}
+  }else if(e.key==='ArrowUp'){
+    for(var i=ri-1;i>=0;i--){var c=rows[i].children[ci];if(c&&c.hasAttribute('contenteditable')){nextTd=c;break;}}
+  }
+  if(nextTd){nextTd.focus();selectAll(nextTd);}
 });
