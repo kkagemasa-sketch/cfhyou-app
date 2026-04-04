@@ -78,8 +78,9 @@ document.addEventListener('keydown',function(e){
     return;
   }
 
-  // 矢印キー → セル移動
+  // 矢印キー → セル移動（Shift押下時は範囲選択側に委譲）
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key)===-1)return;
+  if(e.shiftKey)return; // Shift+矢印は範囲選択ハンドラで処理
   e.preventDefault();
   td.blur(); // 現在のセルを確定
 
