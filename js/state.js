@@ -25,7 +25,7 @@ let otherMemberCnt=0;
 
 let repairCnt=1;
 
-let insSavCnt=0, secCnt=0;
+let insSavCnt=0, insLumpCnt=0, secCnt=0;
 
 let carOwn=true;
 let carCnt=0;

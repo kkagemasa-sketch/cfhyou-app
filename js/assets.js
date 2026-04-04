@@ -1,5 +1,75 @@
 // assets.js — 保険・有価証券・車両・ペアローン
 
+// ===== 一時払い保険 =====
+function addInsLump(person){
+  person=person||'h';
+  insLumpCnt++;const id=insLumpCnt;
+  const el=document.createElement('div');
+  el.id=`ins-lump-${person}-${id}`;
+  el.style.cssText='background:#fff8ee;border:1px solid #f0c060;border-radius:var(--rs);padding:9px 10px;margin-bottom:8px';
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:start">
+      <div class="fg">
+        <label class="lbl" style="font-size:9px">加入年齢</label>
+        <div class="suf"><input class="inp age-inp" id="ins-lump-enroll-${person}-${id}" type="number" value="" placeholder="例:40" min="20" max="90" oninput="calcInsLumpPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
+      </div>
+      <div class="fg">
+        <label class="lbl" style="font-size:9px">拠出額（一括）</label>
+        <div class="suf"><input class="inp amt-inp" id="ins-lump-amt-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsLumpPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万円</span></div>
+        <span style="font-size:9px;color:#b8860b;font-weight:600">※支出に自動計上</span>
+      </div>
+      <div class="fg">
+        <label class="lbl" style="font-size:9px">満期年齢</label>
+        <div class="suf"><input class="inp age-inp" id="ins-lump-matage-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsLumpPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
+      </div>
+      <button class="btn-rm" onclick="document.getElementById('ins-lump-${person}-${id}').remove();live()" style="margin-top:18px">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+      <div class="fg">
+        <label class="lbl" style="font-size:9px">想定利率（年）</label>
+        <div class="suf"><input class="inp amt-inp" id="ins-lump-rate-${person}-${id}" type="number" value="" placeholder="例:1.5" min="0" max="10" step="0.1" oninput="calcInsLumpPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">%/年</span></div>
+        <span style="font-size:9px;color:var(--light)">入力時は満期額を自動計算</span>
+      </div>
+      <div class="fg">
+        <label class="lbl" style="font-size:9px">満期返戻金</label>
+        <div style="display:flex;gap:4px;align-items:center">
+          <div class="suf" style="flex:1"><input class="inp amt-inp" id="ins-lump-matamt-${person}-${id}" type="number" value="" placeholder="例:600" min="0" oninput="calcInsLumpPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万円</span></div>
+          <span style="font-size:9px;color:var(--light);white-space:nowrap">または</span>
+          <div class="suf" style="flex:1"><input class="inp amt-inp" id="ins-lump-pct-${person}-${id}" type="number" value="" placeholder="例:120" min="0" max="300" step="0.1" oninput="calcInsLumpPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">%</span></div>
+        </div>
+        <span style="font-size:9px;color:var(--light)">固定額 or 拠出額に対する返戻率</span>
+      </div>
+    </div>
+    <div id="ins-lump-preview-${person}-${id}" style="margin-top:6px;font-size:10px;color:#7a5a00;background:#fff3cc;border-radius:4px;padding:4px 8px;display:none"></div>`;
+  document.getElementById(`ins-lump-cont-${person}`).appendChild(el);live();
+}
+
+function calcInsLumpPreview(person,id){
+  const pBaseAge=person==='h'?iv('husband-age'):iv('wife-age');
+  const enrollAge=iv(`ins-lump-enroll-${person}-${id}`)||pBaseAge||0;
+  const amt=fv(`ins-lump-amt-${person}-${id}`)||0;
+  const matAge=iv(`ins-lump-matage-${person}-${id}`)||0;
+  const rate=fv(`ins-lump-rate-${person}-${id}`)||0;
+  const matAmtFixed=fv(`ins-lump-matamt-${person}-${id}`)||0;
+  const pct=fv(`ins-lump-pct-${person}-${id}`)||0;
+  const prev=document.getElementById(`ins-lump-preview-${person}-${id}`);
+  if(!prev)return live();
+  if(amt<=0||matAge<=0){prev.style.display='none';return live();}
+  const yrs=matAge-enrollAge;
+  if(yrs<=0){prev.style.display='none';return live();}
+  let matVal=0;
+  if(rate>0){matVal=Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;}
+  else if(matAmtFixed>0){matVal=matAmtFixed;}
+  else if(pct>0){matVal=Math.round(amt*pct/100*10)/10;}
+  if(matVal<=0){prev.style.display='none';return live();}
+  const returnRate=Math.round(matVal/amt*1000)/10;
+  const rateColor=returnRate>=100?'#0d8a20':'#d63a2a';
+  prev.style.display='';
+  prev.innerHTML=`拠出：<strong>${amt.toLocaleString()}万円</strong>（${enrollAge}歳）　満期受取：<strong>${matVal.toLocaleString()}万円</strong>（${matAge}歳・${yrs}年後）　返戻率：<strong style="color:${rateColor}">${returnRate}%</strong>`;
+  live();
+}
+
+// ===== 積み立て保険 =====
 function addInsSaving(person){
   person=person||'h';
   insSavCnt++;const id=insSavCnt;
@@ -7,22 +77,34 @@ function addInsSaving(person){
   el.id=`ins-${person}-${id}`;
   el.style.cssText='background:#fdf6ff;border:1px solid #d8b8f0;border-radius:var(--rs);padding:9px 10px;margin-bottom:8px';
   el.innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:6px;align-items:start">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:start;margin-bottom:6px">
+      <div class="fg">
+        <label class="lbl" style="font-size:9px">加入年齢</label>
+        <div class="suf"><input class="inp age-inp" id="ins-enroll-${person}-${id}" type="number" value="" placeholder="現在年齢" min="20" max="90" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
+        <span style="font-size:9px;color:var(--light)">空欄＝現在年齢</span>
+      </div>
       <div class="fg">
         <label class="lbl" style="font-size:9px">毎月の保険料</label>
-        <div class="suf"><input class="inp amt-inp" id="ins-m-${person}-${id}" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="" placeholder="例:3" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万/月</span></div>
+        <div class="suf"><input class="inp amt-inp" id="ins-m-${person}-${id}" type="number" value="" placeholder="例:3" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万/月</span></div>
+        <span style="font-size:9px;color:#6a2a8a;font-weight:600">※支出に自動計上</span>
       </div>
       <div class="fg">
         <label class="lbl" style="font-size:9px">満期年齢</label>
-        <div class="suf"><input class="inp age-inp" id="ins-age-${person}-${id}" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="" placeholder="例:60" min="30" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
+        <div class="suf"><input class="inp age-inp" id="ins-age-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
       </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:start">
       <div class="fg">
         <label class="lbl" style="font-size:9px">満期受取金額</label>
-        <div class="suf"><input class="inp amt-inp" id="ins-mat-${person}-${id}" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万円</span></div>
+        <div class="suf"><input class="inp amt-inp" id="ins-mat-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万円</span></div>
       </div>
       <div class="fg">
         <label class="lbl" style="font-size:9px;color:#c00">解約年齢</label>
-        <div class="suf"><input class="inp age-inp" id="ins-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="空欄=満期" min="20" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">歳</span></div>
+        <div class="suf"><input class="inp age-inp" id="ins-redeem-${person}-${id}" type="number" value="" placeholder="空欄=満期" min="20" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">歳</span></div>
+      </div>
+      <div class="fg">
+        <label class="lbl" style="font-size:9px;color:#c00">解約返戻金</label>
+        <div class="suf"><input class="inp amt-inp" id="ins-redeem-amt-${person}-${id}" type="number" value="" placeholder="例:350" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">万円</span></div>
       </div>
       <button class="btn-rm" onclick="document.getElementById('ins-${person}-${id}').remove();live()" style="margin-top:18px">×</button>
     </div>
@@ -98,32 +180,39 @@ function setSecType(person,id,t){
   live();
 }
 
-// ===== 積立保険 プレビュー（払込累計・返戻率） =====
-function calcInsPreview(person, id){
-  const pAge=person==='h'?iv('husband-age'):iv('wife-age');
+function calcInsPreview(person,id){
+  const pBaseAge=person==='h'?iv('husband-age'):iv('wife-age');
+  const enrollAge=iv(`ins-enroll-${person}-${id}`)||pBaseAge||0;
   const monthly=fv(`ins-m-${person}-${id}`)||0;
   const matAge=iv(`ins-age-${person}-${id}`)||0;
   const matAmt=fv(`ins-mat-${person}-${id}`)||0;
   const redeemAge=iv(`ins-redeem-${person}-${id}`)||0;
+  const redeemAmt=fv(`ins-redeem-amt-${person}-${id}`)||0;
   const prev=document.getElementById(`ins-preview-${person}-${id}`);
   if(!prev)return live();
-  if(monthly<=0||matAge<=0||pAge<=0){prev.style.display='none';return live();}
-  const payYrs=matAge-pAge;
+  if(monthly<=0||matAge<=0||enrollAge<=0){prev.style.display='none';return live();}
+  const payYrs=matAge-enrollAge;
   if(payYrs<=0){prev.style.display='none';return live();}
   const cumPay=Math.round(monthly*12*payYrs*10)/10;
   const returnRate=matAmt>0?Math.round(matAmt/cumPay*1000)/10:0;
   const rateColor=returnRate>=100?'#0d8a20':'#d63a2a';
   let txt=`払込累計：<strong>${cumPay.toLocaleString()}万円</strong>（${payYrs}年間）　満期受取：<strong>${matAmt.toLocaleString()}万円</strong>　返戻率：<strong style="color:${rateColor}">${returnRate}%</strong>`;
   if(redeemAge>0&&redeemAge<matAge){
-    const paidYrs2=redeemAge-pAge;
-    const cum2=Math.round(monthly*12*paidYrs2*10)/10;
-    const totalPay=Math.round(monthly*12*payYrs*10)/10;
-    const linearMat=Math.round(matAmt*paidYrs2/payYrs*10)/10;
-    const ratio=paidYrs2/payYrs;
-    const est=Math.round((cum2*(1-ratio*0.3)+linearMat*ratio*0.3)*10)/10;
-    const rateEst=cum2>0?Math.round(est/cum2*1000)/10:0;
-    const rateColor2=rateEst>=100?'#0d8a20':'#d63a2a';
-    txt+=`　｜　<span style="color:#888">解約（${redeemAge}歳）：払込${cum2}万 → 推計返戻金${est}万（${rateColor2==='#0d8a20'?'':'<span style=\'color:#d63a2a\'>'}${rateEst}%${'</span>'}</span>）</span>`;
+    const paidYrs2=redeemAge-enrollAge;
+    const cum2=Math.round(monthly*12*Math.max(0,paidYrs2)*10)/10;
+    if(redeemAmt>0){
+      const rateR=cum2>0?Math.round(redeemAmt/cum2*1000)/10:0;
+      const rColor=rateR>=100?'#0d8a20':'#d63a2a';
+      txt+=`　｜　<span style="color:#c00">解約（${redeemAge}歳）：払込${cum2}万 → 返戻金<strong>${redeemAmt}万</strong>（<span style="color:${rColor}">${rateR}%</span>）</span>`;
+    } else {
+      const totalPayYrs=payYrs;
+      const ratio=Math.max(0,paidYrs2)/totalPayYrs;
+      const surrenderCharge=Math.max(0,0.3*(1-ratio));
+      const est=Math.round(cum2*(1-surrenderCharge)+matAmt*ratio*ratio);
+      const rateEst=cum2>0?Math.round(est/cum2*1000)/10:0;
+      const rateColor2=rateEst>=100?'#0d8a20':'#d63a2a';
+      txt+=`　｜　<span style="color:#888">解約（${redeemAge}歳）：払込${cum2}万 → 推計${est}万（<span style="color:${rateColor2}">${rateEst}%</span>）</span>`;
+    }
   }
   prev.style.display='';
   prev.innerHTML=txt;

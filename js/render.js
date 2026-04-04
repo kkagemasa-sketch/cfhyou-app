@@ -322,7 +322,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],incT:[],
     lc:[],lRep:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -383,15 +383,36 @@ function render(){
       if(childAge+i===19)scTotal+=scAmt;
     });
     R.scholarship.push(scTotal);
-    // 積み立て保険満期金（主人・奥様両方）
+    // 保険満期金（積み立て保険 + 一時払い保険）
     let insMatTotal=0;
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
+      const pBaseAge=p==='h'?hAge:wAge;
+      // 積み立て保険：満期受取（早期解約がない場合のみ）
       document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
         const matAmt=fv(`ins-mat-${p}-${iid}`)||0;
         const matAge=iv(`ins-age-${p}-${iid}`)||0;
-        if(matAmt>0&&matAge>0&&pAge===matAge)insMatTotal+=matAmt;
+        const redeemAge=iv(`ins-redeem-${p}-${iid}`)||0;
+        // 早期解約がある場合は満期時に受け取らない
+        if(matAmt>0&&matAge>0&&pAge===matAge&&(redeemAge<=0||redeemAge>=matAge))insMatTotal+=matAmt;
+      });
+      // 一時払い保険：満期受取
+      document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
+        const parts=el.id.split('-');const iid=parts[parts.length-1];
+        const enrollAge=iv(`ins-lump-enroll-${p}-${iid}`)||pBaseAge;
+        const amt=fv(`ins-lump-amt-${p}-${iid}`)||0;
+        const matAge=iv(`ins-lump-matage-${p}-${iid}`)||0;
+        const rate=fv(`ins-lump-rate-${p}-${iid}`)||0;
+        const matAmtFixed=fv(`ins-lump-matamt-${p}-${iid}`)||0;
+        const pct=fv(`ins-lump-pct-${p}-${iid}`)||0;
+        if(amt<=0||matAge<=0||pAge!==matAge)return;
+        const yrs=matAge-enrollAge;
+        let matVal=0;
+        if(rate>0)matVal=Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;
+        else if(matAmtFixed>0)matVal=matAmtFixed;
+        else if(pct>0)matVal=Math.round(amt*pct/100*10)/10;
+        insMatTotal+=matVal;
       });
     });
     R.insMat.push(insMatTotal);
@@ -589,12 +610,15 @@ function render(){
         const monthly=fv(`ins-m-${p}-${iid}`)||0;
         const matAge=iv(`ins-age-${p}-${iid}`)||0;
         const matAmt=fv(`ins-mat-${p}-${iid}`)||0;
+        const redeemAmt=fv(`ins-redeem-amt-${p}-${iid}`)||0;
         if(pAge>=matAge&&matAmt>0){secRedeemTotal+=matAmt;return;}
+        if(redeemAmt>0){secRedeemTotal+=redeemAmt;return;}
         if(matAge>0&&monthly>0){
-          const totalPayYrs=matAge-pBaseAge;
-          const paidYrs2=Math.min(i+1,totalPayYrs);
-          const cumPay=monthly*12*paidYrs2;
-          const ratio=paidYrs2/totalPayYrs;
+          const enrollAge=iv(`ins-enroll-${p}-${iid}`)||pBaseAge;
+          const totalPayYrs=matAge-enrollAge;
+          const paidYrs2=Math.min(redeemAge-enrollAge,totalPayYrs);
+          const cumPay=monthly*12*Math.max(0,paidYrs2);
+          const ratio=totalPayYrs>0?paidYrs2/totalPayYrs:0;
           const surrenderCharge=Math.max(0,0.3*(1-ratio));
           secRedeemTotal+=Math.round(cumPay*(1-surrenderCharge)+matAmt*ratio*ratio);
         }
@@ -799,7 +823,36 @@ function render(){
       if(childAge+i===wedAge)wedTotal+=wedAmt;
     });
     R.wedding.push(wedTotal);
-    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i];
+    // 積み立て保険 月払い保険料（加入年齢〜満期/解約年齢まで支出計上）
+    let insMonthlyTotal=0;
+    ['h','w'].forEach(p=>{
+      const pAge2=p==='h'?ha:wa;
+      const pBase2=p==='h'?hAge:wAge;
+      document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
+        const parts=el.id.split('-');const iid=parts[parts.length-1];
+        const enrollAge2=iv(`ins-enroll-${p}-${iid}`)||pBase2;
+        const matAge2=iv(`ins-age-${p}-${iid}`)||0;
+        const monthly2=fv(`ins-m-${p}-${iid}`)||0;
+        const redeemAge2=iv(`ins-redeem-${p}-${iid}`)||0;
+        const endAge2=(redeemAge2>0&&redeemAge2<matAge2)?redeemAge2:matAge2;
+        if(monthly2>0&&matAge2>0&&pAge2>=enrollAge2&&pAge2<endAge2)insMonthlyTotal+=monthly2*12;
+      });
+    });
+    R.insMonthly.push(ri(insMonthlyTotal));
+    // 一時払い保険 拠出（加入年齢の年のみ支出計上）
+    let insLumpExpTotal=0;
+    ['h','w'].forEach(p=>{
+      const pAge2=p==='h'?ha:wa;
+      const pBase2=p==='h'?hAge:wAge;
+      document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
+        const parts=el.id.split('-');const iid=parts[parts.length-1];
+        const enrollAge2=iv(`ins-lump-enroll-${p}-${iid}`)||pBase2;
+        const amt2=fv(`ins-lump-amt-${p}-${iid}`)||0;
+        if(amt2>0&&pAge2===enrollAge2)insLumpExpTotal+=amt2;
+      });
+    });
+    R.insLumpExp.push(ri(insLumpExpTotal));
+    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     const b=R.incT[i]-R.expT[i];R.bal.push(b);sav+=b;
@@ -952,7 +1005,7 @@ function render(){
   // ─── cfOverrides後処理: サブ行上書きを合計・収支・残高に反映 ───
   if(Object.keys(cfOverrides).length>0){
     const incKeys=['hInc','wInc','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl'];
-    const expKeys=['lc','secInvest','secBuy','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{
@@ -1229,6 +1282,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else{h+=eRow('車両費（購入・車検）',R.carTotal,'carTotal');}
   h+=eRow('駐車場代',R.prk,'prk');
   h+=eRow('積立投資額',R.secInvest,'secInvest')+eRow('一括投資額',R.secBuy,'secBuy');
+  h+=eRow('保険料（積立）',R.insMonthly,'insMonthly')+eRow('一時払い保険',R.insLumpExp,'insLumpExp');
   h+=eRow('結婚のお祝い',R.wedding,'wedding')+eRow('特別支出',R.ext,'ext');
   h+=`<tr class="rexpt"><td>支出合計</td><td></td>`;for(let i=0;i<disp;i++)h+=`<td>${ri(R.expT[i]).toLocaleString()}</td>`;h+=`<td>${ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0)).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">支出合計</span></td></tr>`;
 
