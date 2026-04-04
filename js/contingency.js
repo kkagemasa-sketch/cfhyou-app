@@ -553,11 +553,10 @@ function renderContingency(){
     return r+`<td>${ri(tot).toLocaleString()}${lblSpan}</td></tr>`;
   };
 
+  // 収入行：年収 → 退職金 → 年金系 → 金融商品解約系 → 奨学金 → 児童手当 → 控除
   h+=mgRow('ご主人手取年収',MR.hInc,N.hInc);
   h+=mgRow('奥様手取年収',MR.wInc,N.wInc);
   h+=mgRow('副業・その他収入',N.otherInc);
-  h+=mgRow('保険満期金',N.insMat);
-  if(N.secRedeemRows)N.secRedeemRows.forEach(row=>{h+=mgRow(row.lbl,row.vals);});
   // 退職金（死亡者は受け取れない場合あり）
   const rPayMG=MR.hInc.map((_,i)=>{
     let v=0;
@@ -570,8 +569,12 @@ function renderContingency(){
   });
   const rPayNormal=N.hInc.map((_,i)=>(N.rPay[i]||0)+(N.wRPay[i]||0));
   h+=mgRow('退職金',rPayMG,rPayNormal);
-  h+=mgRow('死亡保険金',MR.insPayArr);
+  h+=mgRow('本人年金',N.pS);
+  h+=mgRow('配偶者年金',N.pW);
   h+=mgRow('遺族年金',MR.survPension,N.survPension);
+  h+=mgRow('死亡保険金',MR.insPayArr);
+  h+=mgRow('保険満期金',N.insMat);
+  if(N.secRedeemRows)N.secRedeemRows.forEach(row=>{h+=mgRow(row.lbl,row.vals);});
   h+=mgRow('奨学金',MR.scholarship,N.scholarship);
   h+=mgRow('児童手当',N.teate);
   h+=mgRow('住宅ローン控除',MR.lCtrl,N.lCtrl);
@@ -597,9 +600,8 @@ function renderContingency(){
     return r+`<td>${ri(tot).toLocaleString()}${eLblSpan}</td></tr>`;
   };
 
+  // 支出行：生活費 → 住宅系 → 教育費 → 車 → 駐車場 → 積立投資 → その他
   h+=mgERow('生活費',MR.lc,N.lc);
-  h+=mgERow('積立投資額',N.secInvest);
-  h+=mgERow('一括投資額',N.secBuy);
   h+=mgERow('家賃（引渡前）',N.rent);
   h+=mgERow('住宅ローン返済',MR.lRep,N.lRep);
   if(isM)h+=mgERow('修繕積立金',N.rep);
@@ -618,8 +620,10 @@ function renderContingency(){
       h+=`<td class="${cls}">${v>0?ri(v).toLocaleString():'-'}</td>`;
     }h+=`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${cLbls[ci]}教育費</span></td></tr>`;
   });
-  h+=mgERow('駐車場代',MR.prk,N.prk);
   h+=mgERow('車両費（購入・車検）',MR.carTotal,N.carTotal);
+  h+=mgERow('駐車場代',MR.prk,N.prk);
+  h+=mgERow('積立投資額',N.secInvest);
+  h+=mgERow('一括投資額',N.secBuy);
   h+=mgERow('結婚のお祝い',N.wedding);
   h+=mgERow('特別支出',N.ext);
 
