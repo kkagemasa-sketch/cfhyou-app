@@ -236,7 +236,7 @@ document.addEventListener('keydown',function(e){
     }
   });
 
-  // Shift+矢印キーで範囲拡張
+  // Shift+矢印キーで範囲拡張（captureフェーズでブラウザのテキスト選択より先に捕捉）
   document.addEventListener('keydown',function(e){
     if(!e.shiftKey)return;
     var td=document.activeElement;
@@ -244,6 +244,7 @@ document.addEventListener('keydown',function(e){
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key)===-1)return;
 
     e.preventDefault();
+    e.stopImmediatePropagation();
     if(!_anchorTd)_anchorTd=td;
 
     // 移動先を見つける
@@ -269,7 +270,7 @@ document.addEventListener('keydown',function(e){
       nextTd.focus();
       _selectRange(_anchorTd,nextTd);
     }
-  });
+  },true); // ← captureフェーズ
 
   // Delete/Backspace で選択範囲の上書きを一括削除
   document.addEventListener('keydown',function(e){
