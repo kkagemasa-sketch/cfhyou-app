@@ -171,7 +171,7 @@ function renderContingency(){
 
   let sav=initSav;
   const MR={yr:[],hA:[],wA:[],
-    hInc:[],wInc:[],survPension:[],insPayArr:[],otherInc:[],scholarship:[],lCtrl:[],incT:[],
+    hInc:[],wInc:[],survPension:[],insPayArr:[],otherInc:[],scholarship:[],lCtrl:[],pS:[],pW:[],incT:[],
     lc:[],lRep:[],carTotal:[],prk:[],expT:[],bal:[],sav:[],lBal:[],
     needCoverage:0};
 
@@ -317,6 +317,8 @@ function renderContingency(){
       }
     }
     MR.scholarship.push(scholarVal);
+    MR.pS.push(pSelfVal);
+    MR.pW.push(pWifeVal);
     const incTotal=ri(hInc)+ri(wInc)+rPayVal+insPayVal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal;
     MR.incT.push(incTotal);
 
@@ -569,8 +571,8 @@ function renderContingency(){
   });
   const rPayNormal=N.hInc.map((_,i)=>(N.rPay[i]||0)+(N.wRPay[i]||0));
   h+=mgRow('退職金',rPayMG,rPayNormal);
-  h+=mgRow('本人年金',N.pS);
-  h+=mgRow('配偶者年金',N.pW);
+  h+=mgRow('本人年金',MR.pS,N.pS);
+  h+=mgRow('配偶者年金',MR.pW,N.pW);
   h+=mgRow('遺族年金',MR.survPension,N.survPension);
   h+=mgRow('死亡保険金',MR.insPayArr);
   h+=mgRow('保険満期金',N.insMat);

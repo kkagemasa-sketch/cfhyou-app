@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="Housing FP">
 <meta name="theme-color" content="#1e3a5f">
 <!-- Fonts: system fallback (offline mode) -->
-<link rel="stylesheet" href="./css/style.css?v=9">
+<link rel="stylesheet" href="./css/style.css?v=10">
 </head>
 <body>
 <!-- パスワードロック画面 -->
@@ -58,7 +58,7 @@ if(authExp&&Date.now()<Number(authExp)){
   </div>
   <div class="hdr-acts">
     <span id="update-indicator" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;display:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif"></span>
-    <button class="btn-h" onclick="window.location.href=window.location.pathname+'?v='+Date.now()" title="最新版に更新">↻ 更新</button>
+    <button class="btn-h" onclick="saveAndRefresh()" title="最新版に更新">↻ 更新</button>
     <button class="btn-h" onclick="togglePanel()" id="btn-toggle-panel" title="入力パネルを隠す">◀ 隠す</button>
     <div style="display:flex;gap:2px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:2px">
       <button class="btn-h" id="btn-undo" onclick="undoState()" title="1つ前の状態に戻す（Ctrl+Z）" disabled style="border:none;background:transparent;border-radius:4px;padding:5px 10px;min-width:52px">↩ 戻る</button>
@@ -1171,33 +1171,33 @@ if(authExp&&Date.now()<Number(authExp)){
 
 
 <!-- Vendor Libraries -->
-<script src="./js/vendors/chart.min.js?v=9"></script>
-<script src="./js/vendors/xlsx-style.min.js?v=9"></script>
-<script src="./js/vendors/jszip.min.js?v=9"></script>
-<script src="./js/vendors/FileSaver.min.js?v=9"></script>
+<script src="./js/vendors/chart.min.js?v=10"></script>
+<script src="./js/vendors/xlsx-style.min.js?v=10"></script>
+<script src="./js/vendors/jszip.min.js?v=10"></script>
+<script src="./js/vendors/FileSaver.min.js?v=10"></script>
 
 <!-- App Modules (dependency order) -->
-<script src="./js/constants.js?v=9"></script>
-<script src="./js/state.js?v=9"></script>
-<script src="./js/utils.js?v=9"></script>
-<script src="./js/loan-calc.js?v=9"></script>
-<script src="./js/education.js?v=9"></script>
-<script src="./js/living-cost.js?v=9"></script>
-<script src="./js/housing.js?v=9"></script>
-<script src="./js/income.js?v=9"></script>
-<script src="./js/family.js?v=9"></script>
-<script src="./js/contingency.js?v=9"></script>
-<script src="./js/assets.js?v=9"></script>
-<script src="./js/extras.js?v=9"></script>
-<script src="./js/cf-highlight.js?v=9"></script>
-<script src="./js/render.js?v=9"></script>
-<script src="./js/graphs.js?v=9"></script>
-<script src="./js/export.js?v=9"></script>
-<script src="./js/save-load.js?v=9"></script>
-<script src="./js/loan-plan.js?v=9"></script>
-<script src="./js/scenario.js?v=9"></script>
-<script src="./js/handbook.js?v=9"></script>
-<script src="./js/ui.js?v=9"></script>
-<script src="./js/app.js?v=9"></script>
+<script src="./js/constants.js?v=10"></script>
+<script src="./js/state.js?v=10"></script>
+<script src="./js/utils.js?v=10"></script>
+<script src="./js/loan-calc.js?v=10"></script>
+<script src="./js/education.js?v=10"></script>
+<script src="./js/living-cost.js?v=10"></script>
+<script src="./js/housing.js?v=10"></script>
+<script src="./js/income.js?v=10"></script>
+<script src="./js/family.js?v=10"></script>
+<script src="./js/contingency.js?v=10"></script>
+<script src="./js/assets.js?v=10"></script>
+<script src="./js/extras.js?v=10"></script>
+<script src="./js/cf-highlight.js?v=10"></script>
+<script src="./js/render.js?v=10"></script>
+<script src="./js/graphs.js?v=10"></script>
+<script src="./js/export.js?v=10"></script>
+<script src="./js/save-load.js?v=10"></script>
+<script src="./js/loan-plan.js?v=10"></script>
+<script src="./js/scenario.js?v=10"></script>
+<script src="./js/handbook.js?v=10"></script>
+<script src="./js/ui.js?v=10"></script>
+<script src="./js/app.js?v=10"></script>
 </body>
 </html>

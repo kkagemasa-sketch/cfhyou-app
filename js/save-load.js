@@ -641,6 +641,14 @@ function scheduleAutoSave(){
     }catch(e){}
   },2000);
 }
+// 更新ボタン：先に保存してからページ遷移（2秒デバウンス前に遷移するとデータが消えるのを防止）
+async function saveAndRefresh(){
+  clearTimeout(_autoSaveTimer);
+  try{
+    await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:_collectSaveData()});
+  }catch(e){}
+  window.location.href=window.location.pathname+'?v='+Date.now();
+}
 async function restoreAutoSave(){
   try{
     const entry=await dbGet(AUTOSAVE_KEY);
