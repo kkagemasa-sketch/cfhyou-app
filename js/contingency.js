@@ -227,16 +227,22 @@ function renderContingency(){
         let kH=koseiH_mg, kW=koseiW_mg;
         if(mgSurvMode==='detail'){
           const hGross=fv('mg-h-gross')||0;
+          const hBonus=fv('mg-h-bonus')||0;
           const wGross=fv('mg-w-gross')||0;
-          if(hGross>0){
+          const wBonus=fv('mg-w-bonus')||0;
+          if(hGross>0||hBonus>0){
+            const hCapped=Math.min(hGross,65);
+            const hBonusCapped=Math.min(hBonus,300);
+            const hHyojun=(hCapped*12+hBonusCapped)/12;
             const joinM=Math.max((deathAge-pHStart_mg)*12,300);
-            // 月額（万円）→ 年額（万円）: gross × 5.481/1000 × joinM × 3/4 = 遺族厚生年金
-            // koseiH として使うには ÷0.75 して戻す
-            kH=hGross*5.481/1000*joinM; // = 遺族厚生年金 / 0.75 相当
+            kH=hHyojun*5.481/1000*joinM;
           }
-          if(wGross>0){
+          if(wGross>0||wBonus>0){
+            const wCapped=Math.min(wGross,65);
+            const wBonusCapped=Math.min(wBonus,300);
+            const wHyojun=(wCapped*12+wBonusCapped)/12;
             const wJoinM=Math.max((deathAge-pWStart_mg)*12,300);
-            kW=wGross*5.481/1000*wJoinM;
+            kW=wHyojun*5.481/1000*wJoinM;
           }
         }
         if(targetIsH){

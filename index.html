@@ -966,17 +966,27 @@ if(authExp&&Date.now()<Number(authExp)){
           <button class="btn-tog" id="mg-surv-manual" onclick="setMGSurvMode('manual')">手入力</button>
         </div>
       </div>
-      <!-- 詳細モード：額面月収入力 -->
+      <!-- 詳細モード：月収＋ボーナス入力 -->
       <div id="mg-surv-detail-wrap" style="display:none;background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:8px">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
-          遺族厚生年金 ＝ 額面月収 × 5.481‰ × max(加入月数, 300ヶ月) × 3/4<br>
-          <span style="font-size:9px">就職年齢は収入設定の「加入開始年齢」を使用します</span>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.6">
+          <div style="font-weight:600;margin-bottom:2px">計算式</div>
+          <div>平均標準報酬額 ＝（月収 ※上限65万 × 12 ＋ 年間ボーナス ※上限300万）÷ 12</div>
+          <div>遺族厚生年金 ＝ 平均標準報酬額 × 5.481‰ × max(加入月数, 300) × 3/4</div>
+          <div style="font-size:9px;color:#888;margin-top:3px">月収は残業代・交通費・各種手当を含む総支給額／ボーナスは年間合計（税引前）</div>
         </div>
+        <div style="font-weight:600;font-size:10px;color:#1e3a5f;margin-bottom:4px">👔 ご主人様</div>
+        <div class="g2" style="margin-bottom:8px">
+          <div class="fg"><label class="lbl" style="font-size:9px">月収（手当・交通費込み）</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-h-gross" type="number" min="0" placeholder="例:40" oninput="live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">年間ボーナス合計（額面）</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-h-bonus" type="number" min="0" placeholder="例:80" oninput="live()" style="font-size:11px"><span class="sl">万円/年</span></div></div>
+        </div>
+        <div style="font-weight:600;font-size:10px;color:#8e2050;margin-bottom:4px">👗 奥様</div>
         <div class="g2">
-          <div class="fg"><label class="lbl" style="font-size:9px">👔 ご主人様 額面月収</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-h-gross" type="number" min="0" placeholder="例:40" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">👗 奥様 額面月収</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-w-gross" type="number" min="0" placeholder="例:30" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">月収（手当・交通費込み）</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-w-gross" type="number" min="0" placeholder="例:30" oninput="live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">年間ボーナス合計（額面）</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-w-bonus" type="number" min="0" placeholder="例:60" oninput="live()" style="font-size:11px"><span class="sl">万円/年</span></div></div>
         </div>
       </div>
       <!-- 手入力モード -->
