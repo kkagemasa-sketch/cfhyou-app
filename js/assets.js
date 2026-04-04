@@ -260,6 +260,6 @@ function setLoanMode(mode){
   document.getElementById('loan-pair-tab')?.classList.toggle('on',pairLoanMode);
   document.getElementById('loan-single-body').style.display=pairLoanMode?'none':'';
   document.getElementById('loan-pair-body').style.display=pairLoanMode?'':'none';
-  updateMGDansinUI();
+  if(typeof updateMGDansinUI==='function')updateMGDansinUI();
   live();
 }
