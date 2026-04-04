@@ -265,8 +265,22 @@ function render(){
   const pWStart=iv('pension-w-start')||22;
   const kisoH=ri(KISO_FULL*Math.min(retAge-pHStart,40)/40);   // ご主人の老齢基礎年金
   const kisoW=ri(KISO_FULL*Math.min(wRetAge-pWStart,40)/40);  // 奥様の老齢基礎年金
-  const koseiH=Math.max(0,pSelf-kisoH);  // ご主人の老齢厚生年金
-  const koseiW=Math.max(0,pWife-kisoW);  // 奥様の老齢厚生年金
+  // 月収/ボーナスが入力されていれば精算計算、未入力なら年金設定から逆算
+  const hGrossM=fv('h-gross-monthly')||0, hGrossB=fv('h-gross-bonus')||0;
+  const wGrossM=fv('w-gross-monthly')||0, wGrossB=fv('w-gross-bonus')||0;
+  let koseiH, koseiW;
+  if(hGrossM>0){
+    const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
+    const hHyojun=(hCapped*12+hBonusCapped)/12;
+    const hJoinM=Math.max(hDeathAge>0?(hDeathAge-pHStart)*12:(retAge-pHStart)*12,300);
+    koseiH=hHyojun*5.481/1000*hJoinM;
+  }else{koseiH=Math.max(0,pSelf-kisoH);}
+  if(wGrossM>0){
+    const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
+    const wHyojun=(wCapped*12+wBonusCapped)/12;
+    const wJoinM=Math.max(wDeathAge>0?(wDeathAge-pWStart)*12:(wRetAge-pWStart)*12,300);
+    koseiW=wHyojun*5.481/1000*wJoinM;
+  }else{koseiW=Math.max(0,pWife-kisoW);}
   const leaves=getLeaves();
   // 生活費
   const baseLc=calcLC();

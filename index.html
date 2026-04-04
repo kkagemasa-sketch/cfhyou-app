@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="Housing FP">
 <meta name="theme-color" content="#1e3a5f">
 <!-- Fonts: system fallback (offline mode) -->
-<link rel="stylesheet" href="./css/style.css?v=4">
+<link rel="stylesheet" href="./css/style.css?v=5">
 </head>
 <body>
 <!-- パスワードロック画面 -->
@@ -297,16 +297,30 @@ if(authExp&&Date.now()<Number(authExp)){
             </div>
             <div id="h-pension-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">65歳〜 受給</div>
             <div style="font-size:9px;color:var(--light);margin-top:3px">※ねんきん定期便の金額に上書きできます</div>
+            <!-- 遺族年金計算用：月収/ボーナス（任意） -->
+            <div style="margin-top:8px;padding:8px 10px;background:#fff8e6;border:1px solid #ffd080;border-radius:var(--rs)">
+              <div style="font-size:10px;font-weight:700;color:#7a4000;margin-bottom:5px">🪦 遺族年金の精算用（任意）</div>
+              <div class="g2" style="margin-bottom:4px">
+                <div class="fg"><label class="lbl" style="font-size:9px">月収（総支給額）</label>
+                  <div class="suf"><input class="inp amt-inp" id="h-gross-monthly" type="number" min="0" placeholder="例:40" oninput="updateSurvHint('h');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+                <div class="fg"><label class="lbl" style="font-size:9px">年間ボーナス計（額面）</label>
+                  <div class="suf"><input class="inp amt-inp" id="h-gross-bonus" type="number" min="0" placeholder="例:80" oninput="updateSurvHint('h');live()" style="font-size:11px"><span class="sl">万円/年</span></div></div>
+              </div>
+              <div id="h-surv-hint" style="font-size:9px;color:var(--light);margin-top:2px">入力すると年金設定より精度の高い遺族厚生年金を自動計算します</div>
+            </div>
           </div>
 
           <!-- 遺族年金の計算根拠 -->
           <div id="survivor-info" style="display:none;margin-top:8px">
             <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('▶')?'▼ 遺族年金の計算根拠を隠す':'▶ 遺族年金の計算根拠を確認する'" style="background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#7a5000;cursor:pointer;font-family:inherit;font-weight:600;width:100%;text-align:left">▶ 遺族年金の計算根拠を確認する</button>
             <div style="display:none;background:#fff8e6;border:1px solid #ffc000;border-top:none;border-radius:0 0 var(--rs) var(--rs);padding:9px 12px;font-size:10px;color:#5a4000;line-height:1.9">
-              <div>・<strong>遺族厚生年金</strong>：ご主人の老齢厚生年金 × 3/4</div>
+              <div>・<strong>遺族厚生年金の計算方法</strong></div>
+              <div style="padding-left:8px">①月収/ボーナス入力あり（精算）：平均標準報酬額 × 5.481‰ × max(加入月数,300) × 3/4</div>
+              <div style="padding-left:8px">②月収/ボーナス未入力（概算）：老齢年金額 − 老齢基礎年金 = 老齢厚生年金 × 3/4</div>
               <div>・<strong>遺族基礎年金</strong>：子が18歳未満の間のみ支給</div>
-              <div style="padding-left:8px">1人：約100万円/年　2人：約123万円/年　3人以上：+約7.6万円/人</div>
+              <div style="padding-left:8px">1人：約105万円/年　2人：約128万円/年　3人以上：+約7.8万円/人</div>
               <div>・奥様に厚生年金がある場合は<strong>高い方を適用</strong>（65歳以降）</div>
+              <div>・中高齢寡婦加算（40〜64歳・子なし）：約61万円/年</div>
               <div style="margin-top:4px;color:#aaa;font-size:9px">※概算です。実際は日本年金機構にてご確認ください。</div>
             </div>
           </div>
@@ -409,6 +423,17 @@ if(authExp&&Date.now()<Number(authExp)){
             </div>
             <div id="w-pension-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">65歳〜 受給</div>
             <div style="font-size:9px;color:var(--light);margin-top:3px">※ねんきん定期便の金額に上書きできます</div>
+            <!-- 遺族年金計算用：月収/ボーナス（任意） -->
+            <div style="margin-top:8px;padding:8px 10px;background:#fff0f6;border:1px solid #f0a0c8;border-radius:var(--rs)">
+              <div style="font-size:10px;font-weight:700;color:#7a0040;margin-bottom:5px">🪦 遺族年金の精算用（任意）</div>
+              <div class="g2" style="margin-bottom:4px">
+                <div class="fg"><label class="lbl" style="font-size:9px">月収（総支給額）</label>
+                  <div class="suf"><input class="inp amt-inp" id="w-gross-monthly" type="number" min="0" placeholder="例:30" oninput="updateSurvHint('w');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+                <div class="fg"><label class="lbl" style="font-size:9px">年間ボーナス計（額面）</label>
+                  <div class="suf"><input class="inp amt-inp" id="w-gross-bonus" type="number" min="0" placeholder="例:60" oninput="updateSurvHint('w');live()" style="font-size:11px"><span class="sl">万円/年</span></div></div>
+              </div>
+              <div id="w-surv-hint" style="font-size:9px;color:var(--light);margin-top:2px">入力すると年金設定より精度の高い遺族厚生年金を自動計算します</div>
+            </div>
           </div>
 
           <!-- 遺族年金 案B（奥様ご逝去後・ご主人様が受取） -->
@@ -963,39 +988,19 @@ if(authExp&&Date.now()<Number(authExp)){
       <div class="sub">📋 遺族年金</div>
       <div class="fg" style="margin-bottom:8px"><label class="lbl">計算方法</label>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn-tog on" id="mg-surv-auto" onclick="setMGSurvMode('auto')">自動（年金額から）</button>
-          <button class="btn-tog" id="mg-surv-detail" onclick="setMGSurvMode('detail')">詳細（額面月収から）</button>
+          <button class="btn-tog on" id="mg-surv-auto" onclick="setMGSurvMode('auto')">自動計算</button>
           <button class="btn-tog" id="mg-surv-manual" onclick="setMGSurvMode('manual')">手入力</button>
         </div>
       </div>
-      <!-- 詳細モード：月収＋ボーナス入力 -->
-      <div id="mg-surv-detail-wrap" style="display:none;background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:8px">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.6">
-          <div style="font-weight:600;margin-bottom:2px">計算式</div>
-          <div>平均標準報酬額 ＝（月収 ※上限65万 × 12 ＋ 年間ボーナス ※上限300万）÷ 12</div>
-          <div>遺族厚生年金 ＝ 平均標準報酬額 × 5.481‰ × max(加入月数, 300) × 3/4</div>
-          <div style="font-size:9px;color:#888;margin-top:3px">月収は残業代・交通費・各種手当を含む総支給額／ボーナスは年間合計（税引前）</div>
-        </div>
-        <div style="font-weight:600;font-size:10px;color:#1e3a5f;margin-bottom:4px">👔 ご主人様</div>
-        <div class="g2" style="margin-bottom:8px">
-          <div class="fg"><label class="lbl" style="font-size:9px">月収（手当・交通費込み）</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-h-gross" type="number" min="0" placeholder="例:40" oninput="live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">年間ボーナス合計（額面）</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-h-bonus" type="number" min="0" placeholder="例:80" oninput="live()" style="font-size:11px"><span class="sl">万円/年</span></div></div>
-        </div>
-        <div style="font-weight:600;font-size:10px;color:#8e2050;margin-bottom:4px">👗 奥様</div>
-        <div class="g2">
-          <div class="fg"><label class="lbl" style="font-size:9px">月収（手当・交通費込み）</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-w-gross" type="number" min="0" placeholder="例:30" oninput="live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">年間ボーナス合計（額面）</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-w-bonus" type="number" min="0" placeholder="例:60" oninput="live()" style="font-size:11px"><span class="sl">万円/年</span></div></div>
-        </div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:6px;line-height:1.6;background:#f8fafc;border:1px solid #e2e8f0;border-radius:var(--rs);padding:6px 9px" id="mg-surv-auto-note">
+        ③収入欄の月収・ボーナスが入力済みの場合→ <strong>精算計算</strong>（平均標準報酬額 × 5.481‰ × 加入月数 × 3/4）<br>
+        未入力の場合→ <strong>概算計算</strong>（老齢年金額から老齢厚生年金を逆算して × 3/4）
       </div>
       <!-- 手入力モード -->
       <div class="fg" id="mg-surv-manual-wrap" style="display:none"><label class="lbl">遺族年金額（年額）</label>
         <div class="suf"><input class="inp amt-inp" id="mg-surv-amt" type="number" value="0" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
       <div class="fg" style="margin-top:4px">
-        <span class="hint ok" id="mg-surv-hint">年金収入設定から自動計算します</span>
+        <span class="hint ok" id="mg-surv-hint">③収入欄の月収・ボーナス設定から自動計算します</span>
       </div>
 
       <div class="divider"></div>
@@ -1166,33 +1171,33 @@ if(authExp&&Date.now()<Number(authExp)){
 
 
 <!-- Vendor Libraries -->
-<script src="./js/vendors/chart.min.js?v=4"></script>
-<script src="./js/vendors/xlsx-style.min.js?v=4"></script>
-<script src="./js/vendors/jszip.min.js?v=4"></script>
-<script src="./js/vendors/FileSaver.min.js?v=4"></script>
+<script src="./js/vendors/chart.min.js?v=5"></script>
+<script src="./js/vendors/xlsx-style.min.js?v=5"></script>
+<script src="./js/vendors/jszip.min.js?v=5"></script>
+<script src="./js/vendors/FileSaver.min.js?v=5"></script>
 
 <!-- App Modules (dependency order) -->
-<script src="./js/constants.js?v=4"></script>
-<script src="./js/state.js?v=4"></script>
-<script src="./js/utils.js?v=4"></script>
-<script src="./js/loan-calc.js?v=4"></script>
-<script src="./js/education.js?v=4"></script>
-<script src="./js/living-cost.js?v=4"></script>
-<script src="./js/housing.js?v=4"></script>
-<script src="./js/income.js?v=4"></script>
-<script src="./js/family.js?v=4"></script>
-<script src="./js/contingency.js?v=4"></script>
-<script src="./js/assets.js?v=4"></script>
-<script src="./js/extras.js?v=4"></script>
-<script src="./js/cf-highlight.js?v=4"></script>
-<script src="./js/render.js?v=4"></script>
-<script src="./js/graphs.js?v=4"></script>
-<script src="./js/export.js?v=4"></script>
-<script src="./js/save-load.js?v=4"></script>
-<script src="./js/loan-plan.js?v=4"></script>
-<script src="./js/scenario.js?v=4"></script>
-<script src="./js/handbook.js?v=4"></script>
-<script src="./js/ui.js?v=4"></script>
-<script src="./js/app.js?v=4"></script>
+<script src="./js/constants.js?v=5"></script>
+<script src="./js/state.js?v=5"></script>
+<script src="./js/utils.js?v=5"></script>
+<script src="./js/loan-calc.js?v=5"></script>
+<script src="./js/education.js?v=5"></script>
+<script src="./js/living-cost.js?v=5"></script>
+<script src="./js/housing.js?v=5"></script>
+<script src="./js/income.js?v=5"></script>
+<script src="./js/family.js?v=5"></script>
+<script src="./js/contingency.js?v=5"></script>
+<script src="./js/assets.js?v=5"></script>
+<script src="./js/extras.js?v=5"></script>
+<script src="./js/cf-highlight.js?v=5"></script>
+<script src="./js/render.js?v=5"></script>
+<script src="./js/graphs.js?v=5"></script>
+<script src="./js/export.js?v=5"></script>
+<script src="./js/save-load.js?v=5"></script>
+<script src="./js/loan-plan.js?v=5"></script>
+<script src="./js/scenario.js?v=5"></script>
+<script src="./js/handbook.js?v=5"></script>
+<script src="./js/ui.js?v=5"></script>
+<script src="./js/app.js?v=5"></script>
 </body>
 </html>

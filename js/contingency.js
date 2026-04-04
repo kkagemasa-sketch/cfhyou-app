@@ -23,13 +23,14 @@ function updateMGDansinUI(){
   if($('mg-dansin-pair'))$('mg-dansin-pair').style.display=isPair?'block':'none';
 }
 function setMGSurvMode(m){
+  // 廃止された 'detail' モードは 'auto' に寄せる
+  if(m==='detail')m='auto';
   mgSurvMode=m;
   $('mg-surv-auto')?.classList.toggle('on',m==='auto');
-  $('mg-surv-detail')?.classList.toggle('on',m==='detail');
   $('mg-surv-manual')?.classList.toggle('on',m==='manual');
-  if($('mg-surv-detail-wrap'))$('mg-surv-detail-wrap').style.display=m==='detail'?'':'none';
+  if($('mg-surv-auto-note'))$('mg-surv-auto-note').style.display=m==='auto'?'':'none';
   if($('mg-surv-manual-wrap'))$('mg-surv-manual-wrap').style.display=m==='manual'?'':'none';
-  const hints={auto:'年金収入設定から自動計算します',detail:'額面月収から遺族厚生年金を計算します',manual:'手入力した金額を使用します'};
+  const hints={auto:'③収入欄の月収・ボーナス設定から自動計算します',manual:'手入力した金額を使用します'};
   if($('mg-surv-hint'))$('mg-surv-hint').textContent=hints[m]||hints.auto;
   live(true);
 }
@@ -148,7 +149,6 @@ function renderContingency(){
   const KISO_FULL=81.6;
   const retAge_mg=iv('retire-age')||65, wRetAge_mg=iv('w-retire-age')||60;
   const pHStart_mg=iv('pension-h-start')||22, pWStart_mg=iv('pension-w-start')||22;
-  const pWStart_mg=iv('pension-w-start')||22;
   const kisoH_mg=ri(KISO_FULL*Math.min(retAge_mg-pHStart_mg,40)/40);
   const kisoW_mg=ri(KISO_FULL*Math.min(wRetAge_mg-pWStart_mg,40)/40);
   const koseiH_mg=Math.max(0,pSelf-kisoH_mg);
@@ -222,28 +222,21 @@ function renderContingency(){
       if(mgSurvMode==='manual'){
         survP=survManualAmt;
       }else{
-        // 自動 or 詳細計算
-        // 詳細モードの場合: 額面月収から遺族厚生年金を直接計算
+        // ③収入欄の月収/ボーナスが入力されていれば精算計算、未入力なら年金設定から逆算
+        const hGrossM=fv('h-gross-monthly')||0, hGrossB=fv('h-gross-bonus')||0;
+        const wGrossM=fv('w-gross-monthly')||0, wGrossB=fv('w-gross-bonus')||0;
         let kH=koseiH_mg, kW=koseiW_mg;
-        if(mgSurvMode==='detail'){
-          const hGross=fv('mg-h-gross')||0;
-          const hBonus=fv('mg-h-bonus')||0;
-          const wGross=fv('mg-w-gross')||0;
-          const wBonus=fv('mg-w-bonus')||0;
-          if(hGross>0||hBonus>0){
-            const hCapped=Math.min(hGross,65);
-            const hBonusCapped=Math.min(hBonus,300);
-            const hHyojun=(hCapped*12+hBonusCapped)/12;
-            const joinM=Math.max((deathAge-pHStart_mg)*12,300);
-            kH=hHyojun*5.481/1000*joinM;
-          }
-          if(wGross>0||wBonus>0){
-            const wCapped=Math.min(wGross,65);
-            const wBonusCapped=Math.min(wBonus,300);
-            const wHyojun=(wCapped*12+wBonusCapped)/12;
-            const wJoinM=Math.max((deathAge-pWStart_mg)*12,300);
-            kW=wHyojun*5.481/1000*wJoinM;
-          }
+        if(hGrossM>0){
+          const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
+          const hHyojun=(hCapped*12+hBonusCapped)/12;
+          const joinM=Math.max((deathAge-pHStart_mg)*12,300);
+          kH=hHyojun*5.481/1000*joinM;
+        }
+        if(wGrossM>0){
+          const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
+          const wHyojun=(wCapped*12+wBonusCapped)/12;
+          const wJoinM=Math.max((deathAge-pWStart_mg)*12,300);
+          kW=wHyojun*5.481/1000*wJoinM;
         }
         if(targetIsH){
           let childUnder18=0;

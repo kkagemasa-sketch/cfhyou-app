@@ -1,5 +1,27 @@
 // income.js — 収入ステップ・手取り計算・年金
 
+// ===== 遺族厚生年金の概算ヒント更新 =====
+function updateSurvHint(p){
+  const gross=fv(`${p}-gross-monthly`)||0;
+  const bonus=fv(`${p}-gross-bonus`)||0;
+  const hintEl=document.getElementById(`${p}-surv-hint`);
+  if(!hintEl)return;
+  if(gross<=0){
+    hintEl.textContent='入力すると年金設定より精度の高い遺族厚生年金を自動計算します';
+    hintEl.style.color='var(--light)';
+    return;
+  }
+  const start=iv(`pension-${p}-start`)||22;
+  const retA=p==='h'?(iv('retire-age')||65):(iv('w-retire-age')||60);
+  const capped=Math.min(gross,65);
+  const bonusCapped=Math.min(bonus,300);
+  const hyojun=(capped*12+bonusCapped)/12;
+  const joinM=Math.max((retA-start)*12,300);
+  const iko=Math.round(hyojun*5.481/1000*joinM*0.75*10)/10;
+  hintEl.textContent=`✓ 遺族厚生年金 約${iko}万円/年（就職${start}歳・退職${retA}歳 加入${joinM}ヶ月）`;
+  hintEl.style.color='#3a8a3a';
+}
+
 // ===== 現在年齢 → 段階１開始年齢 の単方向連動 =====
 function syncStep1From(person, ageEl){
   const age=parseInt(ageEl.value)||0;
