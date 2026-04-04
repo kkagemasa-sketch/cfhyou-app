@@ -222,8 +222,23 @@ function renderContingency(){
       if(mgSurvMode==='manual'){
         survP=survManualAmt;
       }else{
-        // 老齢厚生年金相当額は③年金設定の年金額から算出（月収入力は参考ヒントのみ）
-        const kH=koseiH_mg, kW=koseiW_mg;
+        // 月収入力があれば生涯平均補正（×0.75）で精算、なければ年金設定から逆算
+        const CAREER_FACTOR=0.75;
+        const hGrossM=fv('h-gross-monthly')||0, hGrossB=fv('h-gross-bonus')||0;
+        const wGrossM=fv('w-gross-monthly')||0, wGrossB=fv('w-gross-bonus')||0;
+        let kH=koseiH_mg, kW=koseiW_mg;
+        if(hGrossM>0){
+          const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
+          const hHyojun=(hCapped*12+hBonusCapped)/12*CAREER_FACTOR;
+          const hJoinM=Math.max((retAge_mg-pHStart_mg)*12,300);
+          kH=hHyojun*5.481/1000*hJoinM;
+        }
+        if(wGrossM>0){
+          const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
+          const wHyojun=(wCapped*12+wBonusCapped)/12*CAREER_FACTOR;
+          const wJoinM=Math.max((wRetAge_mg-pWStart_mg)*12,300);
+          kW=wHyojun*5.481/1000*wJoinM;
+        }
         if(targetIsH){
           let childUnder18=0;
           children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});

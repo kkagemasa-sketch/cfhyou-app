@@ -7,7 +7,7 @@ function updateSurvHint(p){
   const hintEl=document.getElementById(`${p}-surv-hint`);
   if(!hintEl)return;
   if(gross<=0){
-    hintEl.textContent='入力すると遺族厚生年金の目安を表示します（CF表は⑤年金設定の年金額から計算）';
+    hintEl.textContent='入力すると遺族厚生年金の目安を表示します';
     hintEl.style.color='var(--light)';
     return;
   }
@@ -15,10 +15,11 @@ function updateSurvHint(p){
   const retA=p==='h'?(iv('retire-age')||65):(iv('w-retire-age')||60);
   const capped=Math.min(gross,65);
   const bonusCapped=Math.min(bonus,300);
-  const hyojun=(capped*12+bonusCapped)/12;
+  // 生涯平均補正×0.75：現在月収はキャリアのピーク付近であり、生涯平均は概ね75%程度
+  const hyojun=(capped*12+bonusCapped)/12*0.75;
   const joinM=Math.max((retA-start)*12,300);
   const iko=Math.round(hyojun*5.481/1000*joinM*0.75*10)/10;
-  hintEl.textContent=`参考: 遺族厚生年金 約${iko}万円/年（就職${start}歳・退職${retA}歳 加入${joinM}ヶ月）※CF表は年金設定の年金額から計算`;
+  hintEl.textContent=`遺族厚生年金（目安）約${iko}万円/年（就職${start}歳・退職${retA}歳・生涯平均補正済み）`;
   hintEl.style.color='#3a8a3a';
 }
 
