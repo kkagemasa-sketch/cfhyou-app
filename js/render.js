@@ -272,13 +272,15 @@ function render(){
   if(hGrossM>0){
     const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
     const hHyojun=(hCapped*12+hBonusCapped)/12;
-    const hJoinM=Math.max(hDeathAge>0?(hDeathAge-pHStart)*12:(retAge-pHStart)*12,300);
+    const hWorkEnd=hDeathAge>0?Math.min(hDeathAge,retAge):retAge;
+    const hJoinM=Math.max((hWorkEnd-pHStart)*12,300);
     koseiH=hHyojun*5.481/1000*hJoinM;
   }else{koseiH=Math.max(0,pSelf-kisoH);}
   if(wGrossM>0){
     const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
     const wHyojun=(wCapped*12+wBonusCapped)/12;
-    const wJoinM=Math.max(wDeathAge>0?(wDeathAge-pWStart)*12:(wRetAge-pWStart)*12,300);
+    const wWorkEnd=wDeathAge>0?Math.min(wDeathAge,wRetAge):wRetAge;
+    const wJoinM=Math.max((wWorkEnd-pWStart)*12,300);
     koseiW=wHyojun*5.481/1000*wJoinM;
   }else{koseiW=Math.max(0,pWife-kisoW);}
   const leaves=getLeaves();
@@ -427,9 +429,8 @@ function render(){
         // 中高齢寡婦加算: 遺族基礎年金なし かつ 妻40〜64歳
         const chukorei=(kiso===0&&wa>=40&&wa<65)?ri(61.43):0;
         if(wa>=pWReceive){
-          const opt1=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW));
-          const opt2=kisoW+ri(koseiH*2/3)+ri(koseiW*0.5);
-          survP=Math.max(opt1,opt2)+kiso+chukorei;
+          // 2022年改正後は差額方式のみ（2/3・1/2方式は廃止）
+          survP=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW))+kiso+chukorei;
         }else{
           survP=ri(koseiH*0.75)+kiso+chukorei;
         }
@@ -998,9 +999,8 @@ function render(){
     const chukorei0=(kiso0===0&&wa0>=40&&wa0<65)?ri(61.43):0;
     let autoH;
     if(wa0>=pWReceive){
-      const opt1=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW));
-      const opt2=kisoW+ri(koseiH*2/3)+ri(koseiW*0.5);
-      autoH=Math.max(opt1,opt2)+kiso0+chukorei0;
+      // 2022年改正後は差額方式のみ（2/3・1/2方式は廃止）
+      autoH=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW))+kiso0+chukorei0;
     }else{
       autoH=ri(koseiH*0.75)+kiso0+chukorei0;
     }

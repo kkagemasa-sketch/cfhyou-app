@@ -229,13 +229,16 @@ function renderContingency(){
         if(hGrossM>0){
           const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
           const hHyojun=(hCapped*12+hBonusCapped)/12;
-          const joinM=Math.max((deathAge-pHStart_mg)*12,300);
+          // 退職後は厚生年金加入なし → 加入月数は退職年齢でキャップ
+          const hWorkEnd=targetIsH?Math.min(deathAge,retAge_mg):retAge_mg;
+          const joinM=Math.max((hWorkEnd-pHStart_mg)*12,300);
           kH=hHyojun*5.481/1000*joinM;
         }
         if(wGrossM>0){
           const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
           const wHyojun=(wCapped*12+wBonusCapped)/12;
-          const wJoinM=Math.max((deathAge-pWStart_mg)*12,300);
+          const wWorkEnd=(!targetIsH)?Math.min(deathAge,wRetAge_mg):wRetAge_mg;
+          const wJoinM=Math.max((wWorkEnd-pWStart_mg)*12,300);
           kW=wHyojun*5.481/1000*wJoinM;
         }
         if(targetIsH){
@@ -245,9 +248,8 @@ function renderContingency(){
           // 中高齢寡婦加算（遺族基礎年金なし かつ 妻40〜64歳）
           const chukorei=(kiso===0&&wa>=40&&wa<65)?ri(61.43):0;
           if(wa>=pWReceive){
-            const opt1=kisoW_mg+Math.max(ri(kH*0.75),ri(kW));
-            const opt2=kisoW_mg+ri(kH*2/3)+ri(kW*0.5);
-            survP=Math.max(opt1,opt2)+kiso+chukorei;
+            // 2022年改正後は差額方式のみ（2/3・1/2方式は廃止）
+            survP=kisoW_mg+Math.max(ri(kH*0.75),ri(kW))+kiso+chukorei;
           }else{
             survP=ri(kH*0.75)+kiso+chukorei;
           }
