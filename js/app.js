@@ -43,6 +43,7 @@ window.onload=()=>{
   live();
   updateLctrlHint();
   initInputHighlight();
+
   initLCComma();
   initScrollSpy();
 
@@ -64,3 +65,11 @@ window.onload=()=>{
   // ペアローン状態に応じて団信UIを切り替え
   if(typeof updateMGDansinUI==='function')updateMGDansinUI();
 };
+
+// CF表セル: Enterキーで改行ではなく確定（document委譲・onload外で確実に登録）
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&e.target.hasAttribute&&e.target.hasAttribute('contenteditable')){
+    e.preventDefault();
+    e.target.blur();
+  }
+});
