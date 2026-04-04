@@ -219,6 +219,7 @@ document.addEventListener('keydown',function(e){
 
   var _draggingSel=false;
   var _dragMoved=false;
+  var _skipNextClick=false;
 
   // mousedown → ドラッグ選択開始（captureフェーズ）
   document.addEventListener('mousedown',function(e){
@@ -264,6 +265,9 @@ document.addEventListener('keydown',function(e){
         _anchorTd=td;
         td.focus();
         selectAll(td);
+      }else{
+        // ドラッグ選択完了 → 直後のclickで解除されないようにガード
+        _skipNextClick=true;
       }
     };
     document.addEventListener('mouseover',onOver,true);
@@ -272,6 +276,7 @@ document.addEventListener('keydown',function(e){
 
   // セル外クリックで選択解除
   document.addEventListener('click',function(e){
+    if(_skipNextClick){_skipNextClick=false;return;}
     var td=e.target.closest?e.target.closest('td[contenteditable]'):null;
     if(!td&&_selected.length>0&&!(e.target.closest&&e.target.closest('.fill-handle'))){
       _clearSel();
