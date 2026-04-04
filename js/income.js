@@ -7,7 +7,7 @@ function updateSurvHint(p){
   const hintEl=document.getElementById(`${p}-surv-hint`);
   if(!hintEl)return;
   if(gross<=0){
-    hintEl.textContent='入力すると年金設定より精度の高い遺族厚生年金を自動計算します';
+    hintEl.textContent='入力すると遺族厚生年金の目安を表示します（CF表は⑤年金設定の年金額から計算）';
     hintEl.style.color='var(--light)';
     return;
   }
@@ -18,7 +18,7 @@ function updateSurvHint(p){
   const hyojun=(capped*12+bonusCapped)/12;
   const joinM=Math.max((retA-start)*12,300);
   const iko=Math.round(hyojun*5.481/1000*joinM*0.75*10)/10;
-  hintEl.textContent=`✓ 遺族厚生年金 約${iko}万円/年（就職${start}歳・退職${retA}歳 加入${joinM}ヶ月）`;
+  hintEl.textContent=`参考: 遺族厚生年金 約${iko}万円/年（就職${start}歳・退職${retA}歳 加入${joinM}ヶ月）※CF表は年金設定の年金額から計算`;
   hintEl.style.color='#3a8a3a';
 }
 

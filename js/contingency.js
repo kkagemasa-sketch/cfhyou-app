@@ -222,25 +222,8 @@ function renderContingency(){
       if(mgSurvMode==='manual'){
         survP=survManualAmt;
       }else{
-        // ③収入欄の月収/ボーナスが入力されていれば精算計算、未入力なら年金設定から逆算
-        const hGrossM=fv('h-gross-monthly')||0, hGrossB=fv('h-gross-bonus')||0;
-        const wGrossM=fv('w-gross-monthly')||0, wGrossB=fv('w-gross-bonus')||0;
-        let kH=koseiH_mg, kW=koseiW_mg;
-        if(hGrossM>0){
-          const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
-          const hHyojun=(hCapped*12+hBonusCapped)/12;
-          // 退職後は厚生年金加入なし → 加入月数は退職年齢でキャップ
-          const hWorkEnd=targetIsH?Math.min(deathAge,retAge_mg):retAge_mg;
-          const joinM=Math.max((hWorkEnd-pHStart_mg)*12,300);
-          kH=hHyojun*5.481/1000*joinM;
-        }
-        if(wGrossM>0){
-          const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
-          const wHyojun=(wCapped*12+wBonusCapped)/12;
-          const wWorkEnd=(!targetIsH)?Math.min(deathAge,wRetAge_mg):wRetAge_mg;
-          const wJoinM=Math.max((wWorkEnd-pWStart_mg)*12,300);
-          kW=wHyojun*5.481/1000*wJoinM;
-        }
+        // 老齢厚生年金相当額は③年金設定の年金額から算出（月収入力は参考ヒントのみ）
+        const kH=koseiH_mg, kW=koseiW_mg;
         if(targetIsH){
           let childUnder18=0;
           children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
