@@ -104,3 +104,78 @@ document.addEventListener('keydown',function(e){
   }
   if(nextTd){nextTd.focus();selectAll(nextTd);}
 });
+
+// ===== Fill Handle（ドラッグコピー） =====
+(function(){
+  var _fh=null;       // fill handleのDOM要素
+  var _srcTd=null;    // ドラッグ元セル
+  var _srcVal=0;      // ドラッグ元の値
+  var _dragging=false;
+  var _preview=[];    // プレビュー中のセル
+
+  // フォーカス時にfill handleを表示
+  document.addEventListener('focusin',function(e){
+    var td=e.target;
+    if(!td.hasAttribute||!td.hasAttribute('contenteditable')||!td.dataset.row)return;
+    _removeFH();
+    _fh=document.createElement('div');
+    _fh.className='fill-handle';
+    td.style.overflow='visible';
+    td.appendChild(_fh);
+
+    _fh.addEventListener('mousedown',function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      _dragging=true;
+      _srcTd=td;
+      var raw=td.textContent.replace(/,/g,'').trim();
+      _srcVal=parseFloat(raw)||0;
+      _preview=[];
+      document.addEventListener('mousemove',_onMove);
+      document.addEventListener('mouseup',_onUp);
+    });
+  });
+
+  function _removeFH(){
+    if(_fh&&_fh.parentElement){_fh.parentElement.style.overflow='';_fh.remove();}
+    _fh=null;
+  }
+
+  function _onMove(e){
+    if(!_dragging||!_srcTd)return;
+    // プレビュークリア
+    _preview.forEach(function(t){t.classList.remove('fill-preview');});
+    _preview=[];
+    // マウス位置から対象セルを特定（同じ行の右方向のみ）
+    var row=_srcTd.parentElement;
+    var cells=Array.from(row.children);
+    var si=cells.indexOf(_srcTd);
+    var mouseX=e.clientX;
+    for(var i=si+1;i<cells.length;i++){
+      var c=cells[i];
+      if(!c.hasAttribute('contenteditable'))continue;
+      var rect=c.getBoundingClientRect();
+      if(rect.left>mouseX)break;
+      _preview.push(c);
+      c.classList.add('fill-preview');
+    }
+  }
+
+  function _onUp(){
+    document.removeEventListener('mousemove',_onMove);
+    document.removeEventListener('mouseup',_onUp);
+    if(!_dragging)return;
+    _dragging=false;
+    // プレビューセルに値を適用
+    var rowKey=_srcTd.dataset.row;
+    _preview.forEach(function(td){
+      td.classList.remove('fill-preview');
+      var col=parseInt(td.dataset.col);
+      if(!cfOverrides[rowKey])cfOverrides[rowKey]={};
+      cfOverrides[rowKey][col]=_srcVal;
+    });
+    _preview=[];
+    if(_srcTd)render();
+    _srcTd=null;
+  }
+})();
