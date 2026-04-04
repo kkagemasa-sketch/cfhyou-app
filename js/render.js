@@ -1003,7 +1003,7 @@ function render(){
   }
 
   // ─── cfOverrides後処理: サブ行上書きを合計・収支・残高に反映 ───
-  if(Object.keys(cfOverrides).length>0){
+  if(Object.keys(cfOverrides).length>0||cfCustomRows.length>0){
     const incKeys=['hInc','wInc','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext'];
     [...incKeys,...expKeys].forEach(key=>{
@@ -1030,9 +1030,9 @@ function render(){
     let newSav=initSav;
     for(let i=0;i<R.incT.length;i++){
       if(cfOverrides['incT']?.[i]!==undefined){R.incT[i]=cfOverrides['incT'][i];}
-      else{let t=incKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);if(R.secRedeemRows)R.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));R.incT[i]=t;}
+      else{let t=incKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);if(R.secRedeemRows)R.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.incT[i]=t;}
       if(cfOverrides['expT']?.[i]!==undefined){R.expT[i]=cfOverrides['expT'][i];}
-      else{let t=expKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(R.edu[ci]?.[i]||0));R.expT[i]=t;}
+      else{let t=expKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(R.edu[ci]?.[i]||0));cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.expT[i]=t;}
       R.bal[i]=R.incT[i]-R.expT[i];
       newSav+=R.bal[i]+(R.savExtra[i]||0);
       R.sav[i]=ri(newSav);
@@ -1234,6 +1234,19 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     h+=`<td></td></tr>`;
   });
 
+  // カスタム行レンダラー
+  const _customRow=(row,disp,cls)=>{
+    let tot=0;
+    let r=`<tr class="${cls}"><td><button onclick="deleteCustomRow('${row.id}')" class="btn-del-row" title="行を削除">×</button></td><td contenteditable="true" data-custom-id="${row.id}" onblur="customLabelEdit(this)" class="custom-lbl">${row.label}</td>`;
+    for(let i=0;i<disp;i++){
+      const v=cfOverrides[row.id]?.[i]||0;
+      tot+=v;
+      const isOvr=cfOverrides[row.id]?.[i]!==undefined;
+      r+=`<td class="${v===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${row.id}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${v>0?ri(v).toLocaleString():'-'}</td>`;
+    }
+    return r+`<td>${tot>0?ri(tot).toLocaleString():'-'}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${row.label}</span></td></tr>`;
+  };
+
   // ─ 収入 ─
   h+=`<tr class="rcat inc-cat"><td></td><td>収　　入</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   const iRow=(lbl,arr,rowKey)=>{const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return'';let r=`<tr class="rinc"><td></td><td>${lbl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${lbl}</span></td></tr>`};
@@ -1245,6 +1258,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 有価証券解約：銘柄ごとに個別行で表示
   if(R.secRedeemRows){R.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
   h+=iRow('奨学金',R.scholarship,'scholarship')+iRow('児童手当',R.teate,'teate')+iRow('住宅ローン控除',R.lCtrl,'lCtrl');
+  // カスタム収入行
+  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{h+=_customRow(r,disp,'rinc');});
+  h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('inc')" class="btn-add-row">＋ 収入行を追加</button></td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   h+=`<tr class="rinct"><td>収入合計</td><td></td>`;for(let i=0;i<disp;i++)h+=`<td>${ri(R.incT[i]).toLocaleString()}</td>`;h+=`<td>${ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0)).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">収入合計</span></td></tr>`;
 
   // ─ 支出 ─
@@ -1284,6 +1300,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=eRow('積立投資額',R.secInvest,'secInvest')+eRow('一括投資額',R.secBuy,'secBuy');
   h+=eRow('保険料（積立）',R.insMonthly,'insMonthly')+eRow('一時払い保険',R.insLumpExp,'insLumpExp');
   h+=eRow('結婚のお祝い',R.wedding,'wedding')+eRow('特別支出',R.ext,'ext');
+  // カスタム支出行
+  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{h+=_customRow(r,disp,'rexp');});
+  h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('exp')" class="btn-add-row">＋ 支出行を追加</button></td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   h+=`<tr class="rexpt"><td>支出合計</td><td></td>`;for(let i=0;i<disp;i++)h+=`<td>${ri(R.expT[i]).toLocaleString()}</td>`;h+=`<td>${ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0)).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">支出合計</span></td></tr>`;
 
   // ─ 収支・残高 ─

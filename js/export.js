@@ -303,6 +303,7 @@ async function exportExcelMG(){
   addI('児童手当',N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
   addISkip('保険満期金',N.insMat);
+  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...MR.incT.slice(0,disp).map(v=>ri(v)),ri(MR.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
   // ── 支出 ──
@@ -335,6 +336,7 @@ async function exportExcelMG(){
   addE('駐車場代',MR.prk);
   addE('車両費（購入・車検）',MR.carTotal);
   addE('特別支出',N.ext);
+  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
   // ── 収支・残高 ──
@@ -764,6 +766,7 @@ async function exportExcel(){
   addI('退職金（ご主人）',R.rPay);addI('退職金（奥様）',R.wRPay);
   addI('本人年金',R.pS);addI('配偶者年金',R.pW);addI('遺族年金',R.survPension);
   addI('奨学金',R.scholarship);addI('児童手当',R.teate);addI('住宅ローン控除',R.lCtrl);
+  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
   // ── 支出 ──
@@ -789,6 +792,7 @@ async function exportExcel(){
   if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
   else{addE('車両費（購入・車検）',R.carTotal);}
   addE('結婚のお祝い',R.wedding);addE('特別支出',R.ext);
+  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
   // ── 収支・残高 ──

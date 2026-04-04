@@ -9,6 +9,8 @@ let charts={};
 let timer=null;
 let rTab='cf';
 let cfOverrides={};// CF表手動上書き {rowKey: {colIndex: value}}
+let cfCustomRows=[];// カスタム行 [{id:'cinc_1', type:'inc'|'exp', label:'...'}]
+let _cfCustomId=0;  // カスタム行ID用カウンタ（単調増加）
 
 let indicatorTimer=null;
 let _lastInputHash='';
