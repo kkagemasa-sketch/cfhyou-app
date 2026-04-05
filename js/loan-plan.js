@@ -480,9 +480,9 @@ function renderLoanCalc(){
   if(grossW>0)calcLPTaxFromGross('w');
   const itaxH=taxInfoH.itax;
   const itaxW=taxInfoW.itax;
-  // 住民税からの控除上限＝課税総所得金額等×5%（上限9.75万円）
-  const jCapH=Math.min(Math.round(taxInfoH.taxableBase*0.05*10)/10,9.75);
-  const jCapW=Math.min(Math.round(taxInfoW.taxableBase*0.05*10)/10,9.75);
+  // 住民税からの控除上限＝課税総所得金額等×5%（上限JUMIN_CTRL_MAX）
+  const jCapH=Math.min(Math.round(taxInfoH.taxableBase*0.05*10)/10,JUMIN_CTRL_MAX);
+  const jCapW=Math.min(Math.round(taxInfoW.taxableBase*0.05*10)/10,JUMIN_CTRL_MAX);
   const taxCapH=(itaxH+jCapH)*10000;
   const taxCapW=(itaxW+jCapW)*10000;
   const hasTaxLimit=grossH>0;

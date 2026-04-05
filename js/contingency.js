@@ -243,8 +243,9 @@ function renderContingency(){
           let childUnder18=0;
           children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           const kiso=calcKiso(childUnder18);
-          // 中高齢寡婦加算（遺族基礎年金なし かつ 妻40〜64歳）
-          const chukorei=(kiso===0&&wa>=40&&wa<65)?ri(61.43):0;
+          // 中高齢寡婦加算（遺族基礎年金なし かつ 妻40〜64歳 かつ 夫死亡時に妻40歳以上）
+          const wAgeAtDeath=wAge+(deathAge-hAge);
+          const chukorei=(kiso===0&&wa>=40&&wa<65&&wAgeAtDeath>=40)?ri(61.43):0;
           if(wa>=pWReceive){
             // 2022年改正後は差額方式のみ（2/3・1/2方式は廃止）
             survP=kisoW_mg+Math.max(ri(kH*0.75),ri(kW))+kiso+chukorei;
