@@ -788,7 +788,7 @@ async function loadSlot(name){
     activeScenarioId=entry.data.activeScenarioId||scenarios[0].id;
     scenarioCnt=Math.max(...scenarios.map(s=>s.id));
   }else{
-    scenarios=[{id:1,name:'プラン1',data:entry.data}];
+    scenarios=[{id:1,name:'CF表1',data:entry.data}];
     activeScenarioId=1;scenarioCnt=1;
   }
   renderScenarioTabs();

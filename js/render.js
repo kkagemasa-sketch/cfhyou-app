@@ -187,12 +187,13 @@ function saveMemo(){
 }
 function setRTab(t){
   rTab=t;
-  $('rt-cf')?.classList.toggle('on',t==='cf');
   $('rt-graph')?.classList.toggle('on',t==='graph');
   $('rt-loan')?.classList.toggle('on',t==='loan');
   $('rt-memo')?.classList.toggle('on',t==='memo');
   $('rt-mg-h')?.classList.toggle('on',t==='mg-h');
   $('rt-mg-w')?.classList.toggle('on',t==='mg-w');
+  // シナリオタブのon/offを更新
+  renderScenarioTabs();
   // CF表・万が一タブのみ金融資産ボタン表示
   const finBtn=$('btn-fin-toggle');
   if(finBtn)finBtn.style.display=(t==='cf'||t==='mg-h'||t==='mg-w')?'':'none';
