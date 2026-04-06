@@ -36,6 +36,10 @@ function onJSONImport(input){
       const d = JSON.parse(e.target.result);
       setType(d.type || 'mansion');
       Object.entries(d.fields || {}).forEach(([id, val]) => { const el=$(id); if(el) el.value=val; });
+      cfOverrides=d.cfOverrides||{};
+      cfCustomRows=d.cfCustomRows||[];
+      _cfCustomId=d._cfCustomId||0;
+      _lcBikou=d.lcBikou||{};
       // v7以前の後方互換（extrasが直接ある場合）
       if(d.extras && !d.dynamic){
         $('extra-cont').innerHTML = ''; extraCnt = 0;
