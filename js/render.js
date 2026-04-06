@@ -914,6 +914,7 @@ function render(){
         const lbl=customLabel||(isNisa?'NISA':'課税')+'積み立て';
         const bal=fv(`sec-bal-${p}-${sid}`)||0;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
+        if(bal<=0&&monthly<=0)return; // 残高も積立額もなければスキップ
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
         const rate=(fv(`sec-rate-${p}-${sid}`)||5)/100;
         const yrs=i+1;
@@ -947,6 +948,7 @@ function render(){
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const lbl=customLabel||(isNisa?'NISA':'課税')+'一括投資';
         const bal=fv(`sec-stk-bal-${p}-${sid}`)||0;
+        if(bal<=0)return; // 残高なければスキップ
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
         finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
