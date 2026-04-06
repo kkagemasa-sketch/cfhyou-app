@@ -197,8 +197,8 @@ function _collectDynamic(){
   // フラグ系
   d.repMode=repMode; d.retirePayOn=retirePayOn; d.wRetirePayOn=wRetirePayOn;
   d.downType=downType; d.carOwn=carOwn; d.parkOwn=parkOwn;
-  d.parkEndAge=document.getElementById('park-end-age')?.value||'';
-  d.parkEndAgeManual=document.getElementById('park-end-age')?.dataset.manual||'';
+  d.parkFromYr=document.getElementById('park-from-yr')?.value||'';
+  d.parkToYr=document.getElementById('park-to-yr')?.value||'';
   d.carCnt=carCnt;
   d.cars=[];
   document.querySelectorAll('#car-list>[id^="car-"]').forEach(el=>{
@@ -477,11 +477,10 @@ function _restoreDynamic(d){
   if(typeof d.pairLoanMode!=='undefined')setLoanMode(d.pairLoanMode?'pair':'single');
   if(typeof d.carOwn!=='undefined')setCarOwn(d.carOwn);
   if(typeof d.parkOwn!=='undefined')setParkOwn(d.parkOwn);
-  const parkEndEl=document.getElementById('park-end-age');
-  if(parkEndEl&&d.parkEndAge!==undefined){
-    parkEndEl.value=d.parkEndAge;
-    if(d.parkEndAgeManual)parkEndEl.dataset.manual='1';
-  }
+  const parkFromEl=document.getElementById('park-from-yr');
+  if(parkFromEl&&d.parkFromYr)parkFromEl.value=d.parkFromYr;
+  const parkToEl=document.getElementById('park-to-yr');
+  if(parkToEl&&d.parkToYr)parkToEl.value=d.parkToYr;
   // 車の復元
   if(d.cars&&d.cars.length>0){
     document.getElementById('car-list').innerHTML='';

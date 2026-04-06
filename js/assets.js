@@ -329,19 +329,7 @@ function rmCar(id){
   document.getElementById('car-'+id)?.remove();
   live();
 }
-function syncParkEndAge(){
-  // 全台の「手放す年齢」の最大値を駐車場終了年齢に自動反映（空欄のときは空欄）
-  let maxAge=0;
-  document.querySelectorAll('#car-list>[id^="car-"]').forEach(carEl=>{
-    const cid=carEl.id.replace('car-','');
-    const v=iv('car-'+cid+'-end-age')||0;
-    if(v>maxAge)maxAge=v;
-  });
-  const parkEl=document.getElementById('park-end-age');
-  if(parkEl&&!parkEl.dataset.manual){
-    parkEl.value=maxAge>0?maxAge:'';
-  }
-}
+function syncParkEndAge(){/* 旧park-end-age連動は廃止 — 呼び出し元互換のため残置 */}
 
 function setLoanMode(mode){
   pairLoanMode=mode==='pair';

@@ -36,6 +36,9 @@ window.onload=()=>{
     const w2t=document.getElementById('w-is-2-to');if(w2t)w2t.value=65;
     const w2gf=document.getElementById('w-is-2-net-from');if(w2gf)w2gf.value=471;
     const w2gt=document.getElementById('w-is-2-net-to');if(w2gt)w2gt.value=471;
+    // 駐車場開始年デフォルト
+    const parkFromEl=document.getElementById('park-from-yr');
+    if(parkFromEl&&!parkFromEl.value)parkFromEl.value=new Date().getFullYear();
     // ヒント更新
     ['h-is-1','h-is-2','w-is-1','w-is-2'].forEach(id=>calcStepHint(id));
     live();

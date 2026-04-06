@@ -445,6 +445,12 @@ if(authExp&&Date.now()<Number(authExp)){
             <div class="suf"><input class="inp amt-inp" id="parking" type="number" onfocus="scrollToCFRow('prk')" onblur="cfRowBlur()" value="15000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
           <div></div>
         </div>
+        <div class="g2">
+          <div class="fg"><label class="lbl">開始年</label>
+            <div class="suf"><input class="inp amt-inp" id="park-from-yr" type="number" onfocus="scrollToCFRow('prk')" onblur="cfRowBlur()" min="2020" max="2100" step="1" oninput="live()"><span class="sl">年</span></div></div>
+          <div class="fg"><label class="lbl">終了年</label>
+            <div class="suf"><input class="inp amt-inp" id="park-to-yr" type="number" onfocus="scrollToCFRow('prk')" onblur="cfRowBlur()" placeholder="空欄=ずっと" min="2020" max="2100" step="1" oninput="live()"><span class="sl">年</span></div></div>
+        </div>
       </div>
 
     </div>
@@ -1110,7 +1116,7 @@ if(authExp&&Date.now()<Number(authExp)){
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=3"></script>
-<script src="js/constants.js?v=2"></script>
+<script src="js/constants.js?v=3"></script>
 <script src="js/utils.js?v=2"></script>
 <script src="js/family.js"></script>
 <script src="js/income.js?v=4"></script>
@@ -1118,19 +1124,19 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/housing.js"></script>
 <script src="js/loan-calc.js"></script>
 <script src="js/living-cost.js"></script>
-<script src="js/assets.js?v=3"></script>
+<script src="js/assets.js?v=4"></script>
 <script src="js/extras.js"></script>
 <script src="js/contingency.js?v=5"></script>
-<script src="js/render.js?v=11"></script>
+<script src="js/render.js?v=12"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js"></script>
 <script src="js/export.js?v=3"></script>
 <script src="js/loan-plan.js?v=2"></script>
 <script src="js/handbook.js"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=5"></script>
+<script src="js/save-load.js?v=6"></script>
 <script src="js/ui.js"></script>
-<script src="js/app.js?v=20"></script>
+<script src="js/app.js?v=21"></script>
 <script>
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{
