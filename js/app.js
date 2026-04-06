@@ -47,7 +47,8 @@ window.onload=()=>{
   // 数値入力欄: フォーカス時に全選択（先頭0問題の解消）
   document.addEventListener('focus',e=>{
     if(e.target.tagName==='INPUT'&&e.target.type==='number'){
-      requestAnimationFrame(()=>e.target.select());
+      // scrollToCFRow等のonfocus処理の後に確実にselectするため二重遅延
+      requestAnimationFrame(()=>setTimeout(()=>e.target.select(),0));
     }
   },true);
 
