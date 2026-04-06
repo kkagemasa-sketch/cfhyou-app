@@ -3,11 +3,9 @@
 
 function togglePanel(){
   const pl=document.querySelector('.panel-l');
-  const resizer=document.querySelector('.panel-resizer-grip');
   const btn=document.getElementById('btn-toggle-panel');
   const hidden=pl.classList.toggle('hidden');
-  if(resizer)resizer.style.display=hidden?'none':'';
-  btn.textContent=hidden?'▶ 表示':'◀ 隠す';
+  btn.textContent=hidden?'▶':'◀';
   btn.title=hidden?'入力パネルを表示する':'入力パネルを隠す';
 }
 
