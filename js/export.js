@@ -643,9 +643,10 @@ async function exportExcelMG(){
 // ===== Excel出力 =====
 function exportCurrentTab(){
   if(rTab==='cf')showExportModal('excel');
+  else if(rTab==='lctab')exportLCTabExcel();
   else if(rTab==='loan')exportLoanExcel();
   else if(rTab==='mg-h'||rTab==='mg-w')showExportModal('mg');
-  else if(rTab==='graph')showExportModal('excel'); // グラフはCF表と同じ
+  else if(rTab==='graph')showExportModal('excel');
   else showExportModal('excel');
 }
 async function exportExcel(){
@@ -1079,6 +1080,101 @@ async function exportExcel(){
   XLSX.utils.book_append_sheet(wb,ws,'CF表');
   const cnSama2=clientName.endsWith('様')?clientName:clientName+'様';
   await _writeXlsxWithPageSetup(wb,`CF表_${cnSama2}_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表');
+}
+
+// ===== 生活費タブExcel出力 =====
+function exportLCTabExcel(){
+  const wb=XLSX.utils.book_new();
+  const isM=ST.type==='mansion';
+  const clientName=_v('client-name')||'';
+  const dispName=clientName&&!clientName.endsWith('様')?clientName+'様':clientName;
+
+  function gv(id){const el=document.getElementById(id);if(!el)return 0;return parseFloat(String(el.value).replace(/,/g,''))||0;}
+  function gn(id){const el=document.getElementById(id);return el?el.value:'';}
+  function bk(id){return _lcBikou[id]||'';}
+
+  const rows=[];
+  // ヘッダー色
+  const hdrFill={patternType:'solid',fgColor:{rgb:'FFFFF8C4'}};
+  const hdrFont={bold:true,sz:12,color:{rgb:'FF000000'}};
+  const subFill={patternType:'solid',fgColor:{rgb:'FFF0F0E8'}};
+  const totalFill={patternType:'solid',fgColor:{rgb:'FFFFF8C4'}};
+  const totalFont={bold:true,sz:12,color:{rgb:'FF0D6A0D'}};
+  const border={top:{style:'thin',color:{rgb:'FFC5C5C5'}},bottom:{style:'thin',color:{rgb:'FFC5C5C5'}},left:{style:'thin',color:{rgb:'FFC5C5C5'}},right:{style:'thin',color:{rgb:'FFC5C5C5'}}};
+  const baseFont={sz:11};
+
+  function addHeader(label){
+    rows.push([
+      {v:label,s:{font:hdrFont,fill:hdrFill,border}},
+      {v:'円',s:{font:hdrFont,fill:hdrFill,border,alignment:{horizontal:'center'}}},
+      {v:'備考',s:{font:hdrFont,fill:hdrFill,border,alignment:{horizontal:'center'}}}
+    ]);
+  }
+  function addItem(label,val,bikou){
+    rows.push([
+      {v:label,s:{font:baseFont,border}},
+      {v:val||'',t:val?'n':'s',s:{font:baseFont,border,numFmt:'¥#,##0',alignment:{horizontal:'right'}}},
+      {v:bikou,s:{font:{sz:10,color:{rgb:'FF555555'}},border}}
+    ]);
+  }
+  function addSubtotal(val){
+    rows.push([
+      {v:'小計',s:{font:{bold:true,sz:11},fill:subFill,border}},
+      {v:val,t:'n',s:{font:{bold:true,sz:11},fill:subFill,border,numFmt:'¥#,##0',alignment:{horizontal:'right'}}},
+      {v:'',s:{fill:subFill,border}}
+    ]);
+  }
+  function addTotal(label,val){
+    rows.push([
+      {v:label,s:{font:totalFont,fill:totalFill,border}},
+      {v:val,t:'n',s:{font:totalFont,fill:totalFill,border,numFmt:'¥#,##0',alignment:{horizontal:'right'}}},
+      {v:'',s:{fill:totalFill,border}}
+    ]);
+  }
+
+  // === 毎月の固定費 ===
+  addHeader('毎月の固定費');
+  LC_MONTHLY_ITEMS.forEach(item=>{
+    if(item.cond==='mansion'&&!isM)return;
+    const label=item.other?'その他（'+(gn(item.nameId)||'')+' ）':item.label;
+    addItem(label,gv(item.id),bk(item.id));
+  });
+  let mTotal=0;
+  LC_MONTHLY_ITEMS.forEach(item=>{if(item.cond==='mansion'&&!isM)return;mTotal+=gv(item.id);});
+  addSubtotal(mTotal);
+  const mYearTotal=mTotal*12;
+  addTotal('合計（年間）',mYearTotal);
+
+  // 空行
+  rows.push([{v:'',s:{}},{v:'',s:{}},{v:'',s:{}}]);
+
+  // === 年間の変動費 ===
+  addHeader('年間の変動費');
+  LC_YEARLY_ITEMS.forEach(item=>{
+    const label=item.other?'その他（'+(gn(item.nameId)||'')+' ）':item.label;
+    addItem(label,gv(item.id),bk(item.id));
+  });
+  let yTotal=0;
+  LC_YEARLY_ITEMS.forEach(item=>{yTotal+=gv(item.id);});
+  addSubtotal(yTotal);
+  addTotal('合計（固定費＋変動費）',mYearTotal+yTotal);
+
+  // シート作成
+  const ws=XLSX.utils.aoa_to_sheet(rows.map(r=>r.map(c=>c.v)));
+  // スタイル適用
+  for(let r=0;r<rows.length;r++){
+    for(let c=0;c<3;c++){
+      const addr=XLSX.utils.encode_cell({r,c});
+      if(ws[addr])ws[addr].s=rows[r][c].s;
+      if(rows[r][c].t)ws[addr].t=rows[r][c].t;
+    }
+  }
+  // 列幅
+  ws['!cols']=[{wch:24},{wch:16},{wch:28}];
+
+  XLSX.utils.book_append_sheet(wb,ws,'生活費');
+  const fname=(dispName?dispName+'_':'')+'生活費一覧.xlsx';
+  XLSX.writeFile(wb,fname);
 }
 
 // ===== PDF出力（印刷ダイアログ経由） =====
