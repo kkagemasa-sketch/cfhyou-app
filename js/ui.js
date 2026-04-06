@@ -87,14 +87,14 @@ function initLCComma(){
       inp.addEventListener('focus',function(){this.value=this.value.replace(/,/g,'');this.select()});
       inp.addEventListener('blur',function(){
         const v=parseFloat(this.value.replace(/,/g,''))||0;
-        this.value=v?v.toLocaleString():'0';
+        this.value=v?v.toLocaleString():'';
       });
       inp._lcCommaInit=true;
     }
     // 値をカンマフォーマット（復元後にも対応）
     const raw=String(inp.value).replace(/,/g,'');
     const v=parseFloat(raw)||0;
-    inp.value=v?v.toLocaleString():'0';
+    inp.value=v?v.toLocaleString():'';
   });
 }
 
