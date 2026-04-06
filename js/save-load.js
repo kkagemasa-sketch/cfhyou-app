@@ -199,6 +199,15 @@ function _collectDynamic(){
   d.downType=downType; d.carOwn=carOwn; d.parkOwn=parkOwn;
   d.parkFromYr=document.getElementById('park-from-yr')?.value||'';
   d.parkToYr=document.getElementById('park-to-yr')?.value||'';
+  // 動的修繕周期
+  d.repairCycles=[];
+  document.querySelectorAll('#repair-cont>[id^="rep-"]').forEach(el=>{
+    const id=el.id.replace('rep-','');
+    d.repairCycles.push({
+      cycle:document.getElementById('repair-cycle'+id)?.value||'30',
+      cost:document.getElementById('repair-cost'+id)?.value||'200'
+    });
+  });
   d.carCnt=carCnt;
   d.cars=[];
   document.querySelectorAll('#car-list>[id^="car-"]').forEach(el=>{
@@ -481,6 +490,12 @@ function _restoreDynamic(d){
   if(parkFromEl&&d.parkFromYr)parkFromEl.value=d.parkFromYr;
   const parkToEl=document.getElementById('park-to-yr');
   if(parkToEl&&d.parkToYr)parkToEl.value=d.parkToYr;
+  // 動的修繕周期の復元
+  if(d.repairCycles&&d.repairCycles.length>0){
+    document.getElementById('repair-cont').innerHTML='';
+    repairCnt=0;
+    d.repairCycles.forEach(r=>addRepairCycle(r.cycle,r.cost));
+  }
   // 車の復元
   if(d.cars&&d.cars.length>0){
     document.getElementById('car-list').innerHTML='';
