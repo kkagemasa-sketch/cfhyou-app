@@ -108,14 +108,19 @@ function calcPension(person){
   const retireAge = isH ? (iv('retire-age')||65) : (iv('w-retire-age')||60);
   // 加入月数（最大480ヶ月=40年）
   const months = Math.min(480, Math.max(0, retireAge - startAge) * 12);
-  // 収入ステップから平均手取り年収を推計
-  const steps = getStepsForPension(person);
-  const avgNet = steps.length > 0 ? steps.reduce((s,v)=>s+v,0)/steps.length : (isH?541:322);
-  // 手取りから額面年収を逆算（所得帯別係数）
-  const _coeff=avgNet<300?0.84:avgNet<500?0.80:avgNet<700?0.77:avgNet<900?0.74:avgNet<1100?0.71:0.68;
-  const avgGrossYear = Math.round(avgNet / _coeff);
-  // 平均標準報酬額（月額）= 額面年収 ÷ 12
-  const avgMonthly = Math.round(avgGrossYear / 12);
+  // 生涯平均標準報酬月額を精密計算（収入ステップ活用）
+  let avgMonthly;
+  const avgH=calcAvgHyojun(person, startAge, retireAge);
+  if(avgH!==null){
+    avgMonthly=Math.round(avgH);
+  }else{
+    // フォールバック: ステップ端の平均から推計
+    const steps = getStepsForPension(person);
+    const avgNet = steps.length > 0 ? steps.reduce((s,v)=>s+v,0)/steps.length : (isH?541:322);
+    const _coeff=avgNet<300?0.84:avgNet<500?0.80:avgNet<700?0.77:avgNet<900?0.74:avgNet<1100?0.71:0.68;
+    const avgGrossYear = Math.round(avgNet / _coeff);
+    avgMonthly = Math.round(avgGrossYear / 12);
+  }
   // 老齢厚生年金（本来水準）= 平均標準報酬月額 × 5.481/1000 × 加入月数
   const koseiRaw = Math.round(avgMonthly * 5.481 / 1000 * months);
   // 老齢基礎年金 = 満額約80万 × 加入月数/480
@@ -330,6 +335,39 @@ function addPresetIncome(type){
     const leaveEl=$(`${id}-leave`);if(leaveEl)leaveEl.value='時短勤務';
     calcPctIncome(id);
   }
+}
+
+// ===== 生涯平均標準報酬月額の計算 =====
+// 収入ステップを活用して加入期間全体の平均を精密に計算する
+// - ステップがカバーする期間: 手取り→額面変換で正確に計算
+// - ステップより前の期間（就職～現在）: 最初のステップ値から60%→100%の線形推定
+// - ステップがない場合: null を返す（呼び出し側でフォールバック）
+function calcAvgHyojun(person, startAge, retireAge){
+  const steps=getIncomeSteps(person);
+  if(steps.length===0) return null;
+  const NET2GROSS=function(net){
+    // 手取り年収→額面年収の変換係数（calcPensionと同じ）
+    const c=net<300?0.84:net<500?0.80:net<700?0.77:net<900?0.74:net<1100?0.71:0.68;
+    return net/c;
+  };
+  let sumHyojun=0, countMonths=0;
+  const firstAgeFrom=steps[0].ageFrom;
+  const firstNetFrom=steps[0].netFrom;
+  for(let age=startAge; age<retireAge; age++){
+    let net=getIncomeAtAge(steps, age);
+    if(net<=0 && age<firstAgeFrom && firstNetFrom>0){
+      // 就職〜最初のステップ: 60%→100%の線形成長で推定
+      const span=Math.max(1, firstAgeFrom-startAge);
+      const progress=(age-startAge)/span;
+      net=firstNetFrom*(0.6+0.4*progress);
+    }
+    if(net<=0) continue; // カバーされない期間はスキップ
+    const grossYear=NET2GROSS(net);
+    const hyojunMonth=Math.min(grossYear/12, 65); // 標準報酬月額上限65万
+    sumHyojun+=hyojunMonth*12;
+    countMonths+=12;
+  }
+  return countMonths>0 ? sumHyojun/countMonths : null;
 }
 
 // ===== メイン計算 =====

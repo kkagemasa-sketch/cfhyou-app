@@ -267,20 +267,28 @@ function render(){
   const kisoH=ri(KISO_FULL*Math.min(retAge-pHStart,40)/40);   // ご主人の老齢基礎年金
   const kisoW=ri(KISO_FULL*Math.min(wRetAge-pWStart,40)/40);  // 奥様の老齢基礎年金
   // 老齢厚生年金相当額の計算
-  // 月収/ボーナスが入力されていれば生涯平均補正（×0.75）付きで精算、未入力なら年金設定から逆算
-  // ※補正係数0.75：現在月収はキャリアのピーク付近が多く、入社〜現在の平均は概ね約75%程度
-  //   (厚労省・賃金構造基本統計より。20代は約60〜70%→50代でピーク→生涯平均はピーク時の約3/4)
+  // 収入ステップがあれば生涯平均を精密計算、なければ月収×0.75で推定、どちらもなければ年金設定から逆算
   const hGrossM=fv('h-gross-monthly')||0, hGrossB=fv('h-gross-bonus')||0;
   const wGrossM=fv('w-gross-monthly')||0, wGrossB=fv('w-gross-bonus')||0;
-  const CAREER_FACTOR=0.75;  // 生涯平均月収 ≒ 現在月収 × 0.75
+  const CAREER_FACTOR=0.75;  // フォールバック用
   let koseiH, koseiW;
-  if(hGrossM>0){
+  // ご主人
+  const hAvgHyojun=calcAvgHyojun('h', pHStart, retAge);
+  if(hAvgHyojun!==null){
+    const hJoinM=Math.max((retAge-pHStart)*12,300);
+    koseiH=hAvgHyojun*5.481/1000*hJoinM;
+  }else if(hGrossM>0){
     const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
-    const hHyojun=(hCapped*12+hBonusCapped)/12*CAREER_FACTOR;  // 生涯平均標準報酬額
+    const hHyojun=(hCapped*12+hBonusCapped)/12*CAREER_FACTOR;
     const hJoinM=Math.max((retAge-pHStart)*12,300);
     koseiH=hHyojun*5.481/1000*hJoinM;
   }else{koseiH=Math.max(0,pSelf-kisoH);}
-  if(wGrossM>0){
+  // 奥様
+  const wAvgHyojun=calcAvgHyojun('w', pWStart, wRetAge);
+  if(wAvgHyojun!==null){
+    const wJoinM=Math.max((wRetAge-pWStart)*12,300);
+    koseiW=wAvgHyojun*5.481/1000*wJoinM;
+  }else if(wGrossM>0){
     const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
     const wHyojun=(wCapped*12+wBonusCapped)/12*CAREER_FACTOR;
     const wJoinM=Math.max((wRetAge-pWStart)*12,300);

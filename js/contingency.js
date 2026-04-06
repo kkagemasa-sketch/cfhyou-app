@@ -222,18 +222,26 @@ function renderContingency(){
       if(mgSurvMode==='manual'){
         survP=survManualAmt;
       }else{
-        // 月収入力があれば生涯平均補正（×0.75）で精算、なければ年金設定から逆算
+        // 収入ステップがあれば生涯平均を精密計算、なければ月収×0.75で推定
         const CAREER_FACTOR=0.75;
         const hGrossM=fv('h-gross-monthly')||0, hGrossB=fv('h-gross-bonus')||0;
         const wGrossM=fv('w-gross-monthly')||0, wGrossB=fv('w-gross-bonus')||0;
         let kH=koseiH_mg, kW=koseiW_mg;
-        if(hGrossM>0){
+        const hAvg_mg=calcAvgHyojun('h', pHStart_mg, retAge_mg);
+        if(hAvg_mg!==null){
+          const hJoinM=Math.max((retAge_mg-pHStart_mg)*12,300);
+          kH=hAvg_mg*5.481/1000*hJoinM;
+        }else if(hGrossM>0){
           const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
           const hHyojun=(hCapped*12+hBonusCapped)/12*CAREER_FACTOR;
           const hJoinM=Math.max((retAge_mg-pHStart_mg)*12,300);
           kH=hHyojun*5.481/1000*hJoinM;
         }
-        if(wGrossM>0){
+        const wAvg_mg=calcAvgHyojun('w', pWStart_mg, wRetAge_mg);
+        if(wAvg_mg!==null){
+          const wJoinM=Math.max((wRetAge_mg-pWStart_mg)*12,300);
+          kW=wAvg_mg*5.481/1000*wJoinM;
+        }else if(wGrossM>0){
           const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
           const wHyojun=(wCapped*12+wBonusCapped)/12*CAREER_FACTOR;
           const wJoinM=Math.max((wRetAge_mg-pWStart_mg)*12,300);
