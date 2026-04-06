@@ -64,7 +64,7 @@ let mgInsCnt=1;
 
 let mgCarOn=true, mgParkOn=true;
 
-let _mgLCStepCount=1;
+let _mgLCStepCount=0;
 
 let _loanPrepayId=0;
 

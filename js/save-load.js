@@ -184,14 +184,19 @@ function _collectDynamic(){
     const id=el.id.split('-').pop();
     d.mg.insurances.push({name:$(`mg-ins-name-${id}`)?.value||'',amt:$(`mg-ins-amt-${id}`)?.value||''});
   });
-  document.querySelectorAll('#mg-lc-steps-container>.mg-lc-step, #mg-lc-steps-container>[style]').forEach(el=>{
-    const inputs=el.querySelectorAll('input');
-    if(inputs.length>=4){
-      d.mg.lcSteps.push({base:inputs[0]?.value||'',rate:inputs[1]?.value||'',from:inputs[2]?.value||'',to:inputs[3]?.value||''});
-    }
+  let _mgIdx=0;
+  document.querySelectorAll('#mg-lc-steps-container>.mg-lc-step').forEach(el=>{
+    _mgIdx++;
+    const isPct=el.querySelector(`[id$="lsmode-pct-${_mgIdx}"]`)?.classList.contains('on')||false;
+    d.mg.lcSteps.push({
+      base:$(`mg-lsb-${_mgIdx}`)?.value||'',
+      rate:$(`mg-lsr-${_mgIdx}`)?.value||'',
+      from:$(`mg-lsf-${_mgIdx}`)?.value||'',
+      to:$(`mg-lst-${_mgIdx}`)?.value||'',
+      mode:isPct?'pct':'free',
+      pct:isPct?($(`mg-lspct-${_mgIdx}`)?.value||'80'):''
+    });
   });
-  // 万が一 生活費段階1（静的HTML）
-  d.mg.lcStep1={base:$('mg-lsb-1')?.value||'',rate:$('mg-lsr-1')?.value||'',from:$('mg-lsf-1')?.value||'',to:$('mg-lst-1')?.value||''};
   // 通常CF表 遺族年金上書き金額
   d.survHAmt=$('surv-h-amt')?.value||'';
   d.survWAmt=$('surv-w-amt')?.value||'';
@@ -424,9 +429,8 @@ function _restoreDynamic(d){
     }
     // 追加段階
     if($('mg-lc-steps-container')){
-      // 動的段階のみ削除（段階1は静的）
       $('mg-lc-steps-container').querySelectorAll('.mg-lc-step').forEach(el=>el.remove());
-      _mgLCStepCount=1;
+      _mgLCStepCount=0;
       (mg.lcSteps||[]).forEach(s=>{
         if(typeof addMGLCStep==='function')addMGLCStep();
         const n=_mgLCStepCount;
@@ -434,6 +438,15 @@ function _restoreDynamic(d){
         if($(`mg-lsr-${n}`))$(`mg-lsr-${n}`).value=s.rate;
         if($(`mg-lsf-${n}`))$(`mg-lsf-${n}`).value=s.from;
         if($(`mg-lst-${n}`))$(`mg-lst-${n}`).value=s.to;
+        // 割合モード復元
+        if(s.mode==='pct'){
+          const pctBtn=$(`mg-lsmode-pct-${n}`);
+          const freeBtn=$(`mg-lsmode-free-${n}`);
+          if(pctBtn&&freeBtn){pctBtn.classList.add('on');freeBtn.classList.remove('on');}
+          const fw=$(`mg-lsfree-wrap-${n}`);const pw=$(`mg-lspct-wrap-${n}`);
+          if(fw)fw.style.display='none';if(pw)pw.style.display='block';
+          if($(`mg-lspct-${n}`))$(`mg-lspct-${n}`).value=s.pct||80;
+        }
       });
     }
     // 奨学金

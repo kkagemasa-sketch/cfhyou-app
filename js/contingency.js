@@ -62,40 +62,73 @@ function updateMGHints(){
 function addMGLCStep(){
   _mgLCStepCount++;
   const n=_mgLCStepCount;
+  const isFirst=n===1;
   const cont=document.getElementById('mg-lc-steps-container');
   const d=document.createElement('div');
   d.className='mg-lc-step';
   d.style.cssText='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-bottom:6px';
+  const modeToggle=isFirst?'':`
+  <div style="display:flex;gap:3px;margin-bottom:4px">
+    <button class="btn-tog on" id="mg-lsmode-free-${n}" onclick="setMGLCMode(${n},'free')" style="font-size:10px;padding:3px 8px">自由入力</button>
+    <button class="btn-tog" id="mg-lsmode-pct-${n}" onclick="setMGLCMode(${n},'pct')" style="font-size:10px;padding:3px 8px">前段階の割合</button>
+  </div>`;
+  const pctWrap=isFirst?'':`
+  <div id="mg-lspct-wrap-${n}" style="display:none;margin-bottom:4px">
+    <label style="font-size:10px;color:#92400e;font-weight:600;display:block;margin-bottom:3px">前段階の金額の</label>
+    <div class="suf" style="width:90px"><input class="inp amt-inp" id="mg-lspct-${n}" type="number" value="80" min="1" max="200" step="1" oninput="live()"><span class="sl">%</span></div>
+  </div>`;
+  const phBase=isFirst?'空欄=通常の生活費合計を使用':'空欄=前段階終了時の金額を引継ぎ';
   d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
     <span style="font-size:10px;font-weight:600;color:#64748b">段階${n}</span>
-    <button onclick="this.parentElement.parentElement.remove()" style="background:#fee;color:#d63a2a;border:1px solid #fca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button>
+    <button onclick="this.parentElement.parentElement.remove();live()" style="background:#fee;color:#d63a2a;border:1px solid #fca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button>
   </div>
-  <div class="g2" style="margin-bottom:4px">
-    <div class="fg"><label class="lbl">金額</label>
-      <div class="suf"><input class="inp amt-inp" id="mg-lsb-${n}" type="number" value="" placeholder="万円/年" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
-    <div class="fg"><label class="lbl">上昇率（0=横ばい）</label>
-      <div class="suf"><input class="inp" id="mg-lsr-${n}" type="number" value="0" step="0.1" oninput="live()"><span class="sl">%/年</span></div></div>
+  ${modeToggle}
+  <div id="mg-lsfree-wrap-${n}">
+    <div class="g2" style="margin-bottom:4px">
+      <div class="fg"><label class="lbl">金額</label>
+        <div class="suf"><input class="inp amt-inp" id="mg-lsb-${n}" type="number" value="" placeholder="${phBase}" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
+      <div class="fg"><label class="lbl">上昇率（0=横ばい）</label>
+        <div class="suf"><input class="inp" id="mg-lsr-${n}" type="number" value="0" step="0.1" oninput="live()"><span class="sl">%/年</span></div></div>
+    </div>
   </div>
+  ${pctWrap}
   <div class="g2">
     <div class="fg"><label class="lbl">開始年</label>
-      <div class="suf"><input class="inp age-inp" id="mg-lsf-${n}" type="number" value="" placeholder="前段階+1" oninput="live()"><span class="sl">年</span></div></div>
+      <div class="suf"><input class="inp age-inp" id="mg-lsf-${n}" type="number" value="" placeholder="${isFirst?new Date().getFullYear():'前段階+1'}" oninput="live()"><span class="sl">年</span></div></div>
     <div class="fg"><label class="lbl">終了年</label>
       <div class="suf"><input class="inp age-inp" id="mg-lst-${n}" type="number" value="" placeholder="空欄=ずっと" oninput="live()"><span class="sl">年</span></div></div>
   </div>`;
   cont.appendChild(d);
 }
+function setMGLCMode(n,mode){
+  const isFree=mode==='free';
+  $(`mg-lsmode-free-${n}`)?.classList.toggle('on',isFree);
+  $(`mg-lsmode-pct-${n}`)?.classList.toggle('on',!isFree);
+  const fw=$(`mg-lsfree-wrap-${n}`);
+  const pw=$(`mg-lspct-wrap-${n}`);
+  if(fw)fw.style.display=isFree?'':'none';
+  if(pw)pw.style.display=isFree?'none':'block';
+  live();
+}
 function getMGLCSteps(){
   const steps=[];
+  let idx=0;
   document.querySelectorAll('.mg-lc-step').forEach(el=>{
-    const inputs=el.querySelectorAll('input');
-    if(inputs.length>=4){
-      steps.push({
-        base:parseFloat(inputs[0].value)||0,
-        rate:parseFloat(inputs[1].value)||0,
-        fromYr:parseInt(inputs[2].value)||0,
-        toYr:parseInt(inputs[3].value)||0
-      });
-    }
+    idx++;
+    const isPct=el.querySelector(`[id$="lsmode-pct-${idx}"]`)?.classList.contains('on')||false;
+    const baseEl=el.querySelector(`[id$="lsb-${idx}"]`);
+    const rateEl=el.querySelector(`[id$="lsr-${idx}"]`);
+    const fromEl=el.querySelector(`[id$="lsf-${idx}"]`);
+    const toEl=el.querySelector(`[id$="lst-${idx}"]`);
+    const pctEl=el.querySelector(`[id$="lspct-${idx}"]`);
+    steps.push({
+      base:isPct?0:(parseFloat(baseEl?.value)||0),
+      rate:parseFloat(rateEl?.value)||0,
+      fromYr:parseInt(fromEl?.value)||0,
+      toYr:parseInt(toEl?.value)||0,
+      mode:isPct?'pct':'free',
+      pct:isPct?(parseFloat(pctEl?.value)||80):null
+    });
   });
   return steps;
 }
@@ -343,6 +376,15 @@ function renderContingency(){
     if(isDead){
       if(mgLCMode==='step'&&mgLCSteps.length>0){
         // 段階設定モード：西暦ベースで判定
+        // 割合モードの段階は前段階のbaseを参照
+        for(let si=0;si<mgLCSteps.length;si++){
+          const st=mgLCSteps[si];
+          if(st.mode==='pct'&&si>0){
+            const prevBase=mgLCSteps[si-1].base||normalLC;
+            st.base=ri(prevBase*(st.pct||80)/100);
+          }
+          if(st.base<=0&&si===0)st.base=normalLC; // 段階1が空欄→通常生活費
+        }
         const yr=MR.yr[i];
         let found=false;
         for(const st of mgLCSteps){
@@ -355,7 +397,6 @@ function renderContingency(){
           }
         }
         if(!found){
-          // 最後の段階を継続
           const last=mgLCSteps[mgLCSteps.length-1];
           const from=last.fromYr||0;
           const yrInStep=Math.max(0,yr-from);
