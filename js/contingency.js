@@ -430,7 +430,10 @@ function renderContingency(){
       nPrk=0;
     }else if(mgParkKeep&&isDead){
       const mgParkAmt=fv('mg-parking')||15000;
-      nPrk=ri(mgParkAmt*12/10000);
+      const mgParkFrom=iv('mg-park-from-yr')||0;
+      const mgParkTo=iv('mg-park-to-yr')||0;
+      const mgParkActive=yr>=mgParkFrom&&(mgParkTo<=0||yr<=mgParkTo);
+      nPrk=mgParkActive?ri(mgParkAmt*12/10000):0;
     }else{
       nPrk=i<normalR.prk.length?(normalR.prk[i]||0):0;
     }

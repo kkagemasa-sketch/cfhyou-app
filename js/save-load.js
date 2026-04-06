@@ -178,6 +178,7 @@ function _collectDynamic(){
     carOn:$('mg-car-keep')?.classList.contains('act')!==false,
     carPrice:$('mg-car-price')?.value||'',carCycle:$('mg-car-cycle')?.value||'',carInsp:$('mg-car-insp')?.value||'',carEndAge:$('mg-car-end-age')?.value||'',
     parkOn:$('mg-park-keep')?.classList.contains('act')!==false,parking:$('mg-parking')?.value||'',
+    parkFromYr:$('mg-park-from-yr')?.value||'',parkToYr:$('mg-park-to-yr')?.value||'',
     insurances:[],lcSteps:[]};
   document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
     const id=el.id.split('-').pop();
@@ -466,6 +467,8 @@ function _restoreDynamic(d){
       if($('mg-park-fields'))$('mg-park-fields').style.display='none';
     }
     if($('mg-parking'))$('mg-parking').value=mg.parking||'15000';
+    if($('mg-park-from-yr')&&mg.parkFromYr)$('mg-park-from-yr').value=mg.parkFromYr;
+    if($('mg-park-to-yr')&&mg.parkToYr)$('mg-park-to-yr').value=mg.parkToYr;
     // 保険金
     if($('mg-insurance-cont'))$('mg-insurance-cont').innerHTML='';
     mgInsCnt=0;

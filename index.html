@@ -1042,6 +1042,12 @@ if(authExp&&Date.now()<Number(authExp)){
             <div class="suf"><input class="inp amt-inp" id="mg-parking" type="number" value="15000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
           <div></div>
         </div>
+        <div class="g2">
+          <div class="fg"><label class="lbl">開始年</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-park-from-yr" type="number" min="2020" max="2100" step="1" oninput="live()"><span class="sl">年</span></div></div>
+          <div class="fg"><label class="lbl">終了年</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-park-to-yr" type="number" placeholder="空欄=ずっと" min="2020" max="2100" step="1" oninput="live()"><span class="sl">年</span></div></div>
+        </div>
       </div>
 
       <div class="divider"></div>
@@ -1126,7 +1132,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=4"></script>
 <script src="js/extras.js"></script>
-<script src="js/contingency.js?v=5"></script>
+<script src="js/contingency.js?v=6"></script>
 <script src="js/render.js?v=12"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js"></script>
@@ -1134,9 +1140,9 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/loan-plan.js?v=3"></script>
 <script src="js/handbook.js"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=9"></script>
+<script src="js/save-load.js?v=10"></script>
 <script src="js/ui.js?v=2"></script>
-<script src="js/app.js?v=22"></script>
+<script src="js/app.js?v=23"></script>
 <script>
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{
