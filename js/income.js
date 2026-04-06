@@ -13,13 +13,19 @@ function updateSurvHint(p){
   }
   const start=iv(`pension-${p}-start`)||22;
   const retA=p==='h'?(iv('retire-age')||65):(iv('w-retire-age')||60);
-  const capped=Math.min(gross,65);
-  const bonusCapped=Math.min(bonus,300);
-  // 生涯平均補正×0.75：現在月収はキャリアのピーク付近であり、生涯平均は概ね75%程度
-  const hyojun=(capped*12+bonusCapped)/12*0.75;
   const joinM=Math.min(480,Math.max((retA-start)*12,300));
+  // 収入ステップがあれば精密計算、なければ額面月収×0.75で推定
+  let hyojun;
+  const avgH=calcAvgHyojun(p, start, retA);
+  if(avgH!==null){
+    hyojun=avgH;
+  }else{
+    const capped=Math.min(gross,65);
+    const bonusCapped=Math.min(bonus,300);
+    hyojun=(capped*12+bonusCapped)/12*0.75;
+  }
   const iko=Math.round(hyojun*5.481/1000*joinM*0.75*10)/10;
-  hintEl.textContent=`遺族厚生年金（目安）約${iko}万円/年（就職${start}歳・退職${retA}歳・生涯平均補正済み）`;
+  hintEl.textContent=`遺族厚生年金（目安）約${iko}万円/年（就職${start}歳・退職${retA}歳）`;
   hintEl.style.color='#3a8a3a';
 }
 
@@ -390,8 +396,11 @@ function getIncomeSteps(person){
 }
 function getIncomeAtAge(steps,age){
   if(steps.length===0)return 0;
-  for(const s of steps){
-    if(age>=s.ageFrom&&age<=s.ageTo){
+  for(let si=0;si<steps.length;si++){
+    const s=steps[si];
+    const isLast=si===steps.length-1;
+    // 最後のステップは上限を含む(<=)、途中は次ステップに譲る(<)
+    if(age>=s.ageFrom&&(isLast?age<=s.ageTo:age<s.ageTo)){
       const span=Math.max(1,s.ageTo-s.ageFrom);
       const ratio=(age-s.ageFrom)/span;
       return Math.round(s.netFrom+(s.netTo-s.netFrom)*ratio);
