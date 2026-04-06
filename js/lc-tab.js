@@ -58,14 +58,14 @@ function renderLCTab(){
     const bikou=getBikou(item.id);
     let labelHtml;
     if(item.other){
-      labelHtml=`その他（<input data-nameid="${item.nameId}" value="${escAttr(getName(item.nameId))}" placeholder="項目名" style="border:none;border-bottom:1px dashed #aaa;background:transparent;font-size:14px;width:80px;outline:none;font-family:inherit" oninput="syncLCTabName(this)">）`;
+      labelHtml=`その他（<input data-nameid="${item.nameId}" value="${escAttr(getName(item.nameId))}" placeholder="項目名" style="border:none;border-bottom:1px dashed #aaa;background:transparent;font-size:12px;width:70px;outline:none;font-family:inherit" oninput="syncLCTabName(this)">）`;
     }else{
       labelHtml=item.label;
     }
     return `<tr>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;font-size:14px;white-space:nowrap">${labelHtml}</td>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;text-align:right;font-size:14px;white-space:nowrap"><input data-srcid="${item.id}" value="${val?'¥'+val.toLocaleString():''}" style="border:none;background:transparent;text-align:right;font-size:14px;width:100%;outline:none;font-family:inherit" onfocus="this.value=this.value.replace(/[¥,]/g,'')" onblur="syncLCTabAmt(this)"></td>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;font-size:13px"><input data-bikid="${item.id}" value="${escAttr(bikou)}" style="border:none;background:transparent;font-size:13px;width:100%;outline:none;font-family:inherit;color:#555" oninput="_lcBikou['${item.id}']=this.value;scheduleAutoSave()"></td>
+      <td style="padding:4px 8px;border:1px solid #c5c5c5;font-size:12px;white-space:nowrap">${labelHtml}</td>
+      <td style="padding:4px 8px;border:1px solid #c5c5c5;text-align:right;font-size:12px;white-space:nowrap"><input data-srcid="${item.id}" value="${val?'¥'+val.toLocaleString():''}" style="border:none;background:transparent;text-align:right;font-size:12px;width:100%;outline:none;font-family:inherit" onfocus="this.value=this.value.replace(/[¥,]/g,'')" onblur="syncLCTabAmt(this)"></td>
+      <td style="padding:4px 8px;border:1px solid #c5c5c5;font-size:11px"><input data-bikid="${item.id}" value="${escAttr(bikou)}" style="border:none;background:transparent;font-size:11px;width:100%;outline:none;font-family:inherit;color:#555" oninput="_lcBikou['${item.id}']=this.value;scheduleAutoSave()"></td>
     </tr>`;
   }
 
@@ -82,42 +82,42 @@ function renderLCTab(){
   const mYearTotal=mTotal*12;
   const grandTotal=mYearTotal+yTotal;
 
-  let h=`<div style="max-width:700px;margin:20px auto;font-family:inherit">
-  <table style="width:100%;border-collapse:collapse;margin-bottom:8px">
-    <tr style="background:#4a5e3a;color:#fff">
-      <td style="padding:8px 12px;border:1px solid #3a4e2a;font-weight:700;font-size:15px">毎月の固定費</td>
-      <td style="padding:8px 12px;border:1px solid #3a4e2a;font-weight:700;text-align:center;font-size:15px;width:150px">円</td>
-      <td style="padding:8px 12px;border:1px solid #3a4e2a;font-weight:700;text-align:center;font-size:15px;width:220px">備考</td>
+  let h=`<div style="max-width:600px;margin:20px auto;font-family:inherit">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+    <tr style="background:#fff8c4">
+      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">毎月の固定費</td>
+      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;text-align:center;font-size:13px;width:130px">円</td>
+      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;text-align:center;font-size:13px;width:200px">備考</td>
     </tr>`;
   LC_MONTHLY_ITEMS.forEach(item=>{h+=row(item);});
   h+=`<tr style="background:#f0f0e8">
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;font-weight:700;font-size:14px">小計</td>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:14px">¥${mTotal.toLocaleString()}</td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">小計</td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:13px">¥${mTotal.toLocaleString()}</td>
       <td style="border:1px solid #c5c5c5"></td>
     </tr>
     <tr style="background:#fff8c4">
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;font-weight:700;font-size:14px">FP記入欄</td>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:15px;color:#0d6a0d">¥${mYearTotal.toLocaleString()}</td>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;background:#fff8c4"></td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:12px">合計（年間）</td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:13px;color:#0d6a0d">¥${mYearTotal.toLocaleString()}</td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;background:#fff8c4"></td>
     </tr>
   </table>
 
-  <table style="width:100%;border-collapse:collapse;margin-top:20px;margin-bottom:8px">
-    <tr style="background:#4a5e3a;color:#fff">
-      <td style="padding:8px 12px;border:1px solid #3a4e2a;font-weight:700;font-size:15px">年間の変動費</td>
-      <td style="padding:8px 12px;border:1px solid #3a4e2a;font-weight:700;text-align:center;font-size:15px;width:150px">円</td>
-      <td style="padding:8px 12px;border:1px solid #3a4e2a;font-weight:700;text-align:center;font-size:15px;width:220px">備考</td>
+  <table style="width:100%;border-collapse:collapse;margin-top:16px;margin-bottom:6px">
+    <tr style="background:#fff8c4">
+      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">年間の変動費</td>
+      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;text-align:center;font-size:13px;width:130px">円</td>
+      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;text-align:center;font-size:13px;width:200px">備考</td>
     </tr>`;
   LC_YEARLY_ITEMS.forEach(item=>{h+=row(item);});
   h+=`<tr style="background:#f0f0e8">
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;font-weight:700;font-size:14px">小計</td>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:14px">¥${yTotal.toLocaleString()}</td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">小計</td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:13px">¥${yTotal.toLocaleString()}</td>
       <td style="border:1px solid #c5c5c5"></td>
     </tr>
     <tr style="background:#fff8c4">
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;font-weight:700;font-size:14px">FP記入欄</td>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:15px;color:#0d6a0d">¥${grandTotal.toLocaleString()}</td>
-      <td style="padding:6px 12px;border:1px solid #c5c5c5;background:#fff8c4"></td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:12px">合計（固定費＋変動費）</td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:13px;color:#0d6a0d">¥${grandTotal.toLocaleString()}</td>
+      <td style="padding:5px 8px;border:1px solid #c5c5c5;background:#fff8c4"></td>
     </tr>
   </table>
   </div>`;
