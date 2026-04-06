@@ -1170,7 +1170,7 @@ function exportLCTabExcel(){
     }
   }
   // 列幅
-  ws['!cols']=[{wch:24},{wch:16},{wch:28}];
+  ws['!cols']=[{wch:30},{wch:16},{wch:28}];
 
   XLSX.utils.book_append_sheet(wb,ws,'生活費');
   const fname=(dispName?dispName+'_':'')+'生活費一覧.xlsx';
