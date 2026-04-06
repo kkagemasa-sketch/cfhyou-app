@@ -305,8 +305,8 @@ function addCar(defaults){
     </div>
     <div class="g2" style="margin-bottom:8px">
       <div class="fg"><label class="lbl" style="font-size:10px">車を手放す年齢</label>
-        <div class="suf"><input class="inp age-inp" id="car-${id}-end-age" type="number" value="${d.endAge||''}" placeholder="空欄=ずっと" min="30" max="100" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="syncParkEndAge();live()"><span class="sl">歳</span></div>
-        <span class="hint ok" style="font-size:9px">空欄＝ずっと乗り続ける</span></div>
+        <div class="suf"><input class="inp age-inp" id="car-${id}-end-age" type="number" value="${d.endAge||70}" placeholder="70" min="30" max="100" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="syncParkEndAge();live()"><span class="sl">歳</span></div>
+        <span class="hint ok" style="font-size:9px">70歳がデフォルト</span></div>
       <div class="fg"><label class="lbl" style="font-size:10px">車検費用（1回）</label>
         <div class="suf"><input class="inp amt-inp" id="car-${id}-insp" type="number" value="${d.insp||10}" min="0" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div>
         <span class="hint" id="car-${id}-insp-hint" style="font-size:9px">${(d.type||'new')==='new'?'新車：初回3年後・以降2年ごと':'中古：2年ごと'}</span></div>
