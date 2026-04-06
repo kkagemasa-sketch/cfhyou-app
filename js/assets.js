@@ -141,27 +141,27 @@ function addSecurity(person){
     </div>
     <div id="sec-accum-fields-${person}-${id}">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px">現時点の評価額</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">現時点の評価額(万)</label>
           <input class="inp amt-inp" id="sec-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:200" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">毎月の積立額</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">毎月の積立額(万)</label>
           <input class="inp amt-inp" id="sec-monthly-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="例:5" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">積立終了年齢</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">積立終了年齢(歳)</label>
           <input class="inp age-inp" id="sec-end-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="90" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">想定利回り</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">想定利回り(%)</label>
           <input class="inp amt-inp" id="sec-rate-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;color:#c00">解約年齢</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">解約年齢(歳)</label>
           <input class="inp age-inp" id="sec-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
       </div>
     </div>
     <div id="sec-stock-fields-${person}-${id}" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px">投資額（万円）</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">投資額(万)</label>
           <input class="inp amt-inp" id="sec-stk-bal-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="例:500" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">投資開始年齢</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">投資開始年齢(歳)</label>
           <input class="inp age-inp" id="sec-stk-age-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="例:40" min="20" max="90" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">想定利回り</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">想定利回り(%)</label>
           <input class="inp amt-inp" id="sec-div-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;color:#c00">解約年齢</label>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">解約年齢(歳)</label>
           <input class="inp age-inp" id="sec-stk-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
       </div>
     </div>`;
