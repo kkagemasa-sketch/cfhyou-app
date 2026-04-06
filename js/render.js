@@ -769,7 +769,7 @@ function render(){
         const carLoanYrs=iv('car-'+cIdx+'-loan-yrs')||5;
         const carLoanRate=(fv('car-'+cIdx+'-loan-rate')||2.5)/100/12;
         const carEndAge=iv('car-'+cIdx+'-end-age')||0;
-        const carActive=carEndAge<=0||ha<carEndAge;
+        const carActive=carEndAge<30||ha<carEndAge; // 30未満は無効値→常にアクティブ
         // 台ごとの行を初期化
         const rowKey='car-'+cIdx;
         if(!R.carRows.find(r=>r.key===rowKey)){
