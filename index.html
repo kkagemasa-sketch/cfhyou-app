@@ -1131,6 +1131,13 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/save-load.js?v=4"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js?v=17"></script>
-<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    // ページ読込のたびに新しいSWがないかチェック
+    reg.update();
+  });
+}
+</script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 // Service Worker — PWAインストール用
-const CACHE_NAME = 'cf-app-v13';
+const CACHE_NAME = 'cf-app-v14';
 const ASSETS = [
   './',
   './index.html',
@@ -35,6 +35,13 @@ const ASSETS = [
   './favicon.svg'
 ];
 
+// クエリパラメータ(?v=xx)を除去してキャッシュキーを統一
+function stripQuery(url){
+  const u=new URL(url);
+  u.search='';
+  return u.href;
+}
+
 // インストール時にキャッシュ
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
@@ -51,13 +58,15 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// ネットワーク優先、失敗時キャッシュ
+// ネットワーク優先、失敗時キャッシュ（クエリパラメータを正規化して一致させる）
 self.addEventListener('fetch', e => {
+  const stripped=stripQuery(e.request.url);
   e.respondWith(
     fetch(e.request).then(res => {
       const clone = res.clone();
-      caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+      // クエリなしのURLでキャッシュ保存
+      caches.open(CACHE_NAME).then(c => c.put(new Request(stripped), clone));
       return res;
-    }).catch(() => caches.match(e.request))
+    }).catch(() => caches.match(new Request(stripped)))
   );
 });
