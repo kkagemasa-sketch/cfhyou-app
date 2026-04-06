@@ -680,6 +680,18 @@ function scheduleAutoSave(){
     }catch(e){}
   },2000);
 }
+// ページ離脱・非表示時に即座保存（Ctrl+Shift+R等でデバウンス前にリロードされるのを防止）
+function _saveNow(){
+  try{
+    const data=_collectSaveData();
+    const entry={name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data};
+    // IndexedDBのトランザクションを同期的に開始（完了前にページが閉じても書き込まれる）
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onsuccess=e=>{const db=e.target.result;const tx=db.transaction(STORE_NAME,'readwrite');tx.objectStore(STORE_NAME).put(entry);};
+  }catch(e){}
+}
+window.addEventListener('beforeunload',_saveNow);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_saveNow();});
 // 更新ボタン：先に保存してからページ遷移（2秒デバウンス前に遷移するとデータが消えるのを防止）
 async function saveAndRefresh(){
   clearTimeout(_autoSaveTimer);
