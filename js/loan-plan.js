@@ -242,6 +242,27 @@ function renderLoanTab(){
       const cont=$('lp-prepay-cont');
       if(cont)cont.appendChild(addPrepay(p.yf,p.yt,p.amt));
     });
+    // 金利変更スケジュール復元
+    (lp.ratesA||[]).forEach(r=>{
+      addLPRate('a');
+      const last=$(`lp-rate-cont-a`)?.lastElementChild;
+      if(last){
+        const yrEl=last.querySelector('[id$="-yr"]');
+        const rtEl=last.querySelector('[id$="-rate"]');
+        if(yrEl)yrEl.value=r.yr;
+        if(rtEl)rtEl.value=(r.rate*100).toFixed(2);
+      }
+    });
+    (lp.ratesB||[]).forEach(r=>{
+      addLPRate('b');
+      const last=$(`lp-rate-cont-b`)?.lastElementChild;
+      if(last){
+        const yrEl=last.querySelector('[id$="-yr"]');
+        const rtEl=last.querySelector('[id$="-rate"]');
+        if(yrEl)yrEl.value=r.yr;
+        if(rtEl)rtEl.value=(r.rate*100).toFixed(2);
+      }
+    });
     delete window._pendingLoanPlan;
   }else{
     // 入力パネルの設定を同期

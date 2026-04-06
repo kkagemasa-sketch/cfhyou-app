@@ -239,7 +239,9 @@ function _collectDynamic(){
     dedYear:$('lp-ded-year')?.value||'',dedType:$('lp-ded-type')?.value||'',dedHH:$('lp-ded-hh')?.value||'',
     grossH:$('lp-ded-gross-h')?.value||'',grossW:$('lp-ded-gross-w')?.value||'',
     dedMode:_lctrlDedMode,manualDed:_lctrlDedMode==='manual'?getLctrlManualValues():[],
-    prepays:[]
+    prepays:[],
+    ratesA:typeof getLPRates==='function'?getLPRates('a'):[],
+    ratesB:typeof getLPRates==='function'?getLPRates('b'):[]
   };
   document.querySelectorAll('[id^="pp-yf-"]').forEach(el=>{
     const id=el.id.split('-')[2];
