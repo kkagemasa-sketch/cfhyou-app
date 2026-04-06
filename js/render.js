@@ -1130,9 +1130,6 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const totE_s=R.expT.slice(0,disp).reduce((a,b)=>a+b,0);
   const finSav_s=R.sav[disp-1]||0;
   const redYrs_s=R.bal.slice(0,disp).filter(v=>v<0).length;
-  // 貯蓄がマイナスになる最初の年齢を特定
-  let depletionAge=0;
-  for(let i=0;i<disp;i++){if(R.sav[i]<0){depletionAge=hAge+i;break;}}
   const sc=(icon,lbl,val,unit,color,sub)=>`<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;flex:1;min-width:140px;position:relative;overflow:hidden">
     <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${color};border-radius:4px 0 0 4px"></div>
     <div style="margin-left:8px">
@@ -1141,16 +1138,12 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       ${sub?`<div style="font-size:9px;color:var(--muted);margin-top:1px">${sub}</div>`:''}
     </div>
   </div>`;
-  // 警告バナー構築
-  let warnings=[];
-  if(depletionAge>0)warnings.push(`🚨 <b>${depletionAge}歳で資金が枯渇</b>するリスクがあります`);
-  const warnHtml=warnings.length?`<div style="background:#fff3f3;border:1px solid #f5a0a0;border-radius:var(--r);padding:8px 14px;margin-bottom:8px;font-size:11px;color:#8a2020;line-height:1.7">${warnings.join('<br>')}</div>`:'';
   let h=`<div class="r-summary"><div class="cf-summary" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
     ${sc('💰','総収入',ri(totI_s).toLocaleString(),'万円','#2d7dd2',`${disp}年間合計`)}
     ${sc('💸','総支出',ri(totE_s).toLocaleString(),'万円','#fc5b4a',`${disp}年間合計`)}
-    ${sc('🏦','最終残高',ri(finSav_s).toLocaleString(),'万円',finSav_s>=0?'#0d8a20':'#d63a2a',depletionAge>0?`⚠️ ${depletionAge}歳で枯渇リスク`:`${hAge+disp-1}歳時点`)}
+    ${sc('🏦','最終残高',ri(finSav_s).toLocaleString(),'万円',finSav_s>=0?'#0d8a20':'#d63a2a',`${hAge+disp-1}歳時点`)}
     ${sc('⚠️','赤字年数',redYrs_s,'年',redYrs_s===0?'#0d8a20':'#d63a2a',redYrs_s===0?'赤字なし':`${disp}年中${redYrs_s}年が赤字`)}
-  </div>${warnHtml}`;
+  </div>`;
   h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <span style="background:var(--navy);color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${nm} 様</span>
