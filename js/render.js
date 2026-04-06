@@ -1133,17 +1133,6 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 貯蓄がマイナスになる最初の年齢を特定
   let depletionAge=0;
   for(let i=0;i<disp;i++){if(R.sav[i]<0){depletionAge=hAge+i;break;}}
-  // ローン控除終了年の特定
-  const lctrlYrsChk=(()=>{const r=getLCtrlRow(parseInt(document.getElementById('lctrl-year')?.value)||2025,document.getElementById('lctrl-type')?.value||'new_eco',document.getElementById('lctrl-household')?.value==='kosodate');return r[1]||0;})();
-  const lctrlEndCol=delivery+lctrlYrsChk; // 控除終了の列インデックス
-  const lctrlEndAge=lctrlYrsChk>0&&lctrlEndCol<disp?hAge+lctrlEndCol:0;
-  // 控除終了後に収支が悪化するか（控除終了前後3年の平均収支を比較）
-  let lctrlDropWarning='';
-  if(lctrlEndAge>0&&lctrlEndCol+3<=disp&&lctrlEndCol>=3){
-    const before=R.bal.slice(lctrlEndCol-3,lctrlEndCol).reduce((a,b)=>a+b,0)/3;
-    const after=R.bal.slice(lctrlEndCol,lctrlEndCol+3).reduce((a,b)=>a+b,0)/3;
-    if(after<before-30)lctrlDropWarning=`${lctrlEndAge}歳でローン控除が終了し、年間収支が約${ri(before-after)}万円悪化します`;
-  }
   const sc=(icon,lbl,val,unit,color,sub)=>`<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;flex:1;min-width:140px;position:relative;overflow:hidden">
     <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${color};border-radius:4px 0 0 4px"></div>
     <div style="margin-left:8px">
@@ -1155,7 +1144,6 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 警告バナー構築
   let warnings=[];
   if(depletionAge>0)warnings.push(`🚨 <b>${depletionAge}歳で資金が枯渇</b>するリスクがあります`);
-  if(lctrlDropWarning)warnings.push(`📉 ${lctrlDropWarning}`);
   const warnHtml=warnings.length?`<div style="background:#fff3f3;border:1px solid #f5a0a0;border-radius:var(--r);padding:8px 14px;margin-bottom:8px;font-size:11px;color:#8a2020;line-height:1.7">${warnings.join('<br>')}</div>`:'';
   let h=`<div class="r-summary"><div class="cf-summary" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
     ${sc('💰','総収入',ri(totI_s).toLocaleString(),'万円','#2d7dd2',`${disp}年間合計`)}
