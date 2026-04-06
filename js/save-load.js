@@ -792,8 +792,6 @@ async function openSlotPanel(){
       <div style="border-top:1px solid #f1f5f9;padding-top:12px">
         <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:.04em">バックアップ</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="exportJSON();document.getElementById('slot-modal').remove()" style="font-size:11px;padding:5px 12px;background:#eef2f7;color:#1e3a5f;border:1px solid #c8d6e8;border-radius:6px;cursor:pointer;font-weight:600">📤 現在のデータを書き出し</button>
-          <button onclick="document.getElementById('slot-modal').remove();importJSON()" style="font-size:11px;padding:5px 12px;background:#eef2f7;color:#1e3a5f;border:1px solid #c8d6e8;border-radius:6px;cursor:pointer;font-weight:600">📥 データを読み込み</button>
           <button onclick="exportAllJSON()" style="font-size:11px;padding:5px 12px;background:#fff7ed;color:#92400e;border:1px solid #fed7aa;border-radius:6px;cursor:pointer;font-weight:600">📦 全件一括バックアップ</button>
           <button onclick="document.getElementById('slot-modal').remove();document.getElementById('json-bulk-import-input').click()" style="font-size:11px;padding:5px 12px;background:#fff7ed;color:#92400e;border:1px solid #fed7aa;border-radius:6px;cursor:pointer;font-weight:600">📦 一括バックアップ復元</button>
         </div>
