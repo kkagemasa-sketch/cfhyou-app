@@ -522,9 +522,9 @@ async function exportExcelMG(){
       if(tp==='balance'&&c>=2&&typeof cell.v==='number'){
         fObj.color={rgb:cell.v<0?C.red:'FF0d8a20'};
       }
-      // 預貯金残高の赤字（白文字）
+      // 預貯金残高の赤字（赤文字）
       if(tp==='savings'&&c>=2&&typeof cell.v==='number'&&cell.v<0){
-        fObj.color={rgb:C.white};
+        fObj.color={rgb:C.red};
       }
       // 0値はグレー
       if((tp==='inc'||tp==='exp'||tp==='edu')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
@@ -988,9 +988,9 @@ async function exportExcel(){
       if(tp==='balance'&&c>=2&&typeof cell.v==='number'){
         fObj.color={rgb:cell.v<0?C.red:'FF0d8a20'};
       }
-      // 預貯金残高の赤字・購入直後残高（第2列含む）は緑背景なので白文字
+      // 預貯金残高の赤字（赤文字）
       if(tp==='savings'&&c>=1&&typeof cell.v==='number'&&cell.v<0){
-        fObj.color={rgb:C.white};cell.s={...cell.s};
+        fObj.color={rgb:C.red};
       }
       // 0値はグレー
       if((tp==='inc'||tp==='exp'||tp==='edu')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
