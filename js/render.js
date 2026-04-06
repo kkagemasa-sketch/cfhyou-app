@@ -726,8 +726,8 @@ function render(){
 
     // ─── 住宅固有 ───
     const el2=Math.max(1,lcYr+1);
-    R.rep.push(isM?getRepFund(sqm,el2):0);
-    const ptxV=active&&lcYr<taxRed?ri(propTax*0.5):ri(propTax);
+    R.rep.push(active&&isM?getRepFund(sqm,el2):0);
+    const ptxV=active?(lcYr<taxRed?ri(propTax*0.5):ri(propTax)):0;
     R.ptx.push(ptxV);
     const furnCycle=iv('furn-cycle')||10;
     const furnCost=iv('furn-cost')||80;
