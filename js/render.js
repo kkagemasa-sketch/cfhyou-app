@@ -163,6 +163,11 @@ function validate(){
   if(!_v('client-name').trim())errs.push({id:'client-name',msg:'お客様氏名を入力してください'});
   const ha=iv('husband-age');if(ha<20||ha>80)errs.push({id:'husband-age',msg:'ご主人様の年齢は20〜80歳'});
   if(fv('loan-amt')<=0)errs.push({id:'loan-amt',msg:'借入金額を入力してください'});
+  // ローン完済年齢チェック（80歳超え警告）
+  const loanYrsChk=iv('loan-yrs')||35;
+  const deliveryChk=iv('delivery')||0;
+  const loanEndAge=ha+deliveryChk+loanYrsChk;
+  if(loanEndAge>80)errs.push({id:'loan-yrs',msg:`⚠️ ローン完済時${loanEndAge}歳 — 80歳を超えています（銀行審査に影響する可能性）`});
   // 収入ステップは任意入力のためvalidation省略
   document.querySelectorAll('.inp.err').forEach(e=>e.classList.remove('err'));
   const bar=$('err-bar'),lst=$('err-list');
@@ -1118,11 +1123,25 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const wRetireCol=wRetireAge>wAge0?wRetireAge-wAge0:-1;
   const getColCls=i=>{let c='';if(i===hDeathCol||i===wDeathCol)c+=' col-death';if(i===hRetireCol||i===wRetireCol)c+=' col-retire';return c;};
 
-  // サマリーカード（4枚）
+  // サマリーカード（4枚）+ 警告バナー
   const totI_s=R.incT.slice(0,disp).reduce((a,b)=>a+b,0);
   const totE_s=R.expT.slice(0,disp).reduce((a,b)=>a+b,0);
   const finSav_s=R.sav[disp-1]||0;
   const redYrs_s=R.bal.slice(0,disp).filter(v=>v<0).length;
+  // 貯蓄がマイナスになる最初の年齢を特定
+  let depletionAge=0;
+  for(let i=0;i<disp;i++){if(R.sav[i]<0){depletionAge=hAge+i;break;}}
+  // ローン控除終了年の特定
+  const lctrlYrsChk=(()=>{const r=getLCtrlRow(parseInt(document.getElementById('lctrl-year')?.value)||2025,document.getElementById('lctrl-type')?.value||'new_eco',document.getElementById('lctrl-household')?.value==='kosodate');return r[1]||0;})();
+  const lctrlEndCol=delivery+lctrlYrsChk; // 控除終了の列インデックス
+  const lctrlEndAge=lctrlYrsChk>0&&lctrlEndCol<disp?hAge+lctrlEndCol:0;
+  // 控除終了後に収支が悪化するか（控除終了前後3年の平均収支を比較）
+  let lctrlDropWarning='';
+  if(lctrlEndAge>0&&lctrlEndCol+3<=disp&&lctrlEndCol>=3){
+    const before=R.bal.slice(lctrlEndCol-3,lctrlEndCol).reduce((a,b)=>a+b,0)/3;
+    const after=R.bal.slice(lctrlEndCol,lctrlEndCol+3).reduce((a,b)=>a+b,0)/3;
+    if(after<before-30)lctrlDropWarning=`${lctrlEndAge}歳でローン控除が終了し、年間収支が約${ri(before-after)}万円悪化します`;
+  }
   const sc=(icon,lbl,val,unit,color,sub)=>`<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;flex:1;min-width:140px;position:relative;overflow:hidden">
     <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${color};border-radius:4px 0 0 4px"></div>
     <div style="margin-left:8px">
@@ -1131,12 +1150,17 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       ${sub?`<div style="font-size:9px;color:var(--muted);margin-top:1px">${sub}</div>`:''}
     </div>
   </div>`;
+  // 警告バナー構築
+  let warnings=[];
+  if(depletionAge>0)warnings.push(`🚨 <b>${depletionAge}歳で資金が枯渇</b>するリスクがあります`);
+  if(lctrlDropWarning)warnings.push(`📉 ${lctrlDropWarning}`);
+  const warnHtml=warnings.length?`<div style="background:#fff3f3;border:1px solid #f5a0a0;border-radius:var(--r);padding:8px 14px;margin-bottom:8px;font-size:11px;color:#8a2020;line-height:1.7">${warnings.join('<br>')}</div>`:'';
   let h=`<div class="r-summary"><div class="cf-summary" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
     ${sc('💰','総収入',ri(totI_s).toLocaleString(),'万円','#2d7dd2',`${disp}年間合計`)}
     ${sc('💸','総支出',ri(totE_s).toLocaleString(),'万円','#fc5b4a',`${disp}年間合計`)}
-    ${sc('🏦','最終残高',ri(finSav_s).toLocaleString(),'万円',finSav_s>=0?'#0d8a20':'#d63a2a',`${hAge+disp-1}歳時点`)}
+    ${sc('🏦','最終残高',ri(finSav_s).toLocaleString(),'万円',finSav_s>=0?'#0d8a20':'#d63a2a',depletionAge>0?`⚠️ ${depletionAge}歳で枯渇リスク`:`${hAge+disp-1}歳時点`)}
     ${sc('⚠️','赤字年数',redYrs_s,'年',redYrs_s===0?'#0d8a20':'#d63a2a',redYrs_s===0?'赤字なし':`${disp}年中${redYrs_s}年が赤字`)}
-  </div>`;
+  </div>${warnHtml}`;
   h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <span style="background:var(--navy);color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${nm} 様</span>
