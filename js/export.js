@@ -635,7 +635,8 @@ async function exportExcelMG(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
-  const fname=`万が一_${clientName}様_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
+  const cnSama=clientName.endsWith('様')?clientName:clientName+'様';
+  const fname=`万が一_${cnSama}_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
   await _writeXlsxWithPageSetup(wb,fname,'万が一CF表');
 }
 
@@ -1076,7 +1077,8 @@ async function exportExcel(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'CF表');
-  await _writeXlsxWithPageSetup(wb,`CF表_${clientName}様_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表');
+  const cnSama2=clientName.endsWith('様')?clientName:clientName+'様';
+  await _writeXlsxWithPageSetup(wb,`CF表_${cnSama2}_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表');
 }
 
 // ===== PDF出力（印刷ダイアログ経由） =====

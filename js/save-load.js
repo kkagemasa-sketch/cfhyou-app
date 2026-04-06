@@ -2,9 +2,10 @@
 
 // ===== JSON書き出し・読み込み（完全対応版） =====
 async function exportJSON(){
-  const nm = _v('client-name') || 'CF表データ';
+  const rawNm = _v('client-name') || 'CF表データ';
+  const nm = rawNm.endsWith('様') ? rawNm : rawNm+'様';
   const json = JSON.stringify(_collectSaveData(), null, 2);
-  const fileName = `${nm}様_CF表.json`;
+  const fileName = `${nm}_CF表.json`;
   // File System Access API が使えれば保存先を選択できる（OneDriveフォルダ等）
   if(window.showSaveFilePicker){
     try{
@@ -687,7 +688,8 @@ async function restoreAutoSave(){
 async function openSlotPanel(){
   document.getElementById('slot-modal')?.remove();
   const slots=await dbGetAll();
-  const clientName=_v('client-name')||'';
+  const rawName=_v('client-name')||'';
+  const clientName=rawName&&!rawName.endsWith('様')?rawName+'様':rawName;
   const totalSize=await dbEstimateSize();
   const slotCount=slots.length;
 
