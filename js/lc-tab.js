@@ -58,14 +58,14 @@ function renderLCTab(){
     const bikou=getBikou(item.id);
     let labelHtml;
     if(item.other){
-      labelHtml=`その他（<input data-nameid="${item.nameId}" value="${escAttr(getName(item.nameId))}" placeholder="項目名" style="border:none;border-bottom:1px dashed #aaa;background:transparent;font-size:12px;width:70px;outline:none;font-family:inherit" oninput="syncLCTabName(this)">）`;
+      labelHtml=`その他（<input data-nameid="${item.nameId}" value="${escAttr(getName(item.nameId))}" placeholder="項目名" style="border:none;border-bottom:1px dashed #aaa;background:#f0f7ff;font-size:12px;width:70px;outline:none;font-family:inherit;padding:1px 3px" oninput="syncLCTabName(this)">）`;
     }else{
       labelHtml=item.label;
     }
     return `<tr>
       <td style="padding:4px 8px;border:1px solid #c5c5c5;font-size:12px;white-space:nowrap">${labelHtml}</td>
-      <td style="padding:4px 8px;border:1px solid #c5c5c5;text-align:right;font-size:12px;white-space:nowrap"><input data-srcid="${item.id}" value="${val?'¥'+val.toLocaleString():''}" style="border:none;background:transparent;text-align:right;font-size:12px;width:100%;outline:none;font-family:inherit" onfocus="this.value=this.value.replace(/[¥,]/g,'')" onblur="syncLCTabAmt(this)"></td>
-      <td style="padding:4px 8px;border:1px solid #c5c5c5;font-size:11px"><input data-bikid="${item.id}" value="${escAttr(bikou)}" style="border:none;background:transparent;font-size:11px;width:100%;outline:none;font-family:inherit;color:#555" oninput="_lcBikou['${item.id}']=this.value;scheduleAutoSave()"></td>
+      <td style="padding:4px 8px;border:1px solid #c5c5c5;text-align:right;font-size:12px;white-space:nowrap;background:#f0f7ff"><input data-srcid="${item.id}" value="${val?'¥'+val.toLocaleString():''}" style="border:none;background:transparent;text-align:right;font-size:12px;width:100%;outline:none;font-family:inherit" onfocus="this.value=this.value.replace(/[¥,]/g,'')" onblur="syncLCTabAmt(this)"></td>
+      <td style="padding:4px 8px;border:1px solid #c5c5c5;font-size:11px;background:#f0f7ff"><input data-bikid="${item.id}" value="${escAttr(bikou)}" placeholder="備考を入力" style="border:none;background:transparent;font-size:11px;width:100%;outline:none;font-family:inherit;color:#555" oninput="_lcBikou['${item.id}']=this.value;scheduleAutoSave()"></td>
     </tr>`;
   }
 
