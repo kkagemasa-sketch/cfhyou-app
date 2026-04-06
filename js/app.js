@@ -47,14 +47,15 @@ window.onload=()=>{
   updateLctrlHint();
   initInputHighlight();
 
-  // 数値入力欄: フォーカス時に全選択（先頭0問題の解消）+ サジェスト無効化
-  document.addEventListener('focus',e=>{
+  // 数値入力欄: フォーカス時・クリック時に全選択（先頭0問題の解消）+ サジェスト無効化
+  const selectInput=e=>{
     if(e.target.tagName==='INPUT'&&e.target.type==='number'){
       e.target.setAttribute('autocomplete','off');
-      // scrollToCFRow等のonfocus処理の後に確実にselectするため二重遅延
       requestAnimationFrame(()=>setTimeout(()=>e.target.select(),0));
     }
-  },true);
+  };
+  document.addEventListener('focus',selectInput,true);
+  document.addEventListener('click',selectInput,true);
 
   initLCComma();
   initScrollSpy();
