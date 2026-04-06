@@ -197,6 +197,8 @@ function _collectDynamic(){
       pct:isPct?($(`mg-lspct-${_mgIdx}`)?.value||'80'):''
     });
   });
+  // 生活費タブの備考
+  d.lcBikou=typeof _lcBikou==='object'?{..._lcBikou}:{};
   // 通常CF表 遺族年金上書き金額
   d.survHAmt=$('surv-h-amt')?.value||'';
   d.survWAmt=$('surv-w-amt')?.value||'';
@@ -655,6 +657,7 @@ function _applyData(d){
     cfOverrides=d.cfOverrides||{};
     cfCustomRows=d.cfCustomRows||[];
     _cfCustomId=d._cfCustomId||0;
+    _lcBikou=d.lcBikou||{};
     _restoreDynamic(d.dynamic);
     calcLoanAmt();calcDelivery();initLCComma();live();render();
   }catch(err){

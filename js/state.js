@@ -1,6 +1,7 @@
 // state.js — グローバル状態変数
 
 let finAssetVisible=true;
+let _lcBikou={}; // 生活費タブの備考データ
 
 // ===== 状態 =====
 let ST={type:'mansion'};

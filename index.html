@@ -788,6 +788,7 @@ if(authExp&&Date.now()<Number(authExp)){
         <div class="fg"><label class="lbl">その他１（月）</label><input class="inp" id="lc-other-m-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-m amt-inp" id="lc-other-m" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="60000" oninput="live()"><span class="sl">円</span></div></div>
         <div class="fg"><label class="lbl">その他２（月）</label><input class="inp" id="lc-other-m2-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-m amt-inp" id="lc-other-m2" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0" oninput="live()"><span class="sl">円</span></div></div>
         <div class="fg"><label class="lbl">その他３（月）</label><input class="inp" id="lc-other-m3-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-m amt-inp" id="lc-other-m3" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0" oninput="live()"><span class="sl">円</span></div></div>
+        <div class="fg"><label class="lbl">その他４（月）</label><input class="inp" id="lc-other-m4-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-m amt-inp" id="lc-other-m4" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0" oninput="live()"><span class="sl">円</span></div></div>
       </div>
       <div class="divider"></div>
       <div class="sub">📆 年間の変動費（円/年）</div>
@@ -802,6 +803,7 @@ if(authExp&&Date.now()<Number(authExp)){
         <div class="fg"><label class="lbl">その他１（年）</label><input class="inp" id="lc-other-y-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-y amt-inp" id="lc-other-y" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0" oninput="live()"><span class="sl">円</span></div></div>
         <div class="fg"><label class="lbl">その他２（年）</label><input class="inp" id="lc-other-y2-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-y amt-inp" id="lc-other-y2" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0" oninput="live()"><span class="sl">円</span></div></div>
         <div class="fg"><label class="lbl">その他３（年）</label><input class="inp" id="lc-other-y3-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-y amt-inp" id="lc-other-y3" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0" oninput="live()"><span class="sl">円</span></div></div>
+        <div class="fg"><label class="lbl">その他４（年）</label><input class="inp" id="lc-other-y4-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-y amt-inp" id="lc-other-y4" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0" oninput="live()"><span class="sl">円</span></div></div>
       </div>
       <div class="lc-bar" style="flex-direction:column;gap:6px">
         <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
@@ -1094,6 +1096,7 @@ if(authExp&&Date.now()<Number(authExp)){
   <div class="r-tabs" style="justify-content:space-between">
     <div style="display:flex;align-items:flex-end;gap:4px">
       <div class="scen-tabs" id="scen-tabs"></div>
+      <button class="rtab" id="rt-lctab" onclick="setRTab('lctab')">💰 生活費</button>
       <button class="rtab" id="rt-graph" onclick="setRTab('graph')">📈 グラフ</button>
       <button class="rtab" id="rt-loan" onclick="setRTab('loan')">🏦 返済計画</button>
       <button class="rtab" id="rt-memo" onclick="setRTab('memo')">📝 メモ</button>
@@ -1121,8 +1124,8 @@ if(authExp&&Date.now()<Number(authExp)){
 
 
 <!-- v2 モジュール読み込み -->
-<script src="js/state.js?v=4"></script>
-<script src="js/constants.js?v=3"></script>
+<script src="js/state.js?v=5"></script>
+<script src="js/constants.js?v=4"></script>
 <script src="js/utils.js?v=2"></script>
 <script src="js/family.js"></script>
 <script src="js/income.js?v=5"></script>
@@ -1133,14 +1136,15 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/assets.js?v=4"></script>
 <script src="js/extras.js"></script>
 <script src="js/contingency.js?v=7"></script>
-<script src="js/render.js?v=12"></script>
+<script src="js/render.js?v=13"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js"></script>
 <script src="js/export.js?v=4"></script>
 <script src="js/loan-plan.js?v=3"></script>
 <script src="js/handbook.js"></script>
+<script src="js/lc-tab.js?v=1"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=11"></script>
+<script src="js/save-load.js?v=12"></script>
 <script src="js/ui.js?v=2"></script>
 <script src="js/app.js?v=23"></script>
 <script>
