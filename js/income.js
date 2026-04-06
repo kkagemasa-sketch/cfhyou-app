@@ -44,7 +44,7 @@ function setRetirePay(on){
   document.getElementById('rp-fields').style.display=on?'':'none';
   if(!on){
     const rp=document.getElementById('retire-pay');
-    if(rp)rp.value=0;
+    if(rp)rp.value='';
   }
   live();
 }
@@ -56,7 +56,7 @@ function setWRetirePay(on){
   document.getElementById('w-rp-fields').style.display=on?'':'none';
   if(!on){
     const rp=document.getElementById('w-retire-pay');
-    if(rp)rp.value=0;
+    if(rp)rp.value='';
   }
   live();
 }

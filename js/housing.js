@@ -193,7 +193,7 @@ function updateHints(){
     if(feeRow)feeRow.style.display='none';
     if(netRow)netRow.style.display='none';
     const mf=$('mgmt-fee'), mn=$('mgmt-net');
-    if(mf)mf.value=0; if(mn)mn.value=0;
+    if(mf)mf.value=''; if(mn)mn.value='';
   }
 
   // ── 住宅ローン控除ヒント更新 ──
