@@ -232,7 +232,9 @@ function calcKiso(n){
 
 // ===== メイン計算 =====
 function render(){
+  if(rTab==='lctab'){renderLCTab();return}
   if(rTab==='loan'){renderLoanCalc();return}
+  if(rTab==='memo'){renderMemo();return}
   const hAge=iv('husband-age')||30, wAge=iv('wife-age')||29;
   const loanAmt=fv('loan-amt'), loanYrs=iv('loan-yrs')||35, delivery=iv('delivery');
   // ペアローン用変数
