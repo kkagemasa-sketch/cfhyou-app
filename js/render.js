@@ -275,23 +275,23 @@ function render(){
   // ご主人
   const hAvgHyojun=calcAvgHyojun('h', pHStart, retAge);
   if(hAvgHyojun!==null){
-    const hJoinM=Math.max((retAge-pHStart)*12,300);
+    const hJoinM=Math.min(480,Math.max((retAge-pHStart)*12,300));
     koseiH=hAvgHyojun*5.481/1000*hJoinM;
   }else if(hGrossM>0){
     const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
     const hHyojun=(hCapped*12+hBonusCapped)/12*CAREER_FACTOR;
-    const hJoinM=Math.max((retAge-pHStart)*12,300);
+    const hJoinM=Math.min(480,Math.max((retAge-pHStart)*12,300));
     koseiH=hHyojun*5.481/1000*hJoinM;
   }else{koseiH=Math.max(0,pSelf-kisoH);}
   // 奥様
   const wAvgHyojun=calcAvgHyojun('w', pWStart, wRetAge);
   if(wAvgHyojun!==null){
-    const wJoinM=Math.max((wRetAge-pWStart)*12,300);
+    const wJoinM=Math.min(480,Math.max((wRetAge-pWStart)*12,300));
     koseiW=wAvgHyojun*5.481/1000*wJoinM;
   }else if(wGrossM>0){
     const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
     const wHyojun=(wCapped*12+wBonusCapped)/12*CAREER_FACTOR;
-    const wJoinM=Math.max((wRetAge-pWStart)*12,300);
+    const wJoinM=Math.min(480,Math.max((wRetAge-pWStart)*12,300));
     koseiW=wHyojun*5.481/1000*wJoinM;
   }else{koseiW=Math.max(0,pWife-kisoW);}
   const leaves=getLeaves();

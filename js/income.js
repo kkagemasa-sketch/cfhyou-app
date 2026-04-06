@@ -17,7 +17,7 @@ function updateSurvHint(p){
   const bonusCapped=Math.min(bonus,300);
   // 生涯平均補正×0.75：現在月収はキャリアのピーク付近であり、生涯平均は概ね75%程度
   const hyojun=(capped*12+bonusCapped)/12*0.75;
-  const joinM=Math.max((retA-start)*12,300);
+  const joinM=Math.min(480,Math.max((retA-start)*12,300));
   const iko=Math.round(hyojun*5.481/1000*joinM*0.75*10)/10;
   hintEl.textContent=`遺族厚生年金（目安）約${iko}万円/年（就職${start}歳・退職${retA}歳・生涯平均補正済み）`;
   hintEl.style.color='#3a8a3a';
