@@ -399,8 +399,9 @@ function getIncomeAtAge(steps,age){
   for(let si=0;si<steps.length;si++){
     const s=steps[si];
     const isLast=si===steps.length-1;
-    // 最後のステップは上限を含む(<=)、途中は次ステップに譲る(<)
-    if(age>=s.ageFrom&&(isLast?age<=s.ageTo:age<s.ageTo)){
+    const nextFrom=isLast?Infinity:steps[si+1].ageFrom;
+    // 次ステップの開始年齢未満まで現ステップが担当（隙間を作らない）
+    if(age>=s.ageFrom&&(isLast?age<=s.ageTo:age<nextFrom)){
       const span=Math.max(1,s.ageTo-s.ageFrom);
       const ratio=(age-s.ageFrom)/span;
       return Math.round(s.netFrom+(s.netTo-s.netFrom)*ratio);
