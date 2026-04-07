@@ -1,5 +1,94 @@
 // graphs.js — グラフ描画
 
+// 万が一CF表用グラフ（MRデータを使用）
+function renderGraphsMG(MR,disp,isM,hAge,targetLabel){
+  const totI=MR.incT.slice(0,disp).reduce((a,b)=>a+b,0);
+  const totE=MR.expT.slice(0,disp).reduce((a,b)=>a+b,0);
+  const finS=MR.sav[disp-1]||0;
+  const redY=MR.bal.slice(0,disp).filter(v=>v<0).length;
+  const n=disp;
+  const lbls=Array.from({length:n},(_,i)=>`${hAge+i}歳`);
+  const pr=n>25?0:1.5;
+
+  const tickX={font:{size:9},maxTicksLimit:16};
+  const tickY={font:{size:9},callback:v=>v.toLocaleString()};
+  const tooltipCb={callbacks:{label:ctx=>`${ctx.dataset.label}: ${(ctx.parsed.y||0).toLocaleString()}万円`}};
+  const gc='#f1f5f9';
+  const opt={responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:6}},tooltip:tooltipCb},
+    scales:{x:{ticks:tickX,grid:{color:gc}},y:{ticks:tickY,grid:{color:gc}}}};
+  const stkOpt={responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:6}},tooltip:tooltipCb},
+    scales:{x:{stacked:true,ticks:tickX,grid:{color:gc}},y:{stacked:true,ticks:tickY,grid:{color:gc}}}};
+
+  const sumHtml=`
+    <div class="sc inc"><div class="sc-lbl">総収入（${n}年）</div><div class="sc-val" style="color:#2d7dd2">${ri(totI).toLocaleString()}</div><div class="sc-sub">万円</div></div>
+    <div class="sc exp"><div class="sc-lbl">総支出（${n}年）</div><div class="sc-val" style="color:var(--red-l)">${ri(totE).toLocaleString()}</div><div class="sc-sub">万円</div></div>
+    <div class="sc ${finS>=0?'bal':'dng'}"><div class="sc-lbl">最終預貯金残高</div><div class="sc-val" style="color:${finS>=0?'var(--green)':'var(--red)'}">${ri(finS).toLocaleString()}</div><div class="sc-sub">万円（${hAge+n-1}歳時点）</div></div>
+    <div class="sc ${redY>0?'dng':'bal'}"><div class="sc-lbl">マイナスの年</div><div class="sc-val" style="color:${redY>0?'var(--red)':'var(--green)'}">${redY}</div><div class="sc-sub">年 / ${n}年中</div></div>
+    ${MR.needCoverage>0?`<div class="sc dng"><div class="sc-lbl">必要保障額</div><div class="sc-val" style="color:#c2185b">${ri(MR.needCoverage).toLocaleString()}</div><div class="sc-sub">万円</div></div>`:''}`;
+
+  const d1=[
+    {label:'収入',data:MR.incT.slice(0,n),backgroundColor:'rgba(37,99,235,.55)',borderRadius:2,type:'bar'},
+    {label:'支出',data:MR.expT.slice(0,n),backgroundColor:'rgba(234,88,12,.55)',borderRadius:2,type:'bar'},
+    {label:'年間収支',data:MR.bal.slice(0,n),type:'line',borderColor:'#059669',
+      backgroundColor:'rgba(5,150,105,.08)',tension:.3,fill:'origin',pointRadius:pr,borderWidth:2,order:0}
+  ];
+  const hasFinAsset=MR.finAsset&&MR.finAsset.some(v=>v>0);
+  const hasLoan=MR.lBal&&MR.lBal.some(v=>v>0);
+  const c2ds=[
+    {label:'預貯金残高',data:MR.sav.slice(0,n),borderColor:'#059669',
+      backgroundColor:'rgba(5,150,105,.12)',fill:'origin',tension:.4,borderWidth:2,pointRadius:pr}
+  ];
+  if(hasFinAsset){
+    c2ds.push({label:'有価証券等',data:MR.finAsset.slice(0,n),borderColor:'#f59e0b',
+      backgroundColor:'transparent',fill:false,tension:.4,borderWidth:2,pointRadius:pr});
+    c2ds.push({label:'総金融資産',data:MR.totalAsset.slice(0,n),borderColor:'#2d7dd2',
+      backgroundColor:'transparent',fill:false,tension:.4,borderWidth:2.5,pointRadius:pr});
+  }
+  if(hasLoan)
+    c2ds.push({label:'ローン残高',data:MR.lBal.slice(0,n),borderColor:'#7c3aed',
+      backgroundColor:'transparent',fill:false,tension:.4,borderWidth:1.5,pointRadius:pr,borderDash:[5,3]});
+
+  const eduSum=new Array(n).fill(0);
+  MR.edu.forEach(arr=>arr.slice(0,n).forEach((v,i2)=>eduSum[i2]+=(v||0)));
+  const secInvSum=MR.secInvest.slice(0,n).map((v,i)=>(v||0)+(MR.secBuy?MR.secBuy[i]||0:0));
+  const otherExp=MR.ptx.slice(0,n).map((v,i)=>(v||0)+(MR.prk[i]||0));
+  const ds4=[{label:'生活費',data:MR.lc.slice(0,n),backgroundColor:'rgba(37,99,235,.55)'}];
+  if(MR.lRep.some(v=>v>0))ds4.push({label:'ローン返済',data:MR.lRep.slice(0,n),backgroundColor:'rgba(124,58,237,.55)'});
+  if(eduSum.some(v=>v>0))ds4.push({label:'教育費',data:eduSum,backgroundColor:'rgba(217,119,6,.65)'});
+  if(isM&&MR.rep.some(v=>v>0))ds4.push({label:'修繕積立金',data:MR.rep.slice(0,n),backgroundColor:'rgba(8,145,178,.55)'});
+  if(secInvSum.some(v=>v>0))ds4.push({label:'投資額',data:secInvSum,backgroundColor:'rgba(5,150,105,.55)'});
+  if(otherExp.some(v=>v>0))ds4.push({label:'その他',data:otherExp,backgroundColor:'rgba(107,114,128,.45)'});
+
+  const secTotal=new Array(n).fill(0);
+  if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>row.vals.slice(0,n).forEach((v,i)=>{secTotal[i]+=(v||0);}));
+  else if(MR.secRedeem)MR.secRedeem.slice(0,n).forEach((v,i)=>{secTotal[i]+=(v||0);});
+  const ds5=[];
+  if(MR.hInc.some(v=>v>0))ds5.push({label:'ご主人様手取',data:MR.hInc.slice(0,n),backgroundColor:'rgba(37,99,235,.6)'});
+  if(MR.wInc.some(v=>v>0))ds5.push({label:'奥様手取',data:MR.wInc.slice(0,n),backgroundColor:'rgba(219,39,119,.55)'});
+  if(MR.survPension&&MR.survPension.some(v=>v>0))ds5.push({label:'遺族年金',data:MR.survPension.slice(0,n),backgroundColor:'rgba(156,39,176,.55)'});
+  if(MR.insMat&&MR.insMat.some(v=>v>0))ds5.push({label:'保険満期金',data:MR.insMat.slice(0,n),backgroundColor:'rgba(8,145,178,.6)'});
+  if(secTotal.some(v=>v>0))ds5.push({label:'有価証券解約',data:secTotal,backgroundColor:'rgba(5,150,105,.6)'});
+
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
+  const _rbg=$('right-body');const _gTop=_rbg?_rbg.scrollTop:0;const _gLeft=_rbg?_rbg.scrollLeft:0;
+  $('right-body').innerHTML=
+    `<div class="sum-row" id="graph-sum-row" style="margin-bottom:12px">${sumHtml}</div>`+
+    `<div style="background:#c2185b;color:#fff;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:700;margin-bottom:12px;display:inline-block">🛡️ 万が一（${targetLabel}死亡）</div>`+
+    `<div id="ch-graph-grid" class="ch-grid">`+
+    `<div class="ch-card"><div class="ch-title">📊 収入・支出・年間収支</div><div class="ch-wrap"><canvas id="c1"></canvas></div></div>`+
+    `<div class="ch-card"><div class="ch-title">🏦 資産推移</div><div class="ch-wrap"><canvas id="c2"></canvas></div></div>`+
+    `<div class="ch-card"><div class="ch-title">📚 支出内訳</div><div class="ch-wrap"><canvas id="c4"></canvas></div></div>`+
+    `<div class="ch-card"><div class="ch-title">💰 収入内訳</div><div class="ch-wrap"><canvas id="c5"></canvas></div></div>`+
+    `</div>`;
+  if(_rbg&&(_gTop>0||_gLeft>0)){_rbg.scrollTop=_gTop;_rbg.scrollLeft=_gLeft;}
+  charts.c1=new Chart($('c1'),{type:'bar',data:{labels:lbls,datasets:d1},options:opt});
+  charts.c2=new Chart($('c2'),{type:'line',data:{labels:lbls,datasets:c2ds},options:opt});
+  charts.c4=new Chart($('c4'),{type:'bar',data:{labels:lbls,datasets:ds4},options:stkOpt});
+  charts.c5=new Chart($('c5'),{type:'bar',data:{labels:lbls,datasets:ds5},options:stkOpt});
+}
+
 function renderGraphs(R,disp,isM,total,hAge){
   const totI=R.incT.reduce((a,b)=>a+b,0), totE=R.expT.reduce((a,b)=>a+b,0);
   const finS=R.sav[R.sav.length-1], redY=R.bal.filter(v=>v<0).length;

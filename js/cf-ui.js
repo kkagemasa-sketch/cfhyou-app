@@ -187,6 +187,8 @@ function saveMemo(){
   if(scen)scen.memo=$('memo-area')?.value||'';
 }
 function setRTab(t){
+  // グラフタブの場合、直前のタブコンテキストを記憶
+  if(t!=='graph')window._lastCFTab=t;
   rTab=t;
   $('rt-lctab')?.classList.toggle('on',t==='lctab');
   $('rt-graph')?.classList.toggle('on',t==='graph');
@@ -211,8 +213,24 @@ function setRTab(t){
     if(html){
       const _rb=$('right-body');
       _rb.innerHTML=html;
+      _applyFinAssetVisibility();
     }
     return;
+  }
+  // グラフタブで直前が万が一タブならMGグラフを表示
+  if(t==='graph'){
+    const lastTab=window._lastCFTab||'cf';
+    if((lastTab==='mg-h'||lastTab==='mg-w')&&window._mgMRStore){
+      const mgKey2=lastTab==='mg-h'?'h':'w';
+      const MR2=window._mgMRStore[mgKey2];
+      if(MR2){
+        const hAge2=iv('husband-age')||30;
+        const isM2=ST.type==='mansion';
+        const tLbl2=mgKey2==='h'?'ご主人様':'奥様';
+        renderGraphsMG(MR2,MR2.yr.length,isM2,hAge2,tLbl2);
+        return;
+      }
+    }
   }
   render();
 }

@@ -293,17 +293,24 @@ async function exportExcelMG(){
   };
   addI('ご主人手取年収',MR.hInc);
   addI('奥様手取年収',MR.wInc);
-  addISkip('退職金（ご主人）',targetIsH?Array(disp).fill(0):N.rPay);
-  addISkip('退職金（奥様）',targetIsH?N.wRPay:Array(disp).fill(0));
-  addISkip('本人年金',targetIsH?Array(disp).fill(0):N.pS);
-  addISkip('配偶者年金',targetIsH?N.pW:Array(disp).fill(0));
+  addISkip('副業・その他収入',MR.otherInc);
+  addISkip('退職金（ご主人）',MR.rPay);
+  addISkip('退職金（奥様）',MR.wRPay);
+  addISkip('本人年金',MR.pS);
+  addISkip('配偶者年金',MR.pW);
   addI('遺族年金',MR.survPension);
   addISkip('死亡保険金',MR.insPayArr);
+  addISkip('金融資産現金化',MR.finLiquid);
+  addISkip('DC受取(主)',MR.dcReceiptH);
+  addISkip('DC受取(奥様)',MR.dcReceiptW);
+  addISkip('iDeCo受取(主)',MR.idecoReceiptH);
+  addISkip('iDeCo受取(奥様)',MR.idecoReceiptW);
+  addISkip('保険満期金',MR.insMat);
+  if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.lbl,row.vals);});
   addISkip('奨学金',MR.scholarship);
-  addI('児童手当',N.teate);
+  addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
-  addISkip('保険満期金',N.insMat);
-  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
+  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...MR.incT.slice(0,disp).map(v=>ri(v)),ri(MR.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
   // ── 支出 ──
@@ -318,35 +325,57 @@ async function exportExcelMG(){
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
-  addE(_rl('lc','生活費'),MR.lc);
-  addESkip(_rl('rent','家賃（引渡前）'),N.rent);
-  if(pairLoanMode){addE(_rl('lRepH','ローン返済(主)'),MR.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),MR.lRepW);}
-  else{addE(_rl('lRep','住宅ローン返済'),MR.lRep);}
-  if(isM)addE(_rl('rep','修繕積立金'),N.rep);
-  addE(_rl('ptx','固定資産税'),N.ptx);
-  addESkip(_rl('furn','家具家電買替'),N.furn);
-  addESkip(_rl('senyu',isM?'専有部分修繕費':'修繕費'),N.senyu);
+  addE(_rl('mg-lc','生活費'),MR.lc);
+  addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent);
+  if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(主)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
+  else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
+  if(isM)addE(_rl('mg-rep','修繕積立金'),MR.rep);
+  addE(_rl('mg-ptx','固定資産税'),MR.ptx);
+  addESkip(_rl('mg-furn','家具家電買替'),MR.furn);
+  addESkip(_rl('mg-senyu',isM?'専有部分修繕費':'修繕費'),MR.senyu);
   children.forEach((c,ci)=>{
-    if(N.edu&&N.edu[ci]){
-      const arr=N.edu[ci];
+    if(MR.edu&&MR.edu[ci]){
+      const arr=MR.edu[ci];
       const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;
       const ages=arr.map((_,i)=>c.age+i);
-      push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
+      push(['',_rl('mg-edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
     }
   });
-  addE(_rl('prk','駐車場代'),MR.prk);
-  if(N.carRows&&N.carRows.length>1){N.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
-  else{addE(_rl('carTotal','車両費（購入・車検）'),MR.carTotal);}
-  if(N.insMonthlyRows&&N.insMonthlyRows.length>0){N.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}
-  if(N.insLumpExpRows&&N.insLumpExpRows.length>0){N.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}
-  if(N.extRows&&N.extRows.length>0){N.extRows.forEach(row=>{addE(row.lbl,row.vals);});}
-  else{addE(_rl('ext','特別支出'),N.ext);}
-  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
+  addE(_rl('mg-carTotal','車両費（購入・車検）'),MR.carTotal);
+  addE(_rl('mg-prk','駐車場代'),MR.prk);
+  addESkip(_rl('mg-secInvest','積立投資額'),MR.secInvest);
+  addESkip(_rl('mg-secBuy','一括投資額'),MR.secBuy);
+  addESkip(_rl('mg-insMonthly','保険料（積立）'),MR.insMonthly);
+  addESkip(_rl('mg-insLumpExp','一時払い保険'),MR.insLumpExp);
+  addESkip(_rl('mg-wedding','結婚のお祝い'),MR.wedding);
+  addESkip(_rl('mg-dcMatchExpH','DC拠出(主)'),MR.dcMatchExpH);
+  addESkip(_rl('mg-dcMatchExpW','DC拠出(奥様)'),MR.dcMatchExpW);
+  addESkip(_rl('mg-idecoExpH','iDeCo拠出(主)'),MR.idecoExpH);
+  addESkip(_rl('mg-idecoExpW','iDeCo拠出(奥様)'),MR.idecoExpW);
+  addESkip(_rl('mg-ext','特別支出'),MR.ext);
+  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
   // ── 収支・残高 ──
   push(['年間収支','',...MR.bal.slice(0,disp).map(v=>ri(v)),ri(MR.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
   push(['預貯金残高','',...MR.sav.slice(0,disp).map(v=>ri(v)),ri(MR.sav[disp-1])],'savings');
+  // その他金融資産
+  const _hasFAMG=MR.finAsset&&MR.finAsset.some(v=>v>0);
+  if(_hasFAMG){
+    if(N.finAssetRows&&N.finAssetRows.length>0){
+      const _deadPExp=targetIsH?'h':'w';
+      N.finAssetRows.forEach(row=>{
+        if(row.person===_deadPExp)return;
+        if(!row.vals.slice(0,disp).some(v=>v>0))return;
+        push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v||0)),ri(row.vals[disp-1]||0)],'inc');
+      });
+    }
+    push(['その他金融資産','',...MR.finAsset.slice(0,disp).map(v=>ri(v)),ri(MR.finAsset[disp-1])],'inc');
+  }
+  // 総金融資産
+  if(MR.totalAsset)push(['総金融資産','',...MR.totalAsset.slice(0,disp).map(v=>ri(v)),ri(MR.totalAsset[disp-1])],'savings');
+  // ローン残高
+  if(MR.lBal&&MR.lBal.some(v=>v>0))push(['ローン残高','',...MR.lBal.slice(0,disp).map(v=>ri(v)),ri(MR.lBal[disp-1]||0)],'balance');
 
   // ── 注意文章・使用者情報（通常CFと同じ形式） ──
   const pi=getPrintInfo();

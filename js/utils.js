@@ -32,22 +32,25 @@ function selectAll(el){
 function cellEdit(td){
   const row=td.dataset.row, col=parseInt(td.dataset.col);
   if(!row&&row!=='0')return;
+  const isMG=td.dataset.mg==='1';
+  const ovr=isMG?mgOverrides:cfOverrides;
   const raw=td.textContent.replace(/,/g,'').trim();
   const num=parseFloat(raw);
   if(raw==='-'||raw===''){
     // 上書き削除（自動計算に戻す）
-    if(cfOverrides[row])delete cfOverrides[row][col];
+    if(ovr[row])delete ovr[row][col];
     td.classList.remove('cell-ovr');
   } else if(!isNaN(num)){
-    if(!cfOverrides[row])cfOverrides[row]={};
-    cfOverrides[row][col]=num;
+    if(!ovr[row])ovr[row]={};
+    ovr[row][col]=num;
     td.classList.add('cell-ovr');
     td.textContent=num.toLocaleString();
   }
   pushUndoSnap();
-  render();
+  if(isMG)renderContingency();
+  else render();
 }
-function resetOverrides(){if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;cfOverrides={};render();}
+function resetOverrides(){if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;cfOverrides={};mgOverrides={};render();}
 function rowLabelEdit(td){
   const key=td.dataset.rowlbl;if(!key)return;
   const txt=td.textContent.trim();

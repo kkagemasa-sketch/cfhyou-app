@@ -663,7 +663,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),_cfCustomId:_cfCustomId,version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),_cfCustomId:_cfCustomId,version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value});
   return d;
 }
@@ -703,6 +703,7 @@ function _applyData(d){
     setType(d.type||'mansion');
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el)el.value=val});
     cfOverrides=d.cfOverrides||{};
+    mgOverrides=d.mgOverrides||{};
     cfCustomRows=d.cfCustomRows||[];
     _cfCustomId=d._cfCustomId||0;
     _lcBikou=d.lcBikou||{};
