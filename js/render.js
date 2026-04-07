@@ -675,20 +675,29 @@ function render(){
       }
     }
     R.lc.push(lcVal);
-    // ─── 有価証券積立額（積立型のみ・解約前年まで）を支出計上 ───
+    // ─── 有価証券積立額（積立型のみ・解約前年まで）を支出計上（個別行） ───
+    if(!R.secInvestRows)R.secInvestRows=[];
     let secInvestTotal=0;
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
+      const pLabel=p==='h'?'ご主人様':'奥様';
       document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
         if(!isAccum)return;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         if(monthly<=0)return;
+        const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+        const rowKey=`secInv-${p}-${sid}`;
+        const lbl=customLabel||`積立投資(${pLabel})`;
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
         const redeemAge=iv(`sec-redeem-${p}-${sid}`)||0;
         const isActive=(endAge===0||pAge<endAge)&&(redeemAge===0||pAge<redeemAge);
-        if(isActive)secInvestTotal+=monthly*12;
+        const v=isActive?ri(monthly*12):0;
+        let row=R.secInvestRows.find(r=>r.key===rowKey);
+        if(!row){row={lbl,vals:[],key:rowKey};R.secInvestRows.push(row);}
+        row.vals.push(v);
+        secInvestTotal+=v;
       });
     });
     R.secInvest.push(ri(secInvestTotal));
@@ -1322,7 +1331,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`);});
   if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else{h+=eRow('車両費（購入・車検）',R.carTotal,'carTotal');}
   h+=eRow('駐車場代',R.prk,'prk');
-  h+=eRow('積立投資額',R.secInvest,'secInvest')+eRow('一括投資額',R.secBuy,'secBuy');
+  if(R.secInvestRows&&R.secInvestRows.length>1){R.secInvestRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.secInvestRows&&R.secInvestRows.length===1){h+=eRow(R.secInvestRows[0].lbl,R.secInvestRows[0].vals,R.secInvestRows[0].key);}else{h+=eRow('積立投資額',R.secInvest,'secInvest');}
+  h+=eRow('一括投資額',R.secBuy,'secBuy');
   h+=eRow('保険料（積立）',R.insMonthly,'insMonthly')+eRow('一時払い保険',R.insLumpExp,'insLumpExp');
   h+=eRow('結婚のお祝い',R.wedding,'wedding');
   if(R.extRows&&R.extRows.length>1){R.extRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.extRows&&R.extRows.length===1){h+=eRow(R.extRows[0].lbl,R.extRows[0].vals,R.extRows[0].key);}else{h+=eRow('特別支出',R.ext,'ext');}
