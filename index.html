@@ -779,6 +779,11 @@ if(authExp&&Date.now()<Number(authExp)){
               <div class="suf"><input class="inp" id="monthly-h-pay" readonly><span class="sl">万円</span></div>
               <span class="hint ok" id="monthly-h-hint"></span></div>
           </div>
+          <div style="margin-top:6px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">金利変更スケジュール</div>
+            <div id="rate-h-cont"></div>
+            <button class="btn-add" onclick="addPairRate('h')" id="btn-add-rate-h">＋ 金利変更を追加</button>
+          </div>
         </div>
         <div style="background:#fff0f6;border:1px solid #f8c0d8;border-radius:var(--rs);padding:10px;margin-bottom:8px">
           <div style="font-size:11px;font-weight:700;color:#8b1a4a;margin-bottom:8px">👩 奥様ローン</div>
@@ -799,6 +804,11 @@ if(authExp&&Date.now()<Number(authExp)){
             <div class="fg"><label class="lbl">月返済額（自動）</label>
               <div class="suf"><input class="inp" id="monthly-w-pay" readonly><span class="sl">万円</span></div>
               <span class="hint ok" id="monthly-w-hint"></span></div>
+          </div>
+          <div style="margin-top:6px">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">金利変更スケジュール</div>
+            <div id="rate-w-cont"></div>
+            <button class="btn-add" onclick="addPairRate('w')" id="btn-add-rate-w">＋ 金利変更を追加</button>
           </div>
         </div>
         <div style="background:#f0f4ff;border:1px solid #b8d0f0;border-radius:var(--rs);padding:8px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -1255,7 +1265,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/income.js?v=6"></script>
 <script src="js/education.js"></script>
 <script src="js/housing.js?v=3"></script>
-<script src="js/loan-calc.js"></script>
+<script src="js/loan-calc.js?v=2"></script>
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=6"></script>
 <script src="js/extras.js"></script>
@@ -1270,7 +1280,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=20"></script>
+<script src="js/save-load.js?v=21"></script>
 <script src="js/ui.js?v=3"></script>
 <script src="js/app.js?v=26"></script>
 <script>

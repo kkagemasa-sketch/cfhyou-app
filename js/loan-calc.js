@@ -58,3 +58,35 @@ function getRates(){
   return s.sort((a,b)=>a.from-b.from);
 }
 function effRate(yr,rates){let r=rates[0]?.rate??0.5;for(const s of rates)if(yr>=s.from)r=s.rate;return r}
+
+// ── ペアローン段階金利 ──
+let rHCnt=0, rWCnt=0;
+function addPairRate(p){
+  const cnt=p==='h'?rHCnt:rWCnt;
+  if(cnt>=5){alert('最大5回まで');return}
+  if(p==='h')rHCnt++;else rWCnt++;
+  const id=p==='h'?rHCnt:rWCnt;
+  const el=document.createElement('div');el.id=`rs-${p}-${id}`;el.className='drow drow-4';
+  let prevRate=fv(`rate-${p}-base`);
+  const prevEl=document.getElementById(`rsr-${p}-${id-1}`);
+  if(prevEl)prevRate=parseFloat(prevEl.value)||prevRate;
+  const newRate=(prevRate+1).toFixed(2);
+  const prevFrom=id>1?parseInt(document.getElementById(`rsf-${p}-${id-1}`)?.value)||5:0;
+  const newFrom=prevFrom+5;
+  el.innerHTML=`<span class="dlbl" style="color:var(--amber)">変更${id}</span>
+    <div class="suf"><input class="inp" id="rsf-${p}-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${newFrom}" min="1" max="50" oninput="live()" class="inp age-inp"><span class="sl">年目〜</span></div>
+    <div class="suf"><input class="inp" id="rsr-${p}-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${newRate}" min="0" max="15" step="0.01" oninput="live()" class="inp amt-inp"><span class="sl">%</span></div>
+    <button class="btn-rm" onclick="rmPairRate('${p}',${id})">×</button>`;
+  $(`rate-${p}-cont`).appendChild(el);
+  if((p==='h'?rHCnt:rWCnt)>=5)$(`btn-add-rate-${p}`).style.display='none';
+}
+function rmPairRate(p,id){$(`rs-${p}-${id}`)?.remove();if(p==='h')rHCnt--;else rWCnt--;$(`btn-add-rate-${p}`).style.display=''}
+function getPairRates(p){
+  const s=[{from:0,rate:fv(`rate-${p}-base`)}];
+  document.querySelectorAll(`[id^="rsf-${p}-"]`).forEach(el=>{
+    const id=el.id.split('-')[2];
+    const fromYr=(parseInt(el.value)||0)-1;
+    s.push({from:fromYr,rate:parseFloat($(`rsr-${p}-${id}`)?.value)||0});
+  });
+  return s.sort((a,b)=>a.from-b.from);
+}

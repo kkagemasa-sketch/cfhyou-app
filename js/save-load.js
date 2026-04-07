@@ -98,11 +98,20 @@ function _collectDynamic(){
       });
     });
   });
-    // 金利ステップ
+    // 金利ステップ（通常ローン: rsf-1,rsf-2... ペアローン: rsf-h-1,rsf-w-1...）
   d.rateSteps=[];
   document.querySelectorAll('[id^="rsf-"]').forEach(el=>{
-    const id=el.id.split('-')[1];
-    d.rateSteps.push({from:el.value,rate:$(`rsr-${id}`)?.value||''});
+    const parts=el.id.split('-');
+    if(parts.length===2){// 通常ローン: rsf-{id}
+      d.rateSteps.push({from:el.value,rate:$(`rsr-${parts[1]}`)?.value||''});
+    }
+  });
+  d.rateStepsH=[];d.rateStepsW=[];
+  ['h','w'].forEach(p=>{
+    document.querySelectorAll(`[id^="rsf-${p}-"]`).forEach(el=>{
+      const id=el.id.split('-')[2];
+      d[`rateSteps${p==='h'?'H':'W'}`].push({from:el.value,rate:$(`rsr-${p}-${id}`)?.value||''});
+    });
   });
   // 生活費ステップ
   d.lcSteps=[];
@@ -316,6 +325,18 @@ function _restoreDynamic(d){
     addRate();
     if($(`rsf-${rCnt}`))$(`rsf-${rCnt}`).value=s.from;
     if($(`rsr-${rCnt}`))$(`rsr-${rCnt}`).value=s.rate;
+  });
+  // ペアローン段階金利
+  ['h','w'].forEach(p=>{
+    if($(`rate-${p}-cont`))$(`rate-${p}-cont`).innerHTML='';
+    if(p==='h')rHCnt=0;else rWCnt=0;
+    if($(`btn-add-rate-${p}`))$(`btn-add-rate-${p}`).style.display='';
+    (d[`rateSteps${p==='h'?'H':'W'}`]||[]).forEach(s=>{
+      addPairRate(p);
+      const cnt=p==='h'?rHCnt:rWCnt;
+      if($(`rsf-${p}-${cnt}`))$(`rsf-${p}-${cnt}`).value=s.from;
+      if($(`rsr-${p}-${cnt}`))$(`rsr-${p}-${cnt}`).value=s.rate;
+    });
   });
   // 生活費ステップ
   if($('lc-steps-cont'))$('lc-steps-cont').innerHTML=''; lsCnt=0;
@@ -761,7 +782,10 @@ async function newCFSheet(){
   repairCnt=0;
   // 金利ステップ
   if($('rate-cont'))$('rate-cont').innerHTML='';
-  rateCnt=0;
+  rCnt=0;
+  // ペアローン金利ステップ
+  ['h','w'].forEach(p=>{if($(`rate-${p}-cont`))$(`rate-${p}-cont`).innerHTML='';});
+  rHCnt=0;rWCnt=0;
 
   // フラグリセット
   carOwn=true;parkOwn=true;

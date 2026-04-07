@@ -13,6 +13,7 @@ function render(){
   const lhType=document.getElementById('loan-h-type')?.value||'equal_payment';
   const lwType=document.getElementById('loan-w-type')?.value||'equal_payment';
   const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
+  const ratesH=pairLoanMode?getPairRates('h'):[], ratesW=pairLoanMode?getPairRates('w'):[];
   const effLoanAmt=pairLoanMode?(lhAmt+lwAmt):loanAmt;
   // 自己資産：現預金合計を初期残高に
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
@@ -307,7 +308,7 @@ function render(){
     if(active&&lctrlYrs>0&&lcYr<lctrlYrs&&effLoanAmt>0&&lctrlLimit>0){
       const loanType2tmp=document.getElementById('loan-type')?.value||'equal_payment';
       const remainBal=pairLoanMode
-        ?(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,rHBase,lcYr):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,rWBase,lcYr):0)
+        ?(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0)
         :(loanType2tmp==='equal_payment'
           ?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr)
           :lbal_gankin(loanAmt,loanYrs,lcYr));
@@ -522,8 +523,8 @@ function render(){
     let lRep=0;
     if(pairLoanMode){
       if(active){
-        if(lcYr<lhYrs)lRep+=ri(lhType==='equal_payment'?mpay(lhAmt,lhYrs,rHBase)*12:mpay_gankin_year(lhAmt,lhYrs,rHBase,lcYr));
-        if(lcYr<lwYrs)lRep+=ri(lwType==='equal_payment'?mpay(lwAmt,lwYrs,rWBase)*12:mpay_gankin_year(lwAmt,lwYrs,rWBase,lcYr));
+        if(lcYr<lhYrs)lRep+=ri(lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));
+        if(lcYr<lwYrs)lRep+=ri(lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));
       }
     } else if(active&&lcYr<loanYrs){
       if(loanType2==='equal_payment'){
@@ -899,7 +900,7 @@ function render(){
     R.finAsset.push(ri(finAssetVal));
     R.totalAsset.push(R.sav[i]+ri(finAssetVal));// 預貯金残高＋その他金融資産
     const lb=ri(pairLoanMode
-      ?(active?Math.max(0,(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,rHBase,lcYr+1):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,rWBase,lcYr+1):0)):lhAmt+lwAmt)
+      ?(active?Math.max(0,(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):0)):lhAmt+lwAmt)
       :(active?Math.max(0,(loanType2==='equal_payment'?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr+1):lbal_gankin(loanAmt,loanYrs,lcYr+1))):loanAmt));
     R.lBal.push(lb);
 
