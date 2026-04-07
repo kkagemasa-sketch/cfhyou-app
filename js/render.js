@@ -316,6 +316,22 @@ function render(){
   const choki=iv('choki');
   const taxRed=isM?PROP_TAX_RELIEF.mansion_general:(choki?PROP_TAX_RELIEF.kodate_choki:PROP_TAX_RELIEF.kodate_general);
   const extraItems=getExtraItems();
+  // DC・iDeCo入力値
+  const dcIdeco={};
+  ['h','w'].forEach(p=>{
+    const pRetAge=p==='h'?retAge:wRetAge;
+    dcIdeco[p]={
+      employer: fv(`dc-${p}-employer`)||0,
+      matching: fv(`dc-${p}-matching`)||0,
+      dcRate: (fv(`dc-${p}-rate`)||3)/100,
+      idecoMonthly: fv(`ideco-${p}-monthly`)||0,
+      idecoRate: (fv(`ideco-${p}-rate`)||3)/100,
+      receiveAge: iv(`dc-${p}-receive-age`)||60,
+      method: document.getElementById(`dc-${p}-method`)?.value||'lump',
+      retAge: pRetAge,
+      joinStart: p==='h'?(iv('pension-h-start')||22):(iv('pension-w-start')||22)
+    };
+  });
   // ループ外キャッシュ（パフォーマンス最適化）
   const otherIncomesCache=getOtherIncomes();
   // 諸費用（現金払いの場合、引き渡し年に計上）
@@ -339,7 +355,7 @@ function render(){
 
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
-    hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],incT:[],
+    hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceipt:[],incT:[],
     lc:[],lRep:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
@@ -367,6 +383,11 @@ function render(){
     let hInc=0;
     if(!(hDeathAge>0&&ha>hDeathAge)){
       hInc=getIncomeAtAge(hSteps,ha);
+      // DC・iDeCo節税効果（拠出期間中のみ）
+      if(hInc>0&&ha<dcIdeco.h.retAge){
+        const ded=(dcIdeco.h.matching+dcIdeco.h.idecoMonthly)*12;
+        if(ded>0){const sv=estimateTaxSaving(hInc,ded);hInc+=sv.total;}
+      }
     }
     R.hInc.push(ri(hInc));
 
@@ -378,6 +399,11 @@ function render(){
         wInc=ri(leave.income);
       } else {
         wInc=getIncomeAtAge(wSteps,wa);
+      }
+      // DC・iDeCo節税効果（拠出期間中のみ）
+      if(wInc>0&&wa<dcIdeco.w.retAge){
+        const ded=(dcIdeco.w.matching+dcIdeco.w.idecoMonthly)*12;
+        if(ded>0){const sv=estimateTaxSaving(wInc,ded);wInc+=sv.total;}
       }
     }
     R.wInc.push(ri(wInc));
@@ -652,7 +678,7 @@ function render(){
     });
     R.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap[row.key]?.val||0));});
     R.secRedeem.push(ri(secRedeemTotal));
-    R.incT.push(ri(hInc)+ri(wInc)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)&&hAlive?ri(pWife):0)+t+lc2+survP);
+    R.incT.push(ri(hInc)+ri(wInc)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)&&hAlive?ri(pWife):0)+t+lc2+survP+ri(dcReceiptVal));
 
     // ─── 生活費（段階別複利計算） ───
     let lcVal;{
@@ -973,6 +999,91 @@ function render(){
         finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
       });
     });
+    // 【DC・iDeCo運用残高】
+    let dcReceiptVal=0;
+    ['h','w'].forEach(p=>{
+      const d=dcIdeco[p];
+      const pAge=p==='h'?ha:wa;
+      const pBaseAge=p==='h'?hAge:wAge;
+      const totalMonthly=d.employer+d.matching; // DC合計月額
+      if(totalMonthly<=0&&d.idecoMonthly<=0)return;
+      // DC残高
+      if(totalMonthly>0){
+        const lbl=`DC(${p==='h'?'ご主人様':'奥様'})`;
+        const yrs=i+1;
+        let dcBal=0;
+        if(pAge<d.receiveAge){
+          // 拠出期間中（退職前）は全額拠出+運用、退職後は運用のみ
+          if(pAge<d.retAge){
+            const rate=d.dcRate;
+            dcBal=rate>0?totalMonthly*12*(Math.pow(1+rate,yrs)-1)/rate:totalMonthly*12*yrs;
+          }else{
+            // 退職後：拠出停止、受取開始前は運用のみ
+            const yrsContrib=d.retAge-pBaseAge;
+            const rate=d.dcRate;
+            const balAtRetire=rate>0?totalMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:totalMonthly*12*yrsContrib;
+            const yrsAfter=yrs-yrsContrib;
+            dcBal=balAtRetire*Math.pow(1+rate,Math.max(0,yrsAfter));
+          }
+        }
+        if(dcBal>0)finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(dcBal);
+      }
+      // iDeCo残高
+      if(d.idecoMonthly>0){
+        const lbl=`iDeCo(${p==='h'?'ご主人様':'奥様'})`;
+        const yrs=i+1;
+        let idecoBal=0;
+        if(pAge<d.receiveAge){
+          if(pAge<d.retAge){
+            const rate=d.idecoRate;
+            idecoBal=rate>0?d.idecoMonthly*12*(Math.pow(1+rate,yrs)-1)/rate:d.idecoMonthly*12*yrs;
+          }else{
+            const yrsContrib=d.retAge-pBaseAge;
+            const rate=d.idecoRate;
+            const balAtRetire=rate>0?d.idecoMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:d.idecoMonthly*12*yrsContrib;
+            const yrsAfter=yrs-yrsContrib;
+            idecoBal=balAtRetire*Math.pow(1+rate,Math.max(0,yrsAfter));
+          }
+        }
+        if(idecoBal>0)finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(idecoBal);
+      }
+      // DC+iDeCo受取計算
+      if(pAge>=d.receiveAge){
+        // 受取開始年の総額を計算（受取開始年齢時点の残高）
+        const yrsToReceive=d.receiveAge-pBaseAge;
+        let totalBal=0;
+        if(totalMonthly>0){
+          const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
+          const rate=d.dcRate;
+          const balAtContribEnd=rate>0?totalMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:totalMonthly*12*yrsContrib;
+          totalBal+=balAtContribEnd*Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib));
+        }
+        if(d.idecoMonthly>0){
+          const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
+          const rate=d.idecoRate;
+          const balAtContribEnd=rate>0?d.idecoMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:d.idecoMonthly*12*yrsContrib;
+          totalBal+=balAtContribEnd*Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib));
+        }
+        totalBal=Math.round(totalBal);
+        if(totalBal>0){
+          if(d.method==='lump'){
+            // 一時金：受取年齢に全額
+            if(pAge===d.receiveAge)dcReceiptVal+=totalBal;
+          }else if(d.method==='annuity'){
+            // 年金：20年間に分割
+            const annualAmt=Math.round(totalBal/20);
+            if(pAge>=d.receiveAge&&pAge<d.receiveAge+20)dcReceiptVal+=annualAmt;
+          }else{
+            // 併用：半額一時金＋半額20年年金
+            const half=Math.round(totalBal/2);
+            if(pAge===d.receiveAge)dcReceiptVal+=half;
+            const annualHalf=Math.round(half/20);
+            if(pAge>=d.receiveAge&&pAge<d.receiveAge+20)dcReceiptVal+=annualHalf;
+          }
+        }
+      }
+    });
+    R.dcReceipt.push(ri(dcReceiptVal));
     // 【積立保険】はその他金融資産行から除外（推計精度が低いため）
     // finAssetRowsに追記（毎年動的にキーを管理）
     Object.keys(finRowMap).forEach(k=>{
@@ -1040,7 +1151,7 @@ function render(){
 
   // ─── cfOverrides後処理: サブ行上書きを合計・収支・残高に反映 ───
   if(Object.keys(cfOverrides).length>0||cfCustomRows.length>0){
-    const incKeys=['hInc','wInc','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl'];
+    const incKeys=['hInc','wInc','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl','dcReceipt'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
@@ -1316,6 +1427,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=iRow('ご主人手取年収',R.hInc,'hInc')+iRow('奥様手取年収',R.wInc,'wInc')+iRow('副業・その他収入',R.otherInc,'otherInc');
   h+=iRow('退職金（ご主人）',R.rPay,'rPay')+iRow('退職金（奥様）',R.wRPay,'wRPay');
   h+=iRow('本人年金',R.pS,'pS')+iRow('配偶者年金',R.pW,'pW')+iRow('遺族年金',R.survPension,'survPension');
+  h+=iRow('DC・iDeCo受取',R.dcReceipt,'dcReceipt');
   h+=iRow('保険満期金',R.insMat,'insMat');
   // 有価証券解約：銘柄ごとに個別行で表示
   if(R.secRedeemRows){R.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}

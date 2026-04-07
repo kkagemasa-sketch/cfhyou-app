@@ -343,6 +343,114 @@ function addPresetIncome(type){
   }
 }
 
+// ===== DC・iDeCoバリデーション =====
+const IDECO_LIMITS={emp_dc:2.0, emp_nodc:2.3, civil:1.2, self:6.8, homemaker:2.3};
+
+function validateDC(p){
+  const otherPension=document.getElementById(`dc-${p}-other-pension`)?.value||'none';
+  const cap=otherPension==='none'?5.5:2.75;
+  const employer=fv(`dc-${p}-employer`)||0;
+  const matchEl=document.getElementById(`dc-${p}-matching`);
+  let matching=fv(`dc-${p}-matching`)||0;
+  // マッチング≦事業主掛金、合計≦上限
+  if(matching>employer){matching=employer;if(matchEl)matchEl.value=matching;}
+  if(employer+matching>cap){matching=Math.max(0,cap-employer);if(matchEl)matchEl.value=matching;}
+  const hint=document.getElementById(`dc-${p}-hint`);
+  if(hint){
+    if(employer>0||matching>0){
+      hint.textContent=`✓ 掛金合計 ${(employer+matching).toFixed(1)}万円/月（上限${cap}万円）`;
+    }else{hint.textContent='';}
+  }
+}
+
+function validateiDeCo(p){
+  const job=document.getElementById(`ideco-${p}-job`)?.value||'emp_dc';
+  const cap=IDECO_LIMITS[job]||2.3;
+  const el=document.getElementById(`ideco-${p}-monthly`);
+  let monthly=fv(`ideco-${p}-monthly`)||0;
+  if(monthly>cap){monthly=cap;if(el)el.value=monthly;}
+  const hint=document.getElementById(`ideco-${p}-hint`);
+  if(hint){
+    if(monthly>0){
+      hint.textContent=`✓ 月額${monthly.toFixed(1)}万円（上限${cap}万円）`;
+    }else{hint.textContent='';}
+  }
+}
+
+function estimateTaxSaving(takeHome, deduction){
+  // 手取り年収から限界税率を推定して節税額を計算
+  if(deduction<=0)return{total:0,incomeTax:0,residentTax:0};
+  // 手取り→額面変換
+  let gross=0;
+  for(let gi=0;gi<TAX.length-1;gi++){
+    if(takeHome<=TAX[gi][1]){gross=TAX[gi][0];break;}
+    if(takeHome<TAX[gi+1][1]){
+      const r=(takeHome-TAX[gi][1])/(TAX[gi+1][1]-TAX[gi][1]);
+      gross=Math.round(TAX[gi][0]+r*(TAX[gi+1][0]-TAX[gi][0]));break;
+    }
+    gross=TAX[TAX.length-1][0];
+  }
+  if(gross<=0&&takeHome>0)gross=TAX[TAX.length-1][0];
+  // 限界所得税率を推定
+  const shakai=gross*0.1437;
+  let kyuyo;
+  if(gross<=180)kyuyo=Math.max(55,gross*0.4);
+  else if(gross<=360)kyuyo=gross*0.3+18;
+  else if(gross<=660)kyuyo=gross*0.2+54;
+  else if(gross<=850)kyuyo=gross*0.1+120;
+  else if(gross<=1000)kyuyo=gross*0.05+172.5;
+  else kyuyo=195;
+  const taxable=Math.max(0,gross-kyuyo-shakai-48-38);
+  let marginalRate;
+  if(taxable<=195)marginalRate=0.05;
+  else if(taxable<=330)marginalRate=0.10;
+  else if(taxable<=695)marginalRate=0.20;
+  else if(taxable<=900)marginalRate=0.23;
+  else if(taxable<=1800)marginalRate=0.33;
+  else if(taxable<=4000)marginalRate=0.40;
+  else marginalRate=0.45;
+  const incomeTax=Math.round(deduction*marginalRate*1.021*10)/10;
+  const residentTax=Math.round(deduction*0.1*10)/10;
+  return{total:Math.round((incomeTax+residentTax)*10)/10, incomeTax, residentTax};
+}
+
+function updateDCTaxHint(p){
+  const matching=fv(`dc-${p}-matching`)||0;
+  const idecoMonthly=fv(`ideco-${p}-monthly`)||0;
+  const annualDeduction=(matching+idecoMonthly)*12; // 年間控除対象額
+  // 手取り年収を推定（現在の最初のステップから）
+  const steps=getIncomeSteps(p==='h'?'h':'w');
+  const baseAge=p==='h'?(iv('husband-age')||30):(iv('wife-age')||29);
+  const takeHome=getIncomeAtAge(steps, baseAge)||0;
+  const saving=estimateTaxSaving(takeHome, annualDeduction);
+  const hint=document.getElementById(`dc-${p}-tax-hint`);
+  if(hint){
+    if(saving.total>0){
+      hint.textContent=`💰 年間約${saving.total}万円の節税効果（所得税${saving.incomeTax}万＋住民税${saving.residentTax}万）`;
+    }else{hint.textContent='';}
+  }
+  // 受取方法ヒント
+  updateDCReceiptHint(p);
+}
+
+function updateDCReceiptHint(p){
+  const method=document.getElementById(`dc-${p}-method`)?.value||'lump';
+  const receiveAge=iv(`dc-${p}-receive-age`)||60;
+  const retAge=p==='h'?(iv('retire-age')||65):(iv('w-retire-age')||60);
+  const joinYrs=Math.max(1,retAge-(p==='h'?(iv('pension-h-start')||22):(iv('pension-w-start')||22)));
+  const hint=document.getElementById(`dc-${p}-receipt-hint`);
+  if(!hint)return;
+  if(method==='lump'){
+    // 退職所得控除の概算
+    const ctrl=joinYrs<=20?40*joinYrs:800+70*(joinYrs-20);
+    hint.innerHTML=`一時金受取：退職所得控除 約${ctrl}万円（勤続${joinYrs}年）`;
+  }else if(method==='annuity'){
+    hint.innerHTML=`年金受取：${receiveAge}歳〜${receiveAge+19}歳の20年間に分割（公的年金等控除あり）`;
+  }else{
+    hint.innerHTML=`併用：半額を一時金＋残り半額を${receiveAge}歳〜${receiveAge+19}歳の20年年金`;
+  }
+}
+
 // ===== 生涯平均標準報酬月額の計算 =====
 // 収入ステップを活用して加入期間全体の平均を精密に計算する
 // - ステップがカバーする期間: 手取り→額面変換で正確に計算

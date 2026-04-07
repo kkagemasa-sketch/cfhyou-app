@@ -128,6 +128,10 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'parking','park-from-yr','park-to-yr','mg-park-from-yr','mg-park-to-yr','prop-tax','furn-cycle','furn-cost',
   'cash-h','cash-w','cash-joint','moving-cost','furniture-init',
   'lctrl-year','lctrl-type','lctrl-household',
+  'dc-h-employer','dc-h-matching','dc-h-other-pension','dc-h-rate','dc-h-receive-age','dc-h-method',
+  'ideco-h-job','ideco-h-monthly','ideco-h-rate',
+  'dc-w-employer','dc-w-matching','dc-w-other-pension','dc-w-rate','dc-w-receive-age','dc-w-method',
+  'ideco-w-job','ideco-w-monthly','ideco-w-rate',
   'pi-name','pi-company','pi-address','pi-tel','pi-email','pi-notes'];
 
 const PI_STORAGE_KEY='cf_print_info';

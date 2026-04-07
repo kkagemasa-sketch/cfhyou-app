@@ -280,6 +280,72 @@ if(authExp&&Date.now()<Number(authExp)){
             </div>
           </div>
 
+          <!-- DC・iDeCo（ご主人様） -->
+          <div style="background:#f0f8f4;border:1px solid #b8e8c8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:11px;font-weight:700;color:#1a6a3a">🏢 企業型DC・iDeCo</div>
+              <button onclick="this.parentElement.nextElementSibling.style.display=this.parentElement.nextElementSibling.style.display==='none'?'':'none';this.textContent=this.textContent.includes('▼')?'▶ 開く':'▼ 閉じる'" style="font-size:10px;color:#1a6a3a;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">▶ 開く</button>
+            </div>
+            <div style="display:none">
+              <!-- 企業型DC -->
+              <div style="background:#fff;border:1px solid #d8e8d8;border-radius:var(--rs);padding:8px;margin-bottom:8px">
+                <div style="font-size:10px;font-weight:700;color:#2a7a4a;margin-bottom:6px">企業型DC</div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">事業主掛金</label>
+                    <div class="suf"><input class="inp amt-inp" id="dc-h-employer" type="number" value="" placeholder="0" min="0" step="0.1" oninput="validateDC('h');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">マッチング拠出</label>
+                    <div class="suf"><input class="inp amt-inp" id="dc-h-matching" type="number" value="" placeholder="0" min="0" step="0.1" oninput="validateDC('h');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+                </div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">他の企業年金</label>
+                    <select id="dc-h-other-pension" onchange="validateDC('h');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
+                      <option value="none">なし（上限5.5万）</option>
+                      <option value="exist">あり（上限2.75万）</option>
+                    </select></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">想定利回り</label>
+                    <div class="suf"><input class="inp" id="dc-h-rate" type="number" value="3" min="0" max="10" step="0.5" oninput="live()" style="font-size:11px;width:60px"><span class="sl">%</span></div></div>
+                </div>
+                <div id="dc-h-hint" style="font-size:10px;color:#3a8a3a;margin-top:2px"></div>
+              </div>
+              <!-- iDeCo -->
+              <div style="background:#fff;border:1px solid #d8e8d8;border-radius:var(--rs);padding:8px;margin-bottom:8px">
+                <div style="font-size:10px;font-weight:700;color:#2a7a4a;margin-bottom:6px">iDeCo</div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">職業</label>
+                    <select id="ideco-h-job" onchange="validateiDeCo('h');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
+                      <option value="emp_dc">会社員(DC有) 上限2.0万</option>
+                      <option value="emp_nodc">会社員(DC無) 上限2.3万</option>
+                      <option value="civil">公務員 上限1.2万</option>
+                      <option value="self">自営業 上限6.8万</option>
+                      <option value="homemaker">専業主婦(夫) 上限2.3万</option>
+                    </select></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">月額掛金</label>
+                    <div class="suf"><input class="inp amt-inp" id="ideco-h-monthly" type="number" value="" placeholder="0" min="0" step="0.1" oninput="validateiDeCo('h');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+                </div>
+                <div class="fg" style="margin-bottom:6px"><label class="lbl" style="font-size:9px">想定利回り</label>
+                  <div class="suf"><input class="inp" id="ideco-h-rate" type="number" value="3" min="0" max="10" step="0.5" oninput="live()" style="font-size:11px;width:60px"><span class="sl">%</span></div></div>
+                <div id="ideco-h-hint" style="font-size:10px;color:#3a8a3a;margin-top:2px"></div>
+              </div>
+              <!-- 受取設定 -->
+              <div style="background:#fff;border:1px solid #d8e8d8;border-radius:var(--rs);padding:8px;margin-bottom:8px">
+                <div style="font-size:10px;font-weight:700;color:#2a7a4a;margin-bottom:6px">受取設定</div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">受取開始年齢</label>
+                    <div class="suf"><input class="inp age-inp" id="dc-h-receive-age" type="number" value="60" min="60" max="75" oninput="updateDCTaxHint('h');live()" style="font-size:11px"><span class="sl">歳</span></div></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">受取方法</label>
+                    <select id="dc-h-method" onchange="updateDCTaxHint('h');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
+                      <option value="lump">一時金</option>
+                      <option value="annuity">年金（20年受取）</option>
+                      <option value="combo">併用（半分ずつ）</option>
+                    </select></div>
+                </div>
+                <div id="dc-h-receipt-hint" style="font-size:10px;color:#666;margin-top:2px"></div>
+              </div>
+              <!-- 節税ヒント -->
+              <div id="dc-h-tax-hint" style="font-size:10px;color:#d4790a;font-weight:600;margin-top:4px"></div>
+            </div>
+          </div>
+
           <!-- 年金 -->
           <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🏦 老齢年金</div>
@@ -376,6 +442,72 @@ if(authExp&&Date.now()<Number(authExp)){
                   <div class="suf"><input class="inp age-inp" id="w-retire-pay-age" type="number" onfocus="scrollToCFRowSelf('wRPay',this)" onblur="cfRowBlur()" value="" placeholder="空欄=退職年" min="40" max="80" oninput="live()"><span class="sl">歳</span></div>
                   <span class="hint ok" id="w-retpay-hint">退職時に計上</span></div>
               </div>
+            </div>
+          </div>
+
+          <!-- DC・iDeCo（奥様） -->
+          <div style="background:#f0f8f4;border:1px solid #b8e8c8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:11px;font-weight:700;color:#1a6a3a">🏢 企業型DC・iDeCo（奥様）</div>
+              <button onclick="this.parentElement.nextElementSibling.style.display=this.parentElement.nextElementSibling.style.display==='none'?'':'none';this.textContent=this.textContent.includes('▼')?'▶ 開く':'▼ 閉じる'" style="font-size:10px;color:#1a6a3a;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">▶ 開く</button>
+            </div>
+            <div style="display:none">
+              <!-- 企業型DC -->
+              <div style="background:#fff;border:1px solid #d8e8d8;border-radius:var(--rs);padding:8px;margin-bottom:8px">
+                <div style="font-size:10px;font-weight:700;color:#2a7a4a;margin-bottom:6px">企業型DC</div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">事業主掛金</label>
+                    <div class="suf"><input class="inp amt-inp" id="dc-w-employer" type="number" value="" placeholder="0" min="0" step="0.1" oninput="validateDC('w');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">マッチング拠出</label>
+                    <div class="suf"><input class="inp amt-inp" id="dc-w-matching" type="number" value="" placeholder="0" min="0" step="0.1" oninput="validateDC('w');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+                </div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">他の企業年金</label>
+                    <select id="dc-w-other-pension" onchange="validateDC('w');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
+                      <option value="none">なし（上限5.5万）</option>
+                      <option value="exist">あり（上限2.75万）</option>
+                    </select></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">想定利回り</label>
+                    <div class="suf"><input class="inp" id="dc-w-rate" type="number" value="3" min="0" max="10" step="0.5" oninput="live()" style="font-size:11px;width:60px"><span class="sl">%</span></div></div>
+                </div>
+                <div id="dc-w-hint" style="font-size:10px;color:#3a8a3a;margin-top:2px"></div>
+              </div>
+              <!-- iDeCo -->
+              <div style="background:#fff;border:1px solid #d8e8d8;border-radius:var(--rs);padding:8px;margin-bottom:8px">
+                <div style="font-size:10px;font-weight:700;color:#2a7a4a;margin-bottom:6px">iDeCo</div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">職業</label>
+                    <select id="ideco-w-job" onchange="validateiDeCo('w');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
+                      <option value="emp_dc">会社員(DC有) 上限2.0万</option>
+                      <option value="emp_nodc">会社員(DC無) 上限2.3万</option>
+                      <option value="civil">公務員 上限1.2万</option>
+                      <option value="self">自営業 上限6.8万</option>
+                      <option value="homemaker" selected>専業主婦(夫) 上限2.3万</option>
+                    </select></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">月額掛金</label>
+                    <div class="suf"><input class="inp amt-inp" id="ideco-w-monthly" type="number" value="" placeholder="0" min="0" step="0.1" oninput="validateiDeCo('w');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
+                </div>
+                <div class="fg" style="margin-bottom:6px"><label class="lbl" style="font-size:9px">想定利回り</label>
+                  <div class="suf"><input class="inp" id="ideco-w-rate" type="number" value="3" min="0" max="10" step="0.5" oninput="live()" style="font-size:11px;width:60px"><span class="sl">%</span></div></div>
+                <div id="ideco-w-hint" style="font-size:10px;color:#3a8a3a;margin-top:2px"></div>
+              </div>
+              <!-- 受取設定 -->
+              <div style="background:#fff;border:1px solid #d8e8d8;border-radius:var(--rs);padding:8px;margin-bottom:8px">
+                <div style="font-size:10px;font-weight:700;color:#2a7a4a;margin-bottom:6px">受取設定</div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">受取開始年齢</label>
+                    <div class="suf"><input class="inp age-inp" id="dc-w-receive-age" type="number" value="60" min="60" max="75" oninput="updateDCTaxHint('w');live()" style="font-size:11px"><span class="sl">歳</span></div></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">受取方法</label>
+                    <select id="dc-w-method" onchange="updateDCTaxHint('w');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
+                      <option value="lump">一時金</option>
+                      <option value="annuity">年金（20年受取）</option>
+                      <option value="combo">併用（半分ずつ）</option>
+                    </select></div>
+                </div>
+                <div id="dc-w-receipt-hint" style="font-size:10px;color:#666;margin-top:2px"></div>
+              </div>
+              <!-- 節税ヒント -->
+              <div id="dc-w-tax-hint" style="font-size:10px;color:#d4790a;font-weight:600;margin-top:4px"></div>
             </div>
           </div>
 
@@ -1117,10 +1249,10 @@ if(authExp&&Date.now()<Number(authExp)){
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=6"></script>
-<script src="js/constants.js?v=6"></script>
+<script src="js/constants.js?v=7"></script>
 <script src="js/utils.js?v=4"></script>
 <script src="js/family.js"></script>
-<script src="js/income.js?v=5"></script>
+<script src="js/income.js?v=6"></script>
 <script src="js/education.js"></script>
 <script src="js/housing.js?v=3"></script>
 <script src="js/loan-calc.js"></script>
@@ -1128,7 +1260,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/assets.js?v=6"></script>
 <script src="js/extras.js"></script>
 <script src="js/contingency.js?v=7"></script>
-<script src="js/render.js?v=30"></script>
+<script src="js/render.js?v=31"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js"></script>
 <script src="js/export.js?v=9"></script>
