@@ -6,6 +6,9 @@ function iv(id){return parseInt(String($(id)?.value||'').replace(/,/g,''))||0}
 function fv(id){return parseFloat(String($(id)?.value||'').replace(/,/g,''))||0}
 function tog(h){const b=h.nextElementSibling,t=h.querySelector('.stog'),o=!b.classList.contains('col');b.classList.toggle('col',o);t.classList.toggle('on',!o)}
 function ri(n){return Math.round(n)}// 整数丸め（小数点なし）
+// 空欄→デフォルト値、0を明示入力→0を返す（隠れた初期値問題の対策）
+function ivd(id,def){const el=$(id);if(!el||el.value==='')return def;return parseInt(String(el.value).replace(/,/g,''))||0;}
+function fvd(id,def){const el=$(id);if(!el||el.value==='')return def;return parseFloat(String(el.value).replace(/,/g,''))||0;}
 
 // 手取り補間
 function gn(g){if(!g||g<=0)return 0;for(let i=0;i<TAX.length-1;i++){if(g<=TAX[i][0])return TAX[i][1];if(g<TAX[i+1][0]){const r=(g-TAX[i][0])/(TAX[i+1][0]-TAX[i][0]);return Math.round(TAX[i][1]+r*(TAX[i+1][1]-TAX[i][1]))}}return TAX[TAX.length-1][1]}

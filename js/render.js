@@ -311,7 +311,7 @@ function render(){
   // ローン
   const rates=getRates();
   const parking=fv('parking')/10000, propTax=fv('prop-tax')/10000;
-  const sqm=fv('sqm')||75;
+  const sqm=fvd('sqm',75);
   const isM=ST.type==='mansion';
   const choki=iv('choki');
   const taxRed=isM?PROP_TAX_RELIEF.mansion_general:(choki?PROP_TAX_RELIEF.kodate_choki:PROP_TAX_RELIEF.kodate_general);
@@ -571,7 +571,7 @@ function render(){
         const bal=fv(`sec-bal-${p}-${sid}`)||0;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
-        const rateRaw=document.getElementById(`sec-rate-${p}-${sid}`);const rate=(rateRaw&&rateRaw.value!==''?fv(`sec-rate-${p}-${sid}`):5)/100;
+        const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
         const yrs=i+1;
         let fv2=0;
         if(endAge===0||pAge<=endAge){
@@ -743,8 +743,8 @@ function render(){
     R.rep.push(active&&isM?getRepFund(sqm,el2):0);
     const ptxV=active?(lcYr<taxRed?ri(propTax*0.5):ri(propTax)):0;
     R.ptx.push(ptxV);
-    const furnCycle=iv('furn-cycle')||10;
-    const furnCost=iv('furn-cost')||80;
+    const furnCycle=ivd('furn-cycle',10);
+    const furnCost=ivd('furn-cost',80);
     R.furn.push(active&&el2>0&&el2%furnCycle===0?furnCost:0);
     // 修繕周期の集計（動的要素のみ）
     let repTotal=0;
@@ -770,13 +770,13 @@ function render(){
         const cIdx=carEl.id.replace('car-','');
         const carType=carEl.dataset.type||'new';
         const carPay=carEl.dataset.pay||'cash';
-        const carPrice=fv('car-'+cIdx+'-price')||300;
+        const carPrice=fvd('car-'+cIdx+'-price',300);
         const carFirst=(iv('car-'+cIdx+'-first')||1)-1;
         const carCycle=iv('car-'+cIdx+'-cycle')||7;
-        const carInsp=fv('car-'+cIdx+'-insp')||10;
-        const carDown=fv('car-'+cIdx+'-down')||50;
+        const carInsp=fvd('car-'+cIdx+'-insp',10);
+        const carDown=fvd('car-'+cIdx+'-down',50);
         const carLoanYrs=iv('car-'+cIdx+'-loan-yrs')||5;
-        const carLoanRate=(fv('car-'+cIdx+'-loan-rate')||2.5)/100/12;
+        const carLoanRate=fvd('car-'+cIdx+'-loan-rate',2.5)/100/12;
         const carEndAge=iv('car-'+cIdx+'-end-age')||0;
         const carActive=carEndAge<30||ha<carEndAge; // 30未満は無効値→常にアクティブ
         // 台ごとの行を初期化
@@ -845,7 +845,7 @@ function render(){
       const cid=el.id.split('-')[2];
       const wedOn=document.getElementById(`wed-yes-${cid}`)?.classList.contains('on');
       if(!wedOn)return;
-      const wedAmt=fv(`wed-amt-${cid}`)||100;
+      const wedAmt=fvd(`wed-amt-${cid}`,100);
       const wedAge=iv(`wed-age-${cid}`)||28;
       const childAge=iv(`ca-${cid}`)||0;
       if(childAge+i===wedAge)wedTotal+=wedAmt;
@@ -935,7 +935,7 @@ function render(){
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         if(bal<=0&&monthly<=0)return; // 残高も積立額もなければスキップ
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
-        const rateRaw=document.getElementById(`sec-rate-${p}-${sid}`);const rate=(rateRaw&&rateRaw.value!==''?fv(`sec-rate-${p}-${sid}`):5)/100;
+        const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
         const yrs=i+1;
         let fv2=0;
         if(endAge===0||pAge<endAge){

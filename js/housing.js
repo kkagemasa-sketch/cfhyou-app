@@ -112,7 +112,7 @@ function updateHints(){
     cashAfterEl.textContent=`→ 購入後残高：${_cashAfter.toLocaleString()}万円`;
     cashAfterEl.style.color=_cashAfter>=0?'var(--green)':'var(--red)';
   }
-  const fc=iv('furn-cycle')||10, fco=iv('furn-cost')||80;
+  const fc=ivd('furn-cycle',10), fco=ivd('furn-cost',80);
   const fh=document.getElementById('furn-hint');
   if(fh)fh.textContent=`✓ ${fc}年ごとに${fco}万円`;
   // 車手放す年齢ヒント
@@ -128,7 +128,7 @@ function updateHints(){
   // 修繕積立金ヒント
   const repAutoHint=document.getElementById('rep-auto-hint');
   if(repAutoHint&&ST.type==='mansion'){
-    const sqmV=iv('sqm')||75;const repUnit=fv('rep-unit');
+    const sqmV=ivd('sqm',75);const repUnit=fv('rep-unit');
     if(repUnit>0){
       repAutoHint.textContent=`✓ 固定単価：${repUnit}円/㎡/月 → 年${Math.round(sqmV*repUnit*12/10000)}万円`;
     } else {
@@ -292,7 +292,7 @@ function addRepAutoStep(){
 function getRepFund(sqm,yr){
   if(repMode==='manual'){
     // 手動モード：ステップ値を探す
-    let base=fv('rep-manual-base')||12000;
+    let base=fvd('rep-manual-base',12000);
     const steps=[];
     document.querySelectorAll('[id^="rpsy-"]').forEach(el=>{
       const sid=el.id.split('-')[1];
