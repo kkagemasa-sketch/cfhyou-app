@@ -56,6 +56,19 @@ window.onload=()=>{
   document.addEventListener('focus',selectInput,true);
   document.addEventListener('click',selectInput,true);
 
+  // 全角数字→半角数字の自動変換（全input対応）
+  document.addEventListener('input',e=>{
+    const el=e.target;
+    if(el.tagName!=='INPUT')return;
+    const t=el.type;
+    if(t==='number'||t==='text'){
+      const v=el.value;
+      const converted=v.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+                       .replace(/．/g,'.').replace(/ー/g,'-').replace(/，/g,',');
+      if(v!==converted)el.value=converted;
+    }
+  },true);
+
   initLCComma();
   initScrollSpy();
 
