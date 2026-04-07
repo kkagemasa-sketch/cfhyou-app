@@ -139,14 +139,14 @@ function _collectDynamic(){
   ['h','w'].forEach(p=>{
     document.querySelectorAll(`#ins-savings-cont-${p}>[id^="ins-${p}-"]`).forEach(el=>{
       const id=el.id.split('-').pop();
-      d.insSavings.push({person:p,enrollAge:$(`ins-enroll-${p}-${id}`)?.value||'',monthly:$(`ins-m-${p}-${id}`)?.value||'',matAge:$(`ins-age-${p}-${id}`)?.value||'',matAmt:$(`ins-mat-${p}-${id}`)?.value||'',redeemAge:$(`ins-redeem-${p}-${id}`)?.value||'',redeemAmt:$(`ins-redeem-amt-${p}-${id}`)?.value||''});
+      d.insSavings.push({person:p,label:$(`ins-label-${p}-${id}`)?.value||'',enrollAge:$(`ins-enroll-${p}-${id}`)?.value||'',monthly:$(`ins-m-${p}-${id}`)?.value||'',matAge:$(`ins-age-${p}-${id}`)?.value||'',matAmt:$(`ins-mat-${p}-${id}`)?.value||'',redeemAge:$(`ins-redeem-${p}-${id}`)?.value||'',redeemAmt:$(`ins-redeem-amt-${p}-${id}`)?.value||''});
     });
   });
   d.insLumps=[];
   ['h','w'].forEach(p=>{
     document.querySelectorAll(`#ins-lump-cont-${p}>[id^="ins-lump-${p}-"]`).forEach(el=>{
       const id=el.id.split('-').pop();
-      d.insLumps.push({person:p,enrollAge:$(`ins-lump-enroll-${p}-${id}`)?.value||'',amt:$(`ins-lump-amt-${p}-${id}`)?.value||'',matAge:$(`ins-lump-matage-${p}-${id}`)?.value||'',rate:$(`ins-lump-rate-${p}-${id}`)?.value||'',matAmt:$(`ins-lump-matamt-${p}-${id}`)?.value||'',pct:$(`ins-lump-pct-${p}-${id}`)?.value||''});
+      d.insLumps.push({person:p,label:$(`ins-lump-label-${p}-${id}`)?.value||'',enrollAge:$(`ins-lump-enroll-${p}-${id}`)?.value||'',amt:$(`ins-lump-amt-${p}-${id}`)?.value||'',matAge:$(`ins-lump-matage-${p}-${id}`)?.value||'',rate:$(`ins-lump-rate-${p}-${id}`)?.value||'',matAmt:$(`ins-lump-matamt-${p}-${id}`)?.value||'',pct:$(`ins-lump-pct-${p}-${id}`)?.value||''});
     });
   });
   // 有価証券
@@ -348,6 +348,7 @@ function _restoreDynamic(d){
   (d.insLumps||[]).forEach(s=>{
     addInsLump(s.person);
     const id=insLumpCnt;const p=s.person;
+    if($(`ins-lump-label-${p}-${id}`))$(`ins-lump-label-${p}-${id}`).value=s.label||'';
     if($(`ins-lump-enroll-${p}-${id}`))$(`ins-lump-enroll-${p}-${id}`).value=s.enrollAge;
     if($(`ins-lump-amt-${p}-${id}`))$(`ins-lump-amt-${p}-${id}`).value=s.amt;
     if($(`ins-lump-matage-${p}-${id}`))$(`ins-lump-matage-${p}-${id}`).value=s.matAge;
@@ -361,6 +362,7 @@ function _restoreDynamic(d){
   (d.insSavings||[]).forEach(s=>{
     addInsSaving(s.person);
     const id=insSavCnt;const p=s.person;
+    if($(`ins-label-${p}-${id}`))$(`ins-label-${p}-${id}`).value=s.label||'';
     if($(`ins-enroll-${p}-${id}`))$(`ins-enroll-${p}-${id}`).value=s.enrollAge||'';
     if($(`ins-m-${p}-${id}`))$(`ins-m-${p}-${id}`).value=s.monthly;
     if($(`ins-age-${p}-${id}`))$(`ins-age-${p}-${id}`).value=s.matAge;

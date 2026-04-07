@@ -8,7 +8,11 @@ function addInsLump(person){
   el.id=`ins-lump-${person}-${id}`;
   el.style.cssText='background:#fff8ee;border:1px solid #f0c060;border-radius:var(--rs);padding:9px 10px;margin-bottom:8px';
   el.innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:start">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <input class="inp" id="ins-lump-label-${person}-${id}" type="text" placeholder="保険名（例：ドル建終身）" oninput="live()" style="font-size:11px;padding:4px 8px;flex:1">
+      <button class="btn-rm" onclick="document.getElementById('ins-lump-${person}-${id}').remove();live()">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:start">
       <div class="fg">
         <label class="lbl" style="font-size:9px">加入年齢</label>
         <div class="suf"><input class="inp age-inp" id="ins-lump-enroll-${person}-${id}" type="number" value="" placeholder="例:40" min="20" max="90" oninput="calcInsLumpPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
@@ -22,7 +26,6 @@ function addInsLump(person){
         <label class="lbl" style="font-size:9px">満期年齢</label>
         <div class="suf"><input class="inp age-inp" id="ins-lump-matage-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsLumpPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
       </div>
-      <button class="btn-rm" onclick="document.getElementById('ins-lump-${person}-${id}').remove();live()" style="margin-top:18px">×</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
       <div class="fg">
@@ -77,6 +80,10 @@ function addInsSaving(person){
   el.id=`ins-${person}-${id}`;
   el.style.cssText='background:#fdf6ff;border:1px solid #d8b8f0;border-radius:var(--rs);padding:9px 10px;margin-bottom:8px';
   el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <input class="inp" id="ins-label-${person}-${id}" type="text" placeholder="保険名（例：学資保険）" oninput="live()" style="font-size:11px;padding:4px 8px;flex:1">
+      <button class="btn-rm" onclick="document.getElementById('ins-${person}-${id}').remove();live()">×</button>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:start;margin-bottom:6px">
       <div class="fg">
         <label class="lbl" style="font-size:9px">加入年齢</label>
@@ -106,7 +113,6 @@ function addInsSaving(person){
         <label class="lbl" style="font-size:9px;color:#c00">解約返戻金</label>
         <div class="suf"><input class="inp amt-inp" id="ins-redeem-amt-${person}-${id}" type="number" value="" placeholder="例:350" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">万円</span></div>
       </div>
-      <button class="btn-rm" onclick="document.getElementById('ins-${person}-${id}').remove();live()" style="margin-top:18px">×</button>
     </div>
     <div id="ins-preview-${person}-${id}" style="margin-top:6px;font-size:10px;color:#6a2a8a;background:#f5e8ff;border-radius:4px;padding:4px 8px;display:none"></div>`;
   document.getElementById(`ins-savings-cont-${person}`).appendChild(el);live();
