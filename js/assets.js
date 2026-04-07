@@ -61,7 +61,7 @@ function calcInsLumpPreview(person,id){
   const yrs=matAge-enrollAge;
   if(yrs<=0){prev.style.display='none';return live();}
   let matVal=0;
-  if(rate>0){matVal=Math.round(amt*Math.pow(1+rate/100/12,yrs*12)*10)/10;}
+  if(rate>0){matVal=Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;}
   else if(matAmtFixed>0){matVal=matAmtFixed;}
   else if(pct>0){matVal=Math.round(amt*pct/100*10)/10;}
   if(matVal<=0){prev.style.display='none';return live();}
