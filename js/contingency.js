@@ -163,6 +163,7 @@ function renderContingency(){
   const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
   const rates=getRates();
   const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
+  const ratesH=pairLoanMode?getPairRates('h'):[], ratesW=pairLoanMode?getPairRates('w'):[];
   const mgLCMode=getMGLCMode();
   const lcRatio=(parseInt($('mg-lc-ratio')?.value)||70)/100;
   const mgLCSteps=mgLCMode==='step'?getMGLCSteps():[];
@@ -205,7 +206,7 @@ function renderContingency(){
   let sav=initSav;
   const MR={yr:[],hA:[],wA:[],
     hInc:[],wInc:[],survPension:[],insPayArr:[],otherInc:[],scholarship:[],lCtrl:[],pS:[],pW:[],incT:[],
-    lc:[],lRep:[],carTotal:[],prk:[],expT:[],bal:[],sav:[],lBal:[],
+    lc:[],lRep:[],lRepH:[],lRepW:[],carTotal:[],prk:[],expT:[],bal:[],sav:[],lBal:[],
     needCoverage:0};
 
   const hSteps=getIncomeSteps('h');
@@ -326,10 +327,10 @@ function renderContingency(){
       // ペアローン：死亡者の団信適用分を除外、残存ローン残高比率で按分
       if((targetIsH&&mgDansinH)||(!targetIsH&&mgDansinW)){
         if(active&&lcYr>=0){
-          const hBal=(isDead&&targetIsH&&mgDansinH)?0:(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,rHBase,lcYr):0);
-          const wBal=(isDead&&!targetIsH&&mgDansinW)?0:(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,rWBase,lcYr):0);
-          const origHBal=lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,rHBase,lcYr):0;
-          const origWBal=lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,rWBase,lcYr):0;
+          const hBal=(isDead&&targetIsH&&mgDansinH)?0:(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0);
+          const wBal=(isDead&&!targetIsH&&mgDansinW)?0:(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0);
+          const origHBal=lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0;
+          const origWBal=lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0;
           const origTotal=origHBal+origWBal;
           lctrlVal=origTotal>0?Math.round(baseCtrl*(hBal+wBal)/origTotal):0;
         }else{
@@ -410,7 +411,7 @@ function renderContingency(){
     MR.lc.push(lcVal);
 
     // ローン返済（団信適用）
-    let lRep=0;
+    let lRep=0,_mlRepH=0,_mlRepW=0;
     if(pairLoanMode){
       if(active){
         // ペアローン：死亡者の分は団信で免除
@@ -419,13 +420,14 @@ function renderContingency(){
         if(isDead&&!targetIsH&&mgDansinW)wLoanActive=false;
         if(hLoanActive&&lcYr<lhYrs){
           const lhType2=document.getElementById('loan-h-type')?.value||'equal_payment';
-          lRep+=ri(lhType2==='equal_payment'?mpay(lhAmt,lhYrs,rHBase)*12:mpay_gankin_year(lhAmt,lhYrs,rHBase,lcYr));
+          _mlRepH=ri(lhType2==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));
         }
         if(wLoanActive&&lcYr<lwYrs){
           const lwType2=document.getElementById('loan-w-type')?.value||'equal_payment';
-          lRep+=ri(lwType2==='equal_payment'?mpay(lwAmt,lwYrs,rWBase)*12:mpay_gankin_year(lwAmt,lwYrs,rWBase,lcYr));
+          _mlRepW=ri(lwType2==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));
         }
       }
+      lRep=_mlRepH+_mlRepW;
     }else{
       // 通常ローン：団信で免除
       if(active&&lcYr<loanYrs){
@@ -437,7 +439,7 @@ function renderContingency(){
         }
       }
     }
-    MR.lRep.push(lRep);
+    MR.lRep.push(lRep);MR.lRepH.push(_mlRepH);MR.lRepW.push(_mlRepW);
 
     // その他支出（通常と同じ分を引用。車両・駐車場は個別制御）
     // 車両費：万が一用の設定で再計算
@@ -663,7 +665,8 @@ function renderContingency(){
   // 支出行：生活費 → 住宅系 → 教育費 → 車 → 駐車場 → 積立投資 → その他
   h+=mgERow('生活費',MR.lc,N.lc);
   h+=mgERow('家賃（引渡前）',N.rent);
-  h+=mgERow('住宅ローン返済',MR.lRep,N.lRep);
+  if(pairLoanMode){h+=mgERow('ローン返済(主)',MR.lRepH,N.lRepH);h+=mgERow('ローン返済(奥様)',MR.lRepW,N.lRepW);}
+  else{h+=mgERow('住宅ローン返済',MR.lRep,N.lRep);}
   if(isM)h+=mgERow('修繕積立金',N.rep);
   h+=mgERow('固定資産税',N.ptx);
   h+=mgERow('家具家電買替',N.furn);

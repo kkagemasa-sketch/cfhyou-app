@@ -125,7 +125,7 @@ function render(){
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
-    lc:[],lRep:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
+    lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
@@ -520,12 +520,13 @@ function render(){
 
     // ─── ローン返済 ───
     const loanType2=document.getElementById('loan-type')?.value||'equal_payment';
-    let lRep=0;
+    let lRep=0,_lRepH=0,_lRepW=0;
     if(pairLoanMode){
       if(active){
-        if(lcYr<lhYrs)lRep+=ri(lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));
-        if(lcYr<lwYrs)lRep+=ri(lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));
+        if(lcYr<lhYrs)_lRepH=ri(lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));
+        if(lcYr<lwYrs)_lRepW=ri(lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));
       }
+      lRep=_lRepH+_lRepW;
     } else if(active&&lcYr<loanYrs){
       if(loanType2==='equal_payment'){
         lRep=ri(mpay(loanAmt,loanYrs,effRate(lcYr,rates))*12);
@@ -533,7 +534,7 @@ function render(){
         lRep=ri(mpay_gankin_year(loanAmt,loanYrs,effRate(lcYr,rates),lcYr));
       }
     }
-    R.lRep.push(lRep);
+    R.lRep.push(lRep);R.lRepH.push(_lRepH);R.lRepW.push(_lRepW);
 
     // ─── 住宅固有 ───
     const el2=Math.max(1,lcYr+1);

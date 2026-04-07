@@ -320,7 +320,8 @@ async function exportExcelMG(){
   };
   addE(_rl('lc','生活費'),MR.lc);
   addESkip(_rl('rent','家賃（引渡前）'),N.rent);
-  addE(_rl('lRep','住宅ローン返済'),MR.lRep);
+  if(pairLoanMode){addE(_rl('lRepH','ローン返済(主)'),MR.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),MR.lRepW);}
+  else{addE(_rl('lRep','住宅ローン返済'),MR.lRep);}
   if(isM)addE(_rl('rep','修繕積立金'),N.rep);
   addE(_rl('ptx','固定資産税'),N.ptx);
   addESkip(_rl('furn','家具家電買替'),N.furn);
@@ -787,7 +788,9 @@ async function exportExcel(){
   addE(_rl('lc','生活費'),R.lc);
   if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
   addE(_rl('secBuy','一括投資額'),R.secBuy);
-  addE(_rl('rent','家賃（引渡前）'),R.rent);addE(_rl('lRep','住宅ローン返済'),R.lRep);
+  addE(_rl('rent','家賃（引渡前）'),R.rent);
+  if(pairLoanMode){addE(_rl('lRepH','ローン返済(主)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
+  else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
   if(isM)addE(_rl('rep','修繕積立金'),R.rep);
   addE(_rl('ptx','固定資産税'),R.ptx);addE(_rl('furn','家具家電買替'),R.furn);
   addE(_rl('senyu',isM?'専有部分修繕費':'修繕費'),R.senyu);
