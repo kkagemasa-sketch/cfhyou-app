@@ -702,6 +702,89 @@ async function _migrateFromLocalStorage(){
   }catch(e){console.warn('localStorage移行エラー:',e);}
 }
 
+// ===== 新規作成（オールリセット） =====
+async function newCFSheet(){
+  // 未保存確認
+  const msg='現在のデータを破棄して新規作成します。\n\n先にファイルに保存しますか？';
+  const save=confirm(msg);
+  if(save){
+    await exportJSON();
+  }
+  if(!confirm('本当に全データをリセットして新規作成しますか？\nこの操作は元に戻せません。'))return;
+
+  // 全SAVE_IDSフィールドをクリア
+  SAVE_IDS.forEach(id=>{const el=$(id);if(el)el.value='';});
+
+  // グローバル状態リセット
+  cfOverrides={};
+  cfCustomRows=[];
+  _cfCustomId=0;
+  _lcBikou={};
+  _cfRowLabels={};
+
+  // 動的要素をすべて削除
+  // 子ども
+  document.querySelectorAll('[id^="child-"]').forEach(el=>el.remove());
+  childCnt=0;
+  // その他家族
+  if($('other-member-cont'))$('other-member-cont').innerHTML='';
+  otherMemberCnt=0;
+  // 収入ステップ
+  ['h','w'].forEach(p=>{if($(`income-steps-${p}`))$(`income-steps-${p}`).innerHTML='';});
+  incStepCnt=0;
+  // 生活費ステップ
+  if($('lc-steps-cont'))$('lc-steps-cont').innerHTML='';
+  lsCnt=0;
+  // 特別支出
+  if($('extra-cont'))$('extra-cont').innerHTML='';
+  extraCnt=0;
+  // 産休育休
+  if($('leave-cont'))$('leave-cont').innerHTML='';
+  leaveCnt=0;
+  // その他収入
+  if($('other-income-cont'))$('other-income-cont').innerHTML='';
+  otherIncomeCnt=0;
+  // 車
+  if($('car-list'))$('car-list').innerHTML='';
+  carCnt=0;
+  // 一時払い保険
+  ['h','w'].forEach(p=>{if($(`ins-lump-cont-${p}`))$(`ins-lump-cont-${p}`).innerHTML='';});
+  insLumpCnt=0;
+  // 積立保険
+  ['h','w'].forEach(p=>{if($(`ins-savings-cont-${p}`))$(`ins-savings-cont-${p}`).innerHTML='';});
+  insSavCnt=0;
+  // 有価証券
+  ['h','w'].forEach(p=>{if($(`securities-cont-${p}`))$(`securities-cont-${p}`).innerHTML='';});
+  secCnt=0;
+  // 修繕周期
+  if($('repair-cont'))$('repair-cont').innerHTML='';
+  repairCnt=0;
+  // 金利ステップ
+  if($('rate-cont'))$('rate-cont').innerHTML='';
+  rateCnt=0;
+
+  // フラグリセット
+  carOwn=true;parkOwn=true;
+  retirePayOn=true;wRetirePayOn=true;
+  pairLoanMode=false;
+
+  // UI状態リセット
+  setType('mansion');
+  if(typeof setCarOwn==='function')setCarOwn(true);
+  if(typeof setParkOwn==='function')setParkOwn(true);
+  if(typeof setRetirePay==='function')setRetirePay(true);
+  if(typeof setWRetirePay==='function')setWRetirePay(true);
+
+  // 自動保存を上書き
+  try{
+    await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:_collectSaveData()});
+  }catch(e){}
+
+  initLCComma();
+  live();
+  alert('新規CF表を作成しました。');
+}
+
 // ===== 自動保存 =====
 function scheduleAutoSave(){
   clearTimeout(_autoSaveTimer);

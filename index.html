@@ -65,6 +65,7 @@ if(authExp&&Date.now()<Number(authExp)){
     <button class="btn-h" onclick="resetOverrides()" title="CF表の手動上書きをすべてリセット">↺ 上書きリセット</button>
     <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="onJSONImport(this)">
     <input type="file" id="json-bulk-import-input" accept=".json" style="display:none" onchange="onBulkJSONImport(this)">
+    <button class="btn-h" onclick="newCFSheet()" title="全項目を白紙にして新しいCF表を作成" style="background:rgba(180,60,0,.3);border-color:rgba(255,120,50,.5)">📄 新規作成</button>
     <button class="btn-h" onclick="openSlotPanel()" title="お客様データの保存・読込・バックアップ" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">💾 保存 / 読込</button>
     <button class="btn-h" onclick="exportJSON()" title="現在のデータをJSONファイルとしてPCに保存（バックアップ）" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">📤 ファイルに保存</button>
     <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">📥 ファイルから復元</button>
@@ -1147,7 +1148,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=16"></script>
+<script src="js/save-load.js?v=17"></script>
 <script src="js/ui.js?v=3"></script>
 <script src="js/app.js?v=23"></script>
 <script>
