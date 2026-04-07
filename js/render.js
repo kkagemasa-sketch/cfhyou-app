@@ -1227,16 +1227,41 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   </div>`;
 
   // 行2：住宅ローン条件
-  h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
-    <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件</div>
-    <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-      ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
-      ${chip('🏦','借入総額',`${loanAmt.toLocaleString()}万円`)}
-      ${chip('📊','金利',rateDisp)}
-      ${chip('📅','借入期間',`${loanYrsV}年`)}
-      ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
-    </div>
-  </div>`;
+  if(pairLoanMode){
+    const lhAmtV=fv('loan-h-amt')||0, lwAmtV=fv('loan-w-amt')||0;
+    const rHBaseV=fv('rate-h-base')||0.5, rWBaseV=fv('rate-w-base')||0.5;
+    const lhYrsV=iv('loan-h-yrs')||35, lwYrsV=iv('loan-w-yrs')||35;
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（ペアローン）</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
+      </div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ${_rl('age-h','ご主人様')}</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chip('🏦','借入額',`${lhAmtV.toLocaleString()}万円`)}
+        ${chip('📊','金利',`${rHBaseV}%`)}
+        ${chip('📅','期間',`${lhYrsV}年`)}
+      </div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">👩 ${_rl('age-w','奥様')}</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chip('🏦','借入額',`${lwAmtV.toLocaleString()}万円`)}
+        ${chip('📊','金利',`${rWBaseV}%`)}
+        ${chip('📅','期間',`${lwYrsV}年`)}
+      </div>
+    </div>`;
+  } else {
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('🏦','借入総額',`${loanAmt.toLocaleString()}万円`)}
+        ${chip('📊','金利',rateDisp)}
+        ${chip('📅','借入期間',`${loanYrsV}年`)}
+        ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
+      </div>
+    </div>`;
+  }
 
   h+=`</div><div class="tbl-wrap"><table class="cf">`;
   // 年ヘッダー
