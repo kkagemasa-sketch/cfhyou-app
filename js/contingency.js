@@ -1059,18 +1059,56 @@ function renderContingency(){
       h+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;
     }h+=`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
   });
+  // 車両費：MG独自計算のため集約行で表示（mgCarKeep等で再計算済み）
   h+=mgERow('車両費（購入・車検）',MR.carTotal,N.carTotal,'carTotal');
   h+=mgERow('駐車場代',MR.prk,N.prk,'prk');
-  h+=mgERow('積立投資額',MR.secInvest,N.secInvest,'secInvest');
+  // 積立投資額：通常CF表と同じく個別行（死亡者除外）
+  const _mgDeadP=targetIsH?'h':'w';
+  if(N.secInvestRows&&N.secInvestRows.length>1){
+    N.secInvestRows.forEach(row=>{
+      const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
+      if(p2===_mgDeadP)return;// 死亡者の投資は除外
+      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
+      h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+    });
+  }else if(N.secInvestRows&&N.secInvestRows.length===1){
+    const row=N.secInvestRows[0];const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
+    if(p2!==_mgDeadP)h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+  }else{h+=mgERow('積立投資額',MR.secInvest,N.secInvest,'secInvest');}
   h+=mgERow('一括投資額',MR.secBuy,N.secBuy,'secBuy');
-  h+=mgERow('保険料（積立）',MR.insMonthly,N.insMonthly,'insMonthly');
-  h+=mgERow('一時払い保険',MR.insLumpExp,N.insLumpExp,'insLumpExp');
+  // 保険料（積立）：個別行（死亡者除外）
+  if(N.insMonthlyRows&&N.insMonthlyRows.length>1){
+    N.insMonthlyRows.forEach(row=>{
+      const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
+      if(p2===_mgDeadP)return;
+      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
+      h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+    });
+  }else if(N.insMonthlyRows&&N.insMonthlyRows.length===1){
+    const row=N.insMonthlyRows[0];const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
+    if(p2!==_mgDeadP)h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+  }else{h+=mgERow('保険料（積立）',MR.insMonthly,N.insMonthly,'insMonthly');}
+  // 一時払い保険：個別行（死亡者除外）
+  if(N.insLumpExpRows&&N.insLumpExpRows.length>1){
+    N.insLumpExpRows.forEach(row=>{
+      const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
+      if(p2===_mgDeadP)return;
+      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
+      h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+    });
+  }else if(N.insLumpExpRows&&N.insLumpExpRows.length===1){
+    const row=N.insLumpExpRows[0];const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
+    if(p2!==_mgDeadP)h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+  }else{h+=mgERow('一時払い保険',MR.insLumpExp,N.insLumpExp,'insLumpExp');}
   h+=mgERow('結婚のお祝い',MR.wedding,null,'wedding');
   h+=mgERow('DC拠出(主)',MR.dcMatchExpH,N.dcMatchExpH,'dcMatchExpH');
   h+=mgERow('DC拠出(奥様)',MR.dcMatchExpW,N.dcMatchExpW,'dcMatchExpW');
   h+=mgERow('iDeCo拠出(主)',MR.idecoExpH,N.idecoExpH,'idecoExpH');
   h+=mgERow('iDeCo拠出(奥様)',MR.idecoExpW,N.idecoExpW,'idecoExpW');
-  h+=mgERow('特別支出',MR.ext,null,'ext');
+  // 特別支出：個別行
+  if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgERow(row.lbl,row.vals,row.vals,row.key);});}
+  else if(N.extRows&&N.extRows.length===1){h+=mgERow(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals,N.extRows[0].key);}
+  else{h+=mgERow('特別支出',MR.ext,null,'ext');}
   // カスタム支出行
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
