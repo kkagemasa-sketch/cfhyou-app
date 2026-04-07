@@ -300,13 +300,28 @@ function renderContingency(){
             survP=ri(kH*0.75)+kiso+chukorei;
           }
         }else{
-          // 奥様死亡→ご主人への遺族年金（55歳以上かつ年収850万未満）
+          // 奥様死亡→ご主人への遺族年金
           let childUnder18=0;
           children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           const kiso=calcKiso(childUnder18);
           const hIncome=getIncomeAtAge(getIncomeSteps('h'),ha);
-          if(childUnder18>0||(ha>=55&&hIncome<850)){survP=ri(kW*0.75)+kiso;}
-          else{survP=kiso;}
+          if(childUnder18>0){
+            // 子がいる場合：年齢制限なく遺族厚生＋遺族基礎を即支給
+            survP=ri(kW*0.75)+kiso;
+          }else if(ha>=60&&hIncome<850){
+            // 60歳以上（子なし）：遺族厚生年金を支給
+            if(ha>=pHReceive){
+              // 老齢年金受給後：差額方式（自分の年金と遺族年金の高い方）
+              survP=kisoH_mg+Math.max(ri(kW*0.75),ri(kH));
+            }else{
+              survP=ri(kW*0.75);
+            }
+          }else if(ha>=55&&ha<60&&hIncome<850){
+            // 55〜59歳（子なし）：受給権はあるが支給停止
+            survP=0;
+          }else{
+            survP=kiso;
+          }
         }
       }
     }
