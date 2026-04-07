@@ -125,7 +125,7 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'lc-travel','lc-social','lc-clothes','lc-ins-y','lc-medical','lc-home','lc-car-tax',
   'lc-other-y','lc-other-y2','lc-other-y3','lc-other-y4',
   'lc-other-y-name','lc-other-y2-name','lc-other-y3-name','lc-other-y4-name',
-  'parking','park-from-yr','park-to-yr','prop-tax','furn-cycle','furn-cost','repair-cycle','repair-cost','repair-cycle2','repair-cost2',
+  'parking','park-from-yr','park-to-yr','mg-park-from-yr','mg-park-to-yr','prop-tax','furn-cycle','furn-cost','repair-cycle','repair-cost','repair-cycle2','repair-cost2',
   'cash-h','cash-w','cash-joint','moving-cost','furniture-init',
   'lctrl-year','lctrl-type','lctrl-household',
   'pi-name','pi-company','pi-address','pi-tel','pi-email','pi-notes'];

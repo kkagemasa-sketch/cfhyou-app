@@ -712,8 +712,8 @@ async function newCFSheet(){
   }
   if(!confirm('本当に全データをリセットして新規作成しますか？\nこの操作は元に戻せません。'))return;
 
-  // 全SAVE_IDSフィールドをクリア
-  SAVE_IDS.forEach(id=>{const el=$(id);if(el)el.value='';});
+  // 全フィールドをクリア
+  _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)el.value='';});
 
   // グローバル状態リセット
   cfOverrides={};

@@ -778,7 +778,9 @@ async function exportExcel(){
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
-  addE('生活費',R.lc);addE('積立投資額',R.secInvest);addE('一括投資額',R.secBuy);
+  addE('生活費',R.lc);
+  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('積立投資額',R.secInvest);}
+  addE('一括投資額',R.secBuy);
   addE('家賃（引渡前）',R.rent);addE('住宅ローン返済',R.lRep);
   if(isM)addE('修繕積立金',R.rep);
   addE('固定資産税',R.ptx);addE('家具家電買替',R.furn);
@@ -793,7 +795,10 @@ async function exportExcel(){
   addE('駐車場代',R.prk);
   if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
   else{addE('車両費（購入・車検）',R.carTotal);}
-  addE('結婚のお祝い',R.wedding);addE('特別支出',R.ext);
+  if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
+  if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('一時払い保険',R.insLumpExp);}
+  addE('結婚のお祝い',R.wedding);
+  if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('特別支出',R.ext);}
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
