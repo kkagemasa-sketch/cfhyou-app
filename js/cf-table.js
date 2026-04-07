@@ -9,9 +9,17 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const loanYrsV=iv('loan-yrs')||35;
   const rateBaseV=fv('rate-base')||0.5;
   const deliveryYrV=iv('delivery-year')||0;
-  // 金利変更ステップ（複数ある場合は「〜」で省略）
+  // 金利変更ステップ
   const rates=getRates();
   const rateDisp=rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`;
+  // 段階金利詳細チップ生成ヘルパー
+  const _rateChips=(rArr)=>{
+    if(rArr.length<=1)return '';
+    return rArr.slice(1).map(s=>{
+      const yr=s.from+1;// 0-based→表示用
+      return chip('📈',`${yr}年目〜`,`${s.rate}%`);
+    }).join('');
+  };
 
   // 逝去・退職列インデックス計算
   const wAge0=iv('wife-age');
@@ -102,13 +110,15 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ${_rl('age-h','ご主人様')}</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
         ${chip('🏦','借入額',`${lhAmtV.toLocaleString()}万円`)}
-        ${chip('📊','金利',`${rHBaseV}%`)}
+        ${chip('📊','当初金利',`${rHBaseV}%`)}
+        ${_rateChips(getPairRates('h'))}
         ${chip('📅','期間',`${lhYrsV}年`)}
       </div>
       <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">👩 ${_rl('age-w','奥様')}</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
         ${chip('🏦','借入額',`${lwAmtV.toLocaleString()}万円`)}
-        ${chip('📊','金利',`${rWBaseV}%`)}
+        ${chip('📊','当初金利',`${rWBaseV}%`)}
+        ${_rateChips(getPairRates('w'))}
         ${chip('📅','期間',`${lwYrsV}年`)}
       </div>
     </div>`;
@@ -118,7 +128,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
         ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
         ${chip('🏦','借入総額',`${loanAmt.toLocaleString()}万円`)}
-        ${chip('📊','金利',rateDisp)}
+        ${chip('📊','当初金利',`${rateBaseV}%`)}
+        ${_rateChips(rates)}
         ${chip('📅','借入期間',`${loanYrsV}年`)}
         ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
       </div>

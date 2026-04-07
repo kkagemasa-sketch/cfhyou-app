@@ -541,11 +541,37 @@ function renderContingency(){
     <div style="display:flex;flex-wrap:wrap;align-items:stretch">
       ${mgChip('🏦','現預金合計',cashTotal2.toLocaleString()+'万円')}${mgArrow}${mgChip('💴','頭金',downPay2.toLocaleString()+'万円','var(--red)')}${mgChip('📋','諸費用',houseCost2.toLocaleString()+'万円','var(--red)')}${mgChip('🚚','引越・家具',movCost2.toLocaleString()+'万円','var(--red)')}
     </div></div>`;
-  h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
-    <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件</div>
-    <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-      ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}${mgChip('🏦','借入総額',loanAmt2.toLocaleString()+'万円')}${mgChip('📊','金利',loanRate2+'%')}${mgChip('📅','借入期間',loanYrs2+'年')}
-    </div></div>`;
+  // 段階金利チップ生成ヘルパー
+  const _mgRateChips=(rArr)=>{
+    if(rArr.length<=1)return '';
+    return rArr.slice(1).map(s=>mgChip('📈',`${s.from+1}年目〜`,`${s.rate}%`)).join('');
+  };
+  if(pairLoanMode){
+    const lhAmtV2=fv('loan-h-amt')||0, lwAmtV2=fv('loan-w-amt')||0;
+    const rHBaseV2=fv('rate-h-base')||0.5, rWBaseV2=fv('rate-w-base')||0.5;
+    const lhYrsV2=iv('loan-h-yrs')||35, lwYrsV2=iv('loan-w-yrs')||35;
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（ペアローン）</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}
+      </div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ご主人様</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${mgChip('🏦','借入額',lhAmtV2.toLocaleString()+'万円')}${mgChip('📊','当初金利',rHBaseV2+'%')}${_mgRateChips(getPairRates('h'))}${mgChip('📅','期間',lhYrsV2+'年')}
+      </div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">👩 奥様</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${mgChip('🏦','借入額',lwAmtV2.toLocaleString()+'万円')}${mgChip('📊','当初金利',rWBaseV2+'%')}${_mgRateChips(getPairRates('w'))}${mgChip('📅','期間',lwYrsV2+'年')}
+      </div>
+    </div>`;
+  } else {
+    const _mgRates=getRates();
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}${mgChip('🏦','借入総額',loanAmt2.toLocaleString()+'万円')}${mgChip('📊','当初金利',loanRate2+'%')}${_mgRateChips(_mgRates)}${mgChip('📅','借入期間',loanYrs2+'年')}
+      </div></div>`;
+  }
 
   // CF表テーブル（通常CF表と同じ構造）
   const cLbls=['第一子','第二子','第三子','第四子'];
