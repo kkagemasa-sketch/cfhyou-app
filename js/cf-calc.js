@@ -28,14 +28,14 @@ function render(){
   // ※ getIncomeSteps / getIncomeAtAge はグローバル版を使用
   const hSteps=getIncomeSteps('h');
   const wSteps=getIncomeSteps('w');
-  const retAge=iv('retire-age')||65, retPay=fv('retire-pay'), pSelf=fv('pension-h')||186;
+  const retAge=iv('retire-age')||65, retPay=fv('retire-pay'), pSelf=$('pension-h')?.value===''?0:(fv('pension-h')||186);
   const retPayAge=iv('retire-pay-age')||retAge;
   const hDeathAge=iv('h-death-age');
   const wDeathAge=iv('w-death-age');
   const wRetAge=iv('w-retire-age')||60;
   const wRetPay=fv('w-retire-pay')||0;
   const wRetPayAge=iv('w-retire-pay-age')||wRetAge;
-  const pWife=fv('pension-w')||66;
+  const pWife=$('pension-w')?.value===''?0:(fv('pension-w')||66);
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=iv('pension-w-receive')||65;
   // 老齢基礎年金概算（2024年度満額81.6万円 × 加入年数/40年）
