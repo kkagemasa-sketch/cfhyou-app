@@ -194,8 +194,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=iRow('ご主人手取年収',R.hInc,'hInc')+iRow('奥様手取年収',R.wInc,'wInc')+iRow('副業・その他収入',R.otherInc,'otherInc');
   h+=iRow('退職金（ご主人）',R.rPay,'rPay')+iRow('退職金（奥様）',R.wRPay,'wRPay');
   h+=iRow('本人年金',R.pS,'pS')+iRow('配偶者年金',R.pW,'pW')+iRow('遺族年金',R.survPension,'survPension');
-  h+=iRow('DC・iDeCo受取(主)',R.dcReceiptH,'dcReceiptH');
-  h+=iRow('DC・iDeCo受取(奥様)',R.dcReceiptW,'dcReceiptW');
+  h+=iRow('DC受取(主)',R.dcReceiptH,'dcReceiptH');
+  h+=iRow('DC受取(奥様)',R.dcReceiptW,'dcReceiptW');
+  h+=iRow('iDeCo受取(主)',R.idecoReceiptH,'idecoReceiptH');
+  h+=iRow('iDeCo受取(奥様)',R.idecoReceiptW,'idecoReceiptW');
   h+=iRow('保険満期金',R.insMat,'insMat');
   // 有価証券解約：銘柄ごとに個別行で表示
   if(R.secRedeemRows){R.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}

@@ -772,7 +772,8 @@ async function exportExcel(){
   addI(_rl('rPay','退職金（ご主人）'),R.rPay);addI(_rl('wRPay','退職金（奥様）'),R.wRPay);
   addI(_rl('pS','本人年金'),R.pS);addI(_rl('pW','配偶者年金'),R.pW);addI(_rl('survPension','遺族年金'),R.survPension);
   addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
-  addI(_rl('dcReceiptH','DC・iDeCo受取(主)'),R.dcReceiptH);addI(_rl('dcReceiptW','DC・iDeCo受取(奥様)'),R.dcReceiptW);
+  addI(_rl('dcReceiptH','DC受取(主)'),R.dcReceiptH);addI(_rl('dcReceiptW','DC受取(奥様)'),R.dcReceiptW);
+  addI(_rl('idecoReceiptH','iDeCo受取(主)'),R.idecoReceiptH);addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW);
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
