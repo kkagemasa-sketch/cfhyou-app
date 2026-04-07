@@ -801,6 +801,7 @@ async function exportExcel(){
   if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
   if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('一時払い保険',R.insLumpExp);}
   addE('結婚のお祝い',R.wedding);
+  addE('iDeCo拠出',R.idecoExp);
   if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('特別支出',R.ext);}
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');

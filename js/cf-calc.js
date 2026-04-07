@@ -91,9 +91,9 @@ function render(){
     dcIdeco[p]={
       employer: fv(`dc-${p}-employer`)||0,
       matching: fv(`dc-${p}-matching`)||0,
-      dcRate: (fv(`dc-${p}-rate`)||3)/100,
+      dcRate: fv(`dc-${p}-rate`)/100,
       idecoMonthly: fv(`ideco-${p}-monthly`)||0,
-      idecoRate: (fv(`ideco-${p}-rate`)||3)/100,
+      idecoRate: fv(`ideco-${p}-rate`)/100,
       receiveAge: iv(`dc-${p}-receive-age`)||60,
       method: document.getElementById(`dc-${p}-method`)?.value||'lump',
       retAge: pRetAge,
@@ -125,7 +125,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceipt:[],incT:[],
     lc:[],lRep:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],idecoExp:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -694,7 +694,15 @@ function render(){
       });
     });
     R.insLumpExp.push(ri(insLumpExpTotal));
-    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i];
+    // iDeCo拠出（支出として計上＝預貯金から差し引く）
+    let idecoExpTotal=0;
+    ['h','w'].forEach(p=>{
+      const d=dcIdeco[p];
+      const pAge=p==='h'?ha:wa;
+      if(d.idecoMonthly>0&&pAge<d.retAge)idecoExpTotal+=d.idecoMonthly*12;
+    });
+    R.idecoExp.push(ri(idecoExpTotal));
+    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.idecoExp[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     const b=R.incT[i]-R.expT[i];R.bal.push(b);sav+=b;
