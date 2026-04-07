@@ -917,19 +917,7 @@ function render(){
       const ze=iv(`zaikei-${p}-end`)||0;
       if(zm>0&&(ze===0||pAge<(ze||pRetAge))){sav+=zm*12;_savExtra+=zm*12;}
     });
-    // 積み立て証券の資産増加（複利・主人・奥様）
-    ['h','w'].forEach(p=>{
-      const pAge=p==='h'?ha:wa;
-      document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
-        const parts=el.id.split('-');const sid=parts[parts.length-1];
-        const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
-        if(!isAccum)return;
-        const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
-        const endAge=iv(`sec-end-${p}-${sid}`)||0;
-        const rateRaw=document.getElementById(`sec-rate-${p}-${sid}`);const rate=(rateRaw&&rateRaw.value!==''?fv(`sec-rate-${p}-${sid}`):5)/100;
-        if(monthly>0&&(endAge===0||pAge<endAge)){sav+=monthly*12*(1+rate*0.5);_savExtra+=monthly*12*(1+rate*0.5);}
-      });
-    });
+    // 積み立て証券の資産増加は預貯金残高に含めない（その他金融資産で別途表示）
     R.savExtra.push(_savExtra);
     R.sav.push(ri(sav));
     // ─── その他金融資産（有価証券＋積立保険 - 個別追跡） ───
