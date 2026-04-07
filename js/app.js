@@ -10,6 +10,7 @@ window.onload=()=>{
   // 初期値を設定
   calcLoanAmt();
   addCar();
+  addRepairCycle(15,100); // デフォルト修繕周期
   calcDelivery();
   setTimeout(()=>{
     if(_autoSaveRestored)return; // 自動保存復元済みならデフォルト値で上書きしない

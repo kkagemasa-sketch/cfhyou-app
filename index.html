@@ -842,19 +842,7 @@ if(authExp&&Date.now()<Number(authExp)){
 
       <!-- 修繕費（マンション：専有部分／戸建て：修繕費） -->
       <div class="sub" id="repair-sub">🔨 <span id="repair-sub-lbl">専有部分の修繕費</span></div>
-      <div id="repair-cont">
-        <div style="background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px" id="rep-1">
-          <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:5px">修繕① （例：15年周期）</div>
-          <div class="g3">
-            <div class="fg"><label class="lbl">修繕周期</label>
-              <div class="suf"><input class="inp age-inp" id="repair-cycle" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="15" min="1" max="50" oninput="live()"><span class="sl">年に1回</span></div></div>
-            <div class="fg"><label class="lbl">1回あたりの費用</label>
-              <div class="suf"><input class="inp amt-inp" id="repair-cost" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="100" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-            <div class="fg"><label class="lbl">&nbsp;</label>
-              <span class="hint ok" id="repair-hint">✓ 15年ごとに100万円</span></div>
-          </div>
-        </div>
-      </div>
+      <div id="repair-cont"></div>
       <button class="btn-add" onclick="addRepairCycle()" id="btn-add-repair" style="font-size:11px;margin-bottom:7px">＋ 修繕周期を追加</button>
 
     </div>
@@ -1129,7 +1117,7 @@ if(authExp&&Date.now()<Number(authExp)){
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=6"></script>
-<script src="js/constants.js?v=5"></script>
+<script src="js/constants.js?v=6"></script>
 <script src="js/utils.js?v=3"></script>
 <script src="js/family.js"></script>
 <script src="js/income.js?v=5"></script>
@@ -1140,7 +1128,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/assets.js?v=6"></script>
 <script src="js/extras.js"></script>
 <script src="js/contingency.js?v=7"></script>
-<script src="js/render.js?v=24"></script>
+<script src="js/render.js?v=25"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js"></script>
 <script src="js/export.js?v=9"></script>
@@ -1150,7 +1138,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/scenario.js?v=2"></script>
 <script src="js/save-load.js?v=18"></script>
 <script src="js/ui.js?v=3"></script>
-<script src="js/app.js?v=23"></script>
+<script src="js/app.js?v=24"></script>
 <script>
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{

@@ -746,17 +746,12 @@ function render(){
     const furnCycle=iv('furn-cycle')||10;
     const furnCost=iv('furn-cost')||80;
     R.furn.push(active&&el2>0&&el2%furnCycle===0?furnCost:0);
-    // 動的修繕周期の集計
+    // 修繕周期の集計（動的要素のみ）
     let repTotal=0;
     if(active&&el2>0){
-      // 修繕①（固定）
-      const rc1=iv('repair-cycle')||15, rco1=iv('repair-cost')||100;
-      if(rc1>0&&rco1>0&&el2%rc1===0)repTotal+=rco1;
-      // 動的に追加された修繕周期
-      document.querySelectorAll('[id^="repair-cycle"]').forEach(el=>{
-        const rid=el.id.replace('repair-cycle','');
-        if(rid===''||rid==='')return; // 修繕①はスキップ（上で処理済み）
-        const cyc=parseInt(el.value)||0;
+      document.querySelectorAll('#repair-cont>[id^="rep-"]').forEach(repEl=>{
+        const rid=repEl.id.replace('rep-','');
+        const cyc=parseInt(document.getElementById('repair-cycle'+rid)?.value)||0;
         const cost=iv('repair-cost'+rid)||0;
         if(cyc>0&&cost>0&&el2%cyc===0)repTotal+=cost;
       });
