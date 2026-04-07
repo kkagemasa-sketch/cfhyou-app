@@ -50,7 +50,7 @@ function cellEdit(td){
   if(isMG)renderContingency();
   else render();
 }
-function resetOverrides(){if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;cfOverrides={};mgOverrides={};render();}
+function resetOverrides(){if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;cfOverrides={};mgOverrides={};if(rTab==='mg-h'||rTab==='mg-w')renderContingency();else render();}
 function rowLabelEdit(td){
   const key=td.dataset.rowlbl;if(!key)return;
   const txt=td.textContent.trim();
@@ -65,7 +65,8 @@ function addCustomRow(type){
   _cfCustomId++;
   const id=type==='inc'?'cinc_'+_cfCustomId:'cexp_'+_cfCustomId;
   cfCustomRows.push({id:id,type:type,label:type==='inc'?'カスタム収入':'カスタム支出'});
-  pushUndoSnap();render();
+  pushUndoSnap();
+  if(rTab==='mg-h'||rTab==='mg-w')renderContingency();else render();
 }
 function customLabelEdit(td){
   const id=td.dataset.customId;
@@ -74,12 +75,15 @@ function customLabelEdit(td){
   const txt=td.textContent.trim();
   row.label=txt||(row.type==='inc'?'カスタム収入':'カスタム支出');
   pushUndoSnap();
+  scheduleAutoSave();
 }
 function deleteCustomRow(id){
   if(!confirm('この行を削除しますか？'))return;
   cfCustomRows=cfCustomRows.filter(r=>r.id!==id);
   delete cfOverrides[id];
-  pushUndoSnap();render();
+  delete mgOverrides[id];
+  pushUndoSnap();
+  if(rTab==='mg-h'||rTab==='mg-w')renderContingency();else render();
 }
 
 function _getInputHash(){
