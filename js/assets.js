@@ -100,7 +100,7 @@ function addInsSaving(person){
         <div class="suf"><input class="inp age-inp" id="ins-age-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:start">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:start">
       <div class="fg">
         <label class="lbl" style="font-size:9px">満期受取金額</label>
         <div class="suf"><input class="inp amt-inp" id="ins-mat-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万円</span></div>

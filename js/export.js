@@ -334,11 +334,11 @@ async function exportExcelMG(){
     }
   });
   addE(_rl('prk','駐車場代'),MR.prk);
-  if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  if(N.carRows&&N.carRows.length>1){N.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
   else{addE(_rl('carTotal','車両費（購入・車検）'),MR.carTotal);}
-  if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}
-  if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}
-  if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  if(N.insMonthlyRows&&N.insMonthlyRows.length>0){N.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  if(N.insLumpExpRows&&N.insLumpExpRows.length>0){N.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  if(N.extRows&&N.extRows.length>0){N.extRows.forEach(row=>{addE(row.lbl,row.vals);});}
   else{addE(_rl('ext','特別支出'),N.ext);}
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
