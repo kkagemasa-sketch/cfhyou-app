@@ -1248,19 +1248,19 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   for(let i=0;i<disp;i++)h+=`<td>${i+1}</td>`;h+=`<td style="background:#0f2744;color:#8aa4bc">-</td></tr>`;
 
   // 年齢
-  h+=`<tr class="rage"><td data-row="hAge">年齢</td><td>ご主人様</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.hA[i]}</td>`;h+=`<td></td></tr>`;
-  h+=`<tr class="rage"><td data-row="wAge"></td><td>奥様</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.wA[i]}</td>`;h+=`<td></td></tr>`;
-  children.forEach((c,ci)=>{h+=`<tr class="rage"><td data-row="cAge${ci}"></td><td>${cLbls[ci]}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.cA[ci][i]}</td>`;h+=`<td></td></tr>`});
+  h+=`<tr class="rage"><td data-row="hAge">年齢</td><td contenteditable="true" data-rowlbl="age-h" data-default="ご主人様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('age-h','ご主人様')}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.hA[i]}</td>`;h+=`<td></td></tr>`;
+  h+=`<tr class="rage"><td data-row="wAge"></td><td contenteditable="true" data-rowlbl="age-w" data-default="奥様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('age-w','奥様')}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.wA[i]}</td>`;h+=`<td></td></tr>`;
+  children.forEach((c,ci)=>{h+=`<tr class="rage"><td data-row="cAge${ci}"></td><td contenteditable="true" data-rowlbl="age-c${ci}" data-default="${cLbls[ci]}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('age-c'+ci,cLbls[ci])}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.cA[ci][i]}</td>`;h+=`<td></td></tr>`});
 
   // イベント：ご主人様
-  h+=`<tr class="rev-h"><td>イベント</td><td>ご主人様</td>`;
+  h+=`<tr class="rev-h"><td>イベント</td><td contenteditable="true" data-rowlbl="ev-h" data-default="ご主人様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('ev-h','ご主人様')}</td>`;
   for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.evH[i]}</td>`;h+=`<td></td></tr>`;
   // イベント：奥様
-  h+=`<tr class="rev-w"><td></td><td>奥様</td>`;
+  h+=`<tr class="rev-w"><td></td><td contenteditable="true" data-rowlbl="ev-w" data-default="奥様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('ev-w','奥様')}</td>`;
   for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.evW[i]}</td>`;h+=`<td></td></tr>`;
   // イベント：子ども（フェーズ別色クラス付与）
   children.forEach((c,ci)=>{
-    h+=`<tr class="rev-c"><td></td><td>${cLbls[ci]}</td>`;
+    h+=`<tr class="rev-c"><td></td><td contenteditable="true" data-rowlbl="ev-c${ci}" data-default="${cLbls[ci]}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('ev-c'+ci,cLbls[ci])}</td>`;
     for(let i=0;i<disp;i++){
       const ca=R.cA[ci][i];
       let cls='',label='';
