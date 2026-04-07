@@ -205,9 +205,102 @@ function renderContingency(){
 
   let sav=initSav;
   const MR={yr:[],hA:[],wA:[],
-    hInc:[],wInc:[],survPension:[],insPayArr:[],otherInc:[],scholarship:[],lCtrl:[],pS:[],pW:[],incT:[],
+    hInc:[],wInc:[],survPension:[],insPayArr:[],finLiquid:[],otherInc:[],scholarship:[],lCtrl:[],pS:[],pW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],carTotal:[],prk:[],expT:[],bal:[],sav:[],lBal:[],
+    finAsset:[],totalAsset:[],finAssetRows:null,
     needCoverage:0};
+
+  // ── 死亡者の金融資産を死亡時に現金化するための事前計算 ──
+  // 死亡者(p)の有価証券・DC・iDeCoの死亡時点FVを算出
+  const _deadP=targetIsH?'h':'w';
+  const _aliveP=targetIsH?'w':'h';
+  const _deadBaseAge=targetIsH?hAge:wAge;
+  const _deadDeathAge=targetIsH?hAge+deathYearOffset-1:wAge+deathYearOffset-1;
+  const _yrsAtDeath=deathYearOffset; // i+1 at death year (i=deathYearOffset-1)
+  let _deadFinTotal=0;
+  // 積立型有価証券
+  document.querySelectorAll(`[id^="sec-bal-${_deadP}-"]`).forEach(el=>{
+    const parts=el.id.split('-');const sid=parts[parts.length-1];
+    const isAccum=document.getElementById(`sec-acc-${_deadP}-${sid}`)?.classList.contains('on');
+    if(!isAccum)return;
+    const redeemAge=iv(`sec-redeem-${_deadP}-${sid}`)||0;
+    if(redeemAge>0&&_deadDeathAge>=redeemAge)return; // 既に解約済み
+    const bal=fv(`sec-bal-${_deadP}-${sid}`)||0;
+    const monthly=fv(`sec-monthly-${_deadP}-${sid}`)||0;
+    if(bal<=0&&monthly<=0)return;
+    const endAge=iv(`sec-end-${_deadP}-${sid}`)||0;
+    const rate=fvd(`sec-rate-${_deadP}-${sid}`,5)/100;
+    const yrs=_yrsAtDeath;
+    let fv2=0;
+    if(endAge===0||_deadDeathAge<=endAge){
+      const cpd=Math.pow(1+rate,yrs);const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
+      fv2=bal*cpd+(mr>0?monthly*(cpd-1)/mr:monthly*12*yrs);
+    }else{
+      const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
+      const yrsAccum=endAge-_deadBaseAge;const yrsAfter=yrs-yrsAccum;
+      const cpdA=Math.pow(1+rate,yrsAccum);
+      const balAtEnd=bal*cpdA+(mr>0?monthly*(cpdA-1)/mr:monthly*12*yrsAccum);
+      fv2=balAtEnd*Math.pow(1+rate,Math.max(0,yrsAfter));
+    }
+    // 課税口座なら譲渡益課税を控除
+    const isNisa=document.getElementById(`sec-nisa-${_deadP}-${sid}`)?.classList.contains('on');
+    if(!isNisa){
+      const costAccum=bal+monthly*12*(endAge>0&&_deadDeathAge>endAge?(endAge-_deadBaseAge):yrs);
+      const gain=Math.max(0,fv2-costAccum);
+      fv2=fv2-gain*0.20315;
+    }
+    _deadFinTotal+=Math.round(fv2);
+  });
+  // 一括投資
+  document.querySelectorAll(`[id^="sec-stk-bal-${_deadP}-"]`).forEach(el=>{
+    const parts=el.id.split('-');const sid=parts[parts.length-1];
+    const isStock=document.getElementById(`sec-stock-${_deadP}-${sid}`)?.classList.contains('on');
+    if(!isStock)return;
+    const redeemAge=iv(`sec-stk-redeem-${_deadP}-${sid}`)||0;
+    if(redeemAge>0&&_deadDeathAge>=redeemAge)return;
+    const bal=fv(`sec-stk-bal-${_deadP}-${sid}`)||0;if(bal<=0)return;
+    const investAge=iv(`sec-stk-age-${_deadP}-${sid}`)||0;
+    if(investAge>0&&_deadDeathAge<investAge)return;
+    const rate=(fv(`sec-div-${_deadP}-${sid}`)||0)/100;
+    const yrsHeld=investAge>0?(_deadDeathAge-investAge):_yrsAtDeath;
+    let val=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+    const isNisa=document.getElementById(`sec-nisa-${_deadP}-${sid}`)?.classList.contains('on');
+    if(!isNisa){const gain=Math.max(0,val-bal);val=Math.round(val-gain*0.20315);}
+    _deadFinTotal+=val;
+  });
+  // DC・iDeCo（死亡者分 — 受取前なら残高を現金化）
+  const _deadDC={
+    employer:fv(`dc-${_deadP}-employer`)||0,matching:fv(`dc-${_deadP}-matching`)||0,
+    dcRate:fv(`dc-${_deadP}-rate`)/100, dcInitBal:fv(`dc-${_deadP}-bal`)||0,
+    idecoMonthly:fv(`ideco-${_deadP}-monthly`)||0, idecoRate:fv(`ideco-${_deadP}-rate`)/100,
+    idecoInitBal:fv(`ideco-${_deadP}-bal`)||0,
+    receiveAge:iv(`dc-${_deadP}-receive-age`)||60,
+    retAge:_deadP==='h'?retAge_mg:wRetAge_mg
+  };
+  {
+    const _deadPBaseAge=_deadBaseAge;
+    const dcTotal=_deadDC.employer+_deadDC.matching;
+    const hasDC2=dcTotal>0||_deadDC.dcInitBal>0;
+    const hasIdeco2=_deadDC.idecoMonthly>0||_deadDC.idecoInitBal>0;
+    const _fvWI2=(initBal,monthly,rate,yrs)=>{
+      const cpd=rate>0?Math.pow(1+rate,yrs):1;
+      const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
+      return initBal*cpd+(monthly>0?(mr>0?monthly*(cpd-1)/mr:monthly*12*yrs):0);
+    };
+    if(hasDC2&&_deadDeathAge<_deadDC.receiveAge){
+      const yrsContrib=Math.min(_deadDC.retAge-_deadPBaseAge,_yrsAtDeath);
+      const balAtEnd=_fvWI2(_deadDC.dcInitBal,dcTotal,_deadDC.dcRate,yrsContrib);
+      const yrsAfter=Math.max(0,_yrsAtDeath-yrsContrib);
+      _deadFinTotal+=Math.round(balAtEnd*(_deadDC.dcRate>0?Math.pow(1+_deadDC.dcRate,yrsAfter):1));
+    }
+    if(hasIdeco2&&_deadDeathAge<_deadDC.receiveAge){
+      const yrsContrib=Math.min(_deadDC.retAge-_deadPBaseAge,_yrsAtDeath);
+      const balAtEnd=_fvWI2(_deadDC.idecoInitBal,_deadDC.idecoMonthly,_deadDC.idecoRate,yrsContrib);
+      const yrsAfter=Math.max(0,_yrsAtDeath-yrsContrib);
+      _deadFinTotal+=Math.round(balAtEnd*(_deadDC.idecoRate>0?Math.pow(1+_deadDC.idecoRate,yrsAfter):1));
+    }
+  }
+  _deadFinTotal=ri(_deadFinTotal);
 
   const hSteps=getIncomeSteps('h');
   const wSteps=getIncomeSteps('w');
@@ -382,7 +475,10 @@ function renderContingency(){
     MR.scholarship.push(scholarVal);
     MR.pS.push(pSelfVal);
     MR.pW.push(pWifeVal);
-    const incTotal=ri(hInc)+ri(wInc)+rPayVal+insPayVal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal;
+    // 金融資産現金化（死亡年に死亡者の金融資産を一括収入計上）
+    const finLiquidVal=isDeathYear?_deadFinTotal:0;
+    MR.finLiquid.push(finLiquidVal);
+    const incTotal=ri(hInc)+ri(wInc)+rPayVal+insPayVal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal;
     MR.incT.push(incTotal);
 
     // ── 支出 ──
@@ -512,6 +608,23 @@ function renderContingency(){
     MR.bal.push(bal);
     sav+=bal;
     MR.sav.push(ri(sav));
+
+    // その他金融資産（生存者分のみ。死亡者分は死亡年に現金化済み）
+    let mgFinAsset=i<normalR.finAsset.length?(normalR.finAsset[i]||0):0;
+    if(isDead&&normalR.finAssetRows){
+      // 死亡後：生存者分のみ残す（person属性で判定）
+      mgFinAsset=0;
+      const deadP=targetIsH?'h':'w';
+      normalR.finAssetRows.forEach(row=>{
+        const v=row.vals[i]||0;if(v<=0)return;
+        // person='h','w','both' — 死亡者単独の行は除外、'both'は半額で近似
+        if(row.person===deadP)return;
+        if(row.person==='both')mgFinAsset+=Math.round(v/2);
+        else mgFinAsset+=v;
+      });
+    }
+    MR.finAsset.push(ri(mgFinAsset));
+    MR.totalAsset.push(ri(sav)+ri(mgFinAsset));
   }
 
   // 必要保障額計算
@@ -677,6 +790,7 @@ function renderContingency(){
   h+=mgRow('配偶者年金',MR.pW,N.pW);
   h+=mgRow('遺族年金',MR.survPension,N.survPension);
   h+=mgRow('死亡保険金',MR.insPayArr);
+  h+=mgRow('金融資産現金化',MR.finLiquid);
   h+=mgRow('保険満期金',N.insMat);
   if(N.secRedeemRows)N.secRedeemRows.forEach(row=>{h+=mgRow(row.lbl,row.vals);});
   h+=mgRow('奨学金',MR.scholarship,N.scholarship);
@@ -745,6 +859,18 @@ function renderContingency(){
   h+=`<tr class="rsav"><td>預貯金残高</td><td></td>`;
   for(let i=0;i<mgDisp;i++){const v=ri(MR.sav[i]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;}
   h+=`<td>${ri(MR.sav[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-weight:400">預貯金残高</span></td></tr>`;
+
+  // その他金融資産（生存者分のみ）
+  const _hasFinAsset=MR.finAsset.some(v=>v>0);
+  if(_hasFinAsset){
+    h+=`<tr class="rfin"><td>その他金融資産</td><td></td>`;
+    for(let i=0;i<mgDisp;i++){const v=ri(MR.finAsset[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
+    h+=`<td>${ri(MR.finAsset[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:var(--navy);font-weight:400">その他金融資産</span></td></tr>`;
+  }
+  // 総資産残高
+  h+=`<tr class="rtotal"><td>総資産残高</td><td></td>`;
+  for(let i=0;i<mgDisp;i++){const v=ri(MR.totalAsset[i]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;}
+  h+=`<td>${ri(MR.totalAsset[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-weight:400">総資産残高</span></td></tr>`;
 
   h+=`</table></div>`;
   h+=`</div>`;

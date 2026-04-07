@@ -730,6 +730,7 @@ function render(){
     // ─── その他金融資産（有価証券＋積立保険 - 個別追跡） ───
     if(!R.finAssetRows)R.finAssetRows=[];
     const finRowMap={};
+    const finRowPerson={}; // finRowMap のキーごとの所有者 ('h' or 'w' or 'both')
     // 【積立型有価証券】（主人・奥様両方）正確な複利計算
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
@@ -766,6 +767,7 @@ function render(){
           fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+rate,Math.max(0,yrsAfter)));
         }
         finRowMap[lbl]=(finRowMap[lbl]||0)+fv2;
+        finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;
       });
     });
     // 【一括投資】（主人・奥様両方）
@@ -787,6 +789,7 @@ function render(){
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
         finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;
       });
     });
     // 【DC・iDeCo運用残高】
@@ -843,7 +846,7 @@ function render(){
           else if(d.method==='annuity') dcBal=Math.round(_dcBalAtReceive)*Math.max(0,20-elapsed)/20;
           else dcBal=Math.round(_dcBalAtReceive/2)*Math.max(0,20-elapsed)/20;
         }
-        if(dcBal>0)finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(dcBal);
+        if(dcBal>0){finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(dcBal);finRowPerson[lbl]=p;}
       }
       // iDeCo残高（finRowMap表示用）
       if(hasIdeco){
@@ -865,7 +868,7 @@ function render(){
           else if(d.method==='annuity') idecoBal=Math.round(_idecoBalAtReceive)*Math.max(0,20-elapsed)/20;
           else idecoBal=Math.round(_idecoBalAtReceive/2)*Math.max(0,20-elapsed)/20;
         }
-        if(idecoBal>0)finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(idecoBal);
+        if(idecoBal>0){finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(idecoBal);finRowPerson[lbl]=p;}
       }
       // DC受取計算
       if(pAge>=d.receiveAge&&Math.round(_dcBalAtReceive)>0){
@@ -908,7 +911,7 @@ function render(){
     Object.keys(finRowMap).forEach(k=>{
       if(!R.finAssetRows.find(r=>r.lbl===k)){
         // 新しいキーが出てきたら過去分を0で埋めて追加
-        R.finAssetRows.push({lbl:k,vals:new Array(i).fill(0)});
+        R.finAssetRows.push({lbl:k,vals:new Array(i).fill(0),person:finRowPerson[k]||'both'});
       }
     });
     R.finAssetRows.forEach(row=>{row.vals.push(ri(finRowMap[row.lbl]||0));});
