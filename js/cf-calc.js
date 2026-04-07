@@ -93,8 +93,10 @@ function render(){
       employer: fv(`dc-${p}-employer`)||0,
       matching: fv(`dc-${p}-matching`)||0,
       dcRate: fv(`dc-${p}-rate`)/100,
+      dcInitBal: fv(`dc-${p}-bal`)||0,
       idecoMonthly: fv(`ideco-${p}-monthly`)||0,
       idecoRate: fv(`ideco-${p}-rate`)/100,
+      idecoInitBal: fv(`ideco-${p}-bal`)||0,
       receiveAge: iv(`dc-${p}-receive-age`)||60,
       method: document.getElementById(`dc-${p}-method`)?.value||'lump',
       retAge: pRetAge,
@@ -785,64 +787,66 @@ function render(){
       const pAge=p==='h'?ha:wa;
       const pBaseAge=p==='h'?hAge:wAge;
       const totalMonthly=d.employer+d.matching; // DC合計月額
-      if(totalMonthly<=0&&d.idecoMonthly<=0)return;
+      const hasDC=totalMonthly>0||d.dcInitBal>0;
+      const hasIdeco=d.idecoMonthly>0||d.idecoInitBal>0;
+      if(!hasDC&&!hasIdeco)return;
+      // 初期残高付き将来価値ヘルパー: initBal*(1+r)^yrs + monthly*12*((1+r)^yrs-1)/r
+      const _fvWithInit=(initBal,monthly,rate,yrs)=>{
+        const grow=initBal*(rate>0?Math.pow(1+rate,yrs):1);
+        const contrib=monthly>0?(rate>0?monthly*12*(Math.pow(1+rate,yrs)-1)/rate:monthly*12*yrs):0;
+        return grow+contrib;
+      };
       // 受取開始時点の総残高を計算（DC+iDeCo共通で使う）
       const yrsToReceive=d.receiveAge-pBaseAge;
       let _dcBalAtReceive=0, _idecoBalAtReceive=0;
-      if(totalMonthly>0){
+      if(hasDC){
         const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
         const rate=d.dcRate;
-        const balAtEnd=rate>0?totalMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:totalMonthly*12*yrsContrib;
-        _dcBalAtReceive=balAtEnd*Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib));
+        const balAtEnd=_fvWithInit(d.dcInitBal,totalMonthly,rate,yrsContrib);
+        _dcBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib)):1);
       }
-      if(d.idecoMonthly>0){
+      if(hasIdeco){
         const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
         const rate=d.idecoRate;
-        const balAtEnd=rate>0?d.idecoMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:d.idecoMonthly*12*yrsContrib;
-        _idecoBalAtReceive=balAtEnd*Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib));
+        const balAtEnd=_fvWithInit(d.idecoInitBal,d.idecoMonthly,rate,yrsContrib);
+        _idecoBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib)):1);
       }
       const _totalBalAtReceive=Math.round(_dcBalAtReceive+_idecoBalAtReceive);
       // DC残高（finRowMap表示用）
-      if(totalMonthly>0){
+      if(hasDC){
         const lbl=`DC(${p==='h'?'ご主人様':'奥様'})`;
         const yrs=i+1;
         let dcBal=0;
         if(pAge<d.receiveAge){
           if(pAge<d.retAge){
-            const rate=d.dcRate;
-            dcBal=rate>0?totalMonthly*12*(Math.pow(1+rate,yrs)-1)/rate:totalMonthly*12*yrs;
+            dcBal=_fvWithInit(d.dcInitBal,totalMonthly,d.dcRate,yrs);
           }else{
             const yrsContrib=d.retAge-pBaseAge;
-            const rate=d.dcRate;
-            const balAtRetire=rate>0?totalMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:totalMonthly*12*yrsContrib;
+            const balAtRetire=_fvWithInit(d.dcInitBal,totalMonthly,d.dcRate,yrsContrib);
             const yrsAfter=yrs-yrsContrib;
-            dcBal=balAtRetire*Math.pow(1+rate,Math.max(0,yrsAfter));
+            dcBal=balAtRetire*(d.dcRate>0?Math.pow(1+d.dcRate,Math.max(0,yrsAfter)):1);
           }
         }else if(_totalBalAtReceive>0){
-          // 受取開始後：受取方法に応じて残高を減少表示
-          const dcShare=_dcBalAtReceive/_totalBalAtReceive;
           const elapsed=pAge-d.receiveAge;
-          if(d.method==='lump') dcBal=0; // 一時金は即ゼロ
+          if(d.method==='lump') dcBal=0;
           else if(d.method==='annuity') dcBal=Math.round(_dcBalAtReceive)*Math.max(0,20-elapsed)/20;
-          else dcBal=Math.round(_dcBalAtReceive/2)*Math.max(0,20-elapsed)/20; // 併用：年金分のみ残る
+          else dcBal=Math.round(_dcBalAtReceive/2)*Math.max(0,20-elapsed)/20;
         }
         if(dcBal>0)finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(dcBal);
       }
       // iDeCo残高（finRowMap表示用）
-      if(d.idecoMonthly>0){
+      if(hasIdeco){
         const lbl=`iDeCo(${p==='h'?'ご主人様':'奥様'})`;
         const yrs=i+1;
         let idecoBal=0;
         if(pAge<d.receiveAge){
           if(pAge<d.retAge){
-            const rate=d.idecoRate;
-            idecoBal=rate>0?d.idecoMonthly*12*(Math.pow(1+rate,yrs)-1)/rate:d.idecoMonthly*12*yrs;
+            idecoBal=_fvWithInit(d.idecoInitBal,d.idecoMonthly,d.idecoRate,yrs);
           }else{
             const yrsContrib=d.retAge-pBaseAge;
-            const rate=d.idecoRate;
-            const balAtRetire=rate>0?d.idecoMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:d.idecoMonthly*12*yrsContrib;
+            const balAtRetire=_fvWithInit(d.idecoInitBal,d.idecoMonthly,d.idecoRate,yrsContrib);
             const yrsAfter=yrs-yrsContrib;
-            idecoBal=balAtRetire*Math.pow(1+rate,Math.max(0,yrsAfter));
+            idecoBal=balAtRetire*(d.idecoRate>0?Math.pow(1+d.idecoRate,Math.max(0,yrsAfter)):1);
           }
         }else if(_totalBalAtReceive>0){
           const elapsed=pAge-d.receiveAge;
