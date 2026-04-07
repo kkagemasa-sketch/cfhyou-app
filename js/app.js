@@ -194,14 +194,16 @@ document.addEventListener('keydown',function(e){
     _dragging=false;
     // プレビューセルに値を適用
     var rowKey=_srcTd.dataset.row;
+    var isMG=_srcTd.dataset.mg==='1';
+    var ovr=isMG?mgOverrides:cfOverrides;
     _preview.forEach(function(td){
       td.classList.remove('fill-preview');
       var col=parseInt(td.dataset.col);
-      if(!cfOverrides[rowKey])cfOverrides[rowKey]={};
-      cfOverrides[rowKey][col]=_srcVal;
+      if(!ovr[rowKey])ovr[rowKey]={};
+      ovr[rowKey][col]=_srcVal;
     });
     _preview=[];
-    if(_srcTd){pushUndoSnap();render();}
+    if(_srcTd){pushUndoSnap();if(isMG)renderContingency();else render();}
     _srcTd=null;
   }
 })();
@@ -346,21 +348,25 @@ document.addEventListener('keydown',function(e){
     }
   },true); // ← captureフェーズ
 
-  // Delete/Backspace で選択範囲を0にする（cfOverridesに0をセット）
+  // Delete/Backspace で選択範囲を0にする（cfOverrides/mgOverridesに0をセット）
   document.addEventListener('keydown',function(e){
     if(_selected.length<=1)return;
     if(e.key!=='Delete'&&e.key!=='Backspace')return;
     e.preventDefault();
+    var hasMG=false;
     _selected.forEach(function(td){
       var rowKey=td.dataset.row;
       var col=parseInt(td.dataset.col);
-      if(!cfOverrides[rowKey])cfOverrides[rowKey]={};
-      cfOverrides[rowKey][col]=0;
+      var isMG=td.dataset.mg==='1';
+      if(isMG)hasMG=true;
+      var ovr=isMG?mgOverrides:cfOverrides;
+      if(!ovr[rowKey])ovr[rowKey]={};
+      ovr[rowKey][col]=0;
     });
     _clearSel();
     _anchorTd=null;
     pushUndoSnap();
-    render();
+    if(hasMG)renderContingency();else render();
   });
 
   // Escで選択解除

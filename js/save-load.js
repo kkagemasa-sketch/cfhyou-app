@@ -37,6 +37,7 @@ function onJSONImport(input){
       setType(d.type || 'mansion');
       Object.entries(d.fields || {}).forEach(([id, val]) => { const el=$(id); if(el) el.value=val; });
       cfOverrides=d.cfOverrides||{};
+      mgOverrides=d.mgOverrides||{};
       cfCustomRows=d.cfCustomRows||[];
       _cfCustomId=d._cfCustomId||0;
       _lcBikou=d.lcBikou||{};
@@ -757,10 +758,15 @@ async function newCFSheet(){
 
   // グローバル状態リセット
   cfOverrides={};
+  mgOverrides={};
   cfCustomRows=[];
   _cfCustomId=0;
   _lcBikou={};
   _cfRowLabels={};
+  // 万が一タブのキャッシュもクリア
+  window._mgStore=null;
+  window._mgMRStore=null;
+  window.lastMR=null;
 
   // 動的要素をすべて削除
   // 子ども
