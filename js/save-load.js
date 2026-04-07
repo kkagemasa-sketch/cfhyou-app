@@ -190,7 +190,8 @@ function _collectDynamic(){
     scholarshipOn:$('mg-scholarship-yes')?.classList.contains('act')||false,
     scholarshipAmt:$('mg-scholarship-amt')?.value||'',scholarshipAge:$('mg-scholarship-age')?.value||'',
     carOn:$('mg-car-keep')?.classList.contains('act')!==false,
-    carPrice:$('mg-car-price')?.value||'',carCycle:$('mg-car-cycle')?.value||'',carInsp:$('mg-car-insp')?.value||'',carEndAge:$('mg-car-end-age')?.value||'',
+    carHPrice:$('mg-car-h-price')?.value||'',carHCycle:$('mg-car-h-cycle')?.value||'',carHInsp:$('mg-car-h-insp')?.value||'',carHEndAge:$('mg-car-h-end-age')?.value||'',
+    carWPrice:$('mg-car-w-price')?.value||'',carWCycle:$('mg-car-w-cycle')?.value||'',carWInsp:$('mg-car-w-insp')?.value||'',carWEndAge:$('mg-car-w-end-age')?.value||'',
     parkOn:$('mg-park-keep')?.classList.contains('act')!==false,parking:$('mg-parking')?.value||'',
     parkFromAge:$('mg-park-from-age')?.value||'',parkToAge:$('mg-park-to-age')?.value||'',
     insurances:[],lcSteps:[]};
@@ -494,15 +495,32 @@ function _restoreDynamic(d){
     // 車
     if(mg.carOn!==false){
       $('mg-car-keep')?.classList.add('act');$('mg-car-stop')?.classList.remove('act');
-      if($('mg-car-fields'))$('mg-car-fields').style.display='';
+      if($('mg-car-fields-h'))$('mg-car-fields-h').style.display='';
+      if($('mg-car-fields-w'))$('mg-car-fields-w').style.display='';
     } else {
       $('mg-car-stop')?.classList.add('act');$('mg-car-keep')?.classList.remove('act');
-      if($('mg-car-fields'))$('mg-car-fields').style.display='none';
+      if($('mg-car-fields-h'))$('mg-car-fields-h').style.display='none';
+      if($('mg-car-fields-w'))$('mg-car-fields-w').style.display='none';
     }
-    if($('mg-car-price'))$('mg-car-price').value=mg.carPrice||'300';
-    if($('mg-car-cycle'))$('mg-car-cycle').value=mg.carCycle||'7';
-    if($('mg-car-insp'))$('mg-car-insp').value=mg.carInsp||'10';
-    if($('mg-car-end-age'))$('mg-car-end-age').value=mg.carEndAge||'';
+    // 旧データ互換: 旧carPrice等があれば両方に適用
+    const _cp=mg.carHPrice?'new':'old';
+    if(_cp==='new'){
+      if($('mg-car-h-price'))$('mg-car-h-price').value=mg.carHPrice||'300';
+      if($('mg-car-h-cycle'))$('mg-car-h-cycle').value=mg.carHCycle||'7';
+      if($('mg-car-h-insp'))$('mg-car-h-insp').value=mg.carHInsp||'10';
+      if($('mg-car-h-end-age'))$('mg-car-h-end-age').value=mg.carHEndAge||'';
+      if($('mg-car-w-price'))$('mg-car-w-price').value=mg.carWPrice||'300';
+      if($('mg-car-w-cycle'))$('mg-car-w-cycle').value=mg.carWCycle||'7';
+      if($('mg-car-w-insp'))$('mg-car-w-insp').value=mg.carWInsp||'10';
+      if($('mg-car-w-end-age'))$('mg-car-w-end-age').value=mg.carWEndAge||'';
+    }else{
+      ['h','w'].forEach(p=>{
+        if($(`mg-car-${p}-price`))$(`mg-car-${p}-price`).value=mg.carPrice||'300';
+        if($(`mg-car-${p}-cycle`))$(`mg-car-${p}-cycle`).value=mg.carCycle||'7';
+        if($(`mg-car-${p}-insp`))$(`mg-car-${p}-insp`).value=mg.carInsp||'10';
+        if($(`mg-car-${p}-end-age`))$(`mg-car-${p}-end-age`).value=mg.carEndAge||'';
+      });
+    }
     // 駐車場
     if(mg.parkOn!==false){
       $('mg-park-keep')?.classList.add('act');$('mg-park-stop')?.classList.remove('act');

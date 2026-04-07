@@ -442,16 +442,17 @@ function renderContingency(){
     MR.lRep.push(lRep);MR.lRepH.push(_mlRepH);MR.lRepW.push(_mlRepW);
 
     // その他支出（通常と同じ分を引用。車両・駐車場は個別制御）
-    // 車両費：万が一用の設定で再計算
+    // 車両費：万が一用の設定で再計算（ご主人様/奥様別）
     let nCar=0;
     if(!mgCarKeep&&isDead){
       nCar=0;
     }else if(mgCarKeep&&isDead){
-      // 万が一専用の車設定で計算
-      const mgCarPrice=fv('mg-car-price')||300;
-      const mgCarCycle=iv('mg-car-cycle')||7;
-      const mgCarInsp=fv('mg-car-insp')||10;
-      const mgCarEndAge=iv('mg-car-end-age')||0;
+      // targetIsH=ご主人様死亡→遺族は奥様(h入力)、奥様死亡→遺族はご主人様(w入力)
+      const cp=targetIsH?'h':'w';
+      const mgCarPrice=fv(`mg-car-${cp}-price`)||300;
+      const mgCarCycle=iv(`mg-car-${cp}-cycle`)||7;
+      const mgCarInsp=fv(`mg-car-${cp}-insp`)||10;
+      const mgCarEndAge=iv(`mg-car-${cp}-end-age`)||0;
       const survivorAge=targetIsH?wa:ha;
       if(mgCarEndAge>0&&survivorAge>mgCarEndAge){
         nCar=0;

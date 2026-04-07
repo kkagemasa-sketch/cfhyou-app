@@ -1154,8 +1154,8 @@ if(authExp&&Date.now()<Number(authExp)){
       <div class="g2" style="margin-bottom:8px">
         <div class="fg"><label class="lbl">車両</label>
           <div style="display:flex;gap:4px">
-            <button type="button" class="btn-tog act" onclick="this.classList.add('act');this.nextElementSibling.classList.remove('act');document.getElementById('mg-car-fields').style.display='';live()" id="mg-car-keep">継続</button>
-            <button type="button" class="btn-tog" onclick="this.classList.add('act');this.previousElementSibling.classList.remove('act');document.getElementById('mg-car-fields').style.display='none';live()" id="mg-car-stop">なし</button>
+            <button type="button" class="btn-tog act" onclick="this.classList.add('act');this.nextElementSibling.classList.remove('act');document.getElementById('mg-car-fields-h').style.display='';document.getElementById('mg-car-fields-w').style.display='';live()" id="mg-car-keep">継続</button>
+            <button type="button" class="btn-tog" onclick="this.classList.add('act');this.previousElementSibling.classList.remove('act');document.getElementById('mg-car-fields-h').style.display='none';document.getElementById('mg-car-fields-w').style.display='none';live()" id="mg-car-stop">なし</button>
           </div></div>
         <div class="fg"><label class="lbl">駐車場</label>
           <div style="display:flex;gap:4px">
@@ -1163,18 +1163,37 @@ if(authExp&&Date.now()<Number(authExp)){
             <button type="button" class="btn-tog" onclick="this.classList.add('act');this.previousElementSibling.classList.remove('act');document.getElementById('mg-park-fields').style.display='none';live()" id="mg-park-stop">なし</button>
           </div></div>
       </div>
-      <div id="mg-car-fields">
+      <!-- ご主人様の万が一（遺族＝奥様） -->
+      <div id="mg-car-fields-h">
+        <div style="font-size:10px;font-weight:700;color:#1a5fa0;margin-bottom:4px">🚗 ご主人様の万が一（遺族：奥様基準）</div>
         <div class="g3" style="margin-bottom:6px">
           <div class="fg"><label class="lbl">車両価格</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-car-price" type="number" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="mg-car-h-price" type="number" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
           <div class="fg"><label class="lbl">乗り換え周期</label>
-            <div class="suf"><input class="inp age-inp" id="mg-car-cycle" type="number" value="7" min="1" max="20" oninput="live()"><span class="sl">年ごと</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="mg-car-h-cycle" type="number" value="7" min="1" max="20" oninput="live()"><span class="sl">年ごと</span></div></div>
           <div class="fg"><label class="lbl">車検費用</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-car-insp" type="number" value="10" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="mg-car-h-insp" type="number" value="10" min="0" oninput="live()"><span class="sl">万円</span></div></div>
         </div>
-        <div class="g2" style="margin-bottom:6px">
-          <div class="fg"><label class="lbl">手放す年齢（遺族）</label>
-            <div class="suf"><input class="inp age-inp" id="mg-car-end-age" type="number" value="" placeholder="空欄=ずっと" min="30" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+        <div class="g2" style="margin-bottom:8px">
+          <div class="fg"><label class="lbl">手放す年齢（奥様）</label>
+            <div class="suf"><input class="inp age-inp" id="mg-car-h-end-age" type="number" value="" placeholder="空欄=ずっと" min="30" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+          <div></div>
+        </div>
+      </div>
+      <!-- 奥様の万が一（遺族＝ご主人様） -->
+      <div id="mg-car-fields-w">
+        <div style="font-size:10px;font-weight:700;color:#a01a5f;margin-bottom:4px">🚗 奥様の万が一（遺族：ご主人様基準）</div>
+        <div class="g3" style="margin-bottom:6px">
+          <div class="fg"><label class="lbl">車両価格</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-car-w-price" type="number" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+          <div class="fg"><label class="lbl">乗り換え周期</label>
+            <div class="suf"><input class="inp age-inp" id="mg-car-w-cycle" type="number" value="7" min="1" max="20" oninput="live()"><span class="sl">年ごと</span></div></div>
+          <div class="fg"><label class="lbl">車検費用</label>
+            <div class="suf"><input class="inp amt-inp" id="mg-car-w-insp" type="number" value="10" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+        </div>
+        <div class="g2" style="margin-bottom:8px">
+          <div class="fg"><label class="lbl">手放す年齢（ご主人様）</label>
+            <div class="suf"><input class="inp age-inp" id="mg-car-w-end-age" type="number" value="" placeholder="空欄=ずっと" min="30" max="100" oninput="live()"><span class="sl">歳</span></div></div>
           <div></div>
         </div>
       </div>
@@ -1277,7 +1296,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=8"></script>
 <script src="js/extras.js"></script>
-<script src="js/contingency.js?v=10"></script>
+<script src="js/contingency.js?v=11"></script>
 <script src="js/cf-ui.js"></script>
 <script src="js/cf-calc.js?v=9"></script>
 <script src="js/cf-table.js?v=7"></script>
@@ -1288,7 +1307,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=21"></script>
+<script src="js/save-load.js?v=22"></script>
 <script src="js/ui.js?v=3"></script>
 <script src="js/app.js?v=26"></script>
 <script>
