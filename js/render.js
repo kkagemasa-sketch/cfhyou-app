@@ -819,12 +819,16 @@ function render(){
     R.carBuy.push(ri(carBuyAmt));
     R.carInsp.push(ri(carInspAmt));
     R.carTotal.push(ri(carBuyAmt)+ri(carInspAmt));
-    // 特別支出（複数対応・期間対応）
+    // 特別支出（複数対応・期間対応・個別行）
     const curYr=cYear+i;
-    const extSum=extraItems.reduce((s,it)=>{
-      if(it.yr>0&&curYr>=it.yr&&curYr<=it.yr2)return s+ri(it.amt);
-      return s;
-    },0);
+    if(!R.extRows)R.extRows=[];
+    let extSum=0;
+    extraItems.forEach((it,ei)=>{
+      if(!R.extRows[ei])R.extRows[ei]={lbl:it.lbl||'特別支出',vals:[],key:'ext'+ei};
+      const v=(it.yr>0&&curYr>=it.yr&&curYr<=it.yr2)?ri(it.amt):0;
+      R.extRows[ei].vals.push(v);
+      extSum+=v;
+    });
     R.ext.push(extSum);
     // 諸費用は前提条件で初期残高から差引済み → CF表には計上しない
     R.houseCostArr.push(0);
@@ -1320,7 +1324,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=eRow('駐車場代',R.prk,'prk');
   h+=eRow('積立投資額',R.secInvest,'secInvest')+eRow('一括投資額',R.secBuy,'secBuy');
   h+=eRow('保険料（積立）',R.insMonthly,'insMonthly')+eRow('一時払い保険',R.insLumpExp,'insLumpExp');
-  h+=eRow('結婚のお祝い',R.wedding,'wedding')+eRow('特別支出',R.ext,'ext');
+  h+=eRow('結婚のお祝い',R.wedding,'wedding');
+  if(R.extRows&&R.extRows.length>1){R.extRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.extRows&&R.extRows.length===1){h+=eRow(R.extRows[0].lbl,R.extRows[0].vals,R.extRows[0].key);}else{h+=eRow('特別支出',R.ext,'ext');}
   // カスタム支出行
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{h+=_customRow(r,disp,'rexp');});
   h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('exp')" class="btn-add-row">＋ 支出行を追加</button></td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
