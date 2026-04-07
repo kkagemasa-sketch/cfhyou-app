@@ -570,7 +570,7 @@ function render(){
         const bal=fv(`sec-bal-${p}-${sid}`)||0;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
-        const rate=(fv(`sec-rate-${p}-${sid}`)||5)/100;
+        const rateRaw=document.getElementById(`sec-rate-${p}-${sid}`);const rate=(rateRaw&&rateRaw.value!==''?fv(`sec-rate-${p}-${sid}`):5)/100;
         const yrs=i+1;
         let fv2=0;
         if(endAge===0||pAge<=endAge){
@@ -898,7 +898,7 @@ function render(){
         if(!isAccum)return;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
-        const rate=(fv(`sec-rate-${p}-${sid}`)||5)/100;
+        const rateRaw=document.getElementById(`sec-rate-${p}-${sid}`);const rate=(rateRaw&&rateRaw.value!==''?fv(`sec-rate-${p}-${sid}`):5)/100;
         if(monthly>0&&(endAge===0||pAge<endAge)){sav+=monthly*12*(1+rate*0.5);_savExtra+=monthly*12*(1+rate*0.5);}
       });
     });
@@ -924,7 +924,7 @@ function render(){
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         if(bal<=0&&monthly<=0)return; // 残高も積立額もなければスキップ
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
-        const rate=(fv(`sec-rate-${p}-${sid}`)||5)/100;
+        const rateRaw=document.getElementById(`sec-rate-${p}-${sid}`);const rate=(rateRaw&&rateRaw.value!==''?fv(`sec-rate-${p}-${sid}`):5)/100;
         const yrs=i+1;
         let fv2=0;
         if(endAge===0||pAge<endAge){
