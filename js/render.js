@@ -1072,6 +1072,7 @@ function render(){
       R.bal[i]=R.incT[i]-R.expT[i];
       newSav+=R.bal[i]+(R.savExtra[i]||0);
       R.sav[i]=ri(newSav);
+      R.totalAsset[i]=R.sav[i]+ri(R.finAsset[i]||0);
     }
   }
 
