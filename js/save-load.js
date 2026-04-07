@@ -767,13 +767,17 @@ async function newCFSheet(){
   carOwn=true;parkOwn=true;
   retirePayOn=true;wRetirePayOn=true;
   pairLoanMode=false;
+  if(typeof setRepMode==='function')setRepMode('auto');
 
-  // UI状態リセット
+  // UI状態リセット（live()呼び出しを一時抑制して最後に1回だけ実行）
+  const _origLive=window.live;
+  window.live=()=>{};
   setType('mansion');
   if(typeof setCarOwn==='function')setCarOwn(true);
   if(typeof setParkOwn==='function')setParkOwn(true);
   if(typeof setRetirePay==='function')setRetirePay(true);
   if(typeof setWRetirePay==='function')setWRetirePay(true);
+  window.live=_origLive;
 
   // デフォルト要素は追加しない（完全白紙状態）
   // 子ども・収入ステップ・特別支出・車・修繕周期は
@@ -794,6 +798,7 @@ async function newCFSheet(){
   }catch(e){}
 
   initLCComma();
+  _lastInputHash='';  // ハッシュキャッシュをリセットして強制再描画
   live();
   alert('新規CF表を作成しました。');
 }

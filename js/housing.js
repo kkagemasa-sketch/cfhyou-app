@@ -290,6 +290,7 @@ function addRepAutoStep(){
 }
 // 修繕積立金を返す（万円/年）
 function getRepFund(sqm,yr){
+  if(sqm<=0&&repMode!=='manual')return 0;
   if(repMode==='manual'){
     // 手動モード：ステップ値を探す
     let base=fvd('rep-manual-base',12000);
