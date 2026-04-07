@@ -318,24 +318,28 @@ async function exportExcelMG(){
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
-  addE('生活費',MR.lc);
-  addESkip('家賃（引渡前）',N.rent);
-  addE('住宅ローン返済',MR.lRep);
-  if(isM)addE('修繕積立金',N.rep);
-  addE('固定資産税',N.ptx);
-  addESkip('家具家電買替',N.furn);
-  addESkip(isM?'専有部分修繕費':'修繕費',N.senyu);
+  addE(_rl('lc','生活費'),MR.lc);
+  addESkip(_rl('rent','家賃（引渡前）'),N.rent);
+  addE(_rl('lRep','住宅ローン返済'),MR.lRep);
+  if(isM)addE(_rl('rep','修繕積立金'),N.rep);
+  addE(_rl('ptx','固定資産税'),N.ptx);
+  addESkip(_rl('furn','家具家電買替'),N.furn);
+  addESkip(_rl('senyu',isM?'専有部分修繕費':'修繕費'),N.senyu);
   children.forEach((c,ci)=>{
     if(N.edu&&N.edu[ci]){
       const arr=N.edu[ci];
       const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;
       const ages=arr.map((_,i)=>c.age+i);
-      push(['',`${cLbls[ci]}教育費`,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
+      push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
     }
   });
-  addE('駐車場代',MR.prk);
-  addE('車両費（購入・車検）',MR.carTotal);
-  addE('特別支出',N.ext);
+  addE(_rl('prk','駐車場代'),MR.prk);
+  if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  else{addE(_rl('carTotal','車両費（購入・車検）'),MR.carTotal);}
+  if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}
+  else{addE(_rl('ext','特別支出'),N.ext);}
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
@@ -762,12 +766,12 @@ async function exportExcel(){
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
-  addI('ご主人手取年収',R.hInc);addI('奥様手取年収',R.wInc);
-  addI('副業・その他収入',R.otherInc);addI('保険満期金',R.insMat);
+  addI(_rl('hInc','ご主人手取年収'),R.hInc);addI(_rl('wInc','奥様手取年収'),R.wInc);
+  addI(_rl('otherInc','副業・その他収入'),R.otherInc);addI(_rl('insMat','保険満期金'),R.insMat);
   if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(row.lbl,row.vals);});
-  addI('退職金（ご主人）',R.rPay);addI('退職金（奥様）',R.wRPay);
-  addI('本人年金',R.pS);addI('配偶者年金',R.pW);addI('遺族年金',R.survPension);
-  addI('奨学金',R.scholarship);addI('児童手当',R.teate);addI('住宅ローン控除',R.lCtrl);
+  addI(_rl('rPay','退職金（ご主人）'),R.rPay);addI(_rl('wRPay','退職金（奥様）'),R.wRPay);
+  addI(_rl('pS','本人年金'),R.pS);addI(_rl('pW','配偶者年金'),R.pW);addI(_rl('survPension','遺族年金'),R.survPension);
+  addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -778,21 +782,20 @@ async function exportExcel(){
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
-  addE('生活費',R.lc);
-  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('積立投資額',R.secInvest);}
-  addE('一括投資額',R.secBuy);
-  addE('家賃（引渡前）',R.rent);addE('住宅ローン返済',R.lRep);
-  if(isM)addE('修繕積立金',R.rep);
-  addE('固定資産税',R.ptx);addE('家具家電買替',R.furn);
-  addE(isM?'専有部分修繕費':'修繕費',R.senyu);
+  addE(_rl('lc','生活費'),R.lc);
+  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
+  addE(_rl('secBuy','一括投資額'),R.secBuy);
+  addE(_rl('rent','家賃（引渡前）'),R.rent);addE(_rl('lRep','住宅ローン返済'),R.lRep);
+  if(isM)addE(_rl('rep','修繕積立金'),R.rep);
+  addE(_rl('ptx','固定資産税'),R.ptx);addE(_rl('furn','家具家電買替'),R.furn);
+  addE(_rl('senyu',isM?'専有部分修繕費':'修繕費'),R.senyu);
   children.forEach((c,ci)=>{
     const arr=R.edu[ci];if(!arr)return;
     const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;
-    // 子どもの年齢配列を作成（色分け用）
     const ages=arr.slice(0,disp).map((_,i)=>c.age+i);
-    push(['',`${cLbls[ci]}教育費`,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
+    push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
   });
-  addE('駐車場代',R.prk);
+  addE(_rl('prk','駐車場代'),R.prk);
   if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
   else{addE('車両費（購入・車検）',R.carTotal);}
   if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
