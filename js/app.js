@@ -37,12 +37,7 @@ window.onload=()=>{
     const w2t=document.getElementById('w-is-2-to');if(w2t)w2t.value=65;
     const w2gf=document.getElementById('w-is-2-net-from');if(w2gf)w2gf.value=471;
     const w2gt=document.getElementById('w-is-2-net-to');if(w2gt)w2gt.value=471;
-    // 駐車場開始年デフォルト（通常・万が一）
-    const thisYr=new Date().getFullYear();
-    const parkFromEl=document.getElementById('park-from-yr');
-    if(parkFromEl&&!parkFromEl.value)parkFromEl.value=thisYr;
-    const mgParkFromEl=document.getElementById('mg-park-from-yr');
-    if(mgParkFromEl&&!mgParkFromEl.value)mgParkFromEl.value=thisYr;
+    // 駐車場開始年齢デフォルトは空欄（=現在年齢から）
     // ヒント更新
     ['h-is-1','h-is-2','w-is-1','w-is-2'].forEach(id=>calcStepHint(id));
     live();

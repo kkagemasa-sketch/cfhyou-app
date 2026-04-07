@@ -471,9 +471,9 @@ function renderContingency(){
       nPrk=0;
     }else if(mgParkKeep&&isDead){
       const mgParkAmt=fv('mg-parking')||15000;
-      const mgParkFrom=iv('mg-park-from-yr')||0;
-      const mgParkTo=iv('mg-park-to-yr')||0;
-      const mgParkActive=yr>=mgParkFrom&&(mgParkTo<=0||yr<=mgParkTo);
+      const mgParkFromAge=iv('mg-park-from-age')||0;
+      const mgParkToAge=iv('mg-park-to-age')||0;
+      const mgParkActive=(mgParkFromAge<=0||ha>=mgParkFromAge)&&(mgParkToAge<=0||ha<=mgParkToAge);
       nPrk=mgParkActive?ri(mgParkAmt*12/10000):0;
     }else{
       nPrk=i<normalR.prk.length?(normalR.prk[i]||0):0;

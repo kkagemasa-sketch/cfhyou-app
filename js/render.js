@@ -786,9 +786,9 @@ function render(){
     }
     R.senyu.push(repTotal);
     children.forEach((c,ci)=>{const ca=c.age+i;R.edu[ci].push(ca>=0&&ca<c.costs.length?c.costs[ca]:0)});
-    const parkFromYr=iv('park-from-yr')||0;
-    const parkToYr=iv('park-to-yr')||0;
-    const parkActive=yr>=parkFromYr&&(parkToYr<=0||yr<=parkToYr);
+    const parkFromAge=iv('park-from-age')||0;
+    const parkToAge=iv('park-to-age')||0;
+    const parkActive=(parkFromAge<=0||ha>=parkFromAge)&&(parkToAge<=0||ha<=parkToAge);
     R.prk.push(parkOwn&&parkActive?ri(parking*12):0);
     // 車両購入・車検（複数台対応）
     if(!R.carRows)R.carRows=[];

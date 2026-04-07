@@ -183,7 +183,7 @@ function _collectDynamic(){
     carOn:$('mg-car-keep')?.classList.contains('act')!==false,
     carPrice:$('mg-car-price')?.value||'',carCycle:$('mg-car-cycle')?.value||'',carInsp:$('mg-car-insp')?.value||'',carEndAge:$('mg-car-end-age')?.value||'',
     parkOn:$('mg-park-keep')?.classList.contains('act')!==false,parking:$('mg-parking')?.value||'',
-    parkFromYr:$('mg-park-from-yr')?.value||'',parkToYr:$('mg-park-to-yr')?.value||'',
+    parkFromAge:$('mg-park-from-age')?.value||'',parkToAge:$('mg-park-to-age')?.value||'',
     insurances:[],lcSteps:[]};
   document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
     const id=el.id.split('-').pop();
@@ -212,8 +212,8 @@ function _collectDynamic(){
   // フラグ系
   d.repMode=repMode; d.retirePayOn=retirePayOn; d.wRetirePayOn=wRetirePayOn;
   d.downType=downType; d.carOwn=carOwn; d.parkOwn=parkOwn;
-  d.parkFromYr=document.getElementById('park-from-yr')?.value||'';
-  d.parkToYr=document.getElementById('park-to-yr')?.value||'';
+  d.parkFromAge=document.getElementById('park-from-age')?.value||'';
+  d.parkToAge=document.getElementById('park-to-age')?.value||'';
   // 動的修繕周期
   d.repairCycles=[];
   document.querySelectorAll('#repair-cont>[id^="rep-"]').forEach(el=>{
@@ -491,8 +491,8 @@ function _restoreDynamic(d){
       if($('mg-park-fields'))$('mg-park-fields').style.display='none';
     }
     if($('mg-parking'))$('mg-parking').value=mg.parking||'15000';
-    if($('mg-park-from-yr')&&mg.parkFromYr)$('mg-park-from-yr').value=mg.parkFromYr;
-    if($('mg-park-to-yr')&&mg.parkToYr)$('mg-park-to-yr').value=mg.parkToYr;
+    if($('mg-park-from-age')&&mg.parkFromAge)$('mg-park-from-age').value=mg.parkFromAge;
+    if($('mg-park-to-age')&&mg.parkToAge)$('mg-park-to-age').value=mg.parkToAge;
     // 保険金
     if($('mg-insurance-cont'))$('mg-insurance-cont').innerHTML='';
     mgInsCnt=0;
@@ -515,10 +515,10 @@ function _restoreDynamic(d){
   if(typeof d.pairLoanMode!=='undefined')setLoanMode(d.pairLoanMode?'pair':'single');
   if(typeof d.carOwn!=='undefined')setCarOwn(d.carOwn);
   if(typeof d.parkOwn!=='undefined')setParkOwn(d.parkOwn);
-  const parkFromEl=document.getElementById('park-from-yr');
-  if(parkFromEl&&d.parkFromYr)parkFromEl.value=d.parkFromYr;
-  const parkToEl=document.getElementById('park-to-yr');
-  if(parkToEl&&d.parkToYr)parkToEl.value=d.parkToYr;
+  const parkFromEl=document.getElementById('park-from-age');
+  if(parkFromEl&&d.parkFromAge)parkFromEl.value=d.parkFromAge;
+  const parkToEl=document.getElementById('park-to-age');
+  if(parkToEl&&d.parkToAge)parkToEl.value=d.parkToAge;
   // 動的修繕周期の復元
   if(d.repairCycles&&d.repairCycles.length>0){
     document.getElementById('repair-cont').innerHTML='';
