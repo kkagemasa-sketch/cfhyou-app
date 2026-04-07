@@ -123,9 +123,9 @@ function render(){
 
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
-    hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceipt:[],incT:[],
+    hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceiptH:[],dcReceiptW:[],incT:[],
     lc:[],lRep:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],idecoExp:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -144,7 +144,7 @@ function render(){
   for(let i=0;i<totalYrs;i++){
     const yr=cYear+i, ha=hAge+i, wa=wAge+i;
     const active=i>=delivery, lcYr=i-delivery;
-    let dcReceiptVal=0; // DC・iDeCo受取額（後方のfinRowMap計算後に確定）
+    let dcReceiptH=0,dcReceiptW=0; // DC・iDeCo受取額（ご主人/奥様別）
     R.yr.push(yr);R.hA.push(ha);R.wA.push(wa);
     children.forEach((c,ci)=>R.cA[ci].push(c.age+i));
 
@@ -694,15 +694,15 @@ function render(){
       });
     });
     R.insLumpExp.push(ri(insLumpExpTotal));
-    // iDeCo拠出（支出として計上＝預貯金から差し引く）
-    let idecoExpTotal=0;
-    ['h','w'].forEach(p=>{
-      const d=dcIdeco[p];
-      const pAge=p==='h'?ha:wa;
-      if(d.idecoMonthly>0&&pAge<d.retAge)idecoExpTotal+=d.idecoMonthly*12;
-    });
-    R.idecoExp.push(ri(idecoExpTotal));
-    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.idecoExp[i];
+    // DC マッチング拠出（支出として計上）ご主人/奥様別
+    const _dcMatchH=(dcIdeco.h.matching>0&&ha<dcIdeco.h.retAge)?ri(dcIdeco.h.matching*12):0;
+    const _dcMatchW=(dcIdeco.w.matching>0&&wa<dcIdeco.w.retAge)?ri(dcIdeco.w.matching*12):0;
+    R.dcMatchExpH.push(_dcMatchH);R.dcMatchExpW.push(_dcMatchW);
+    // iDeCo拠出（支出として計上＝預貯金から差し引く）ご主人/奥様別
+    const _idecoH=(dcIdeco.h.idecoMonthly>0&&ha<dcIdeco.h.retAge)?ri(dcIdeco.h.idecoMonthly*12):0;
+    const _idecoW=(dcIdeco.w.idecoMonthly>0&&wa<dcIdeco.w.retAge)?ri(dcIdeco.w.idecoMonthly*12):0;
+    R.idecoExpH.push(_idecoH);R.idecoExpW.push(_idecoW);
+    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     const b=R.incT[i]-R.expT[i];R.bal.push(b);sav+=b;
@@ -853,20 +853,21 @@ function render(){
       // DC+iDeCo受取計算
       if(pAge>=d.receiveAge&&_totalBalAtReceive>0){
         if(d.method==='lump'){
-          if(pAge===d.receiveAge)dcReceiptVal+=_totalBalAtReceive;
+          if(pAge===d.receiveAge){if(p==='h')dcReceiptH+=_totalBalAtReceive;else dcReceiptW+=_totalBalAtReceive;}
         }else if(d.method==='annuity'){
           const annualAmt=Math.round(_totalBalAtReceive/20);
-          if(pAge<d.receiveAge+20)dcReceiptVal+=annualAmt;
+          if(pAge<d.receiveAge+20){if(p==='h')dcReceiptH+=annualAmt;else dcReceiptW+=annualAmt;}
         }else{
           const half=Math.round(_totalBalAtReceive/2);
-          if(pAge===d.receiveAge)dcReceiptVal+=half;
+          if(pAge===d.receiveAge){if(p==='h')dcReceiptH+=half;else dcReceiptW+=half;}
           const annualHalf=Math.round(half/20);
-          if(pAge<d.receiveAge+20)dcReceiptVal+=annualHalf;
+          if(pAge<d.receiveAge+20){if(p==='h')dcReceiptH+=annualHalf;else dcReceiptW+=annualHalf;}
         }
       }
     });
-    R.dcReceipt.push(ri(dcReceiptVal));
+    R.dcReceiptH.push(ri(dcReceiptH));R.dcReceiptW.push(ri(dcReceiptW));
     // DC受取をincTに加算（dcReceiptValはfinRowMap計算後に確定するため遅延加算）
+    const dcReceiptVal=dcReceiptH+dcReceiptW;
     if(dcReceiptVal>0){R.incT[i]+=ri(dcReceiptVal);R.bal[i]+=ri(dcReceiptVal);sav+=ri(dcReceiptVal);R.sav[i]=ri(sav);}
     // 【積立保険】はその他金融資産行から除外（推計精度が低いため）
     // finAssetRowsに追記（毎年動的にキーを管理）
@@ -935,8 +936,8 @@ function render(){
 
   // ─── cfOverrides後処理: サブ行上書きを合計・収支・残高に反映 ───
   if(Object.keys(cfOverrides).length>0||cfCustomRows.length>0){
-    const incKeys=['hInc','wInc','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl','dcReceipt'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext'];
+    const incKeys=['hInc','wInc','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{

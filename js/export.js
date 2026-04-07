@@ -772,6 +772,7 @@ async function exportExcel(){
   addI(_rl('rPay','退職金（ご主人）'),R.rPay);addI(_rl('wRPay','退職金（奥様）'),R.wRPay);
   addI(_rl('pS','本人年金'),R.pS);addI(_rl('pW','配偶者年金'),R.pW);addI(_rl('survPension','遺族年金'),R.survPension);
   addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
+  addI(_rl('dcReceiptH','DC・iDeCo受取(主)'),R.dcReceiptH);addI(_rl('dcReceiptW','DC・iDeCo受取(奥様)'),R.dcReceiptW);
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -801,7 +802,8 @@ async function exportExcel(){
   if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
   if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('一時払い保険',R.insLumpExp);}
   addE('結婚のお祝い',R.wedding);
-  addE('iDeCo拠出',R.idecoExp);
+  addE('DC拠出(主)',R.dcMatchExpH);addE('DC拠出(奥様)',R.dcMatchExpW);
+  addE('iDeCo拠出(主)',R.idecoExpH);addE('iDeCo拠出(奥様)',R.idecoExpW);
   if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('特別支出',R.ext);}
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
