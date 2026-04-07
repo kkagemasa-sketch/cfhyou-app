@@ -1008,28 +1008,49 @@ function render(){
       const pBaseAge=p==='h'?hAge:wAge;
       const totalMonthly=d.employer+d.matching; // DC合計月額
       if(totalMonthly<=0&&d.idecoMonthly<=0)return;
-      // DC残高
+      // 受取開始時点の総残高を計算（DC+iDeCo共通で使う）
+      const yrsToReceive=d.receiveAge-pBaseAge;
+      let _dcBalAtReceive=0, _idecoBalAtReceive=0;
+      if(totalMonthly>0){
+        const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
+        const rate=d.dcRate;
+        const balAtEnd=rate>0?totalMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:totalMonthly*12*yrsContrib;
+        _dcBalAtReceive=balAtEnd*Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib));
+      }
+      if(d.idecoMonthly>0){
+        const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
+        const rate=d.idecoRate;
+        const balAtEnd=rate>0?d.idecoMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:d.idecoMonthly*12*yrsContrib;
+        _idecoBalAtReceive=balAtEnd*Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib));
+      }
+      const _totalBalAtReceive=Math.round(_dcBalAtReceive+_idecoBalAtReceive);
+      // DC残高（finRowMap表示用）
       if(totalMonthly>0){
         const lbl=`DC(${p==='h'?'ご主人様':'奥様'})`;
         const yrs=i+1;
         let dcBal=0;
         if(pAge<d.receiveAge){
-          // 拠出期間中（退職前）は全額拠出+運用、退職後は運用のみ
           if(pAge<d.retAge){
             const rate=d.dcRate;
             dcBal=rate>0?totalMonthly*12*(Math.pow(1+rate,yrs)-1)/rate:totalMonthly*12*yrs;
           }else{
-            // 退職後：拠出停止、受取開始前は運用のみ
             const yrsContrib=d.retAge-pBaseAge;
             const rate=d.dcRate;
             const balAtRetire=rate>0?totalMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:totalMonthly*12*yrsContrib;
             const yrsAfter=yrs-yrsContrib;
             dcBal=balAtRetire*Math.pow(1+rate,Math.max(0,yrsAfter));
           }
+        }else if(_totalBalAtReceive>0){
+          // 受取開始後：受取方法に応じて残高を減少表示
+          const dcShare=_dcBalAtReceive/_totalBalAtReceive;
+          const elapsed=pAge-d.receiveAge;
+          if(d.method==='lump') dcBal=0; // 一時金は即ゼロ
+          else if(d.method==='annuity') dcBal=Math.round(_dcBalAtReceive)*Math.max(0,20-elapsed)/20;
+          else dcBal=Math.round(_dcBalAtReceive/2)*Math.max(0,20-elapsed)/20; // 併用：年金分のみ残る
         }
         if(dcBal>0)finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(dcBal);
       }
-      // iDeCo残高
+      // iDeCo残高（finRowMap表示用）
       if(d.idecoMonthly>0){
         const lbl=`iDeCo(${p==='h'?'ご主人様':'奥様'})`;
         const yrs=i+1;
@@ -1045,42 +1066,26 @@ function render(){
             const yrsAfter=yrs-yrsContrib;
             idecoBal=balAtRetire*Math.pow(1+rate,Math.max(0,yrsAfter));
           }
+        }else if(_totalBalAtReceive>0){
+          const elapsed=pAge-d.receiveAge;
+          if(d.method==='lump') idecoBal=0;
+          else if(d.method==='annuity') idecoBal=Math.round(_idecoBalAtReceive)*Math.max(0,20-elapsed)/20;
+          else idecoBal=Math.round(_idecoBalAtReceive/2)*Math.max(0,20-elapsed)/20;
         }
         if(idecoBal>0)finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(idecoBal);
       }
       // DC+iDeCo受取計算
-      if(pAge>=d.receiveAge){
-        // 受取開始年の総額を計算（受取開始年齢時点の残高）
-        const yrsToReceive=d.receiveAge-pBaseAge;
-        let totalBal=0;
-        if(totalMonthly>0){
-          const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
-          const rate=d.dcRate;
-          const balAtContribEnd=rate>0?totalMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:totalMonthly*12*yrsContrib;
-          totalBal+=balAtContribEnd*Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib));
-        }
-        if(d.idecoMonthly>0){
-          const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
-          const rate=d.idecoRate;
-          const balAtContribEnd=rate>0?d.idecoMonthly*12*(Math.pow(1+rate,yrsContrib)-1)/rate:d.idecoMonthly*12*yrsContrib;
-          totalBal+=balAtContribEnd*Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib));
-        }
-        totalBal=Math.round(totalBal);
-        if(totalBal>0){
-          if(d.method==='lump'){
-            // 一時金：受取年齢に全額
-            if(pAge===d.receiveAge)dcReceiptVal+=totalBal;
-          }else if(d.method==='annuity'){
-            // 年金：20年間に分割
-            const annualAmt=Math.round(totalBal/20);
-            if(pAge>=d.receiveAge&&pAge<d.receiveAge+20)dcReceiptVal+=annualAmt;
-          }else{
-            // 併用：半額一時金＋半額20年年金
-            const half=Math.round(totalBal/2);
-            if(pAge===d.receiveAge)dcReceiptVal+=half;
-            const annualHalf=Math.round(half/20);
-            if(pAge>=d.receiveAge&&pAge<d.receiveAge+20)dcReceiptVal+=annualHalf;
-          }
+      if(pAge>=d.receiveAge&&_totalBalAtReceive>0){
+        if(d.method==='lump'){
+          if(pAge===d.receiveAge)dcReceiptVal+=_totalBalAtReceive;
+        }else if(d.method==='annuity'){
+          const annualAmt=Math.round(_totalBalAtReceive/20);
+          if(pAge<d.receiveAge+20)dcReceiptVal+=annualAmt;
+        }else{
+          const half=Math.round(_totalBalAtReceive/2);
+          if(pAge===d.receiveAge)dcReceiptVal+=half;
+          const annualHalf=Math.round(half/20);
+          if(pAge<d.receiveAge+20)dcReceiptVal+=annualHalf;
         }
       }
     });
