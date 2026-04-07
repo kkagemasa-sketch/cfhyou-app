@@ -45,6 +45,14 @@ function cellEdit(td){
   render();
 }
 function resetOverrides(){if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;cfOverrides={};render();}
+function rowLabelEdit(td){
+  const key=td.dataset.rowlbl;if(!key)return;
+  const txt=td.textContent.trim();
+  const def=td.dataset.default||'';
+  if(!txt||txt===def){delete _cfRowLabels[key];}
+  else{_cfRowLabels[key]=txt;}
+  scheduleAutoSave();
+}
 
 // カスタム行操作
 function addCustomRow(type){

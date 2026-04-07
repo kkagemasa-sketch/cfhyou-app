@@ -2,6 +2,7 @@
 
 let finAssetVisible=true;
 let _lcBikou={}; // 生活費タブの備考データ
+let _cfRowLabels={}; // CF表行名のカスタムラベル {rowKey: 'カスタム名'}
 
 // ===== 状態 =====
 let ST={type:'mansion'};

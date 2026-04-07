@@ -40,6 +40,7 @@ function onJSONImport(input){
       cfCustomRows=d.cfCustomRows||[];
       _cfCustomId=d._cfCustomId||0;
       _lcBikou=d.lcBikou||{};
+      _cfRowLabels=d.cfRowLabels||{};
       // v7以前の後方互換（extrasが直接ある場合）
       if(d.extras && !d.dynamic){
         $('extra-cont').innerHTML = ''; extraCnt = 0;
@@ -203,6 +204,8 @@ function _collectDynamic(){
   });
   // 生活費タブの備考
   d.lcBikou=typeof _lcBikou==='object'?{..._lcBikou}:{};
+  // CF表行名カスタムラベル
+  d.cfRowLabels=typeof _cfRowLabels==='object'?{..._cfRowLabels}:{};
   // 通常CF表 遺族年金上書き金額
   d.survHAmt=$('surv-h-amt')?.value||'';
   d.survWAmt=$('surv-w-amt')?.value||'';
@@ -664,6 +667,7 @@ function _applyData(d){
     cfCustomRows=d.cfCustomRows||[];
     _cfCustomId=d._cfCustomId||0;
     _lcBikou=d.lcBikou||{};
+    _cfRowLabels=d.cfRowLabels||{};
     _restoreDynamic(d.dynamic);
     calcLoanAmt();calcDelivery();initLCComma();live();render();
   }catch(err){
