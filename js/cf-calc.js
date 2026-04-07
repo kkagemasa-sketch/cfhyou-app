@@ -226,7 +226,7 @@ function render(){
         if(amt<=0||matAge<=0||pAge!==matAge)return;
         const yrs=matAge-enrollAge;
         let matVal=0;
-        if(rate>0)matVal=Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;
+        if(rate>0)matVal=Math.round(amt*Math.pow(1+rate/100/12,yrs*12)*10)/10;
         else if(matAmtFixed>0)matVal=matAmtFixed;
         else if(pct>0)matVal=Math.round(amt*pct/100*10)/10;
         insMatTotal+=matVal;
@@ -373,15 +373,17 @@ function render(){
         const yrs=i+1;
         let fv2=0;
         if(endAge===0||pAge<=endAge){
-          const balGrow=bal*Math.pow(1+rate,yrs);
-          const accumFV=rate>0?monthly*12*(Math.pow(1+rate,yrs)-1)/rate:monthly*12*yrs;
+          const mr=rate/12, n=yrs*12;
+          const balGrow=bal*Math.pow(1+mr,n);
+          const accumFV=rate>0?monthly*(Math.pow(1+mr,n)-1)/mr:monthly*12*yrs;
           fv2=Math.round(balGrow+accumFV);
         } else {
+          const mr=rate/12;
           const yrsAccum=endAge-pBaseAge;
           const yrsAfter=yrs-yrsAccum;
-          const balAtEnd=bal*Math.pow(1+rate,yrsAccum);
-          const accumAtEnd=rate>0?monthly*12*(Math.pow(1+rate,yrsAccum)-1)/rate:monthly*12*yrsAccum;
-          fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+rate,Math.max(0,yrsAfter)));
+          const balAtEnd=bal*Math.pow(1+mr,yrsAccum*12);
+          const accumAtEnd=rate>0?monthly*(Math.pow(1+mr,yrsAccum*12)-1)/mr:monthly*12*yrsAccum;
+          fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+mr,Math.max(0,yrsAfter)*12));
         }
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
@@ -407,7 +409,7 @@ function render(){
         const investAge=iv(`sec-stk-age-${p}-${sid}`)||0;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
-        const redeemVal=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        const redeemVal=Math.round(bal*Math.pow(1+rate/12,Math.max(0,yrsHeld)*12));
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         // 課税口座：譲渡益課税 20.315%
@@ -747,15 +749,17 @@ function render(){
         const yrs=i+1;
         let fv2=0;
         if(endAge===0||pAge<endAge){
-          const balGrow=bal*Math.pow(1+rate,yrs);
-          const accumFV=rate>0?monthly*12*(Math.pow(1+rate,yrs)-1)/rate:monthly*12*yrs;
+          const mr=rate/12, n=yrs*12;
+          const balGrow=bal*Math.pow(1+mr,n);
+          const accumFV=rate>0?monthly*(Math.pow(1+mr,n)-1)/mr:monthly*12*yrs;
           fv2=Math.round(balGrow+accumFV);
         } else {
+          const mr=rate/12;
           const yrsAccum=endAge-pBaseAge;
           const yrsAfter=yrs-yrsAccum;
-          const balAtEnd=bal*Math.pow(1+rate,yrsAccum);
-          const accumAtEnd=rate>0?monthly*12*(Math.pow(1+rate,yrsAccum)-1)/rate:monthly*12*yrsAccum;
-          fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+rate,Math.max(0,yrsAfter)));
+          const balAtEnd=bal*Math.pow(1+mr,yrsAccum*12);
+          const accumAtEnd=rate>0?monthly*(Math.pow(1+mr,yrsAccum*12)-1)/mr:monthly*12*yrsAccum;
+          fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+mr,Math.max(0,yrsAfter)*12));
         }
         finRowMap[lbl]=(finRowMap[lbl]||0)+fv2;
       });
@@ -778,7 +782,7 @@ function render(){
         if(bal<=0)return; // 残高なければスキップ
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
-        finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(bal*Math.pow(1+rate/12,Math.max(0,yrsHeld)*12));
       });
     });
     // 【DC・iDeCo運用残高】
@@ -790,10 +794,11 @@ function render(){
       const hasDC=totalMonthly>0||d.dcInitBal>0;
       const hasIdeco=d.idecoMonthly>0||d.idecoInitBal>0;
       if(!hasDC&&!hasIdeco)return;
-      // 初期残高付き将来価値ヘルパー: initBal*(1+r)^yrs + monthly*12*((1+r)^yrs-1)/r
+      // 初期残高付き将来価値ヘルパー（月複利）: initBal*(1+r/12)^(yrs*12) + monthly*((1+r/12)^(yrs*12)-1)/(r/12)
       const _fvWithInit=(initBal,monthly,rate,yrs)=>{
-        const grow=initBal*(rate>0?Math.pow(1+rate,yrs):1);
-        const contrib=monthly>0?(rate>0?monthly*12*(Math.pow(1+rate,yrs)-1)/rate:monthly*12*yrs):0;
+        const mr=rate/12, n=yrs*12;
+        const grow=initBal*(rate>0?Math.pow(1+mr,n):1);
+        const contrib=monthly>0?(rate>0?monthly*(Math.pow(1+mr,n)-1)/mr:monthly*12*yrs):0;
         return grow+contrib;
       };
       // 受取開始時点の総残高を計算（DC+iDeCo共通で使う）
@@ -803,13 +808,13 @@ function render(){
         const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
         const rate=d.dcRate;
         const balAtEnd=_fvWithInit(d.dcInitBal,totalMonthly,rate,yrsContrib);
-        _dcBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib)):1);
+        _dcBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate/12,Math.max(0,yrsToReceive-yrsContrib)*12):1);
       }
       if(hasIdeco){
         const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
         const rate=d.idecoRate;
         const balAtEnd=_fvWithInit(d.idecoInitBal,d.idecoMonthly,rate,yrsContrib);
-        _idecoBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib)):1);
+        _idecoBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate/12,Math.max(0,yrsToReceive-yrsContrib)*12):1);
       }
       const _totalBalAtReceive=Math.round(_dcBalAtReceive+_idecoBalAtReceive);
       // DC残高（finRowMap表示用）
@@ -824,7 +829,7 @@ function render(){
             const yrsContrib=d.retAge-pBaseAge;
             const balAtRetire=_fvWithInit(d.dcInitBal,totalMonthly,d.dcRate,yrsContrib);
             const yrsAfter=yrs-yrsContrib;
-            dcBal=balAtRetire*(d.dcRate>0?Math.pow(1+d.dcRate,Math.max(0,yrsAfter)):1);
+            dcBal=balAtRetire*(d.dcRate>0?Math.pow(1+d.dcRate/12,Math.max(0,yrsAfter)*12):1);
           }
         }else if(_totalBalAtReceive>0){
           const elapsed=pAge-d.receiveAge;
@@ -846,7 +851,7 @@ function render(){
             const yrsContrib=d.retAge-pBaseAge;
             const balAtRetire=_fvWithInit(d.idecoInitBal,d.idecoMonthly,d.idecoRate,yrsContrib);
             const yrsAfter=yrs-yrsContrib;
-            idecoBal=balAtRetire*(d.idecoRate>0?Math.pow(1+d.idecoRate,Math.max(0,yrsAfter)):1);
+            idecoBal=balAtRetire*(d.idecoRate>0?Math.pow(1+d.idecoRate/12,Math.max(0,yrsAfter)*12):1);
           }
         }else if(_totalBalAtReceive>0){
           const elapsed=pAge-d.receiveAge;
