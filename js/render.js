@@ -376,6 +376,7 @@ function render(){
   for(let i=0;i<totalYrs;i++){
     const yr=cYear+i, ha=hAge+i, wa=wAge+i;
     const active=i>=delivery, lcYr=i-delivery;
+    let dcReceiptVal=0; // DC・iDeCo受取額（後方のfinRowMap計算後に確定）
     R.yr.push(yr);R.hA.push(ha);R.wA.push(wa);
     children.forEach((c,ci)=>R.cA[ci].push(c.age+i));
 
@@ -678,7 +679,8 @@ function render(){
     });
     R.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap[row.key]?.val||0));});
     R.secRedeem.push(ri(secRedeemTotal));
-    R.incT.push(ri(hInc)+ri(wInc)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)&&hAlive?ri(pWife):0)+t+lc2+survP+ri(dcReceiptVal));
+    R.incT.push(ri(hInc)+ri(wInc)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)&&hAlive?ri(pWife):0)+t+lc2+survP);
+    // DC・iDeCo受取は後でfinRowMap計算後にincTに加算される（Pass2でincKeysに含む）
 
     // ─── 生活費（段階別複利計算） ───
     let lcVal;{
@@ -1000,7 +1002,6 @@ function render(){
       });
     });
     // 【DC・iDeCo運用残高】
-    let dcReceiptVal=0;
     ['h','w'].forEach(p=>{
       const d=dcIdeco[p];
       const pAge=p==='h'?ha:wa;
@@ -1084,6 +1085,8 @@ function render(){
       }
     });
     R.dcReceipt.push(ri(dcReceiptVal));
+    // DC受取をincTに加算（dcReceiptValはfinRowMap計算後に確定するため遅延加算）
+    if(dcReceiptVal>0){R.incT[i]+=ri(dcReceiptVal);R.bal[i]+=ri(dcReceiptVal);sav+=ri(dcReceiptVal);R.sav[i]=ri(sav);}
     // 【積立保険】はその他金融資産行から除外（推計精度が低いため）
     // finAssetRowsに追記（毎年動的にキーを管理）
     Object.keys(finRowMap).forEach(k=>{
