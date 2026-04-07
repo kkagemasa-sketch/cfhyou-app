@@ -984,7 +984,7 @@ function render(){
     R.finAssetRows.forEach(row=>{row.vals.push(ri(finRowMap[row.lbl]||0));});
     const finAssetVal=Object.values(finRowMap).reduce((a,b)=>a+b,0);
     R.finAsset.push(ri(finAssetVal));
-    R.totalAsset.push(ri(R.sav[i])+ri(finAssetVal));// 預貯金残高＋その他金融資産
+    R.totalAsset.push(R.sav[i]+ri(finAssetVal));// 預貯金残高＋その他金融資産
     const lb=ri(pairLoanMode
       ?(active?Math.max(0,(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,rHBase,lcYr+1):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,rWBase,lcYr+1):0)):lhAmt+lwAmt)
       :(active?Math.max(0,(loanType2==='equal_payment'?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr+1):lbal_gankin(loanAmt,loanYrs,lcYr+1))):loanAmt));
