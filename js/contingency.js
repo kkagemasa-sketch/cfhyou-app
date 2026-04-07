@@ -981,7 +981,7 @@ function renderContingency(){
     for(let i2=0;i2<mgDisp;i2++){
       const ov=mgOverrides[rowKey]?.[i2];const v=ov!==undefined?ov:(arr[i2]||0);const nv=normalArr?(normalArr[i2]||0):0;
       const changed=normalArr&&v!==nv;const isOvr=ov!==undefined;
-      const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'');
+      const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'')+getMgColCls(i2);
       r+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():(changed?'0':'-')}</td>`;
     }
     return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
@@ -1012,7 +1012,7 @@ function renderContingency(){
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
     const tot=vals.reduce((a,b)=>a+b,0);if(tot===0)return;
     let rr=`<tr class="rinc"><td><button onclick="deleteCustomRow('${r.id}')" class="btn-del-row" title="行を削除">×</button></td><td ${_ce} data-custom-id="${r.id}" onblur="customLabelEdit(this)" class="custom-lbl">${r.label}</td>`;
-    for(let i2=0;i2<mgDisp;i2++){const v=vals[i2];const isOvr=mgOverrides[r.id]?.[i2]!==undefined;rr+=`<td class="${v===0?'vz':''}${isOvr?' cell-ovr':''}" ${_ce} data-row="${r.id}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;}
+    for(let i2=0;i2<mgDisp;i2++){const v=vals[i2];const isOvr=mgOverrides[r.id]?.[i2]!==undefined;rr+=`<td class="${v===0?'vz':''}${isOvr?' cell-ovr':''}${getMgColCls(i2)}" ${_ce} data-row="${r.id}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;}
     h+=rr+`<td>${tot>0?ri(tot).toLocaleString():'-'}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${r.label}</span></td></tr>`;
   });
   h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('inc')" class="btn-add-row">＋ 収入行を追加</button></td>`;for(let i2=0;i2<mgDisp;i2++)h+=`<td></td>`;h+=`<td></td></tr>`;
@@ -1032,7 +1032,7 @@ function renderContingency(){
     for(let i2=0;i2<mgDisp;i2++){
       const ov=mgOverrides[rowKey]?.[i2];const v=ov!==undefined?ov:(arr[i2]||0);const nv=normalArr?(normalArr[i2]||0):0;
       const changed=normalArr&&v!==nv;const isOvr=ov!==undefined;
-      const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'');
+      const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'')+getMgColCls(i2);
       r+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():(changed?'0':'-')}</td>`;
     }
     return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
@@ -1056,6 +1056,7 @@ function renderContingency(){
       let cls=v===0?'vz':'';
       if(v>0){if(ca>=1&&ca<=6)cls='edu-hoiku';else if(ca>=7&&ca<=12)cls='edu-elem';else if(ca>=13&&ca<=15)cls='edu-mid';else if(ca>=16&&ca<=18)cls='edu-high';else if(ca>=19&&ca<19+univLen)cls=un.startsWith('senmon')?'edu-senmon':'edu-univ';}
       if(isOvr)cls+=' cell-ovr';
+      cls+=getMgColCls(i2);
       h+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;
     }h+=`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
   });
@@ -1114,7 +1115,7 @@ function renderContingency(){
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
     const tot=vals.reduce((a,b)=>a+b,0);if(tot===0)return;
     let rr=`<tr class="rexp"><td><button onclick="deleteCustomRow('${r.id}')" class="btn-del-row" title="行を削除">×</button></td><td ${_ce} data-custom-id="${r.id}" onblur="customLabelEdit(this)" class="custom-lbl">${r.label}</td>`;
-    for(let i2=0;i2<mgDisp;i2++){const v=vals[i2];const isOvr=mgOverrides[r.id]?.[i2]!==undefined;rr+=`<td class="${v===0?'vz':''}${isOvr?' cell-ovr':''}" ${_ce} data-row="${r.id}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;}
+    for(let i2=0;i2<mgDisp;i2++){const v=vals[i2];const isOvr=mgOverrides[r.id]?.[i2]!==undefined;rr+=`<td class="${v===0?'vz':''}${isOvr?' cell-ovr':''}${getMgColCls(i2)}" ${_ce} data-row="${r.id}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;}
     h+=rr+`<td>${tot>0?ri(tot).toLocaleString():'-'}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${r.label}</span></td></tr>`;
   });
   h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('exp')" class="btn-add-row">＋ 支出行を追加</button></td>`;for(let i2=0;i2<mgDisp;i2++)h+=`<td></td>`;h+=`<td></td></tr>`;
