@@ -71,7 +71,6 @@ let _mgLCStepCount=0;
 
 let _loanPrepayId=0;
 
-let _isPairLoan=false;
 
 let _lpRateCntA=0,_lpRateCntB=0;
 

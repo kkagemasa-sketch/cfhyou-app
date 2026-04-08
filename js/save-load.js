@@ -259,7 +259,7 @@ function _collectDynamic(){
   d.lctrlManualDed=_lctrlDedMode==='manual'?getLctrlManualValues():[];
   // 返済計画タブ
   d.loanPlan={
-    isPairLoan:_isPairLoan, ppType:_ppType,
+    isPairLoan:pairLoanMode, ppType:_ppType,
     amtA:$('lp-amt-a')?.value||'',rateA:$('lp-rate-a')?.value||'',yrsA:$('lp-yrs-a')?.value||'',methodA:$('lp-method-a')?.value||'',
     amtB:$('lp-amt-b')?.value||'',rateB:$('lp-rate-b')?.value||'',yrsB:$('lp-yrs-b')?.value||'',methodB:$('lp-method-b')?.value||'',
     ppTermFrom:$('pp-term-from')?.value||'',ppTermTo:$('pp-term-to')?.value||'',ppReduceYr:$('pp-reduce-yr')?.value||'',ppReduceMP:$('pp-reduce-mp')?.value||'',
@@ -580,7 +580,7 @@ function _restoreDynamic(d){
   // 返済計画タブ復元
   if(d.loanPlan){
     const lp=d.loanPlan;
-    _isPairLoan=!!lp.isPairLoan;
+    // pairLoanModeはsetLoanMode()で設定済み（isPairLoanは後方互換）
     _ppType=lp.ppType||'term';
     // renderLoanTab呼び出し後に値を復元するためにフラグ保持
     window._pendingLoanPlan=lp;
