@@ -286,28 +286,29 @@ async function exportExcelMG(){
     const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
-  const addISkip=(lbl,arr)=>{
+  const addISkip=(lbl,arr,normalArr)=>{
     if(!arr)return;const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
-    if(tot===0)return;
+    const nTot=normalArr?normalArr.slice(0,disp).reduce((a,b)=>a+b,0):0;
+    if(tot===0&&nTot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
   addI('ご主人手取年収',MR.hInc);
   addI('奥様手取年収',MR.wInc);
-  addISkip('副業・その他収入',MR.otherInc);
-  addISkip('退職金（ご主人）',MR.rPay);
-  addISkip('退職金（奥様）',MR.wRPay);
-  addISkip('本人年金',MR.pS);
-  addISkip('配偶者年金',MR.pW);
+  addISkip('副業・その他収入',MR.otherInc,N.otherInc);
+  addISkip('退職金（ご主人）',MR.rPay,N.rPay);
+  addISkip('退職金（奥様）',MR.wRPay,N.wRPay);
+  addISkip('本人年金',MR.pS,N.pS);
+  addISkip('配偶者年金',MR.pW,N.pW);
   addI('遺族年金',MR.survPension);
   addISkip('死亡保険金',MR.insPayArr);
   addISkip('金融資産現金化',MR.finLiquid);
-  addISkip('DC受取(主)',MR.dcReceiptH);
-  addISkip('DC受取(奥様)',MR.dcReceiptW);
-  addISkip('iDeCo受取(主)',MR.idecoReceiptH);
-  addISkip('iDeCo受取(奥様)',MR.idecoReceiptW);
-  addISkip('保険満期金',MR.insMat);
+  addISkip('DC受取(主)',MR.dcReceiptH,N.dcReceiptH);
+  addISkip('DC受取(奥様)',MR.dcReceiptW,N.dcReceiptW);
+  addISkip('iDeCo受取(主)',MR.idecoReceiptH,N.idecoReceiptH);
+  addISkip('iDeCo受取(奥様)',MR.idecoReceiptW,N.idecoReceiptW);
+  addISkip('保険満期金',MR.insMat,N.insMat);
   if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.lbl,row.vals);});
-  addISkip('奨学金',MR.scholarship);
+  addISkip('奨学金',MR.scholarship,N.scholarship);
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addI(r.label,vals);});
@@ -320,19 +321,20 @@ async function exportExcelMG(){
     const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
-  const addESkip=(lbl,arr)=>{
+  const addESkip=(lbl,arr,normalArr)=>{
     if(!arr)return;const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
-    if(tot===0)return;
+    const nTot=normalArr?normalArr.slice(0,disp).reduce((a,b)=>a+b,0):0;
+    if(tot===0&&nTot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
   addE(_rl('mg-lc','生活費'),MR.lc);
-  addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent);
+  addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent,null);
   if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(主)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
   else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
   if(isM)addE(_rl('mg-rep','修繕積立金'),MR.rep);
   addE(_rl('mg-ptx','固定資産税'),MR.ptx);
-  addESkip(_rl('mg-furn','家具家電買替'),MR.furn);
-  addESkip(_rl('mg-senyu',isM?'専有部分修繕費':'修繕費'),MR.senyu);
+  addESkip(_rl('mg-furn','家具家電買替'),MR.furn,null);
+  addESkip(_rl('mg-senyu',isM?'専有部分修繕費':'修繕費'),MR.senyu,null);
   children.forEach((c,ci)=>{
     if(MR.edu&&MR.edu[ci]){
       const arr=MR.edu[ci];
@@ -346,32 +348,32 @@ async function exportExcelMG(){
   // 積立投資額：個別行（死亡者除外）
   const _expDeadP=targetIsH?'h':'w';
   if(N.secInvestRows&&N.secInvestRows.length>1){
-    N.secInvestRows.forEach(row=>{const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';if(p2===_expDeadP)return;addESkip(row.lbl,row.vals);});
+    N.secInvestRows.forEach(row=>{const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';if(p2===_expDeadP)return;addESkip(row.lbl,row.vals,row.vals);});
   }else if(N.secInvestRows&&N.secInvestRows.length===1){
-    const row=N.secInvestRows[0];const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';if(p2!==_expDeadP)addESkip(row.lbl,row.vals);
-  }else{addESkip(_rl('mg-secInvest','積立投資額'),MR.secInvest);}
-  addESkip(_rl('mg-secBuy','一括投資額'),MR.secBuy);
+    const row=N.secInvestRows[0];const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';if(p2!==_expDeadP)addESkip(row.lbl,row.vals,row.vals);
+  }else{addESkip(_rl('mg-secInvest','積立投資額'),MR.secInvest,N.secInvest);}
+  addESkip(_rl('mg-secBuy','一括投資額'),MR.secBuy,N.secBuy);
   // 保険料（積立）：個別行（死亡者除外）
   if(N.insMonthlyRows&&N.insMonthlyRows.length>1){
-    N.insMonthlyRows.forEach(row=>{const k=row.key||'';if(k.includes(`-${_expDeadP}-`))return;addESkip(row.lbl,row.vals);});
+    N.insMonthlyRows.forEach(row=>{const k=row.key||'';if(k.includes(`-${_expDeadP}-`))return;addESkip(row.lbl,row.vals,row.vals);});
   }else if(N.insMonthlyRows&&N.insMonthlyRows.length===1){
-    const row=N.insMonthlyRows[0];if(!row.key?.includes(`-${_expDeadP}-`))addESkip(row.lbl,row.vals);
-  }else{addESkip(_rl('mg-insMonthly','保険料（積立）'),MR.insMonthly);}
+    const row=N.insMonthlyRows[0];if(!row.key?.includes(`-${_expDeadP}-`))addESkip(row.lbl,row.vals,row.vals);
+  }else{addESkip(_rl('mg-insMonthly','保険料（積立）'),MR.insMonthly,N.insMonthly);}
   // 一時払い保険：個別行（死亡者除外）
   if(N.insLumpExpRows&&N.insLumpExpRows.length>1){
-    N.insLumpExpRows.forEach(row=>{const k=row.key||'';if(k.includes(`-${_expDeadP}-`))return;addESkip(row.lbl,row.vals);});
+    N.insLumpExpRows.forEach(row=>{const k=row.key||'';if(k.includes(`-${_expDeadP}-`))return;addESkip(row.lbl,row.vals,row.vals);});
   }else if(N.insLumpExpRows&&N.insLumpExpRows.length===1){
-    const row=N.insLumpExpRows[0];if(!row.key?.includes(`-${_expDeadP}-`))addESkip(row.lbl,row.vals);
-  }else{addESkip(_rl('mg-insLumpExp','一時払い保険'),MR.insLumpExp);}
-  addESkip(_rl('mg-wedding','結婚のお祝い'),MR.wedding);
-  addESkip(_rl('mg-dcMatchExpH','DC拠出(主)'),MR.dcMatchExpH);
-  addESkip(_rl('mg-dcMatchExpW','DC拠出(奥様)'),MR.dcMatchExpW);
-  addESkip(_rl('mg-idecoExpH','iDeCo拠出(主)'),MR.idecoExpH);
-  addESkip(_rl('mg-idecoExpW','iDeCo拠出(奥様)'),MR.idecoExpW);
+    const row=N.insLumpExpRows[0];if(!row.key?.includes(`-${_expDeadP}-`))addESkip(row.lbl,row.vals,row.vals);
+  }else{addESkip(_rl('mg-insLumpExp','一時払い保険'),MR.insLumpExp,N.insLumpExp);}
+  addESkip(_rl('mg-wedding','結婚のお祝い'),MR.wedding,null);
+  addESkip(_rl('mg-dcMatchExpH','DC拠出(主)'),MR.dcMatchExpH,N.dcMatchExpH);
+  addESkip(_rl('mg-dcMatchExpW','DC拠出(奥様)'),MR.dcMatchExpW,N.dcMatchExpW);
+  addESkip(_rl('mg-idecoExpH','iDeCo拠出(主)'),MR.idecoExpH,N.idecoExpH);
+  addESkip(_rl('mg-idecoExpW','iDeCo拠出(奥様)'),MR.idecoExpW,N.idecoExpW);
   // 特別支出：個別行
-  if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{addESkip(row.lbl,row.vals);});}
-  else if(N.extRows&&N.extRows.length===1){addESkip(N.extRows[0].lbl,N.extRows[0].vals);}
-  else{addESkip(_rl('mg-ext','特別支出'),MR.ext);}
+  if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{addESkip(row.lbl,row.vals,row.vals);});}
+  else if(N.extRows&&N.extRows.length===1){addESkip(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals);}
+  else{addESkip(_rl('mg-ext','特別支出'),MR.ext,null);}
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
