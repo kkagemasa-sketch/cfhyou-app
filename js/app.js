@@ -80,6 +80,10 @@ window.onload=()=>{
     try{
       await _migrateFromLocalStorage();
       await restoreAutoSave();
+      // 万が一CF表を復元（ページリロードで_mgStoreが消えるため再生成）
+      if(_autoSaveRestored&&typeof renderContingency==='function'){
+        try{renderContingency();}catch(e){}
+      }
     }catch(e){console.warn('初期化エラー:',e);}
   })();
 
