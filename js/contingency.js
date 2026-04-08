@@ -412,14 +412,16 @@ function renderContingency(){
           const hadChildren=children.some(c=>c.age+(deathYearOffset-1)<=18);
           const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
           const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(61.43):0;
-          if(wa>=pWReceive){survP=kisoW_mg+Math.max(ri(kH*0.75),ri(kW))+kiso+chukorei;}
+          // 遺族年金＝純粋な遺族厚生年金部分のみ（老齢年金は別行表示）
+          if(wa>=pWReceive){survP=Math.max(ri(kH*0.75)-koseiW_mg,0)+kiso+chukorei;}
           else{survP=ri(kH*0.75)+kiso+chukorei;}
         }else{
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           const kiso=calcKiso(childUnder18);
           const hIncome=getIncomeAtAge(getIncomeSteps('h'),ha);
-          if(childUnder18>0){survP=ri(kW*0.75)+kiso;}
-          else if(ha>=60&&hIncome<850){if(ha>=pHReceive){survP=kisoH_mg+Math.max(ri(kW*0.75),ri(kH));}else{survP=ri(kW*0.75);}}
+          // 遺族年金＝純粋な遺族厚生年金部分のみ（老齢年金は別行表示）
+          if(childUnder18>0){if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0)+kiso;}else{survP=ri(kW*0.75)+kiso;}}
+          else if(ha>=60&&hIncome<850){if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0);}else{survP=ri(kW*0.75);}}
           else if(ha>=55&&ha<60&&hIncome<850){survP=0;}
           else{survP=kiso;}
         }
@@ -458,7 +460,7 @@ function renderContingency(){
     let pSelfVal=0, pWifeVal=0;
     if(targetIsH){pSelfVal=isDead?0:(ha>=pHReceive?ri(pSelf):0);pWifeVal=wa>=pWReceive?ri(pWife):0;}
     else{pSelfVal=ha>=pHReceive?ri(pSelf):0;pWifeVal=isDead?0:(wa>=pWReceive?ri(pWife):0);}
-    if(isDead&&survP>0){if(targetIsH)pWifeVal=0;else pSelfVal=0;}
+    // 遺族年金と老齢年金は別行表示 → ゼロ化しない
     MR.pS.push(pSelfVal);
     MR.pW.push(pWifeVal);
 
