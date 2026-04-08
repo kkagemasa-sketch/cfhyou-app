@@ -34,6 +34,14 @@ function setMGSurvMode(m){
   if($('mg-surv-hint'))$('mg-surv-hint').textContent=hints[m]||hints.auto;
   live(true);
 }
+// 老齢年金の簡易手取り率（年金額面・給与所得有無で段階式）
+function pensionNetRate(amt,hasWork){
+  if(hasWork){// 社保は給与天引き済、公的年金等控除110万以下は非課税
+    if(amt<=110)return 1.00;if(amt<=250)return 0.93;return 0.90;
+  }else{// 国保+介護≈10%＋税
+    if(amt<=110)return 0.92;if(amt<=155)return 0.90;if(amt<=250)return 0.87;return 0.83;
+  }
+}
 // 遺族基礎年金計算（2024年度）: 基本816,000円＋加算234,800円(1・2子)／78,300円(3子以降)
 function calcKiso(n){
   if(n===0)return 0;
@@ -456,11 +464,12 @@ function renderContingency(){
     }
     MR.lCtrl.push(lctrlVal);
 
-    // 本人年金
+    // 本人年金（老齢年金は手取り率を適用、遺族年金は非課税で別行）
     let pSelfVal=0, pWifeVal=0;
     if(targetIsH){pSelfVal=isDead?0:(ha>=pHReceive?ri(pSelf):0);pWifeVal=wa>=pWReceive?ri(pWife):0;}
     else{pSelfVal=ha>=pHReceive?ri(pSelf):0;pWifeVal=isDead?0:(wa>=pWReceive?ri(pWife):0);}
-    // 遺族年金と老齢年金は別行表示 → ゼロ化しない
+    if(pSelfVal>0)pSelfVal=ri(pSelfVal*pensionNetRate(pSelfVal,hInc>0));
+    if(pWifeVal>0)pWifeVal=ri(pWifeVal*pensionNetRate(pWifeVal,wInc>0));
     MR.pS.push(pSelfVal);
     MR.pW.push(pWifeVal);
 
