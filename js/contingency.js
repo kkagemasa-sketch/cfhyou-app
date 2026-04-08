@@ -171,7 +171,7 @@ function getMGLCSteps(){
   });
   return steps;
 }
-function getMGLCMode(){return document.getElementById('mg-lc-mode-step')?.classList.contains('act')?'step':'ratio';}
+function getMGLCMode(){return document.getElementById('mg-lc-mode-step')?.classList.contains('on')?'step':'ratio';}
 function getMGInsuranceTotal(){
   let total=0;
   document.querySelectorAll('[id^="mg-ins-amt-"]').forEach(el=>{total+=(parseFloat(el.value)||0);});
@@ -224,8 +224,8 @@ function renderContingency(){
   const pHStart_mg=iv('pension-h-start')||22, pWStart_mg=iv('pension-w-start')||22;
   const kisoH_mg=ri(KISO_FULL*Math.min(retAge_mg-pHStart_mg,40)/40);
   const kisoW_mg=ri(KISO_FULL*Math.min(wRetAge_mg-pWStart_mg,40)/40);
-  const koseiH_mg=Math.max(0,pSelf-kisoH_mg);
-  const koseiW_mg=Math.max(0,pWife-kisoW_mg);
+  const koseiH_mg=calcKosei('h', pHStart_mg, retAge_mg, pSelf, kisoH_mg);
+  const koseiW_mg=calcKosei('w', pWStart_mg, wRetAge_mg, pWife, kisoW_mg);
 
   const children=[];
   document.querySelectorAll('[id^="ca-"]').forEach(el=>{
@@ -434,16 +434,8 @@ function renderContingency(){
       if(mgSurvMode==='manual'){
         survP=survManualAmt;
       }else{
-        const CAREER_FACTOR=0.75;
-        const hGrossM=fv('h-gross-monthly')||0, hGrossB=fv('h-gross-bonus')||0;
-        const wGrossM=fv('w-gross-monthly')||0, wGrossB=fv('w-gross-bonus')||0;
-        let kH=koseiH_mg, kW=koseiW_mg;
-        const hAvg_mg=calcAvgHyojun('h', pHStart_mg, retAge_mg);
-        if(hAvg_mg!==null){const hJoinM=Math.min(480,Math.max((retAge_mg-pHStart_mg)*12,300));kH=hAvg_mg*5.481/1000*hJoinM;}
-        else if(hGrossM>0){const hCapped=Math.min(hGrossM,65),hBonusCapped=Math.min(hGrossB,300);const hHyojun=(hCapped*12+hBonusCapped)/12*CAREER_FACTOR;const hJoinM=Math.min(480,Math.max((retAge_mg-pHStart_mg)*12,300));kH=hHyojun*5.481/1000*hJoinM;}
-        const wAvg_mg=calcAvgHyojun('w', pWStart_mg, wRetAge_mg);
-        if(wAvg_mg!==null){const wJoinM=Math.min(480,Math.max((wRetAge_mg-pWStart_mg)*12,300));kW=wAvg_mg*5.481/1000*wJoinM;}
-        else if(wGrossM>0){const wCapped=Math.min(wGrossM,65),wBonusCapped=Math.min(wGrossB,300);const wHyojun=(wCapped*12+wBonusCapped)/12*CAREER_FACTOR;const wJoinM=Math.min(480,Math.max((wRetAge_mg-pWStart_mg)*12,300));kW=wHyojun*5.481/1000*wJoinM;}
+        // koseiH_mg/koseiW_mg は既にcalcKosei()で精密計算済み
+        const kH=koseiH_mg, kW=koseiW_mg;
         if(targetIsH){
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           const kiso=calcKiso(childUnder18);

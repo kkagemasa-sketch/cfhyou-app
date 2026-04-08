@@ -1,4 +1,5 @@
 // family.js — 子ども・その他メンバー管理
+const CHILD_LABELS=['第一子','第二子','第三子','第四子'];
 
 function addOther(){
   otherMemberCnt++;const id=otherMemberCnt;
@@ -29,11 +30,11 @@ function addChild(){
   const el=document.createElement('div');
   el.id=`cr-${id}`;
   el.style.cssText='background:#eef6fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:10px;margin-bottom:8px';
-  const labs=['第一子','第二子','第三子','第四子'],defAges=[2,0,-2,-4];
+  const defAges=[2,0,-2,-4];
   const _pos=_existing.length;// 0-based position for the new child
   el.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <span style="font-size:11px;font-weight:700;color:#3a6a8a" data-child-label>${labs[_pos]}</span>
+      <span style="font-size:11px;font-weight:700;color:#3a6a8a" data-child-label>${CHILD_LABELS[_pos]}</span>
       <button class="btn-rm" onclick="rmChild(${id})">× 削除</button>
     </div>
     <div class="g3" style="margin-bottom:8px">
@@ -148,10 +149,9 @@ function addChild(){
 function rmChild(id){
   $(`cr-${id}`)?.remove();
   // ラベル再番号付け
-  const labs=['第一子','第二子','第三子','第四子'];
   document.querySelectorAll('#children-cont > div[id^="cr-"]').forEach((el,idx)=>{
     const lbl=el.querySelector('[data-child-label]');
-    if(lbl)lbl.textContent=labs[idx];
+    if(lbl)lbl.textContent=CHILD_LABELS[idx];
   });
   live();
 }

@@ -6,6 +6,16 @@ function iv(id){return parseInt(String($(id)?.value||'').replace(/,/g,''))||0}
 function fv(id){return parseFloat(String($(id)?.value||'').replace(/,/g,''))||0}
 function tog(h){const b=h.nextElementSibling,t=h.querySelector('.stog'),o=!b.classList.contains('col');b.classList.toggle('col',o);t.classList.toggle('on',!o)}
 function ri(n){return Math.round(n)}// 整数丸め（小数点なし）
+// 老齢厚生年金相当額を計算（収入ステップ→月収→年金設定から逆算のフォールバック）
+function calcKosei(person, startAge, retAge, fallbackPension, kisoAmt){
+  const CAREER_FACTOR=0.75;
+  const avg=calcAvgHyojun(person, startAge, retAge);
+  const joinM=Math.min(480,Math.max((retAge-startAge)*12,300));
+  if(avg!==null) return avg*5.481/1000*joinM;
+  const gM=fv(`${person}-gross-monthly`)||0, gB=fv(`${person}-gross-bonus`)||0;
+  if(gM>0){const hyojun=(Math.min(gM,65)*12+Math.min(gB,300))/12*CAREER_FACTOR;return hyojun*5.481/1000*joinM;}
+  return Math.max(0,fallbackPension-kisoAmt);
+}
 // 空欄→デフォルト値、0を明示入力→0を返す（隠れた初期値問題の対策）
 function ivd(id,def){const el=$(id);if(!el||el.value==='')return def;return parseInt(String(el.value).replace(/,/g,''))||0;}
 function fvd(id,def){const el=$(id);if(!el||el.value==='')return def;return parseFloat(String(el.value).replace(/,/g,''))||0;}

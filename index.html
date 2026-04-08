@@ -1098,8 +1098,8 @@ if(authExp&&Date.now()<Number(authExp)){
       <!-- 生活費の変化 -->
       <div class="sub">🏠 死亡後の生活費</div>
       <div style="display:flex;gap:4px;margin-bottom:8px">
-        <button type="button" class="btn-tog act" onclick="this.classList.add('act');this.nextElementSibling.classList.remove('act');document.getElementById('mg-lc-ratio-fields').style.display='';document.getElementById('mg-lc-step-fields').style.display='none';live()" id="mg-lc-mode-ratio">割合で設定</button>
-        <button type="button" class="btn-tog" onclick="this.classList.add('act');this.previousElementSibling.classList.remove('act');document.getElementById('mg-lc-ratio-fields').style.display='none';document.getElementById('mg-lc-step-fields').style.display='';live()" id="mg-lc-mode-step">段階で設定</button>
+        <button type="button" class="btn-tog on" onclick="this.classList.add('on');this.nextElementSibling.classList.remove('on');document.getElementById('mg-lc-ratio-fields').style.display='';document.getElementById('mg-lc-step-fields').style.display='none';live()" id="mg-lc-mode-ratio">割合で設定</button>
+        <button type="button" class="btn-tog" onclick="this.classList.add('on');this.previousElementSibling.classList.remove('on');document.getElementById('mg-lc-ratio-fields').style.display='none';document.getElementById('mg-lc-step-fields').style.display='';live()" id="mg-lc-mode-step">段階で設定</button>
       </div>
       <div id="mg-lc-ratio-fields">
         <div class="g2">
@@ -1302,8 +1302,8 @@ if(authExp&&Date.now()<Number(authExp)){
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=6"></script>
 <script src="js/constants.js?v=8"></script>
-<script src="js/utils.js?v=5"></script>
-<script src="js/family.js?v=2"></script>
+<script src="js/utils.js?v=6"></script>
+<script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=6"></script>
 <script src="js/education.js"></script>
 <script src="js/housing.js?v=3"></script>
@@ -1311,9 +1311,9 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=8"></script>
 <script src="js/extras.js"></script>
-<script src="js/contingency.js?v=21"></script>
+<script src="js/contingency.js?v=22"></script>
 <script src="js/cf-ui.js?v=2"></script>
-<script src="js/cf-calc.js?v=11"></script>
+<script src="js/cf-calc.js?v=12"></script>
 <script src="js/cf-table.js?v=7"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js?v=2"></script>
@@ -1322,7 +1322,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=24"></script>
+<script src="js/save-load.js?v=25"></script>
 <script src="js/ui.js?v=3"></script>
 <script src="js/app.js?v=28"></script>
 <script>

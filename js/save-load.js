@@ -187,7 +187,7 @@ function _collectDynamic(){
   // 万が一シミュレーション
   d.mg={target:mgTarget,dansin:mgDansin,dansinH:mgDansinH,dansinW:mgDansinW,survMode:mgSurvMode,
     deathYear:$('mg-death-year')?.value||'',survAmt:$('mg-surv-amt')?.value||'',lcRatio:$('mg-lc-ratio')?.value||'',
-    lcMode:$('mg-lc-mode-step')?.classList.contains('act')?'step':'ratio',
+    lcMode:$('mg-lc-mode-step')?.classList.contains('on')?'step':'ratio',
     scholarshipOn:$('mg-scholarship-yes')?.classList.contains('on')||false,
     scholarshipAmt:$('mg-scholarship-amt')?.value||'',scholarshipAge:$('mg-scholarship-age')?.value||'',
     carOn:$('mg-car-keep')?.classList.contains('on')!==false,
@@ -447,11 +447,11 @@ function _restoreDynamic(d){
     if($('mg-lc-ratio'))$('mg-lc-ratio').value=mg.lcRatio||'70';
     // 生活費モード
     if(mg.lcMode==='step'){
-      $('mg-lc-mode-step')?.classList.add('act');$('mg-lc-mode-ratio')?.classList.remove('act');
+      $('mg-lc-mode-step')?.classList.add('on');$('mg-lc-mode-ratio')?.classList.remove('on');
       if($('mg-lc-ratio-fields'))$('mg-lc-ratio-fields').style.display='none';
       if($('mg-lc-step-fields'))$('mg-lc-step-fields').style.display='';
     } else {
-      $('mg-lc-mode-ratio')?.classList.add('act');$('mg-lc-mode-step')?.classList.remove('act');
+      $('mg-lc-mode-ratio')?.classList.add('on');$('mg-lc-mode-step')?.classList.remove('on');
       if($('mg-lc-ratio-fields'))$('mg-lc-ratio-fields').style.display='';
       if($('mg-lc-step-fields'))$('mg-lc-step-fields').style.display='none';
     }

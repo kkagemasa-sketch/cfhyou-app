@@ -46,33 +46,8 @@ function render(){
   const kisoH=ri(KISO_FULL*Math.min(retAge-pHStart,40)/40);   // ご主人の老齢基礎年金
   const kisoW=ri(KISO_FULL*Math.min(wRetAge-pWStart,40)/40);  // 奥様の老齢基礎年金
   // 老齢厚生年金相当額の計算
-  // 収入ステップがあれば生涯平均を精密計算、なければ月収×0.75で推定、どちらもなければ年金設定から逆算
-  const hGrossM=fv('h-gross-monthly')||0, hGrossB=fv('h-gross-bonus')||0;
-  const wGrossM=fv('w-gross-monthly')||0, wGrossB=fv('w-gross-bonus')||0;
-  const CAREER_FACTOR=0.75;  // フォールバック用
-  let koseiH, koseiW;
-  // ご主人
-  const hAvgHyojun=calcAvgHyojun('h', pHStart, retAge);
-  if(hAvgHyojun!==null){
-    const hJoinM=Math.min(480,Math.max((retAge-pHStart)*12,300));
-    koseiH=hAvgHyojun*5.481/1000*hJoinM;
-  }else if(hGrossM>0){
-    const hCapped=Math.min(hGrossM,65), hBonusCapped=Math.min(hGrossB,300);
-    const hHyojun=(hCapped*12+hBonusCapped)/12*CAREER_FACTOR;
-    const hJoinM=Math.min(480,Math.max((retAge-pHStart)*12,300));
-    koseiH=hHyojun*5.481/1000*hJoinM;
-  }else{koseiH=Math.max(0,pSelf-kisoH);}
-  // 奥様
-  const wAvgHyojun=calcAvgHyojun('w', pWStart, wRetAge);
-  if(wAvgHyojun!==null){
-    const wJoinM=Math.min(480,Math.max((wRetAge-pWStart)*12,300));
-    koseiW=wAvgHyojun*5.481/1000*wJoinM;
-  }else if(wGrossM>0){
-    const wCapped=Math.min(wGrossM,65), wBonusCapped=Math.min(wGrossB,300);
-    const wHyojun=(wCapped*12+wBonusCapped)/12*CAREER_FACTOR;
-    const wJoinM=Math.min(480,Math.max((wRetAge-pWStart)*12,300));
-    koseiW=wHyojun*5.481/1000*wJoinM;
-  }else{koseiW=Math.max(0,pWife-kisoW);}
+  const koseiH=calcKosei('h', pHStart, retAge, pSelf, kisoH);
+  const koseiW=calcKosei('w', pWStart, wRetAge, pWife, kisoW);
   const leaves=getLeaves();
   // 生活費
   const baseLc=calcLC();
