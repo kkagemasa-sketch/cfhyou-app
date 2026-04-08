@@ -1,5 +1,5 @@
 // Service Worker — PWAインストール用
-const CACHE_NAME = 'cf-app-v111';
+const CACHE_NAME = 'cf-app-v112';
 const ASSETS = [
   './',
   './index.html',
@@ -35,7 +35,7 @@ const ASSETS = [
   './js/vendors/FileSaver.min.js',
   './icon-192.png',
   './icon-512.png',
-  './favicon.svg'
+  './favicon.png'
 ];
 
 // クエリパラメータ(?v=xx)を除去してキャッシュキーを統一
