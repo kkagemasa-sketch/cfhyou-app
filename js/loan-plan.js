@@ -1,4 +1,7 @@
 // loan-plan.js — 返済計画タブ
+// カンマ付き値を安全にparseする（amt-inp blur時にtype=textへ変換されるため）
+function _lpf(id){return parseFloat(String($(id)?.value||'').replace(/,/g,''))||0;}
+function _lpi(id){return parseInt(String($(id)?.value||'').replace(/,/g,''))||0;}
 // ===== 返済計画タブ =====
 function addPrepay(yrFrom='',yrTo='',amt=''){
   _loanPrepayId++;
@@ -74,12 +77,12 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
 function renderLoanTab(){
   const rb=$('right-body');
   // ペアローン時はH側、単独時は共通の値を使用
-  const loanAmt=(pairLoanMode?(parseFloat($('loan-h-amt')?.value)||0):(parseFloat($('loan-amt')?.value)||4500))*10000;
-  const loanRate=(pairLoanMode?(parseFloat($('rate-h-base')?.value)||0.5):(parseFloat($('rate-base')?.value)||0.5))/100;
-  const loanYrs=pairLoanMode?(parseInt($('loan-h-yrs')?.value)||35):(parseInt($('loan-yrs')?.value)||35);
-  const loanAmtB=(parseFloat($('loan-w-amt')?.value)||0)*10000;
-  const loanRateB=(parseFloat($('rate-w-base')?.value)||loanRate*100)/100;
-  const loanYrsB=parseInt($('loan-w-yrs')?.value)||loanYrs;
+  const loanAmt=(pairLoanMode?_lpf('loan-h-amt'):((_lpf('loan-amt'))||4500))*10000;
+  const loanRate=(pairLoanMode?(_lpf('rate-h-base')||0.5):(_lpf('rate-base')||0.5))/100;
+  const loanYrs=pairLoanMode?(_lpi('loan-h-yrs')||35):(_lpi('loan-yrs')||35);
+  const loanAmtB=_lpf('loan-w-amt')*10000;
+  const loanRateB=(_lpf('rate-w-base')||loanRate*100)/100;
+  const loanYrsB=_lpi('loan-w-yrs')||loanYrs;
   let h=`<div style="padding:16px;max-width:1400px">
     <h2 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px">🏦 返済計画シミュレーション</h2>
     <!-- ペアローン切替 -->
@@ -369,13 +372,13 @@ function setPPType(t){
 }
 function renderLoanCalc(){
   // ローンA
-  const amtA=(parseFloat($('lp-amt-a')?.value)||0)*10000;
-  const rateA=(parseFloat($('lp-rate-a')?.value)||0)/100;
-  const yrsA=parseInt($('lp-yrs-a')?.value)||35;
+  const amtA=_lpf('lp-amt-a')*10000;
+  const rateA=_lpf('lp-rate-a')/100;
+  const yrsA=_lpi('lp-yrs-a')||35;
   // ローンB（ペアローン）
-  const amtB=pairLoanMode?(parseFloat($('lp-amt-b')?.value)||0)*10000:0;
-  const rateB=pairLoanMode?(parseFloat($('lp-rate-b')?.value)||0)/100:0;
-  const yrsB=pairLoanMode?parseInt($('lp-yrs-b')?.value)||35:0;
+  const amtB=pairLoanMode?_lpf('lp-amt-b')*10000:0;
+  const rateB=pairLoanMode?_lpf('lp-rate-b')/100:0;
+  const yrsB=pairLoanMode?_lpi('lp-yrs-b')||35:0;
   if(amtA<=0&&amtB<=0){$('lp-table-wrap').innerHTML='';return}
   function calcMP(amt,rate,yrs){const mr=rate/12;const n=yrs*12;return mr>0?amt*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1):amt/n}
   const mpA=amtA>0?calcMP(amtA,rateA,yrsA):0;
@@ -395,8 +398,8 @@ function renderLoanCalc(){
   const showPP=pairLoanMode&&amtB>0;
   if(_ppType==='term'){
     // 期間短縮型：短縮開始年〜終了年の元金分を一括繰上
-    const termFrom=parseInt($('pp-term-from')?.value)||0;
-    const termTo=parseInt($('pp-term-to')?.value)||0;
+    const termFrom=_lpi('pp-term-from');
+    const termTo=_lpi('pp-term-to');
     const maxLen=Math.max(normalA.length,normalB.length);
     if(termFrom>0&&termTo>=termFrom&&maxLen>0){
       // ローンA
@@ -442,8 +445,8 @@ function renderLoanCalc(){
     }
   }else{
     // 返済額軽減型：希望月額から逆算（A+B合算）
-    const reduceYr=parseInt($('pp-reduce-yr')?.value)||0;
-    const desiredMP=parseFloat($('pp-reduce-mp')?.value)||0;
+    const reduceYr=_lpi('pp-reduce-yr');
+    const desiredMP=_lpf('pp-reduce-mp');
     const totalMP=mpA+mpB;
     if(reduceYr>0&&desiredMP>0&&desiredMP<totalMP){
       // A+Bの合計月額を希望月額にするため、按分して繰上返済額を計算
@@ -501,8 +504,8 @@ function renderLoanCalc(){
   const dedRate=0.007; // 0.7%固定
   const dataA=withPPA||normalA;
   // 額面年収から所得税・住民税・課税所得を計算
-  const grossH=parseFloat($('lp-ded-gross-h')?.value)||0;
-  const grossW=parseFloat($('lp-ded-gross-w')?.value)||0;
+  const grossH=_lpf('lp-ded-gross-h');
+  const grossW=_lpf('lp-ded-gross-w');
   const taxInfoH=grossH>0?estimateTaxFromGross(grossH):{itax:0,jumin:0,taxableBase:0};
   const taxInfoW=grossW>0?estimateTaxFromGross(grossW):{itax:0,jumin:0,taxableBase:0};
   if(grossH>0)calcLPTaxFromGross('h');
@@ -803,12 +806,12 @@ function renderLoanCalc(){
   $('lp-table-wrap').innerHTML=t;
 }
 function exportLoanExcel(){
-  const amtA=(parseFloat($('lp-amt-a')?.value)||0)*10000;
-  const rateA=(parseFloat($('lp-rate-a')?.value)||0)/100;
-  const yrsA=parseInt($('lp-yrs-a')?.value)||35;
-  const amtB=pairLoanMode?(parseFloat($('lp-amt-b')?.value)||0)*10000:0;
-  const rateB=pairLoanMode?(parseFloat($('lp-rate-b')?.value)||0)/100:0;
-  const yrsB=pairLoanMode?parseInt($('lp-yrs-b')?.value)||35:0;
+  const amtA=_lpf('lp-amt-a')*10000;
+  const rateA=_lpf('lp-rate-a')/100;
+  const yrsA=_lpi('lp-yrs-a')||35;
+  const amtB=pairLoanMode?_lpf('lp-amt-b')*10000:0;
+  const rateB=pairLoanMode?_lpf('lp-rate-b')/100:0;
+  const yrsB=pairLoanMode?_lpi('lp-yrs-b')||35:0;
   if(amtA<=0&&amtB<=0){alert('ローン設定を入力してください');return;}
   const ratesAx=getLPRates('a'),ratesBx=getLPRates('b');
   const normalA=amtA>0?calcAmortization(amtA,rateA,yrsA,[],'term',ratesAx):[];
@@ -825,8 +828,8 @@ function exportLoanExcel(){
   let ppReduceAmt=0,ppReduceNewMP=0;
 
   if(_ppType==='term'){
-    ppTermFrom=parseInt($('pp-term-from')?.value)||0;
-    ppTermTo=parseInt($('pp-term-to')?.value)||0;
+    ppTermFrom=_lpi('pp-term-from');
+    ppTermTo=_lpi('pp-term-to');
     if(ppTermFrom>0&&ppTermTo>=ppTermFrom){
       ppTypeLabel='期間短縮型';
       if(normalA.length>0){
@@ -850,7 +853,7 @@ function exportLoanExcel(){
       hasPP=ppAmtTotal>0;
     }
   }else if(_ppType==='reduce'){
-    ppReduceAmt=(parseFloat($('pp-reduce-amt')?.value)||0)*10000;
+    ppReduceAmt=_lpf('pp-reduce-amt')*10000;
     if(ppReduceAmt>0){
       ppTypeLabel='返済額軽減型';
       ppAmtTotal=ppReduceAmt;
