@@ -233,10 +233,9 @@ function render(){
       });
     });
     R.insMat.push(insMatTotal);
+    // 老齢年金（死亡後も生存配偶者の年金は継続表示、遺族年金は別行）
     R.pS.push((ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(pSelf):0);
-    // ご主人死亡後は遺族年金(survPension)に統合されるため配偶者年金は計上しない
-    const hAlive=!(hDeathAge>0&&ha>hDeathAge);
-    R.pW.push((wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)&&hAlive)?ri(pWife):0);
+    R.pW.push((wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife):0);
     // ─── 児童手当（TEATE_TABLEを参照・2024年10月改正対応） ───
     let t=0;
     if(hDeathAge===0||ha<=hDeathAge){
@@ -253,7 +252,7 @@ function render(){
     }
     R.teate.push(t);
 
-    // ─── 遺族年金（ご主人ご逝去後 or 奥様ご逝去後） ───
+    // ─── 遺族年金（純粋な遺族年金部分のみ、老齢年金は別行表示） ───
     let survP=0;
     if(hDeathAge>0&&ha>hDeathAge){
       // ご主人ご逝去後：奥様への遺族年金
@@ -261,17 +260,14 @@ function render(){
       if(overrideH>0){
         survP=overrideH;
       }else{
-        // 65歳未満：遺族厚生年金 = 夫の厚生×3/4
-        // 65歳以降：差額方式 と 2/3+1/2特例 の高い方
         let childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
         const kiso=calcKiso(childUnder18);
-        // 中高齢寡婦加算: 遺族基礎年金なし かつ 妻40〜64歳 かつ 夫死亡時に妻40歳以上
         const wAgeAtDeath=wAge+(hDeathAge-hAge);
         const chukorei=(kiso===0&&wa>=40&&wa<65&&wAgeAtDeath>=40)?ri(61.43):0;
         if(wa>=pWReceive){
-          // 2022年改正後は差額方式のみ（2/3・1/2方式は廃止）
-          survP=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW))+kiso+chukorei;
+          // 差額方式：遺族厚生年金＝夫の厚生×3/4−妻の厚生（老齢年金は別行で表示）
+          survP=Math.max(ri(koseiH*0.75)-koseiW,0)+kiso+chukorei;
         }else{
           survP=ri(koseiH*0.75)+kiso+chukorei;
         }
@@ -287,7 +283,9 @@ function render(){
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
         const kiso=calcKiso(childUnder18);
         if(childUnder18>0||(ha>=55&&hIncome<850)){
-          survP=ri(koseiW*0.75)+kiso;
+          // 差額方式：ご主人の老齢年金受給中は差額のみ
+          if(ha>=pHReceive){survP=Math.max(ri(koseiW*0.75)-koseiH,0)+kiso;}
+          else{survP=ri(koseiW*0.75)+kiso;}
         }
       }
     }
@@ -454,7 +452,7 @@ function render(){
     });
     R.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap[row.key]?.val||0));});
     R.secRedeem.push(ri(secRedeemTotal));
-    R.incT.push(ri(hInc)+ri(wInc)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)&&hAlive?ri(pWife):0)+t+lc2+survP);
+    R.incT.push(ri(hInc)+ri(wInc)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)?ri(pWife):0)+t+lc2+survP);
     // DC・iDeCo受取は後でfinRowMap計算後にincTに加算される（Pass2でincKeysに含む）
 
     // ─── 生活費（段階別複利計算） ───
