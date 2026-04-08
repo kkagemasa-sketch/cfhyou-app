@@ -22,20 +22,23 @@ function addOther(){
 }
 
 function addChild(){
-  if(cCnt>=4){alert('子どもは最大4人まで');return}
-  cCnt++;const id=cCnt;
+  const _existing=document.querySelectorAll('#children-cont > div[id^="cr-"]');
+  if(_existing.length>=4){alert('子どもは最大4人まで');return}
+  let _maxId=0;_existing.forEach(el=>{const n=parseInt(el.id.replace('cr-',''));if(n>_maxId)_maxId=n;});
+  cCnt=_maxId+1;const id=cCnt;
   const el=document.createElement('div');
   el.id=`cr-${id}`;
   el.style.cssText='background:#eef6fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:10px;margin-bottom:8px';
   const labs=['第一子','第二子','第三子','第四子'],defAges=[2,0,-2,-4];
+  const _pos=_existing.length;// 0-based position for the new child
   el.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <span style="font-size:11px;font-weight:700;color:#3a6a8a">${labs[id-1]}</span>
+      <span style="font-size:11px;font-weight:700;color:#3a6a8a" data-child-label>${labs[_pos]}</span>
       <button class="btn-rm" onclick="rmChild(${id})">× 削除</button>
     </div>
     <div class="g3" style="margin-bottom:8px">
       <div class="fg"><label class="lbl">現在年齢</label>
-        <div class="suf"><input class="inp" id="ca-${id}" type="number" value="${defAges[id-1]}" onfocus="scrollToCFRow('cAge${id-1}',iv('husband-age')||30)" onblur="cfRowBlur()" oninput="scrollToCFRow('cAge${id-1}',iv('husband-age')||30);live()" class="inp age-inp"><span class="sl">歳</span></div></div>
+        <div class="suf"><input class="inp" id="ca-${id}" type="number" value="${defAges[_pos]||0}" onfocus="scrollToCFRow('cAge${id-1}',iv('husband-age')||30)" onblur="cfRowBlur()" oninput="scrollToCFRow('cAge${id-1}',iv('husband-age')||30);live()" class="inp age-inp"><span class="sl">歳</span></div></div>
       <div class="fg"><label class="lbl">性別</label>
         <select class="sel" id="cg-${id}" onchange="live()"><option value="m">男の子</option><option value="f">女の子</option></select></div>
     </div>
@@ -142,7 +145,16 @@ function addChild(){
     </div>`;
   $('children-cont').appendChild(el);live();
 }
-function rmChild(id){$(`cr-${id}`)?.remove();live()}
+function rmChild(id){
+  $(`cr-${id}`)?.remove();
+  // ラベル再番号付け
+  const labs=['第一子','第二子','第三子','第四子'];
+  document.querySelectorAll('#children-cont > div[id^="cr-"]').forEach((el,idx)=>{
+    const lbl=el.querySelector('[data-child-label]');
+    if(lbl)lbl.textContent=labs[idx];
+  });
+  live();
+}
 function setScholarship(id,on){
   document.getElementById(`sc-no-${id}`).classList.toggle('on',!on);
   document.getElementById(`sc-yes-${id}`).classList.toggle('on',on);
