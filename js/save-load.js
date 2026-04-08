@@ -188,12 +188,12 @@ function _collectDynamic(){
   d.mg={target:mgTarget,dansin:mgDansin,dansinH:mgDansinH,dansinW:mgDansinW,survMode:mgSurvMode,
     deathYear:$('mg-death-year')?.value||'',survAmt:$('mg-surv-amt')?.value||'',lcRatio:$('mg-lc-ratio')?.value||'',
     lcMode:$('mg-lc-mode-step')?.classList.contains('act')?'step':'ratio',
-    scholarshipOn:$('mg-scholarship-yes')?.classList.contains('act')||false,
+    scholarshipOn:$('mg-scholarship-yes')?.classList.contains('on')||false,
     scholarshipAmt:$('mg-scholarship-amt')?.value||'',scholarshipAge:$('mg-scholarship-age')?.value||'',
-    carOn:$('mg-car-keep')?.classList.contains('act')!==false,
+    carOn:$('mg-car-keep')?.classList.contains('on')!==false,
     carHPrice:$('mg-car-h-price')?.value||'',carHCycle:$('mg-car-h-cycle')?.value||'',carHInsp:$('mg-car-h-insp')?.value||'',carHEndAge:$('mg-car-h-end-age')?.value||'',
     carWPrice:$('mg-car-w-price')?.value||'',carWCycle:$('mg-car-w-cycle')?.value||'',carWInsp:$('mg-car-w-insp')?.value||'',carWEndAge:$('mg-car-w-end-age')?.value||'',
-    parkOn:$('mg-park-keep')?.classList.contains('act')!==false,parking:$('mg-parking')?.value||'',
+    parkOn:$('mg-park-keep')?.classList.contains('on')!==false,parking:$('mg-parking')?.value||'',
     parkFromAge:$('mg-park-from-age')?.value||'',parkToAge:$('mg-park-to-age')?.value||'',
     insurances:[],lcSteps:[]};
   document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
@@ -485,24 +485,17 @@ function _restoreDynamic(d){
     }
     // 奨学金
     if(mg.scholarshipOn){
-      $('mg-scholarship-yes')?.classList.add('act');$('mg-scholarship-none')?.classList.remove('act');
+      $('mg-scholarship-yes')?.classList.add('on');$('mg-scholarship-none')?.classList.remove('on');
       if($('mg-scholarship-fields'))$('mg-scholarship-fields').style.display='';
     } else {
-      $('mg-scholarship-none')?.classList.add('act');$('mg-scholarship-yes')?.classList.remove('act');
+      $('mg-scholarship-none')?.classList.add('on');$('mg-scholarship-yes')?.classList.remove('on');
       if($('mg-scholarship-fields'))$('mg-scholarship-fields').style.display='none';
     }
     if($('mg-scholarship-amt'))$('mg-scholarship-amt').value=mg.scholarshipAmt||'0';
     if($('mg-scholarship-age'))$('mg-scholarship-age').value=mg.scholarshipAge||'19';
     // 車
-    if(mg.carOn!==false){
-      $('mg-car-keep')?.classList.add('act');$('mg-car-stop')?.classList.remove('act');
-      if($('mg-car-fields-h'))$('mg-car-fields-h').style.display='';
-      if($('mg-car-fields-w'))$('mg-car-fields-w').style.display='';
-    } else {
-      $('mg-car-stop')?.classList.add('act');$('mg-car-keep')?.classList.remove('act');
-      if($('mg-car-fields-h'))$('mg-car-fields-h').style.display='none';
-      if($('mg-car-fields-w'))$('mg-car-fields-w').style.display='none';
-    }
+    $('mg-car-keep')?.classList.toggle('on',mg.carOn!==false);
+    $('mg-car-stop')?.classList.toggle('on',mg.carOn===false);
     // 旧データ互換: 旧carPrice等があれば両方に適用
     const _cp=mg.carHPrice?'new':'old';
     if(_cp==='new'){
@@ -523,16 +516,13 @@ function _restoreDynamic(d){
       });
     }
     // 駐車場
-    if(mg.parkOn!==false){
-      $('mg-park-keep')?.classList.add('act');$('mg-park-stop')?.classList.remove('act');
-      if($('mg-park-fields'))$('mg-park-fields').style.display='';
-    } else {
-      $('mg-park-stop')?.classList.add('act');$('mg-park-keep')?.classList.remove('act');
-      if($('mg-park-fields'))$('mg-park-fields').style.display='none';
-    }
+    $('mg-park-keep')?.classList.toggle('on',mg.parkOn!==false);
+    $('mg-park-stop')?.classList.toggle('on',mg.parkOn===false);
+    if($('mg-park-fields'))$('mg-park-fields').style.display=mg.parkOn!==false?'':'none';
     if($('mg-parking'))$('mg-parking').value=mg.parking||'15000';
     if($('mg-park-from-age')&&mg.parkFromAge)$('mg-park-from-age').value=mg.parkFromAge;
     if($('mg-park-to-age')&&mg.parkToAge)$('mg-park-to-age').value=mg.parkToAge;
+    if(typeof updateMGCarParkVisibility==='function')updateMGCarParkVisibility();
     // 保険金
     if($('mg-insurance-cont'))$('mg-insurance-cont').innerHTML='';
     mgInsCnt=0;

@@ -4,7 +4,30 @@ function setMGTarget(t){
   mgTarget=t;
   $('mg-target-h').classList.toggle('on',t==='h');
   $('mg-target-w').classList.toggle('on',t==='w');
+  updateMGCarParkVisibility();
   updateMGHints();
+}
+// 車両費・駐車場の継続/なしボタン
+function setMGCarPark(type,on){
+  $(`mg-${type}-keep`).classList.toggle('on',on);
+  $(`mg-${type}-stop`).classList.toggle('on',!on);
+  if(type==='car'){
+    updateMGCarParkVisibility();
+  }else{
+    $('mg-park-fields').style.display=on?'':'none';
+  }
+  live();
+}
+// ターゲットに応じて車両フィールドの表示を切替
+function updateMGCarParkVisibility(){
+  const carOn=$('mg-car-keep')?.classList.contains('on');
+  const t=mgTarget;
+  const hF=$('mg-car-fields-h'),wF=$('mg-car-fields-w');
+  if(!carOn){if(hF)hF.style.display='none';if(wF)wF.style.display='none';}
+  else{
+    if(hF)hF.style.display=t==='h'?'':'none';
+    if(wF)wF.style.display=t==='w'?'':'none';
+  }
 }
 function setMGDansin(on){
   mgDansin=on;
@@ -60,8 +83,8 @@ function addMGInsurance(){
     <button onclick="this.parentElement.parentElement.parentElement.parentElement.remove()" style="background:#fee;color:#d63a2a;border:1px solid #fca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button></div></div>`;
   cont.appendChild(d);
 }
-function getMGCarOn(){return document.getElementById('mg-car-keep')?.classList.contains('act')!==false;}
-function getMGParkOn(){return document.getElementById('mg-park-keep')?.classList.contains('act')!==false;}
+function getMGCarOn(){return document.getElementById('mg-car-keep')?.classList.contains('on')!==false;}
+function getMGParkOn(){return document.getElementById('mg-park-keep')?.classList.contains('on')!==false;}
 function updateMGHints(){
   const ratio=parseInt($('mg-lc-ratio')?.value)||70;
   $('mg-lc-hint').textContent=`✓ 死亡後は現在の${ratio}%で計算`;
@@ -177,7 +200,7 @@ function renderContingency(){
   const mgLCSteps=mgLCMode==='step'?getMGLCSteps():[];
   const mgCarKeep=getMGCarOn();
   const mgParkKeep=getMGParkOn();
-  const mgScholarOn=document.getElementById('mg-scholarship-yes')?.classList.contains('act');
+  const mgScholarOn=document.getElementById('mg-scholarship-yes')?.classList.contains('on');
   const mgScholarAmt=mgScholarOn?(fv('mg-scholarship-amt')||0):0;
   const mgScholarAge=iv('mg-scholarship-age')||19;
   const insTotal=getMGInsuranceTotal();

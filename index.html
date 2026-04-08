@@ -1136,8 +1136,8 @@ if(authExp&&Date.now()<Number(authExp)){
       <div class="g2" style="margin-bottom:8px">
         <div class="fg"><label class="lbl">奨学金</label>
           <div style="display:flex;gap:4px">
-            <button type="button" class="btn-tog act" onclick="this.classList.add('act');this.nextElementSibling.classList.remove('act');document.getElementById('mg-scholarship-fields').style.display='none';live()" id="mg-scholarship-none">なし</button>
-            <button type="button" class="btn-tog" onclick="this.classList.add('act');this.previousElementSibling.classList.remove('act');document.getElementById('mg-scholarship-fields').style.display='';live()" id="mg-scholarship-yes">あり</button>
+            <button type="button" class="btn-tog on" onclick="this.classList.add('on');this.nextElementSibling.classList.remove('on');document.getElementById('mg-scholarship-fields').style.display='none';live()" id="mg-scholarship-none">なし</button>
+            <button type="button" class="btn-tog" onclick="this.classList.add('on');this.previousElementSibling.classList.remove('on');document.getElementById('mg-scholarship-fields').style.display='';live()" id="mg-scholarship-yes">あり</button>
           </div></div>
         <div></div>
       </div>
@@ -1157,13 +1157,13 @@ if(authExp&&Date.now()<Number(authExp)){
       <div class="g2" style="margin-bottom:8px">
         <div class="fg"><label class="lbl">車両</label>
           <div style="display:flex;gap:4px">
-            <button type="button" class="btn-tog act" onclick="this.classList.add('act');this.nextElementSibling.classList.remove('act');document.getElementById('mg-car-fields-h').style.display='';document.getElementById('mg-car-fields-w').style.display='';live()" id="mg-car-keep">継続</button>
-            <button type="button" class="btn-tog" onclick="this.classList.add('act');this.previousElementSibling.classList.remove('act');document.getElementById('mg-car-fields-h').style.display='none';document.getElementById('mg-car-fields-w').style.display='none';live()" id="mg-car-stop">なし</button>
+            <button type="button" class="btn-tog on" onclick="setMGCarPark('car',true)" id="mg-car-keep">継続</button>
+            <button type="button" class="btn-tog" onclick="setMGCarPark('car',false)" id="mg-car-stop">なし</button>
           </div></div>
         <div class="fg"><label class="lbl">駐車場</label>
           <div style="display:flex;gap:4px">
-            <button type="button" class="btn-tog act" onclick="this.classList.add('act');this.nextElementSibling.classList.remove('act');document.getElementById('mg-park-fields').style.display='';live()" id="mg-park-keep">継続</button>
-            <button type="button" class="btn-tog" onclick="this.classList.add('act');this.previousElementSibling.classList.remove('act');document.getElementById('mg-park-fields').style.display='none';live()" id="mg-park-stop">なし</button>
+            <button type="button" class="btn-tog on" onclick="setMGCarPark('park',true)" id="mg-park-keep">継続</button>
+            <button type="button" class="btn-tog" onclick="setMGCarPark('park',false)" id="mg-park-stop">なし</button>
           </div></div>
       </div>
       <!-- ご主人様の万が一（遺族＝奥様） -->
@@ -1299,7 +1299,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=8"></script>
 <script src="js/extras.js"></script>
-<script src="js/contingency.js?v=19"></script>
+<script src="js/contingency.js?v=20"></script>
 <script src="js/cf-ui.js?v=2"></script>
 <script src="js/cf-calc.js?v=10"></script>
 <script src="js/cf-table.js?v=7"></script>
@@ -1310,7 +1310,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=23"></script>
+<script src="js/save-load.js?v=24"></script>
 <script src="js/ui.js?v=3"></script>
 <script src="js/app.js?v=27"></script>
 <script>
