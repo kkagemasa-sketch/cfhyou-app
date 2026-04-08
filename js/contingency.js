@@ -15,18 +15,26 @@ function setMGCarPark(type,on){
     updateMGCarParkVisibility();
   }else{
     $('mg-park-fields').style.display=on?'':'none';
+    updateMGCarParkVisibility();
   }
   live();
 }
 // ターゲットに応じて車両フィールドの表示を切替
 function updateMGCarParkVisibility(){
   const carOn=$('mg-car-keep')?.classList.contains('on');
+  const parkOn=$('mg-park-keep')?.classList.contains('on');
   const t=mgTarget;
   const hF=$('mg-car-fields-h'),wF=$('mg-car-fields-w');
   if(!carOn){if(hF)hF.style.display='none';if(wF)wF.style.display='none';}
   else{
     if(hF)hF.style.display=t==='h'?'':'none';
     if(wF)wF.style.display=t==='w'?'':'none';
+  }
+  const phF=$('mg-park-age-h'),pwF=$('mg-park-age-w');
+  if(!parkOn){if(phF)phF.style.display='none';if(pwF)pwF.style.display='none';}
+  else{
+    if(phF)phF.style.display=t==='h'?'':'none';
+    if(pwF)pwF.style.display=t==='w'?'':'none';
   }
 }
 function setMGDansin(on){
@@ -665,7 +673,7 @@ function renderContingency(){
     // 駐車場
     let nPrk=0;
     if(!mgParkKeep&&isDead){nPrk=0;}
-    else if(mgParkKeep&&isDead){const mgParkAmt=fv('mg-parking')||15000;const mgParkFromAge=iv('mg-park-from-age')||0;const mgParkToAge=iv('mg-park-to-age')||0;nPrk=((mgParkFromAge<=0||ha>=mgParkFromAge)&&(mgParkToAge<=0||ha<=mgParkToAge))?ri(mgParkAmt*12/10000):0;}
+    else if(mgParkKeep&&isDead){const cp=targetIsH?'h':'w';const mgParkAmt=fv('mg-parking')||15000;const mgParkFromAge=iv(`mg-park-${cp}-from-age`)||0;const mgParkToAge=iv(`mg-park-${cp}-to-age`)||0;const survivorAge2=targetIsH?wa:ha;nPrk=((mgParkFromAge<=0||survivorAge2>=mgParkFromAge)&&(mgParkToAge<=0||survivorAge2<=mgParkToAge))?ri(mgParkAmt*12/10000):0;}
     else{nPrk=i<normalR.prk.length?(normalR.prk[i]||0):0;}
     MR.prk.push(nPrk);
 

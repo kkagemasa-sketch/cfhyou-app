@@ -194,7 +194,8 @@ function _collectDynamic(){
     carHPrice:$('mg-car-h-price')?.value||'',carHCycle:$('mg-car-h-cycle')?.value||'',carHInsp:$('mg-car-h-insp')?.value||'',carHEndAge:$('mg-car-h-end-age')?.value||'',
     carWPrice:$('mg-car-w-price')?.value||'',carWCycle:$('mg-car-w-cycle')?.value||'',carWInsp:$('mg-car-w-insp')?.value||'',carWEndAge:$('mg-car-w-end-age')?.value||'',
     parkOn:$('mg-park-keep')?.classList.contains('on')!==false,parking:$('mg-parking')?.value||'',
-    parkFromAge:$('mg-park-from-age')?.value||'',parkToAge:$('mg-park-to-age')?.value||'',
+    parkHFromAge:$('mg-park-h-from-age')?.value||'',parkHToAge:$('mg-park-h-to-age')?.value||'',
+    parkWFromAge:$('mg-park-w-from-age')?.value||'',parkWToAge:$('mg-park-w-to-age')?.value||'',
     insurances:[],lcSteps:[]};
   document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
     const id=el.id.split('-').pop();
@@ -520,8 +521,10 @@ function _restoreDynamic(d){
     $('mg-park-stop')?.classList.toggle('on',mg.parkOn===false);
     if($('mg-park-fields'))$('mg-park-fields').style.display=mg.parkOn!==false?'':'none';
     if($('mg-parking'))$('mg-parking').value=mg.parking||'15000';
-    if($('mg-park-from-age')&&mg.parkFromAge)$('mg-park-from-age').value=mg.parkFromAge;
-    if($('mg-park-to-age')&&mg.parkToAge)$('mg-park-to-age').value=mg.parkToAge;
+    if($('mg-park-h-from-age')&&(mg.parkHFromAge||mg.parkFromAge))$('mg-park-h-from-age').value=mg.parkHFromAge||mg.parkFromAge||'';
+    if($('mg-park-h-to-age')&&(mg.parkHToAge||mg.parkToAge))$('mg-park-h-to-age').value=mg.parkHToAge||mg.parkToAge||'';
+    if($('mg-park-w-from-age')&&mg.parkWFromAge)$('mg-park-w-from-age').value=mg.parkWFromAge;
+    if($('mg-park-w-to-age')&&mg.parkWToAge)$('mg-park-w-to-age').value=mg.parkWToAge;
     if(typeof updateMGCarParkVisibility==='function')updateMGCarParkVisibility();
     // 保険金
     if($('mg-insurance-cont'))$('mg-insurance-cont').innerHTML='';

@@ -1206,11 +1206,23 @@ if(authExp&&Date.now()<Number(authExp)){
             <div class="suf"><input class="inp amt-inp" id="mg-parking" type="number" value="15000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
           <div></div>
         </div>
-        <div class="g2">
-          <div class="fg"><label class="lbl">開始年齢（ご主人様）</label>
-            <div class="suf"><input class="inp age-inp" id="mg-park-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
-          <div class="fg"><label class="lbl">終了年齢（ご主人様）</label>
-            <div class="suf"><input class="inp age-inp" id="mg-park-to-age" type="number" placeholder="空欄=ずっと" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+        <div id="mg-park-age-h">
+          <div style="font-size:10px;font-weight:700;color:#1a5fa0;margin-bottom:4px">🅿️ 奥様基準</div>
+          <div class="g2">
+            <div class="fg"><label class="lbl">開始年齢（奥様）</label>
+              <div class="suf"><input class="inp age-inp" id="mg-park-h-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+            <div class="fg"><label class="lbl">終了年齢（奥様）</label>
+              <div class="suf"><input class="inp age-inp" id="mg-park-h-to-age" type="number" placeholder="空欄=ずっと" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+          </div>
+        </div>
+        <div id="mg-park-age-w">
+          <div style="font-size:10px;font-weight:700;color:#a01a5f;margin-bottom:4px">🅿️ ご主人様基準</div>
+          <div class="g2">
+            <div class="fg"><label class="lbl">開始年齢（ご主人様）</label>
+              <div class="suf"><input class="inp age-inp" id="mg-park-w-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+            <div class="fg"><label class="lbl">終了年齢（ご主人様）</label>
+              <div class="suf"><input class="inp age-inp" id="mg-park-w-to-age" type="number" placeholder="空欄=ずっと" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+          </div>
         </div>
       </div>
 
