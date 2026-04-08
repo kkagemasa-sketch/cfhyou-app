@@ -680,7 +680,7 @@ function renderLoanCalc(){
   const thS='padding:4px 6px;font-size:10px;white-space:nowrap';
   const thG='padding:3px 6px;font-size:10px;font-weight:700;text-align:center;border-bottom:2px solid rgba(255,255,255,.3)';
   let colsA=5,ppCol=withPPA?2:0,dedCol=showPair?3:1;
-  let t=`<table class="cf" style="font-size:11px;border-collapse:collapse"><thead>`;
+  let t=`<table class="cf" style="font-size:11px;border-collapse:collapse;min-width:${showPair?'1200':'700'}px;white-space:nowrap"><thead>`;
   if(showPair){
     // 2行ヘッダー：グループ行
     t+=`<tr style="background:var(--navy);color:#fff">
