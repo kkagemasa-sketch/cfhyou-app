@@ -341,8 +341,14 @@ function setLoanMode(mode){
   pairLoanMode=mode==='pair';
   document.getElementById('loan-single-tab')?.classList.toggle('on',!pairLoanMode);
   document.getElementById('loan-pair-tab')?.classList.toggle('on',pairLoanMode);
-  document.getElementById('loan-single-body').style.display=pairLoanMode?'none':'';
-  document.getElementById('loan-pair-body').style.display=pairLoanMode?'':'none';
+  // フラット35選択時は標準ローンbodyを非表示
+  if(loanCategory==='flat35'){
+    document.getElementById('loan-single-body').style.display='none';
+    document.getElementById('loan-pair-body').style.display='none';
+  } else {
+    document.getElementById('loan-single-body').style.display=pairLoanMode?'none':'';
+    document.getElementById('loan-pair-body').style.display=pairLoanMode?'':'none';
+  }
   if(typeof updateMGDansinUI==='function')updateMGDansinUI();
   live();
 }

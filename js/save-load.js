@@ -42,6 +42,8 @@ function onJSONImport(input){
       _cfCustomId=d._cfCustomId||0;
       _lcBikou=d.lcBikou||{};
       _cfRowLabels=d.cfRowLabels||{};
+      loanCategory=d.loanCategory||'standard';
+      flat35Sub=d.flat35Sub||'flat35';
       // v7以前の後方互換（extrasが直接ある場合）
       if(d.extras && !d.dynamic){
         $('extra-cont').innerHTML = ''; extraCnt = 0;
@@ -49,7 +51,10 @@ function onJSONImport(input){
       } else {
         _restoreDynamic(d.dynamic);
       }
-      calcLoanAmt(); calcDelivery(); initLCComma(); live();
+      calcLoanAmt(); calcDelivery(); initLCComma();
+      if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
+      if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
+      live();
       alert(`「${d.fields?.['client-name'] || 'データ'}」を読み込みました`);
     }catch(err){ alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n')); console.error('Import error:',err); }
     input.value = '';
@@ -657,7 +662,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),_cfCustomId:_cfCustomId,version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value});
   return d;
 }
@@ -702,8 +707,14 @@ function _applyData(d){
     _cfCustomId=d._cfCustomId||0;
     _lcBikou=d.lcBikou||{};
     _cfRowLabels=d.cfRowLabels||{};
+    // フラット35復元
+    loanCategory=d.loanCategory||'standard';
+    flat35Sub=d.flat35Sub||'flat35';
     _restoreDynamic(d.dynamic);
-    calcLoanAmt();calcDelivery();initLCComma();live();render();
+    calcLoanAmt();calcDelivery();initLCComma();
+    if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
+    if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
+    live();render();
   }catch(err){
     alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n'));
     console.error('Apply data error:',err);

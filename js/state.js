@@ -39,6 +39,9 @@ let parkOwn=true;
 
 let pairLoanMode=false;
 
+let loanCategory='standard'; // 'standard' | 'flat35'
+let flat35Sub='flat35';       // 'flat35' | 'flat20'
+
 let retirePayOn=true;
 
 let wRetirePayOn=true;

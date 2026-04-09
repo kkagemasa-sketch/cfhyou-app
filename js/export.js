@@ -179,10 +179,11 @@ async function exportExcelMG(){
   const initialOut=downFromOwn+houseCostDeductMG+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
   const loanAmtV=fv('loan-amt')||0;
-  const loanYrsV=iv('loan-yrs')||35;
-  const rateBaseV=fv('rate-base')||0.5;
-  const rates=getRates();
-  const rateDisp=rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`;
+  const _isFlat_e=loanCategory==='flat35';
+  const loanYrsV=_isFlat_e?(iv('flat-loan-yrs')||35):(iv('loan-yrs')||35);
+  const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
+  const rates=_isFlat_e?getFlat35Rates():getRates();
+  const rateDisp=_isFlat_e?`${rateBaseV}%(フラット${flat35Sub==='flat20'?'20':'35'} ${calcFlat35Points()}pt)`:(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
   const deliveryYrV=iv('delivery-year')||0;
 
   // ── タイトル行（通常CFと同形式 + E列に万が一ラベル） ──
@@ -741,10 +742,11 @@ async function exportExcel(){
   const initialOut=downFromOwn+houseCostDeductE+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
   const loanAmtV=fv('loan-amt')||0;
-  const loanYrsV=iv('loan-yrs')||35;
-  const rateBaseV=fv('rate-base')||0.5;
-  const rates=getRates();
-  const rateDisp=rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`;
+  const _isFlat_e=loanCategory==='flat35';
+  const loanYrsV=_isFlat_e?(iv('flat-loan-yrs')||35):(iv('loan-yrs')||35);
+  const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
+  const rates=_isFlat_e?getFlat35Rates():getRates();
+  const rateDisp=_isFlat_e?`${rateBaseV}%(フラット${flat35Sub==='flat20'?'20':'35'} ${calcFlat35Points()}pt)`:(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
   const deliveryYrV=iv('delivery-year')||0;
   const emptyFill=Array(disp-1).fill('');
 

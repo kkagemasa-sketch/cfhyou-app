@@ -718,8 +718,17 @@ if(authExp&&Date.now()<Number(authExp)){
 
       <!-- ローン設定 -->
       <div class="sub">🏦 住宅ローン設定</div>
-      <!-- ローン種別トグル -->
+      <!-- ローンカテゴリ切替 -->
       <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="tc on" id="lcat-std" onclick="setLoanCategory('standard')" style="flex:1;padding:7px 10px">
+          <div class="tc-lbl" style="font-size:11px">固定/変動金利</div>
+        </div>
+        <div class="tc" id="lcat-flat" onclick="setLoanCategory('flat35')" style="flex:1;padding:7px 10px">
+          <div class="tc-lbl" style="font-size:11px">フラット35/20</div>
+        </div>
+      </div>
+      <!-- ローン種別トグル -->
+      <div id="loan-mode-toggle" style="display:flex;gap:8px;margin-bottom:10px">
         <div class="tc on" id="loan-single-tab" onclick="setLoanMode('single')" style="flex:1;padding:7px 10px">
           <span style="font-size:15px">👤</span>
           <div><div class="tc-lbl" style="font-size:11px">単独ローン</div></div>
@@ -825,6 +834,106 @@ if(authExp&&Date.now()<Number(authExp)){
           <span style="font-size:10px;color:var(--muted);margin-left:auto">ご主人様 ＋ 奥様の合計</span>
         </div>
       </div><!-- /loan-pair-body -->
+
+      <!-- フラット35/20 設定 -->
+      <div id="flat35-body" style="display:none">
+        <!-- フラット35/20 サブトグル -->
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div class="tc on" id="flat-sub-35" onclick="setFlat35Sub('flat35')" style="flex:1;padding:7px 10px">
+            <div class="tc-lbl" style="font-size:11px">フラット35（21〜35年）</div>
+          </div>
+          <div class="tc" id="flat-sub-20" onclick="setFlat35Sub('flat20')" style="flex:1;padding:7px 10px">
+            <div class="tc-lbl" style="font-size:11px">フラット20（〜20年）</div>
+          </div>
+        </div>
+        <div class="g3">
+          <div class="fg"><label class="lbl">返済期間</label>
+            <div class="suf"><input class="inp age-inp" id="flat-loan-yrs" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="35" min="5" max="35" oninput="live()"><span class="sl">年</span></div></div>
+          <div class="fg"><label class="lbl">返済方式</label>
+            <select class="sel" id="flat-loan-type" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" onchange="live()">
+              <option value="equal_payment">元利均等返済</option>
+              <option value="equal_principal">元金均等返済</option>
+            </select></div>
+          <div class="fg"><label class="lbl">月返済額（自動計算）</label>
+            <div class="suf"><input class="inp" id="flat-monthly-pay" readonly><span class="sl">万円</span></div>
+            <span class="hint ok" id="flat-monthly-hint">✓ 元利均等返済</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="g2">
+          <div class="fg"><label class="lbl">適用月の金利を読込</label>
+            <select class="sel" id="flat-rate-month" onchange="applyFlatRateFromTable()" style="font-size:11px">
+              <option value="">-- 手動入力 --</option>
+            </select>
+            <span class="hint" style="color:var(--muted)" id="flat-rate-src-hint">金利テーブル: 2024年1月〜2026年4月</span></div>
+          <div class="fg"><label class="lbl">ベース金利（適用金利）</label>
+            <div class="suf"><input class="inp amt-inp" id="flat-rate-base" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="1.94" min="0" max="15" step="0.01" oninput="live()"><span class="sl">%</span></div>
+            <span class="hint" style="color:var(--muted)" id="flat-rate-hint">住宅金融支援機構HPで確認</span></div>
+        </div>
+        <div class="divider"></div>
+        <!-- ポイント制 金利引き下げ -->
+        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">📊 ポイント制 金利引き下げ</div>
+        <div style="background:#f0f4ff;border:1px solid #b8d0f0;border-radius:var(--rs);padding:12px;margin-bottom:10px">
+          <!-- 住宅性能 -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:11px;font-weight:600;min-width:80px">住宅性能</span>
+            <select class="sel" id="flat-perf" onchange="updateFlat35Info();live()" style="flex:1;font-size:11px">
+              <option value="none">なし（0pt）</option>
+              <option value="b">Bプラン — 劣化対策等級3等（1pt）</option>
+              <option value="a">Aプラン — 耐震等級3等（2pt）</option>
+              <option value="zeh" selected>ZEH（3pt）</option>
+            </select>
+          </div>
+          <!-- 維持保全型 -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <label style="font-size:11px;font-weight:600;min-width:80px;cursor:pointer">
+              <input type="checkbox" id="flat-maintain" onchange="updateFlat35Info();live()"> 維持保全型
+            </label>
+            <span style="font-size:10px;color:var(--muted)">長期優良住宅等（1pt）</span>
+          </div>
+          <!-- 中古プラス -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <label style="font-size:11px;font-weight:600;min-width:80px;cursor:pointer">
+              <input type="checkbox" id="flat-used-plus" onchange="updateFlat35Info();live()"> 中古プラス
+            </label>
+            <span style="font-size:10px;color:var(--muted)">安心R住宅等（1pt）2025年新設</span>
+          </div>
+          <!-- 地域連携型 -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <label style="font-size:11px;font-weight:600;min-width:80px;cursor:pointer">
+              <input type="checkbox" id="flat-region" onchange="updateFlat35Info();live()"> 地域連携型
+            </label>
+            <span style="font-size:10px;color:var(--muted)">地方移住支援等（1pt）</span>
+          </div>
+          <!-- 子育てプラス -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:11px;font-weight:600;min-width:80px">子育てプラス</span>
+            <div class="suf" style="width:80px"><input class="inp age-inp" id="flat-children" type="number" value="0" min="0" max="10" oninput="updateFlat35Info();live()"><span class="sl">人</span></div>
+            <span style="font-size:10px;color:var(--muted)">子ども1人につき1pt</span>
+          </div>
+        </div>
+        <!-- 計算結果表示 -->
+        <div id="flat35-result" style="background:#e8f2fc;border:1px solid #b8d0f0;border-radius:var(--rs);padding:12px;font-size:11px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:12px;font-weight:700;color:var(--navy)">合計ポイント</span>
+            <span style="font-size:18px;font-weight:800;color:var(--blue)" id="flat-total-pt">3</span>
+            <span style="font-size:12px;color:var(--navy)">pt</span>
+          </div>
+          <table id="flat-rate-table" style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px">
+            <thead>
+              <tr style="background:#d0e2f4">
+                <th style="padding:4px 6px;text-align:left;border:1px solid #b8d0f0;font-weight:600">期間</th>
+                <th style="padding:4px 6px;text-align:right;border:1px solid #b8d0f0;font-weight:600">引き下げ</th>
+                <th style="padding:4px 6px;text-align:right;border:1px solid #b8d0f0;font-weight:600">適用金利</th>
+                <th style="padding:4px 6px;text-align:right;border:1px solid #b8d0f0;font-weight:600">月返済額</th>
+              </tr>
+            </thead>
+            <tbody id="flat-rate-tbody"></tbody>
+          </table>
+          <div style="display:flex;align-items:center;gap:16px;padding-top:6px;border-top:1px solid #b8d0f0">
+            <span>総返済額: <strong id="flat-result-total" style="font-size:14px;color:var(--navy)">―</strong> 万円</span>
+          </div>
+        </div>
+      </div><!-- /flat35-body -->
 
       <!-- 引っ越し・家具家電 初期費用 -->
       <div class="divider"></div>
@@ -1299,31 +1408,31 @@ if(authExp&&Date.now()<Number(authExp)){
 
 
 <!-- v2 モジュール読み込み -->
-<script src="js/state.js?v=7"></script>
-<script src="js/constants.js?v=8"></script>
+<script src="js/state.js?v=8"></script>
+<script src="js/constants.js?v=9"></script>
 <script src="js/utils.js?v=6"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=6"></script>
 <script src="js/education.js"></script>
-<script src="js/housing.js?v=3"></script>
+<script src="js/housing.js?v=4"></script>
 <script src="js/loan-calc.js?v=3"></script>
 <script src="js/living-cost.js"></script>
-<script src="js/assets.js?v=8"></script>
+<script src="js/assets.js?v=9"></script>
 <script src="js/extras.js"></script>
 <script src="js/contingency.js?v=22"></script>
 <script src="js/cf-ui.js?v=2"></script>
-<script src="js/cf-calc.js?v=12"></script>
+<script src="js/cf-calc.js?v=13"></script>
 <script src="js/cf-table.js?v=7"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js?v=2"></script>
-<script src="js/export.js?v=17"></script>
+<script src="js/export.js?v=18"></script>
 <script src="js/loan-plan.js?v=6"></script>
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=25"></script>
+<script src="js/save-load.js?v=26"></script>
 <script src="js/ui.js?v=3"></script>
-<script src="js/app.js?v=28"></script>
+<script src="js/app.js?v=29"></script>
 <script>
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{

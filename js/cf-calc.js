@@ -54,6 +54,15 @@ function render(){
   const lcSteps=getLCSteps();
   // ローン
   const rates=getRates();
+  // フラット35用実効変数（loanCategory==='flat35'時に上書き）
+  const _isFlat=loanCategory==='flat35';
+  const _flatRates=_isFlat?getFlat35Rates():null;
+  const _flatYrs=_isFlat?(iv('flat-loan-yrs')||35):0;
+  const _flatType=_isFlat?($('flat-loan-type')?.value||'equal_payment'):'';
+  // 実効ローン変数（フラット35/標準で切替）
+  const eLoanYrs=_isFlat?_flatYrs:loanYrs;
+  const eRates=_isFlat?_flatRates:rates;
+  const eLoanType=_isFlat?_flatType:(document.getElementById('loan-type')?.value||'equal_payment');
   const parking=fv('parking')/10000, propTax=fv('prop-tax')/10000;
   const sqm=fvd('sqm',75);
   const isM=ST.type==='mansion';
@@ -94,7 +103,7 @@ function render(){
   const wEndYr = wDeathAge>0 ? wDeathAge-wAge+1 : 0;
   const autoDisp = Math.max(hEndYr, wEndYr);
   // ローン全期間が収まるよう totalYrs を確保（delivery + loanYrs が60年を超える場合に対応）
-  const loanEnd = delivery + loanYrs + 1;
+  const loanEnd = delivery + (_isFlat&&!pairLoanMode?eLoanYrs:loanYrs) + 1;
   const totalYrs = Math.max(autoDisp, 60, loanEnd);
   const disp = Math.max(autoDisp>0 ? autoDisp : 60, loanEnd - 1);
   const cLbls=['第一子','第二子','第三子','第四子'];
@@ -281,12 +290,12 @@ function render(){
       R.lCtrl.push(ri(lc2));
     }else
     if(active&&lctrlYrs>0&&lcYr<lctrlYrs&&effLoanAmt>0&&lctrlLimit>0){
-      const loanType2tmp=document.getElementById('loan-type')?.value||'equal_payment';
-      const remainBal=pairLoanMode
+      const loanType2tmp=_isFlat?eLoanType:(document.getElementById('loan-type')?.value||'equal_payment');
+      const remainBal=(pairLoanMode&&!_isFlat)
         ?(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0)
         :(loanType2tmp==='equal_payment'
-          ?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr)
-          :lbal_gankin(loanAmt,loanYrs,lcYr));
+          ?lbal(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr)
+          :lbal_gankin(loanAmt,eLoanYrs,lcYr));
       const cappedBal=Math.min(remainBal,pairLoanMode?lctrlLimit*2:lctrlLimit);
       const calcCtrl=Math.round(cappedBal*0.007*10)/10;
       // 所得税・住民税から上限を推計（ご主人の手取りから額面を逆算）
@@ -498,19 +507,19 @@ function render(){
     R.rent.push(rentAmt);
 
     // ─── ローン返済 ───
-    const loanType2=document.getElementById('loan-type')?.value||'equal_payment';
+    const loanType2=_isFlat?eLoanType:(document.getElementById('loan-type')?.value||'equal_payment');
     let lRep=0,_lRepH=0,_lRepW=0;
-    if(pairLoanMode){
+    if(pairLoanMode&&!_isFlat){
       if(active){
         if(lcYr<lhYrs)_lRepH=ri(lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));
         if(lcYr<lwYrs)_lRepW=ri(lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));
       }
       lRep=_lRepH+_lRepW;
-    } else if(active&&lcYr<loanYrs){
-      if(loanType2==='equal_payment'){
-        lRep=ri(mpay(loanAmt,loanYrs,effRate(lcYr,rates))*12);
+    } else if(active&&lcYr<eLoanYrs){
+      if(eLoanType==='equal_payment'){
+        lRep=ri(mpay(loanAmt,eLoanYrs,effRate(lcYr,eRates))*12);
       } else {
-        lRep=ri(mpay_gankin_year(loanAmt,loanYrs,effRate(lcYr,rates),lcYr));
+        lRep=ri(mpay_gankin_year(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr));
       }
     }
     R.lRep.push(lRep);R.lRepH.push(_lRepH);R.lRepW.push(_lRepW);
@@ -891,9 +900,9 @@ function render(){
     const finAssetVal=Object.values(finRowMap).reduce((a,b)=>a+b,0);
     R.finAsset.push(ri(finAssetVal));
     R.totalAsset.push(R.sav[i]+ri(finAssetVal));// 預貯金残高＋その他金融資産
-    const lb=ri(pairLoanMode
+    const lb=ri((pairLoanMode&&!_isFlat)
       ?(active?Math.max(0,(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):0)):lhAmt+lwAmt)
-      :(active?Math.max(0,(loanType2==='equal_payment'?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr+1):lbal_gankin(loanAmt,loanYrs,lcYr+1))):loanAmt));
+      :(active?Math.max(0,(eLoanType==='equal_payment'?lbal(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr+1):lbal_gankin(loanAmt,eLoanYrs,lcYr+1))):loanAmt));
     R.lBal.push(lb);
 
     // ─── イベント文字列 ───
