@@ -290,6 +290,7 @@ function addMansion(){
   saveMansionMaster();
   _renderMansionList();
   editMansion(id);
+  // ※ クラウド保存は保存ボタン押下時（saveMansionEdit）に実行
 }
 function editMansion(id){
   const m=_mansionMaster.find(x=>x.id===id);
@@ -313,7 +314,7 @@ function editMansion(id){
     +'</div></div>';
   document.getElementById('med-name-'+id)?.focus();
 }
-function saveMansionEdit(id){
+async function saveMansionEdit(id){
   const m=_mansionMaster.find(x=>x.id===id);
   if(!m)return;
   const name=(document.getElementById('med-name-'+id)?.value||'').trim();
@@ -322,20 +323,27 @@ function saveMansionEdit(id){
   m.mgmtUnit=parseFloat(document.getElementById('med-mgmt-'+id)?.value)||0;
   m.repUnit=parseFloat(document.getElementById('med-rep-'+id)?.value)||0;
   m.netFee=parseFloat(document.getElementById('med-net-'+id)?.value)||0;
-  saveMansionMaster();
+  saveMansionMaster(); // ローカルキャッシュ即時更新
   populateMansionSelect();
   _renderMansionList();
   if(_selectedMansionId===id)applyMansionData();
+  // クラウド保存（チーム共有）
+  const ok=await saveMansionToCloud(m);
+  if(ok){
+    console.log('[Firebase] マンション「'+name+'」をクラウドに保存しました');
+  }
 }
-function deleteMansion(id){
+async function deleteMansion(id){
   const m=_mansionMaster.find(x=>x.id===id);
   if(!m)return;
-  if(!confirm('「'+m.name+'」を削除しますか？'))return;
+  if(!confirm('「'+m.name+'」を削除しますか？\n※ チーム全員のデータから削除されます'))return;
   _mansionMaster=_mansionMaster.filter(x=>x.id!==id);
-  saveMansionMaster();
+  saveMansionMaster(); // ローカルキャッシュ即時更新
   populateMansionSelect();
   if(_selectedMansionId===id){_selectedMansionId='';const sel=document.getElementById('mansion-select');if(sel)sel.value='';}
   _renderMansionList();
+  // クラウド削除（チーム全員に反映）
+  await deleteMansionFromCloud(id);
 }
 
 // ===== 印刷情報 =====

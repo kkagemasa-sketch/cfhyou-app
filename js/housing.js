@@ -343,17 +343,86 @@ function setType(t){
   live();
 }
 
-// ===== マンションマスター管理 =====
-function loadMansionMaster(){
+// ===== マンションマスター管理（Firebase共有+localStorageキャッシュ） =====
+async function loadMansionMaster(){
+  // まずlocalStorageキャッシュから即時表示（オフライン対応）
   try{
     const raw=localStorage.getItem('cf_mansion_master');
     _mansionMaster=raw?JSON.parse(raw):[];
   }catch(e){_mansionMaster=[];}
   populateMansionSelect();
+
+  // Firebase準備完了後、クラウドから最新を取得
+  if(window._firebaseReadyPromise){
+    try{
+      const ok=await window._firebaseReadyPromise;
+      if(!ok||!window._firebase)return;
+      const fb=window._firebase;
+      const snap=await fb.getDocs(fb.collection(fb.db,'mansions'));
+      _mansionMaster=snap.docs.map(d=>({id:d.id,...d.data()}));
+      // ローカルキャッシュを更新
+      localStorage.setItem('cf_mansion_master',JSON.stringify(_mansionMaster));
+      populateMansionSelect();
+      // マンション管理モーダルが開いていれば再描画
+      const ov=document.getElementById('mansion-mgmt-overlay');
+      if(ov&&ov.style.display!=='none'&&typeof _renderMansionList==='function'){
+        _renderMansionList();
+      }
+    }catch(e){
+      console.warn('[Firebase] マンションマスター読込失敗（キャッシュ使用）:',e);
+    }
+  }
 }
+window.loadMansionMaster=loadMansionMaster;
+
+// ローカルキャッシュへ保存（Firebase保存は別関数）
 function saveMansionMaster(){
   localStorage.setItem('cf_mansion_master',JSON.stringify(_mansionMaster));
 }
+
+// 単一マンションをクラウドに保存
+async function saveMansionToCloud(mansion){
+  if(!window._firebase||!window._firebaseReady){
+    alert('クラウド接続中です。数秒待ってから再度お試しください。');
+    return false;
+  }
+  try{
+    const fb=window._firebase;
+    const ref=fb.doc(fb.db,'mansions',mansion.id);
+    await fb.setDoc(ref,{
+      name:mansion.name||'',
+      mgmtUnit:mansion.mgmtUnit||0,
+      repUnit:mansion.repUnit||0,
+      netFee:mansion.netFee||0,
+      updatedAt:Date.now()
+    });
+    return true;
+  }catch(e){
+    console.error('[Firebase] マンション保存失敗:',e);
+    alert('クラウドへの保存に失敗しました: '+e.message);
+    return false;
+  }
+}
+window.saveMansionToCloud=saveMansionToCloud;
+
+// 単一マンションをクラウドから削除
+async function deleteMansionFromCloud(id){
+  if(!window._firebase||!window._firebaseReady){
+    alert('クラウド接続中です。数秒待ってから再度お試しください。');
+    return false;
+  }
+  try{
+    const fb=window._firebase;
+    const ref=fb.doc(fb.db,'mansions',id);
+    await fb.deleteDoc(ref);
+    return true;
+  }catch(e){
+    console.error('[Firebase] マンション削除失敗:',e);
+    alert('クラウドからの削除に失敗しました: '+e.message);
+    return false;
+  }
+}
+window.deleteMansionFromCloud=deleteMansionFromCloud;
 function populateMansionSelect(){
   const sel=$('mansion-select');
   if(!sel)return;
