@@ -196,7 +196,8 @@ function setRTab(t){
   $('rt-memo')?.classList.toggle('on',t==='memo');
   $('rt-mg-h')?.classList.toggle('on',t==='mg-h');
   $('rt-mg-w')?.classList.toggle('on',t==='mg-w');
-  // シナリオタブのon/offを更新
+  // rt-mansion removed — now in header
+  // シ���リオタブのon/offを更新
   renderScenarioTabs();
   // CF表・万が一タブのみ金融資産ボタン表示
   const finBtn=$('btn-fin-toggle');
@@ -233,6 +234,108 @@ function setRTab(t){
     }
   }
   render();
+}
+
+// ===== マンション管理（モーダル） =====
+function openMansionMgmt(){
+  let ov=document.getElementById('mansion-mgmt-overlay');
+  if(ov){ov.style.display='flex';_renderMansionList();return;}
+  ov=document.createElement('div');
+  ov.id='mansion-mgmt-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999';
+  ov.onclick=function(e){if(e.target===ov)closeMansionMgmt();};
+  const box=document.createElement('div');
+  box.id='mansion-mgmt-box';
+  box.style.cssText='background:#fff;border-radius:12px;width:90%;max-width:520px;max-height:80vh;overflow-y:auto;padding:20px 24px;box-shadow:0 8px 32px rgba(0,0,0,.25)';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  _renderMansionList();
+}
+function closeMansionMgmt(){
+  const ov=document.getElementById('mansion-mgmt-overlay');
+  if(ov)ov.style.display='none';
+}
+function _renderMansionList(){
+  const box=document.getElementById('mansion-mgmt-box');
+  if(!box)return;
+  let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+  h+='<div style="font-size:16px;font-weight:700;color:#1e3a5f">🏢 マンション管理</div>';
+  h+='<div style="display:flex;gap:8px">';
+  h+='<button onclick="addMansion()" style="background:#0d9488;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">＋ 新規追加</button>';
+  h+='<button onclick="closeMansionMgmt()" style="background:#94a3b8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer">閉じる</button>';
+  h+='</div></div>';
+  if(_mansionMaster.length===0){
+    h+='<div style="text-align:center;padding:30px;color:#94a3b8;font-size:13px">マンションが登録されていません。<br>「＋ 新規追加」から登録してください。</div>';
+  } else {
+    _mansionMaster.forEach(m=>{
+      h+='<div id="mcard-'+m.id+'" style="background:#f7f9fb;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:8px">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+      h+='<div style="font-size:13px;font-weight:700;color:#1e3a5f">'+_escH(m.name||'（未入力）')+'</div>';
+      h+='<div style="display:flex;gap:6px">';
+      h+='<button onclick="editMansion(\''+m.id+'\')" style="background:#2563eb;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer">編集</button>';
+      h+='<button onclick="deleteMansion(\''+m.id+'\')" style="background:#dc2626;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer">削除</button>';
+      h+='</div></div>';
+      h+='<div style="font-size:11px;color:#64748b;margin-top:6px">';
+      h+='管理費: <strong>'+m.mgmtUnit+'</strong>円/㎡/月　修繕積立金: <strong>'+m.repUnit+'</strong>円/㎡/月　ネット: <strong>'+(m.netFee||0)+'</strong>円/月';
+      h+='</div></div>';
+    });
+  }
+  box.innerHTML=h;
+}
+function _escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function addMansion(){
+  const id=String(Date.now());
+  _mansionMaster.push({id:id,name:'',mgmtUnit:200,repUnit:160,netFee:0});
+  saveMansionMaster();
+  _renderMansionList();
+  editMansion(id);
+}
+function editMansion(id){
+  const m=_mansionMaster.find(x=>x.id===id);
+  if(!m)return;
+  const card=document.getElementById('mcard-'+id);
+  if(!card)return;
+  card.innerHTML='<div style="display:grid;grid-template-columns:1fr;gap:8px">'
+    +'<div><label style="font-size:10px;font-weight:600;color:#64748b">マンション名</label>'
+    +'<input id="med-name-'+id+'" class="inp" style="font-size:12px" value="'+_escH(m.name)+'" placeholder="例: グランドメゾン東京"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+    +'<div><label style="font-size:10px;font-weight:600;color:#64748b">管理費単価（円/㎡/月）</label>'
+    +'<input id="med-mgmt-'+id+'" class="inp" type="number" style="font-size:12px" value="'+m.mgmtUnit+'" min="0"></div>'
+    +'<div><label style="font-size:10px;font-weight:600;color:#64748b">修繕積立金単価（円/㎡/月）</label>'
+    +'<input id="med-rep-'+id+'" class="inp" type="number" style="font-size:12px" value="'+m.repUnit+'" min="0"></div>'
+    +'<div><label style="font-size:10px;font-weight:600;color:#64748b">インターネット（円/月）</label>'
+    +'<input id="med-net-'+id+'" class="inp" type="number" style="font-size:12px" value="'+(m.netFee||0)+'" min="0"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px;justify-content:flex-end">'
+    +'<button onclick="saveMansionEdit(\''+id+'\')" style="background:#16a34a;color:#fff;border:none;border-radius:4px;padding:4px 14px;font-size:11px;font-weight:600;cursor:pointer">保存</button>'
+    +'<button onclick="_renderMansionList()" style="background:#94a3b8;color:#fff;border:none;border-radius:4px;padding:4px 14px;font-size:11px;cursor:pointer">キャンセル</button>'
+    +'</div></div>';
+  document.getElementById('med-name-'+id)?.focus();
+}
+function saveMansionEdit(id){
+  const m=_mansionMaster.find(x=>x.id===id);
+  if(!m)return;
+  const name=(document.getElementById('med-name-'+id)?.value||'').trim();
+  if(!name){alert('マンション名を入力してください');return;}
+  m.name=name;
+  m.mgmtUnit=parseFloat(document.getElementById('med-mgmt-'+id)?.value)||0;
+  m.repUnit=parseFloat(document.getElementById('med-rep-'+id)?.value)||0;
+  m.netFee=parseFloat(document.getElementById('med-net-'+id)?.value)||0;
+  saveMansionMaster();
+  populateMansionSelect();
+  _renderMansionList();
+  if(_selectedMansionId===id)applyMansionData();
+}
+function deleteMansion(id){
+  const m=_mansionMaster.find(x=>x.id===id);
+  if(!m)return;
+  if(!confirm('「'+m.name+'」を削除しますか？'))return;
+  _mansionMaster=_mansionMaster.filter(x=>x.id!==id);
+  saveMansionMaster();
+  populateMansionSelect();
+  if(_selectedMansionId===id){_selectedMansionId='';const sel=document.getElementById('mansion-select');if(sel)sel.value='';}
+  _renderMansionList();
 }
 
 // ===== 印刷情報 =====

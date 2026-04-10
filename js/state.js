@@ -87,3 +87,8 @@ let _undoStack=[];
 let _redoStack=[];
 
 let _autoSaveRestored=false; // 自動保存の復元完了フラグ（app.jsのsetTimeoutと競合防止）
+
+// マンションマスターデータ [{id, name, mgmtUnit, repUnit}]
+// mgmtUnit = 管理費単価(円/㎡/月), repUnit = 修繕積立金単価(円/㎡/月)
+let _mansionMaster=[];
+let _selectedMansionId='';

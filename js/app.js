@@ -8,6 +8,7 @@ window.onload=()=>{
   // 特別支出の初期値（1件）
   addExtraItem(new Date().getFullYear(),'','');
   // 初期値を設定
+  loadMansionMaster();
   initFlatRateSelect();
   calcLoanAmt();
   addCar();
