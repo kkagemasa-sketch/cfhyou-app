@@ -383,6 +383,7 @@ function _restoreDynamic(d){
   if($('rep-steps-cont'))$('rep-steps-cont').innerHTML=''; repStepCnt=0;
   if(typeof addRepStep==='function'){
     (d.repSteps||[]).forEach(s=>{addRepStep();if($(`rpsy-${repStepCnt}`))$(`rpsy-${repStepCnt}`).value=s.yr;if($(`rpsa-${repStepCnt}`))$(`rpsa-${repStepCnt}`).value=s.amt;});
+    if(typeof _renderRepManualPreview==='function')_renderRepManualPreview();
   }
   if($('rep-auto-steps-cont'))$('rep-auto-steps-cont').innerHTML=''; repAutoStepCnt=0;
   if(typeof addRepAutoStep==='function'){

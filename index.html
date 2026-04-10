@@ -1007,15 +1007,23 @@ function checkPW(){
               マンションを選択すると自動表示されます
             </div>
           </div>
-          <!-- 右：手入力チェックボックス＋固定額上書き -->
-          <div style="width:150px;flex-shrink:0">
+          <!-- 右：手入力チェックボックス＋段階入力 -->
+          <div style="flex:1;min-width:0">
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ink);margin-bottom:6px;cursor:pointer">
               <input type="checkbox" id="rep-manual-toggle" onchange="toggleRepManual()" style="width:14px;height:14px;cursor:pointer">
               <span>✏️ 手入力</span>
             </label>
             <div id="rep-manual-input-wrap" style="display:none">
-              <div class="suf"><input class="inp amt-inp" id="rep-manual-override" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" placeholder="例:15000" min="0" oninput="live()" style="font-size:12px"><span class="sl">円/月</span></div>
-              <div style="font-size:9px;color:var(--muted);margin-top:4px;line-height:1.4">※ 固定額で上書き<br>（ステップは無視）</div>
+              <!-- 1年目〜 基準金額 -->
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+                <span style="font-size:10px;color:var(--muted);width:46px;flex-shrink:0">1年目〜</span>
+                <div class="suf" style="flex:1"><input class="inp amt-inp" id="rep-manual-base" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" placeholder="例:15000" min="0" value="" oninput="_renderRepManualPreview();live()" style="font-size:11px"><span class="sl" style="font-size:9px">円/月</span></div>
+              </div>
+              <!-- 追加ステップ -->
+              <div id="rep-steps-cont"></div>
+              <button class="btn-add" onclick="addRepStep()" style="font-size:10px;padding:3px 10px;margin-top:2px">＋ 段階追加</button>
+              <!-- プレビュー -->
+              <div id="rep-manual-preview" style="margin-top:6px;padding:6px 8px;background:#f0fdf4;border-left:3px solid #16a34a;border-radius:3px;font-size:10px;color:#166534;line-height:1.5;display:none"></div>
             </div>
           </div>
         </div>
@@ -1025,9 +1033,9 @@ function checkPW(){
             <div class="suf"><input class="inp age-inp" id="sqm" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" value="75" min="20" oninput="live()"><span class="sl">㎡</span></div>
           </div>
         </div>
-        <!-- 互換用の隠しフィールド（保存データの読込のため残す） -->
+        <!-- 互換用の隠しフィールド（旧保存データ読込のため残す） -->
         <input type="hidden" id="rep-unit" value="">
-        <input type="hidden" id="rep-manual-base" value="12000">
+        <input type="hidden" id="rep-manual-override" value="">
       </div>
       <!-- 戸建て専用 -->
       <div id="k-fields" style="display:none">
@@ -1449,7 +1457,7 @@ function checkPW(){
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=6"></script>
 <script src="js/education.js"></script>
-<script src="js/housing.js?v=11"></script>
+<script src="js/housing.js?v=12"></script>
 <script src="js/loan-calc.js?v=3"></script>
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=10"></script>
@@ -1465,7 +1473,7 @@ function checkPW(){
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=30"></script>
+<script src="js/save-load.js?v=31"></script>
 <script src="js/ui.js?v=3"></script>
 <script src="js/app.js?v=33"></script>
 <!-- Firebase (マンションマスター共有) -->

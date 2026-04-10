@@ -321,11 +321,70 @@ function _renderRepAutoDisplay(){
   }
   el.innerHTML=html;
 }
+// 手入力ステップを収集（1年目基準＋追加ステップ）
+function _collectRepManualSteps(){
+  const base=fv('rep-manual-base');
+  const byYear=new Map();
+  document.querySelectorAll('#rep-steps-cont [id^="rpsy-"]').forEach(el=>{
+    const sid=el.id.split('-')[1];
+    const y=parseInt(el.value)||0;
+    const amt=fv('rpsa-'+sid);
+    if(y>=2&&amt>0)byYear.set(y,amt);
+  });
+  const steps=[];
+  byYear.forEach((amt,from)=>steps.push({from,amt}));
+  steps.sort((a,b)=>a.from-b.from);
+  return {base,steps};
+}
+// 手入力モード：指定年の月額（円）
+function _getRepManualMonthlyAtYear(yr){
+  const {base,steps}=_collectRepManualSteps();
+  let amt=base;
+  for(const s of steps){if(yr>=s.from)amt=s.amt;}
+  return amt;
+}
+// 手入力プレビュー描画
+function _renderRepManualPreview(){
+  const el=document.getElementById('rep-manual-preview');
+  if(!el)return;
+  const {base,steps}=_collectRepManualSteps();
+  if(!(base>0)&&steps.length===0){el.style.display='none';el.innerHTML='';return;}
+  const allSteps=[{from:1,amt:base||0},...steps];
+  let html='';
+  for(let i=0;i<allSteps.length;i++){
+    const s=allSteps[i];
+    const next=allSteps[i+1];
+    const rangeText=next?(s.from+'年目〜'+(next.from-1)+'年目'):(s.from+'年目〜');
+    const monthly=Math.round(s.amt);
+    const yearly=(monthly*12/10000);
+    const yearlyStr=yearly>=10?Math.round(yearly)+'万円':yearly.toFixed(1)+'万円';
+    html+='<div>▸ '+rangeText+': '+monthly.toLocaleString()+'円/月【年 '+yearlyStr+'】</div>';
+  }
+  el.innerHTML=html;
+  el.style.display='';
+}
+// 手入力ステップ行を追加
+function addRepStep(){
+  const cont=document.getElementById('rep-steps-cont');
+  if(!cont)return;
+  repStepCnt++;
+  const sid=repStepCnt;
+  const row=document.createElement('div');
+  row.id='rps-'+sid;
+  row.style.cssText='display:flex;align-items:center;gap:4px;margin-bottom:4px';
+  row.innerHTML='<div class="suf" style="flex:0 0 72px"><input class="inp" id="rpsy-'+sid+'" type="number" min="2" placeholder="例:6" oninput="_renderRepManualPreview();live()" style="font-size:11px"><span class="sl" style="font-size:9px">年目〜</span></div>'
+    +'<div class="suf" style="flex:1"><input class="inp amt-inp" id="rpsa-'+sid+'" type="number" min="0" placeholder="例:20000" oninput="_renderRepManualPreview();live()" style="font-size:11px"><span class="sl" style="font-size:9px">円/月</span></div>'
+    +'<button class="btn-del" onclick="document.getElementById(\'rps-'+sid+'\').remove();_renderRepManualPreview();live()" style="flex-shrink:0;font-size:10px;padding:2px 6px">×</button>';
+  cont.appendChild(row);
+}
 // 修繕積立金を返す（万円/年）
 function getRepFund(sqm,yr){
-  // 手入力チェックがONなら固定額で上書き（ステップ無視）
+  // 手入力チェックがONならステップ付き手入力値で上書き
   const manualOn=document.getElementById('rep-manual-toggle')?.checked;
   if(manualOn){
+    const amt=_getRepManualMonthlyAtYear(yr);
+    if(amt>0)return Math.round(amt*12/10000);
+    // 互換：旧データのrep-manual-override
     const override=fv('rep-manual-override');
     if(override>0)return Math.round(override*12/10000);
     return 0;
