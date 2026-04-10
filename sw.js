@@ -1,5 +1,5 @@
 // Service Worker — PWAインストール用
-const CACHE_NAME = 'cf-app-v120';
+const CACHE_NAME = 'cf-app-v121';
 const ASSETS = [
   './',
   './index.html',
@@ -29,6 +29,7 @@ const ASSETS = [
   './js/save-load.js',
   './js/ui.js',
   './js/app.js',
+  './js/firebase-init.js',
   './js/vendors/chart.min.js',
   './js/vendors/jszip.min.js',
   './js/vendors/xlsx-style.min.js',
