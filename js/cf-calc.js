@@ -14,7 +14,6 @@ function render(){
   const lwType=document.getElementById('loan-w-type')?.value||'equal_payment';
   const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
   const ratesH=pairLoanMode?getPairRates('h'):[], ratesW=pairLoanMode?getPairRates('w'):[];
-  const effLoanAmt=_flatPair?(_fhAmt+_fwAmt):pairLoanMode?(lhAmt+lwAmt):loanAmt;
   // 自己資産：現預金合計を初期残高に
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
   const zaikiHBal=fv('zaikei-h-bal')||0, zaikiWBal=fv('zaikei-w-bal')||0;
@@ -68,6 +67,7 @@ function render(){
   const _fhType=_flatPair?($('flat-loan-h-type')?.value||'equal_payment'):'';
   const _fwType=_flatPair?($('flat-loan-w-type')?.value||'equal_payment'):'';
   // 実効ローン変数（フラット35/標準で切替）
+  const effLoanAmt=_flatPair?(_fhAmt+_fwAmt):pairLoanMode?(lhAmt+lwAmt):loanAmt;
   const eLoanYrs=_isFlat?(_flatPair?Math.max(_fhYrs,_fwYrs):_flatYrs):loanYrs;
   const eRates=_isFlat?_flatRates:rates;
   const eLoanType=_isFlat?_flatType:(document.getElementById('loan-type')?.value||'equal_payment');
