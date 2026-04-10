@@ -58,17 +58,21 @@ window.onload=()=>{
   document.addEventListener('focus',selectInput,true);
   document.addEventListener('click',selectInput,true);
 
-  // 全角数字→半角数字の自動変換（全input対応）
+  // 全角数字→半角数字の自動変換（数値入力欄のみ、IME変換中はスキップ）
   document.addEventListener('input',e=>{
+    // IME変換中は絶対にvalueを書き換えない（日本語入力が壊れる）
+    if(e.isComposing||e.inputType==='insertCompositionText')return;
     const el=e.target;
     if(el.tagName!=='INPUT')return;
+    if(el.isComposing)return;
     const t=el.type;
-    if(t==='number'||t==='text'){
-      const v=el.value;
-      const converted=v.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
-                       .replace(/．/g,'.').replace(/ー/g,'-').replace(/，/g,',');
-      if(v!==converted)el.value=converted;
-    }
+    // 数値入力欄のみ対象（type="number" または inputMode="numeric" のtext）
+    const isNumeric=(t==='number')||(t==='text'&&el.inputMode==='numeric');
+    if(!isNumeric)return;
+    const v=el.value;
+    const converted=v.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+                     .replace(/．/g,'.').replace(/ー/g,'-').replace(/，/g,',');
+    if(v!==converted)el.value=converted;
   },true);
 
   initLCComma();
