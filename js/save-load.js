@@ -236,6 +236,8 @@ function _collectDynamic(){
   d.survWAmt=$('surv-w-amt')?.value||'';
   // フラグ系
   d.repMode=repMode; d.retirePayOn=retirePayOn; d.wRetirePayOn=wRetirePayOn;
+  // 修繕積立金 手入力チェック状態
+  d.repManualOn=document.getElementById('rep-manual-toggle')?.checked||false;
   d.downType=downType; d.carOwn=carOwn; d.parkOwn=parkOwn;
   d.parkFromAge=document.getElementById('park-from-age')?.value||'';
   d.parkToAge=document.getElementById('park-to-age')?.value||'';
@@ -377,11 +379,15 @@ function _restoreDynamic(d){
   // 特別支出
   if($('extra-cont'))$('extra-cont').innerHTML=''; extraCnt=0;
   (d.extras||[]).forEach(it=>addExtraItem(it.yr,it.amt,it.lbl,it.yr2||''));
-  // 修繕積立金ステップ
+  // 修繕積立金ステップ（旧UIのデータは互換のため受け取りのみ、新UIでは使用しない）
   if($('rep-steps-cont'))$('rep-steps-cont').innerHTML=''; repStepCnt=0;
-  (d.repSteps||[]).forEach(s=>{addRepStep();if($(`rpsy-${repStepCnt}`))$(`rpsy-${repStepCnt}`).value=s.yr;if($(`rpsa-${repStepCnt}`))$(`rpsa-${repStepCnt}`).value=s.amt;});
+  if(typeof addRepStep==='function'){
+    (d.repSteps||[]).forEach(s=>{addRepStep();if($(`rpsy-${repStepCnt}`))$(`rpsy-${repStepCnt}`).value=s.yr;if($(`rpsa-${repStepCnt}`))$(`rpsa-${repStepCnt}`).value=s.amt;});
+  }
   if($('rep-auto-steps-cont'))$('rep-auto-steps-cont').innerHTML=''; repAutoStepCnt=0;
-  (d.repAutoSteps||[]).forEach(s=>{addRepAutoStep();if($(`rpasy-${repAutoStepCnt}`))$(`rpasy-${repAutoStepCnt}`).value=s.yr;if($(`rpasu-${repAutoStepCnt}`))$(`rpasu-${repAutoStepCnt}`).value=s.unit;});
+  if(typeof addRepAutoStep==='function'){
+    (d.repAutoSteps||[]).forEach(s=>{addRepAutoStep();if($(`rpasy-${repAutoStepCnt}`))$(`rpasy-${repAutoStepCnt}`).value=s.yr;if($(`rpasu-${repAutoStepCnt}`))$(`rpasu-${repAutoStepCnt}`).value=s.unit;});
+  }
   // 一時払い保険
   ['h','w'].forEach(p=>{if($(`ins-lump-cont-${p}`))$(`ins-lump-cont-${p}`).innerHTML='';});
   insLumpCnt=0;
@@ -554,7 +560,12 @@ function _restoreDynamic(d){
     if(typeof updateMGHints==='function')updateMGHints();
   }
   // フラグ系
-  if(d.repMode)setRepMode(d.repMode);
+  // 修繕積立金 手入力チェック復元（旧 repMode='manual' も手入力扱いで互換）
+  const repChk=document.getElementById('rep-manual-toggle');
+  if(repChk){
+    repChk.checked=d.repManualOn===true||d.repMode==='manual';
+    if(typeof toggleRepManual==='function')toggleRepManual();
+  }
   if(typeof d.retirePayOn!=='undefined')setRetirePay(d.retirePayOn);
   if(typeof d.wRetirePayOn!=='undefined')setWRetirePay(d.wRetirePayOn);
   if(d.downType)setDownType(d.downType);
@@ -837,7 +848,9 @@ async function newCFSheet(){
   carOwn=true;parkOwn=true;
   retirePayOn=true;wRetirePayOn=true;
   pairLoanMode=false;
-  if(typeof setRepMode==='function')setRepMode('auto');
+  // 修繕積立金 手入力チェックをリセット
+  const repChk0=document.getElementById('rep-manual-toggle');
+  if(repChk0){repChk0.checked=false;if(typeof toggleRepManual==='function')toggleRepManual();}
 
   // UI状態リセット（live()呼び出しを一時抑制して最後に1回だけ実行）
   const _origLive=window.live;

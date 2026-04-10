@@ -125,17 +125,8 @@ function updateHints(){
   const rc2=iv('repair-cycle2')||30, rco2=iv('repair-cost2')||0;
   const rh2=document.getElementById('repair-hint2');
   if(rh2)rh2.textContent=rco2>0?`✓ ${rc2}年ごとに${rco2}万円`:'（未設定）';
-  // 修繕積立金ヒント
-  const repAutoHint=document.getElementById('rep-auto-hint');
-  if(repAutoHint&&ST.type==='mansion'){
-    const sqmV=ivd('sqm',75);const repUnit=fv('rep-unit');
-    if(repUnit>0){
-      repAutoHint.textContent=`✓ 固定単価：${repUnit}円/㎡/月 → 年${Math.round(sqmV*repUnit*12/10000)}万円`;
-    } else {
-      const y1=repFund(sqmV,1),y10=repFund(sqmV,10),y20=repFund(sqmV,20);
-      repAutoHint.textContent=`✓ 1年目:${y1}万→10年目:${y10}万→20年目:${y20}万（年額）`;
-    }
-  }
+  // 修繕積立金 自動表示更新
+  if(ST.type==='mansion'&&typeof _renderRepAutoDisplay==='function')_renderRepAutoDisplay();
   const loanType=document.getElementById('loan-type')?.value||'equal_payment';
   const lTypeHint=document.getElementById('loan-type-hint');
   const mHint=document.getElementById('monthly-hint');
@@ -260,71 +251,96 @@ function updateLctrlHint(){
   }
 }
 
-// ===== 修繕積立金モード =====
-function setRepMode(m){
-  repMode=m;
-  document.getElementById('rep-auto').classList.toggle('on',m==='auto');
-  document.getElementById('rep-manual').classList.toggle('on',m==='manual');
-  document.getElementById('rep-auto-fields').style.display=m==='auto'?'':'none';
-  document.getElementById('rep-manual-fields').style.display=m==='manual'?'':'none';
+// ===== 修繕積立金 =====
+// 手入力チェックボックス切替
+function toggleRepManual(){
+  const chk=document.getElementById('rep-manual-toggle');
+  const wrap=document.getElementById('rep-manual-input-wrap');
+  if(wrap)wrap.style.display=chk?.checked?'':'none';
   live();
 }
-function addRepStep(){
-  repStepCnt++;const id=repStepCnt;
-  const el=document.createElement('div');
-  el.id=`rps-${id}`;el.className='drow';el.style.cssText='display:flex;align-items:center;gap:4px';
-  el.innerHTML=`<span class="dlbl" style="color:var(--amber);white-space:nowrap;font-size:9px;width:20px;text-align:center">変更<br>${id}</span>
-    <div class="suf" style="flex:1"><input class="inp age-inp" id="rpsy-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" value="${id*5}" min="1" max="60" oninput="live()"><span class="sl" style="padding:7px 5px;font-size:10px">年〜</span></div>
-    <div class="suf" style="flex:1.5"><input class="inp amt-inp" id="rpsa-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" placeholder="例:20000" min="0" oninput="live()"><span class="sl" style="padding:7px 5px;font-size:10px">円/月</span></div>
-    <button class="btn-rm" onclick="document.getElementById('rps-${id}').remove();live()" style="padding:2px 6px;font-size:11px">×</button>`;
-  document.getElementById('rep-steps-cont').appendChild(el);live();
+// 選択中のマンションマスターを取得
+function _getSelectedMansion(){
+  if(!_selectedMansionId)return null;
+  return _mansionMaster.find(m=>m.id===_selectedMansionId)||null;
 }
-
-function addRepAutoStep(){
-  repAutoStepCnt++;const id=repAutoStepCnt;
-  const el=document.createElement('div');
-  el.id=`rpas-${id}`;el.className='drow';el.style.cssText='display:flex;align-items:center;gap:4px';
-  el.innerHTML=`<span class="dlbl" style="color:var(--amber);white-space:nowrap;font-size:9px;width:20px;text-align:center">変更<br>${id}</span>
-    <div class="suf" style="flex:1"><input class="inp age-inp" id="rpasy-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" value="${id*5}" min="1" max="70" oninput="live()"><span class="sl" style="padding:7px 5px;font-size:10px">年〜</span></div>
-    <div class="suf" style="flex:1.5"><input class="inp amt-inp" id="rpasu-${id}" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" type="number" placeholder="例:200" min="0" oninput="live()"><span class="sl" style="padding:7px 5px;font-size:10px">円/㎡</span></div>
-    <button class="btn-rm" onclick="document.getElementById('rpas-${id}').remove();live()" style="padding:2px 6px;font-size:11px">×</button>`;
-  document.getElementById('rep-auto-steps-cont').appendChild(el);live();
+// 指定年の修繕積立金 単価（円/㎡/月）を返す
+// マンションマスターの基準単価＋値上げステップに基づく
+function _getMansionRepUnitAtYear(mansion,yr){
+  if(!mansion)return 0;
+  const base=parseFloat(mansion.repUnit)||0;
+  const steps=Array.isArray(mansion.repSteps)?[...mansion.repSteps]:[];
+  steps.sort((a,b)=>a.fromYear-b.fromYear);
+  let u=base;
+  for(const s of steps){if(yr>=s.fromYear&&s.unit>0)u=s.unit;}
+  return u;
+}
+// 自動表示エリア描画（左側：マンション管理からのステップ表）
+function _renderRepAutoDisplay(){
+  const el=document.getElementById('rep-auto-display');
+  if(!el)return;
+  const m=_getSelectedMansion();
+  if(!m){
+    el.innerHTML='<span style="color:var(--muted)">マンションを選択すると自動表示されます</span>';
+    return;
+  }
+  const sqm=ivd('sqm',75);
+  const base=parseFloat(m.repUnit)||0;
+  const rawSteps=Array.isArray(m.repSteps)?[...m.repSteps]:[];
+  // 有効ステップ（単価>0、年度≥2）のみ、かつ同年度重複排除
+  const byYear=new Map();
+  rawSteps.forEach(s=>{
+    const y=parseInt(s.fromYear)||0;
+    const u=parseFloat(s.unit)||0;
+    if(y>=2&&u>0)byYear.set(y,u);
+  });
+  const steps=[];
+  byYear.forEach((unit,fromYear)=>steps.push({fromYear,unit}));
+  steps.sort((a,b)=>a.fromYear-b.fromYear);
+  // 1年目〜を先頭に追加
+  const allSteps=[{fromYear:1,unit:base},...steps];
+  let html='';
+  for(let i=0;i<allSteps.length;i++){
+    const s=allSteps[i];
+    const next=allSteps[i+1];
+    const rangeText=next?(s.fromYear+'年目〜'+(next.fromYear-1)+'年目'):(s.fromYear+'年目〜');
+    const monthly=Math.round(s.unit*sqm);
+    const yearly=(monthly*12/10000);
+    const yearlyStr=yearly>=10?Math.round(yearly)+'万円':yearly.toFixed(1)+'万円';
+    const bg=i===0?'#f0f9ff':'#fefce8';
+    const bd=i===0?'#0ea5e9':'#eab308';
+    html+='<div style="padding:4px 8px;background:'+bg+';border-left:3px solid '+bd+';margin-bottom:3px;border-radius:3px">'
+      +'<div style="font-weight:700;color:var(--ink);font-size:10px">'+rangeText+'</div>'
+      +'<div style="color:var(--muted);font-size:9px">'+s.unit+'円/㎡/月 × '+sqm+'㎡</div>'
+      +'<div style="color:var(--teal);font-weight:700;font-size:11px">月 '+monthly.toLocaleString()+'円【年 '+yearlyStr+'】</div>'
+      +'</div>';
+  }
+  if(!html){
+    el.innerHTML='<span style="color:var(--muted)">マンション管理で修繕基準単価を設定してください</span>';
+    return;
+  }
+  el.innerHTML=html;
 }
 // 修繕積立金を返す（万円/年）
 function getRepFund(sqm,yr){
-  if(sqm<=0&&repMode!=='manual')return 0;
-  if(repMode==='manual'){
-    // 手動モード：ステップ値を探す
-    let base=fvd('rep-manual-base',12000);
-    const steps=[];
-    document.querySelectorAll('[id^="rpsy-"]').forEach(el=>{
-      const sid=el.id.split('-')[1];
-      steps.push({from:parseInt(el.value)||0,amt:fv(`rpsa-${sid}`)});
-    });
-    steps.sort((a,b)=>a.from-b.from);
-    let amt=base;
-    for(const s of steps)if(yr>=s.from&&s.amt>0)amt=s.amt;
-    return Math.round(amt*12/10000);
-  } else {
-    // 自動モード：当初単価（空欄なら標準段階単価）＋値上げステップ
-    const baseUnit=fv('rep-unit');
-    // 値上げステップを収集
-    const autoSteps=[];
-    document.querySelectorAll('[id^="rpasy-"]').forEach(el=>{
-      const sid=el.id.split('-')[1];
-      const u=fv(`rpasu-${sid}`);
-      if(u>0)autoSteps.push({from:parseInt(el.value)||0,unit:u});
-    });
-    autoSteps.sort((a,b)=>a.from-b.from);
-    // 該当年のステップを探す
-    let appliedUnit=baseUnit;
-    for(const s of autoSteps){if(yr>=s.from)appliedUnit=s.unit;}
-    if(appliedUnit>0){
-      return Math.round(sqm*appliedUnit*12/10000);
-    }
-    // 標準段階単価（値上げステップがない場合）
-    return repFund(sqm,yr);
+  // 手入力チェックがONなら固定額で上書き（ステップ無視）
+  const manualOn=document.getElementById('rep-manual-toggle')?.checked;
+  if(manualOn){
+    const override=fv('rep-manual-override');
+    if(override>0)return Math.round(override*12/10000);
+    return 0;
   }
+  // マンションマスターが選択されていればその基準単価＋ステップを使用
+  const m=_getSelectedMansion();
+  if(m){
+    if(sqm<=0)return 0;
+    const unit=_getMansionRepUnitAtYear(m,yr);
+    if(unit>0)return Math.round(sqm*unit*12/10000);
+    return 0;
+  }
+  // マンション未選択：標準段階単価で算出
+  if(sqm<=0)return 0;
+  return repFund(sqm,yr);
 }
 
 // ===== 物件タイプ切替 =====
@@ -465,15 +481,14 @@ function applyMansionData(){
   const mgmtFee=Math.round(m.mgmtUnit*sqmV);
   const mfEl=$('mgmt-fee');
   if(mfEl)mfEl.value=mgmtFee;
-  // 修繕積立金単価自動入力
-  const ruEl=$('rep-unit');
-  if(ruEl)ruEl.value=m.repUnit;
   // インターネット使用料自動入力
   const netEl=$('mgmt-net');
   if(netEl&&m.netFee>0)netEl.value=m.netFee;
   // 専有面積同期
   const sqmMain=$('sqm');
   if(sqmMain)sqmMain.value=sqmV;
+  // 修繕積立金 自動表示エリアを更新
+  if(typeof _renderRepAutoDisplay==='function')_renderRepAutoDisplay();
   // ヒント表示
   const hint=$('mansion-auto-hint');
   if(hint){

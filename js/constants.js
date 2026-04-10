@@ -113,7 +113,7 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'loan-h-amt','loan-h-yrs','loan-h-type','rate-h-base','loan-w-amt','loan-w-yrs','loan-w-type','rate-w-base',
   'delivery-year','rent-before',
   'zaikei-h-bal','zaikei-h-monthly','zaikei-h-end','zaikei-w-bal','zaikei-w-monthly','zaikei-w-end',
-  'rate-base','sqm','mgmt-fee','mgmt-net','rep-unit','rep-manual-base','choki',
+  'rate-base','sqm','mgmt-fee','mgmt-net','rep-unit','rep-manual-base','rep-manual-override','choki',
   'retire-age','retire-pay','retire-pay-age','pension-h','pension-h-start','pension-h-receive',
   'h-gross-monthly','h-gross-bonus',
   'w-retire-age','w-retire-pay','w-retire-pay-age','pension-w','pension-w-start','pension-w-receive',

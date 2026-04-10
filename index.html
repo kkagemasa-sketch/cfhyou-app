@@ -999,48 +999,35 @@ function checkPW(){
         <div class="divider"></div>
 
         <div class="sub">🔧 修繕積立金</div>
-        <!-- モード切替 -->
-        <div style="display:flex;gap:8px;margin-bottom:9px">
-          <div class="tc on" id="rep-auto" onclick="setRepMode('auto')" style="flex:1;padding:8px 10px">
-            <span class="tc-icon" style="font-size:16px">⚙️</span>
-            <div><div class="tc-lbl">自動計算</div><div class="tc-desc">㎡×段階単価で算出</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <!-- 左：自動計算表示（マンション管理より） -->
+          <div style="flex:1;min-width:0">
+            <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">自動計算（マンション管理より）</div>
+            <div id="rep-auto-display" style="background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:8px;min-height:56px;font-size:11px;line-height:1.5;color:var(--muted)">
+              マンションを選択すると自動表示されます
+            </div>
           </div>
-          <div class="tc" id="rep-manual" onclick="setRepMode('manual')" style="flex:1;padding:8px 10px">
-            <span class="tc-icon" style="font-size:16px">✏️</span>
-            <div><div class="tc-lbl">手動入力</div><div class="tc-desc">実際の金額を直接入力</div></div>
+          <!-- 右：手入力チェックボックス＋固定額上書き -->
+          <div style="width:150px;flex-shrink:0">
+            <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ink);margin-bottom:6px;cursor:pointer">
+              <input type="checkbox" id="rep-manual-toggle" onchange="toggleRepManual()" style="width:14px;height:14px;cursor:pointer">
+              <span>✏️ 手入力</span>
+            </label>
+            <div id="rep-manual-input-wrap" style="display:none">
+              <div class="suf"><input class="inp amt-inp" id="rep-manual-override" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" placeholder="例:15000" min="0" oninput="live()" style="font-size:12px"><span class="sl">円/月</span></div>
+              <div style="font-size:9px;color:var(--muted);margin-top:4px;line-height:1.4">※ 固定額で上書き<br>（ステップは無視）</div>
+            </div>
           </div>
         </div>
-        <!-- 自動計算モード -->
-        <div id="rep-auto-fields">
-          <div class="g2" style="margin-bottom:8px">
-            <div class="fg"><label class="lbl">専有面積</label>
-              <div class="suf"><input class="inp age-inp" id="sqm" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" value="75" min="20" oninput="live()"><span class="sl">㎡</span></div>
-              <span class="hint ok" id="rep-auto-hint">✓ 段階単価で自動計算</span></div>
-            <div class="fg"><label class="lbl">当初単価（円/㎡/月）</label>
-              <div class="suf"><input class="inp amt-inp" id="rep-unit" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" value="" placeholder="空欄=標準単価" min="0" oninput="live()"><span class="sl">円</span></div>
-              <span class="hint">空欄→標準(120→240→…)、入力→固定単価</span></div>
+        <!-- 専有面積（自動計算用、既存ID維持） -->
+        <div style="margin-top:9px">
+          <div class="fg" style="max-width:180px"><label class="lbl">専有面積</label>
+            <div class="suf"><input class="inp age-inp" id="sqm" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" value="75" min="20" oninput="live()"><span class="sl">㎡</span></div>
           </div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:5px">5年ごとの値上げを追加できます（引渡からの年数と引上後の単価を入力）</div>
-          <div style="display:grid;grid-template-columns:50px 1fr 1fr auto;gap:5px;padding:0 8px;margin-bottom:4px">
-            <span class="lbl">段階</span><span class="lbl">引渡から何年目〜</span><span class="lbl">単価（円/㎡/月）</span><span></span>
-          </div>
-          <div id="rep-auto-steps-cont"></div>
-          <button class="btn-add" onclick="addRepAutoStep()">＋ 値上げを追加</button>
         </div>
-        <!-- 手動入力モード -->
-        <div id="rep-manual-fields" style="display:none">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:7px">引き渡し時点の金額を入力。将来の値上げは「変更」で追加できます。</div>
-          <div style="display:grid;grid-template-columns:50px 1fr auto;gap:5px;padding:0 8px;margin-bottom:4px">
-            <span class="lbl">段階</span><span class="lbl">引渡から何年目〜</span><span class="lbl">金額（円/月）</span>
-          </div>
-          <div class="drow" style="grid-template-columns:50px 1fr 1fr">
-            <span class="dlbl">当初</span>
-            <div style="font-size:10px;color:var(--muted);padding-top:6px">0年目〜</div>
-            <div class="suf"><input class="inp amt-inp" id="rep-manual-base" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" value="12000" placeholder="例:12000" min="0" oninput="live()"><span class="sl">円/月</span></div>
-          </div>
-          <div id="rep-steps-cont"></div>
-          <button class="btn-add" onclick="addRepStep()">＋ 値上げを追加</button>
-        </div>
+        <!-- 互換用の隠しフィールド（保存データの読込のため残す） -->
+        <input type="hidden" id="rep-unit" value="">
+        <input type="hidden" id="rep-manual-base" value="12000">
       </div>
       <!-- 戸建て専用 -->
       <div id="k-fields" style="display:none">
@@ -1457,12 +1444,12 @@ function checkPW(){
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=9"></script>
-<script src="js/constants.js?v=11"></script>
+<script src="js/constants.js?v=12"></script>
 <script src="js/utils.js?v=6"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=6"></script>
 <script src="js/education.js"></script>
-<script src="js/housing.js?v=10"></script>
+<script src="js/housing.js?v=11"></script>
 <script src="js/loan-calc.js?v=3"></script>
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=10"></script>
@@ -1478,7 +1465,7 @@ function checkPW(){
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=29"></script>
+<script src="js/save-load.js?v=30"></script>
 <script src="js/ui.js?v=3"></script>
 <script src="js/app.js?v=33"></script>
 <!-- Firebase (マンションマスター共有) -->
