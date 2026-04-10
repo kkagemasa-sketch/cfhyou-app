@@ -669,53 +669,6 @@ if(authExp&&Date.now()<Number(authExp)){
       <input type="hidden" id="loan-amt" onfocus="scrollToCFRow('lRep')" value="4500">
       <input type="hidden" id="cost-type" value="cash">
 
-      <div class="divider"></div>
-
-      <!-- 住宅ローン控除設定 -->
-      <div class="sub">🏦 住宅ローン控除設定</div>
-      <div style="background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;margin-bottom:10px">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">入居年・住宅種別・世帯属性により借入限度額が変わります。<br>控除額＝年末残高（上限以内）×0.7%　所得税＋住民税の上限内で計算<br><span style="color:#b45309">※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。</span></div>
-        <div class="g3" style="margin-bottom:8px">
-          <div class="fg"><label class="lbl">入居（引渡）予定年</label>
-            <select class="sel" id="lctrl-year" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
-              <option value="2024">2024年入居</option>
-              <option value="2025" selected>2025年入居</option>
-              <option value="2026">2026年入居</option>
-              <option value="2027">2027年入居</option>
-              <option value="2028">2028年入居</option>
-              <option value="2029">2029年入居</option>
-              <option value="2030">2030年入居</option>
-            </select></div>
-          <div class="fg"><label class="lbl">住宅の種別</label>
-            <select class="sel" id="lctrl-type" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
-              <option value="new_long">新築（長期優良・低炭素）</option>
-              <option value="new_zeh">新築（ZEH水準省エネ）</option>
-              <option value="new_eco" selected>新築（省エネ基準適合）</option>
-              <option value="new_general">新築（その他・一般）</option>
-              <option value="used_eco">中古（省エネ基準適合以上）</option>
-              <option value="used_other">中古（その他）</option>
-            </select></div>
-          <div class="fg"><label class="lbl">世帯属性</label>
-            <select class="sel" id="lctrl-household" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
-              <option value="general">一般世帯</option>
-              <option value="kosodate">子育て・若者夫婦世帯</option>
-            </select>
-            <span style="font-size:9px;color:var(--muted)">19歳未満の子 or 夫婦どちらか40歳未満</span></div>
-        </div>
-        <div id="lctrl-hint" style="font-size:10px;font-weight:600;padding:6px 10px;background:#e8f2fc;border-radius:5px;line-height:1.8"></div>
-        <!-- 自動計算/自由入力切替 -->
-        <div style="display:flex;gap:6px;margin-top:8px;margin-bottom:6px">
-          <button class="btn-tog on" id="lctrl-mode-auto" onclick="setLctrlDedMode('auto')" style="flex:1;font-size:10px;padding:4px">自動計算</button>
-          <button class="btn-tog" id="lctrl-mode-manual" onclick="setLctrlDedMode('manual')" style="flex:1;font-size:10px;padding:4px">自由入力</button>
-        </div>
-        <div id="lctrl-manual-body" style="display:none">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">各年の控除額を直接入力（万円）</div>
-          <div id="lctrl-manual-inputs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4px"></div>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
       <!-- ローン設定 -->
       <div class="sub">🏦 住宅ローン設定</div>
       <!-- ローンカテゴリ切替 -->
@@ -934,6 +887,51 @@ if(authExp&&Date.now()<Number(authExp)){
           </div>
         </div>
       </div><!-- /flat35-body -->
+
+      <div class="divider"></div>
+
+      <!-- 住宅ローン控除設定 -->
+      <div class="sub">🏦 住宅ローン控除設定</div>
+      <div style="background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;margin-bottom:10px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">入居年・住宅種別・世帯属性により借入限度額が変わります。<br>控除額＝年末残高（上限以内）×0.7%　所得税＋住民税の上限内で計算<br><span style="color:#b45309">※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。</span></div>
+        <div class="g3" style="margin-bottom:8px">
+          <div class="fg"><label class="lbl">入居（引渡）予定年</label>
+            <select class="sel" id="lctrl-year" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
+              <option value="2024">2024年入居</option>
+              <option value="2025" selected>2025年入居</option>
+              <option value="2026">2026年入居</option>
+              <option value="2027">2027年入居</option>
+              <option value="2028">2028年入居</option>
+              <option value="2029">2029年入居</option>
+              <option value="2030">2030年入居</option>
+            </select></div>
+          <div class="fg"><label class="lbl">住宅の種別</label>
+            <select class="sel" id="lctrl-type" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
+              <option value="new_long">新築（長期優良・低炭素）</option>
+              <option value="new_zeh">新築（ZEH水準省エネ）</option>
+              <option value="new_eco" selected>新築（省エネ基準適合）</option>
+              <option value="new_general">新築（その他・一般）</option>
+              <option value="used_eco">中古（省エネ基準適合以上）</option>
+              <option value="used_other">中古（その他）</option>
+            </select></div>
+          <div class="fg"><label class="lbl">世帯属性</label>
+            <select class="sel" id="lctrl-household" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
+              <option value="general">一般世帯</option>
+              <option value="kosodate">子育て・若者夫婦世帯</option>
+            </select>
+            <span style="font-size:9px;color:var(--muted)">19歳未満の子 or 夫婦どちらか40歳未満</span></div>
+        </div>
+        <div id="lctrl-hint" style="font-size:10px;font-weight:600;padding:6px 10px;background:#e8f2fc;border-radius:5px;line-height:1.8"></div>
+        <!-- 自動計算/自由入力切替 -->
+        <div style="display:flex;gap:6px;margin-top:8px;margin-bottom:6px">
+          <button class="btn-tog on" id="lctrl-mode-auto" onclick="setLctrlDedMode('auto')" style="flex:1;font-size:10px;padding:4px">自動計算</button>
+          <button class="btn-tog" id="lctrl-mode-manual" onclick="setLctrlDedMode('manual')" style="flex:1;font-size:10px;padding:4px">自由入力</button>
+        </div>
+        <div id="lctrl-manual-body" style="display:none">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">各年の控除額を直接入力（万円）</div>
+          <div id="lctrl-manual-inputs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4px"></div>
+        </div>
+      </div>
 
       <!-- 引っ越し・家具家電 初期費用 -->
       <div class="divider"></div>
