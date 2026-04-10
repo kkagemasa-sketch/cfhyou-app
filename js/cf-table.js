@@ -339,7 +339,12 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   for(let i=0;i<disp;i++){const v=ri(R.totalAsset[i]);h+=`<td class="${v<0?'vn':''}">${v.toLocaleString()}</td>`}
   h+=`<td>${ri(R.totalAsset[disp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">総金融資産</span></td></tr>`;
   // ローン残高（一番下）
-  if(loanAmt>0){h+=`<tr class="rloan"><td>ローン残高</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBal[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;}
+  if(pairLoanMode||_isFlat_t&&pairLoanMode){
+    if(loanAmt>0||(_isFlat_t&&(fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)>0)){
+      h+=`<tr class="rloan"><td>ローン残高(主)</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBalH[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;
+      h+=`<tr class="rloan"><td>ローン残高(奥様)</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBalW[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;
+    }
+  } else if(loanAmt>0){h+=`<tr class="rloan"><td>ローン残高</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBal[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;}
 
   h+=`</table></div>`;
 

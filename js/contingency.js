@@ -256,7 +256,7 @@ function renderContingency(){
     secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],
     dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],
     carTotal:[],prk:[],wedding:[],ext:[],houseCostArr:[],moveInCost:[],expT:[],
-    bal:[],sav:[],savExtra:[],lBal:[],
+    bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],
     finAsset:[],totalAsset:[],finAssetRows:null,
     evH:[],evW:[],evC:[],
     needCoverage:0};
@@ -780,10 +780,12 @@ function renderContingency(){
         if(!(isDead&&!targetIsH&&mgDansinW)&&lwAmt>0&&lcYr<lwYrs)wLB=_mgLwType==='equal_payment'?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):lbal_gankin(lwAmt,lwYrs,lcYr+1);
       }else{hLB=lhAmt;wLB=lwAmt;}
       lb=ri(Math.max(0,hLB+wLB));
+      MR.lBalH.push(ri(Math.max(0,hLB)));MR.lBalW.push(ri(Math.max(0,wLB)));
     }else{
       if(isDead&&targetIsH&&mgDansin){lb=0;}
       else if(active){lb=ri(Math.max(0,loanType_mg==='equal_payment'?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr+1):lbal_gankin(loanAmt,loanYrs,lcYr+1)));}
       else{lb=ri(loanAmt);}
+      MR.lBalH.push(0);MR.lBalW.push(0);
     }
     MR.lBal.push(lb);
 
@@ -1227,9 +1229,18 @@ function renderContingency(){
   h+=`<td>${ri(MR.totalAsset[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">総金融資産</span></td></tr>`;
   // ローン残高
   if(loanAmt>0||lhAmt>0||lwAmt>0){
-    h+=`<tr class="rloan"><td>ローン残高</td><td></td>`;
-    for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.lBal[i2]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
-    h+=`<td></td></tr>`;
+    if(pairLoanMode||_mgFlatPair){
+      h+=`<tr class="rloan"><td>ローン残高(主)</td><td></td>`;
+      for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.lBalH[i2]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
+      h+=`<td></td></tr>`;
+      h+=`<tr class="rloan"><td>ローン残高(奥様)</td><td></td>`;
+      for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.lBalW[i2]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
+      h+=`<td></td></tr>`;
+    } else {
+      h+=`<tr class="rloan"><td>ローン残高</td><td></td>`;
+      for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.lBal[i2]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
+      h+=`<td></td></tr>`;
+    }
   }
 
   h+=`</table></div>`;

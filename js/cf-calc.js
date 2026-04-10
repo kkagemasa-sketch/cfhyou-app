@@ -120,7 +120,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -918,19 +918,23 @@ function render(){
     const finAssetVal=Object.values(finRowMap).reduce((a,b)=>a+b,0);
     R.finAsset.push(ri(finAssetVal));
     R.totalAsset.push(R.sav[i]+ri(finAssetVal));// 預貯金残高＋その他金融資産
-    let lb=0;
+    let lb=0,_lbH=0,_lbW=0;
     if(_flatPair){
       if(active){
-        let bh=_fhAmt>0&&lcYr<_fhYrs?(_fhType==='equal_payment'?lbal(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fhAmt,_fhYrs,lcYr+1)):0;
-        let bw=_fwAmt>0&&lcYr<_fwYrs?(_fwType==='equal_payment'?lbal(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fwAmt,_fwYrs,lcYr+1)):0;
-        lb=ri(Math.max(0,bh+bw));
-      }else{lb=ri(_fhAmt+_fwAmt);}
+        _lbH=_fhAmt>0&&lcYr<_fhYrs?ri(_fhType==='equal_payment'?lbal(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fhAmt,_fhYrs,lcYr+1)):0;
+        _lbW=_fwAmt>0&&lcYr<_fwYrs?ri(_fwType==='equal_payment'?lbal(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fwAmt,_fwYrs,lcYr+1)):0;
+      }else{_lbH=ri(_fhAmt);_lbW=ri(_fwAmt);}
+      lb=ri(Math.max(0,_lbH+_lbW));
     }else if(pairLoanMode){
-      lb=ri(active?Math.max(0,(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):0)):lhAmt+lwAmt);
+      if(active){
+        _lbH=ri(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):0);
+        _lbW=ri(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):0);
+      }else{_lbH=ri(lhAmt);_lbW=ri(lwAmt);}
+      lb=ri(Math.max(0,_lbH+_lbW));
     }else{
       lb=ri(active?Math.max(0,(eLoanType==='equal_payment'?lbal(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr+1):lbal_gankin(loanAmt,eLoanYrs,lcYr+1))):loanAmt);
     }
-    R.lBal.push(lb);
+    R.lBal.push(lb);R.lBalH.push(_lbH);R.lBalW.push(_lbW);
 
     // ─── イベント文字列 ───
     let evH='';
