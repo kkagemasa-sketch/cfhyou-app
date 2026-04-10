@@ -277,7 +277,16 @@ function _renderMansionList(){
       h+='</div></div>';
       h+='<div style="font-size:11px;color:#64748b;margin-top:6px">';
       h+='管理費: <strong>'+m.mgmtUnit+'</strong>円/㎡/月　修繕積立金: <strong>'+m.repUnit+'</strong>円/㎡/月　ネット: <strong>'+(m.netFee||0)+'</strong>円/月';
-      h+='</div></div>';
+      h+='</div>';
+      // 値上げステップ表示
+      const rs=Array.isArray(m.repSteps)?m.repSteps:[];
+      if(rs.length>0){
+        const sorted=[...rs].sort((a,b)=>a.fromYear-b.fromYear);
+        h+='<div style="font-size:10px;color:#0369a1;margin-top:4px;padding:4px 8px;background:#f0f9ff;border-radius:4px">📈 値上げ: ';
+        h+=sorted.map(s=>s.fromYear+'年目〜'+s.unit+'円').join('、 ');
+        h+='</div>';
+      }
+      h+='</div>';
     });
   }
   box.innerHTML=h;
@@ -286,7 +295,7 @@ function _escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 function addMansion(){
   const id=String(Date.now());
-  _mansionMaster.push({id:id,name:'',mgmtUnit:200,repUnit:160,netFee:0});
+  _mansionMaster.push({id:id,name:'',mgmtUnit:200,repUnit:160,netFee:0,repSteps:[]});
   saveMansionMaster();
   _renderMansionList();
   editMansion(id);
@@ -297,22 +306,107 @@ function editMansion(id){
   if(!m)return;
   const card=document.getElementById('mcard-'+id);
   if(!card)return;
-  card.innerHTML='<div style="display:grid;grid-template-columns:1fr;gap:8px">'
+  if(!Array.isArray(m.repSteps))m.repSteps=[];
+  card.innerHTML='<div style="display:grid;grid-template-columns:1fr;gap:10px">'
     +'<div><label style="font-size:10px;font-weight:600;color:#64748b">マンション名</label>'
     +'<input id="med-name-'+id+'" class="inp" style="font-size:12px" value="'+_escH(m.name)+'" placeholder="例: グランドメゾン東京"></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
     +'<div><label style="font-size:10px;font-weight:600;color:#64748b">管理費単価（円/㎡/月）</label>'
-    +'<input id="med-mgmt-'+id+'" class="inp" type="number" style="font-size:12px" value="'+m.mgmtUnit+'" min="0"></div>'
-    +'<div><label style="font-size:10px;font-weight:600;color:#64748b">修繕積立金単価（円/㎡/月）</label>'
-    +'<input id="med-rep-'+id+'" class="inp" type="number" style="font-size:12px" value="'+m.repUnit+'" min="0"></div>'
+    +'<input id="med-mgmt-'+id+'" class="inp" type="number" style="font-size:12px" value="'+m.mgmtUnit+'" min="0" oninput="_updateMansionPreview(\''+id+'\')"></div>'
+    +'<div><label style="font-size:10px;font-weight:600;color:#64748b">修繕基準単価（円/㎡/月）</label>'
+    +'<input id="med-rep-'+id+'" class="inp" type="number" style="font-size:12px" value="'+m.repUnit+'" min="0" oninput="_updateMansionPreview(\''+id+'\')"></div>'
     +'<div><label style="font-size:10px;font-weight:600;color:#64748b">インターネット（円/月）</label>'
     +'<input id="med-net-'+id+'" class="inp" type="number" style="font-size:12px" value="'+(m.netFee||0)+'" min="0"></div>'
     +'</div>'
-    +'<div style="display:flex;gap:6px;justify-content:flex-end">'
-    +'<button onclick="saveMansionEdit(\''+id+'\')" style="background:#16a34a;color:#fff;border:none;border-radius:4px;padding:4px 14px;font-size:11px;font-weight:600;cursor:pointer">保存</button>'
-    +'<button onclick="_renderMansionList()" style="background:#94a3b8;color:#fff;border:none;border-radius:4px;padding:4px 14px;font-size:11px;cursor:pointer">キャンセル</button>'
+    // 修繕積立金 値上げステップ
+    +'<div style="border-top:1px dashed #cbd5e1;padding-top:10px;margin-top:4px">'
+    +'<div style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:6px">📈 修繕積立金 値上げステップ</div>'
+    +'<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:10px;color:#92400e;line-height:1.5">'
+    +'⚠️ 「〇年目」は<strong>CF表の1年目を基準</strong>とします（購入時=1年目）。<br>'
+    +'<strong>※ 現在からの経過年ではありません。</strong>ご注意ください。'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+    +'<label style="font-size:10px;color:#64748b">プレビュー用 専有面積:</label>'
+    +'<input id="med-preview-sqm-'+id+'" class="inp" type="number" style="font-size:11px;width:70px" value="75" min="1" max="500" step="1" oninput="_updateMansionPreview(\''+id+'\')">'
+    +'<span style="font-size:10px;color:#64748b">㎡</span>'
+    +'</div>'
+    +'<div id="med-steps-wrap-'+id+'" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:4px">入力欄（2段階目以降）</div>'
+    +'<div id="med-steps-inputs-'+id+'"></div>'
+    +'<button onclick="addMansionStep(\''+id+'\')" style="background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;margin-top:4px">＋ ステップ追加</button>'
+    +'</div>'
+    +'<div><div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:4px">プレビュー</div>'
+    +'<div id="med-steps-preview-'+id+'" style="font-size:11px;color:#1e293b;line-height:1.6"></div>'
+    +'</div>'
+    +'</div></div>'
+    // 保存・キャンセル
+    +'<div style="display:flex;gap:6px;justify-content:flex-end;border-top:1px solid #e2e8f0;padding-top:8px">'
+    +'<button onclick="saveMansionEdit(\''+id+'\')" style="background:#16a34a;color:#fff;border:none;border-radius:4px;padding:5px 18px;font-size:12px;font-weight:600;cursor:pointer">保存</button>'
+    +'<button onclick="_renderMansionList()" style="background:#94a3b8;color:#fff;border:none;border-radius:4px;padding:5px 18px;font-size:12px;cursor:pointer">キャンセル</button>'
     +'</div></div>';
+  // 既存ステップを描画
+  m.repSteps.forEach(s=>_appendMansionStepRow(id,s.fromYear,s.unit));
+  _updateMansionPreview(id);
   document.getElementById('med-name-'+id)?.focus();
+}
+// ステップ入力行を追加
+function _appendMansionStepRow(id,fromYear,unit){
+  const wrap=document.getElementById('med-steps-inputs-'+id);
+  if(!wrap)return;
+  const rowId='mst-'+id+'-'+Date.now()+Math.floor(Math.random()*1000);
+  const row=document.createElement('div');
+  row.id=rowId;
+  row.style.cssText='display:flex;align-items:center;gap:4px;margin-bottom:4px';
+  row.innerHTML='<input type="number" class="mst-year" style="width:50px;font-size:11px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px" value="'+(fromYear||6)+'" min="2" max="100" step="1">'
+    +'<span style="font-size:10px;color:#64748b">年目〜</span>'
+    +'<input type="number" class="mst-unit" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px" value="'+(unit||0)+'" min="0" step="1">'
+    +'<span style="font-size:10px;color:#64748b">円/㎡/月</span>'
+    +'<button onclick="document.getElementById(\''+rowId+'\').remove();_updateMansionPreview(\''+id+'\')" style="background:#ef4444;color:#fff;border:none;border-radius:4px;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1">×</button>';
+  wrap.appendChild(row);
+  // 入力変更でプレビュー更新
+  row.querySelectorAll('input').forEach(el=>el.addEventListener('input',()=>_updateMansionPreview(id)));
+}
+function addMansionStep(id){
+  _appendMansionStepRow(id,6,0);
+  _updateMansionPreview(id);
+}
+// 現在の入力欄からステップ情報を収集
+function _collectMansionSteps(id){
+  const wrap=document.getElementById('med-steps-inputs-'+id);
+  if(!wrap)return [];
+  const steps=[];
+  wrap.querySelectorAll('[id^="mst-'+id+'-"]').forEach(row=>{
+    const y=parseInt(row.querySelector('.mst-year')?.value)||0;
+    const u=parseFloat(row.querySelector('.mst-unit')?.value)||0;
+    if(y>=2&&u>=0)steps.push({fromYear:y,unit:u});
+  });
+  steps.sort((a,b)=>a.fromYear-b.fromYear);
+  return steps;
+}
+// プレビュー描画
+function _updateMansionPreview(id){
+  const previewEl=document.getElementById('med-steps-preview-'+id);
+  if(!previewEl)return;
+  const baseUnit=parseFloat(document.getElementById('med-rep-'+id)?.value)||0;
+  const sqm=parseFloat(document.getElementById('med-preview-sqm-'+id)?.value)||75;
+  const steps=_collectMansionSteps(id);
+  // 全期間構築: [1年目〜, ...steps]
+  const allSteps=[{fromYear:1,unit:baseUnit},...steps];
+  let html='';
+  for(let i=0;i<allSteps.length;i++){
+    const s=allSteps[i];
+    const next=allSteps[i+1];
+    const rangeText=next?(s.fromYear+'年目〜'+(next.fromYear-1)+'年目'):(s.fromYear+'年目〜');
+    const monthly=Math.round(s.unit*sqm);
+    const yearly=(monthly*12/10000);
+    const yearlyStr=yearly>=10?Math.round(yearly)+'万円':yearly.toFixed(1)+'万円';
+    html+='<div style="padding:4px 8px;background:'+(i===0?'#f0f9ff':'#fefce8')+';border-left:3px solid '+(i===0?'#0ea5e9':'#eab308')+';margin-bottom:4px;border-radius:3px">'
+      +'<div style="font-weight:700;color:#1e293b">'+rangeText+'</div>'
+      +'<div style="color:#475569;font-size:10px">'+s.unit+'円/㎡/月 × '+sqm+'㎡</div>'
+      +'<div style="color:#0f766e;font-weight:600">月 '+monthly.toLocaleString()+'円【年 '+yearlyStr+'】</div>'
+      +'</div>';
+  }
+  previewEl.innerHTML=html||'<div style="color:#94a3b8;font-size:10px">基準単価を入力してください</div>';
 }
 async function saveMansionEdit(id){
   const m=_mansionMaster.find(x=>x.id===id);
@@ -323,6 +417,7 @@ async function saveMansionEdit(id){
   m.mgmtUnit=parseFloat(document.getElementById('med-mgmt-'+id)?.value)||0;
   m.repUnit=parseFloat(document.getElementById('med-rep-'+id)?.value)||0;
   m.netFee=parseFloat(document.getElementById('med-net-'+id)?.value)||0;
+  m.repSteps=_collectMansionSteps(id); // NEW: 値上げステップ
   saveMansionMaster(); // ローカルキャッシュ即時更新
   populateMansionSelect();
   _renderMansionList();

@@ -394,6 +394,7 @@ async function saveMansionToCloud(mansion){
       mgmtUnit:mansion.mgmtUnit||0,
       repUnit:mansion.repUnit||0,
       netFee:mansion.netFee||0,
+      repSteps:Array.isArray(mansion.repSteps)?mansion.repSteps:[],
       updatedAt:Date.now()
     });
     return true;
