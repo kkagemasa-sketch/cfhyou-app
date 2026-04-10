@@ -336,6 +336,83 @@ function setType(t){
   $('k-fields').style.display=t==='kodate'?'':'none';
   const repLbl=document.getElementById('repair-sub-lbl');
   if(repLbl)repLbl.textContent=t==='mansion'?'専有部分の修繕費':'修繕費';
+  // マンション選択プルダウン表示制御
+  const msRow=$('mansion-select-row');
+  if(msRow)msRow.style.display=t==='mansion'?'':'none';
+  if(t==='mansion')populateMansionSelect();
+  live();
+}
+
+// ===== マンションマスター管理 =====
+function loadMansionMaster(){
+  try{
+    const raw=localStorage.getItem('cf_mansion_master');
+    _mansionMaster=raw?JSON.parse(raw):[];
+  }catch(e){_mansionMaster=[];}
+  populateMansionSelect();
+}
+function saveMansionMaster(){
+  localStorage.setItem('cf_mansion_master',JSON.stringify(_mansionMaster));
+}
+function populateMansionSelect(){
+  const sel=$('mansion-select');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- 選択なし --</option>';
+  _mansionMaster.forEach(m=>{
+    const o=document.createElement('option');
+    o.value=m.id;o.textContent=m.name;
+    sel.appendChild(o);
+  });
+  if(cur)sel.value=cur;
+}
+function onMansionSelect(id){
+  _selectedMansionId=id;
+  const sqmRow=$('mansion-sqm-row');
+  if(!id){
+    if(sqmRow)sqmRow.style.display='none';
+    $('mansion-auto-hint').style.display='none';
+    return;
+  }
+  if(sqmRow)sqmRow.style.display='';
+  applyMansionData();
+}
+function onMansionSqmChange(){
+  if(!_selectedMansionId)return;
+  applyMansionData();
+}
+function applyMansionData(){
+  const m=_mansionMaster.find(x=>x.id===_selectedMansionId);
+  if(!m)return;
+  const sqmEl=$('mansion-sqm');
+  const sqmV=parseFloat(sqmEl?.value)||0;
+  if(sqmV<=0){
+    const hint=$('mansion-auto-hint');
+    if(hint){hint.textContent='※ 専有面積を入力してください';hint.style.display='';}
+    return;
+  }
+  // 管理費自動入力
+  const mgmtFee=Math.round(m.mgmtUnit*sqmV);
+  const mfEl=$('mgmt-fee');
+  if(mfEl)mfEl.value=mgmtFee;
+  // 修繕積立金単価自動入力
+  const ruEl=$('rep-unit');
+  if(ruEl)ruEl.value=m.repUnit;
+  // インターネット使用料自動入力
+  const netEl=$('mgmt-net');
+  if(netEl&&m.netFee>0)netEl.value=m.netFee;
+  // 専有面積同期
+  const sqmMain=$('sqm');
+  if(sqmMain)sqmMain.value=sqmV;
+  // ヒント表示
+  const hint=$('mansion-auto-hint');
+  if(hint){
+    let hintTxt=`✓ 管理費 ${m.mgmtUnit}円/㎡ → ${mgmtFee.toLocaleString()}円/月、修繕積立金 ${m.repUnit}円/㎡/月`;
+    if(m.netFee>0)hintTxt+=`、ネット ${m.netFee.toLocaleString()}円/月`;
+    hintTxt+=' をセット';
+    hint.textContent=hintTxt;
+    hint.style.display='';
+  }
   live();
 }
 

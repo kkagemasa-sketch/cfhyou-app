@@ -70,6 +70,7 @@ function checkPW(){
     <button class="btn-h" onclick="openSlotPanel()" title="お客様データの保存・読込・バックアップ" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">💾 保存 / 読込</button>
     <button class="btn-h" onclick="exportJSON()" title="現在のデータをJSONファイルとしてPCに保存（バックアップ）" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">📤 ファイルに保存</button>
     <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">📥 ファイルから復元</button>
+    <button class="btn-h" id="btn-mansion-mgmt" onclick="openMansionMgmt()" title="マンションマスターデータの登録・編集" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">🏢 マンション管理</button>
     <button class="btn-h" onclick="openHandbook()" title="FP手帳（税率・制度早見表）" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">📖 FP手帳</button>
     <button class="btn-h" onclick="showHelp()" title="使い方ガイド" style="background:rgba(37,99,235,.4);border-color:rgba(96,165,250,.6);font-weight:800;font-size:14px;width:34px;padding:0">？</button>
   </div>
@@ -97,6 +98,19 @@ function checkPW(){
       <div class="tc" id="tc-k" onclick="setType('kodate')" style="padding:8px 10px;gap:6px">
         <span class="tc-icon" style="font-size:20px">🏡</span>
         <div><div class="tc-lbl" style="font-size:12px">戸建て</div><div class="tc-desc" style="font-size:9px">修繕費あり</div></div>
+      </div>
+    </div>
+    <!-- マンション選択（マンション時のみ表示） -->
+    <div id="mansion-select-row" style="margin-top:6px">
+      <select class="sel" id="mansion-select" onchange="onMansionSelect(this.value)" style="font-size:12px">
+        <option value="">-- マンション名を選択 --</option>
+      </select>
+      <div id="mansion-sqm-row" style="display:none;margin-top:5px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap">専有面積</label>
+          <div class="suf" style="flex:1"><input class="inp age-inp" id="mansion-sqm" type="number" value="" placeholder="㎡" min="10" oninput="onMansionSqmChange()" style="font-size:12px"><span class="sl">㎡</span></div>
+        </div>
+        <div id="mansion-auto-hint" style="display:none;font-size:10px;color:var(--teal);margin-top:3px"></div>
       </div>
     </div>
   </div>
@@ -1442,19 +1456,19 @@ function checkPW(){
 
 
 <!-- v2 モジュール読み込み -->
-<script src="js/state.js?v=8"></script>
-<script src="js/constants.js?v=10"></script>
+<script src="js/state.js?v=9"></script>
+<script src="js/constants.js?v=11"></script>
 <script src="js/utils.js?v=6"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=6"></script>
 <script src="js/education.js"></script>
-<script src="js/housing.js?v=5"></script>
+<script src="js/housing.js?v=8"></script>
 <script src="js/loan-calc.js?v=3"></script>
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=10"></script>
 <script src="js/extras.js"></script>
 <script src="js/contingency.js?v=24"></script>
-<script src="js/cf-ui.js?v=2"></script>
+<script src="js/cf-ui.js?v=5"></script>
 <script src="js/cf-calc.js?v=16"></script>
 <script src="js/cf-table.js?v=9"></script>
 <script src="js/cf-highlight.js"></script>
@@ -1464,9 +1478,9 @@ function checkPW(){
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=27"></script>
+<script src="js/save-load.js?v=28"></script>
 <script src="js/ui.js?v=3"></script>
-<script src="js/app.js?v=30"></script>
+<script src="js/app.js?v=31"></script>
 <script>
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{

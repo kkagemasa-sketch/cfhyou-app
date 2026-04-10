@@ -44,6 +44,8 @@ function onJSONImport(input){
       _cfRowLabels=d.cfRowLabels||{};
       loanCategory=d.loanCategory||'standard';
       flat35Sub=d.flat35Sub||'flat35';
+      _selectedMansionId=d._selectedMansionId||'';
+      if(_selectedMansionId){const msel=$('mansion-select');if(msel)msel.value=_selectedMansionId;}
       // v7以前の後方互換（extrasが直接ある場合）
       if(d.extras && !d.dynamic){
         $('extra-cont').innerHTML = ''; extraCnt = 0;
@@ -662,7 +664,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,_selectedMansionId:_selectedMansionId,version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   return d;
 }
@@ -710,6 +712,9 @@ function _applyData(d){
     // フラット35復元
     loanCategory=d.loanCategory||'standard';
     flat35Sub=d.flat35Sub||'flat35';
+    // マンション選択復元
+    _selectedMansionId=d._selectedMansionId||'';
+    if(_selectedMansionId){const msel=$('mansion-select');if(msel)msel.value=_selectedMansionId;}
     _restoreDynamic(d.dynamic);
     calcLoanAmt();calcDelivery();initLCComma();
     if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
