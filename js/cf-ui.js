@@ -371,15 +371,20 @@ function addMansionStep(id){
   _updateMansionPreview(id);
 }
 // 現在の入力欄からステップ情報を収集
+// ・同じ年度の重複は「後入力」が優先
+// ・単価が0以下の行は未入力扱いとして無視
 function _collectMansionSteps(id){
   const wrap=document.getElementById('med-steps-inputs-'+id);
   if(!wrap)return [];
-  const steps=[];
+  const byYear=new Map();
   wrap.querySelectorAll('[id^="mst-'+id+'-"]').forEach(row=>{
     const y=parseInt(row.querySelector('.mst-year')?.value)||0;
     const u=parseFloat(row.querySelector('.mst-unit')?.value)||0;
-    if(y>=2&&u>=0)steps.push({fromYear:y,unit:u});
+    // 年度が2以上かつ単価が正のもののみ有効（未入力/空行は除外）
+    if(y>=2&&u>0)byYear.set(y,u);
   });
+  const steps=[];
+  byYear.forEach((unit,fromYear)=>steps.push({fromYear,unit}));
   steps.sort((a,b)=>a.fromYear-b.fromYear);
   return steps;
 }
