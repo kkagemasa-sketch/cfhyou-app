@@ -772,10 +772,12 @@ function renderContingency(){
     const loanType_mg=_mgIsFlat?($('flat-loan-type')?.value||'equal_payment'):(document.getElementById('loan-type')?.value||'equal_payment');
     let lb=0;
     if(pairLoanMode||_mgFlatPair){
+      const _mgLhType=_mgFlatPair?($('flat-loan-h-type')?.value||'equal_payment'):(document.getElementById('loan-h-type')?.value||'equal_payment');
+      const _mgLwType=_mgFlatPair?($('flat-loan-w-type')?.value||'equal_payment'):(document.getElementById('loan-w-type')?.value||'equal_payment');
       let hLB=0,wLB=0;
       if(active){
-        if(!(isDead&&targetIsH&&mgDansinH)&&lhAmt>0&&lcYr<lhYrs)hLB=lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1);
-        if(!(isDead&&!targetIsH&&mgDansinW)&&lwAmt>0&&lcYr<lwYrs)wLB=lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1);
+        if(!(isDead&&targetIsH&&mgDansinH)&&lhAmt>0&&lcYr<lhYrs)hLB=_mgLhType==='equal_payment'?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):lbal_gankin(lhAmt,lhYrs,lcYr+1);
+        if(!(isDead&&!targetIsH&&mgDansinW)&&lwAmt>0&&lcYr<lwYrs)wLB=_mgLwType==='equal_payment'?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):lbal_gankin(lwAmt,lwYrs,lcYr+1);
       }else{hLB=lhAmt;wLB=lwAmt;}
       lb=ri(Math.max(0,hLB+wLB));
     }else{

@@ -465,8 +465,20 @@ function updateFlat35Info(){
       if(lastEnd>0&&lastEnd<yrs)periods.push({label:`${lastEnd+1}年目〜`,red:0,rate:base});
     }
     let html='';
+    const _hAmt=isPair?(fv('flat-loan-h-amt')||0):0;
+    const _wAmt=isPair?(fv('flat-loan-w-amt')||0):0;
+    const _hYrs=isPair?(iv('flat-loan-h-yrs')||35):0;
+    const _wYrs=isPair?(iv('flat-loan-w-yrs')||35):0;
+    const _hTp=isPair?($('flat-loan-h-type')?.value||'equal_payment'):'';
+    const _wTp=isPair?($('flat-loan-w-type')?.value||'equal_payment'):'';
     periods.forEach((p,i)=>{
-      const mPay=loanAmt>0?(loanType==='equal_payment'?mpay(loanAmt,yrs,p.rate):(mpay_gankin_year(loanAmt,yrs,p.rate,0)/12)):0;
+      let mPay=0;
+      if(isPair){
+        if(_hAmt>0)mPay+=_hTp==='equal_payment'?mpay(_hAmt,_hYrs,p.rate):(mpay_gankin_year(_hAmt,_hYrs,p.rate,0)/12);
+        if(_wAmt>0)mPay+=_wTp==='equal_payment'?mpay(_wAmt,_wYrs,p.rate):(mpay_gankin_year(_wAmt,_wYrs,p.rate,0)/12);
+      } else {
+        mPay=loanAmt>0?(loanType==='equal_payment'?mpay(loanAmt,yrs,p.rate):(mpay_gankin_year(loanAmt,yrs,p.rate,0)/12)):0;
+      }
       const bg=i%2===0?'#e8f2fc':'#f4f8fd';
       const redTxt=p.red>0?`△${p.red.toFixed(2)}%`:'―';
       const redColor=p.red>0?'color:#d63a2a;font-weight:600':'color:var(--muted)';
