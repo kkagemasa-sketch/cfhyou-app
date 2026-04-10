@@ -180,10 +180,12 @@ async function exportExcelMG(){
   const cashAfter=cashTotal-initialOut;
   const loanAmtV=fv('loan-amt')||0;
   const _isFlat_e=loanCategory==='flat35';
-  const loanYrsV=_isFlat_e?(iv('flat-loan-yrs')||35):(iv('loan-yrs')||35);
+  const _flatPair_e=_isFlat_e&&pairLoanMode;
+  const loanYrsV=_isFlat_e?(_flatPair_e?Math.max(iv('flat-loan-h-yrs')||35,iv('flat-loan-w-yrs')||35):(iv('flat-loan-yrs')||35)):(iv('loan-yrs')||35);
   const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
   const rates=_isFlat_e?getFlat35Rates():getRates();
-  const rateDisp=_isFlat_e?`${rateBaseV}%(フラット${flat35Sub==='flat20'?'20':'35'} ${calcFlat35Points()}pt)`:(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
+  const _flatTypeLabel=`フラット${flat35Sub==='flat20'?'20':'35'}`;
+  const rateDisp=_isFlat_e?`${rateBaseV}%(${_flatTypeLabel}${_flatPair_e?' ペア':''} ${calcFlat35Points()}pt)`:(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
   const deliveryYrV=iv('delivery-year')||0;
 
   // ── タイトル行（通常CFと同形式 + E列に万が一ラベル） ──
@@ -743,10 +745,12 @@ async function exportExcel(){
   const cashAfter=cashTotal-initialOut;
   const loanAmtV=fv('loan-amt')||0;
   const _isFlat_e=loanCategory==='flat35';
-  const loanYrsV=_isFlat_e?(iv('flat-loan-yrs')||35):(iv('loan-yrs')||35);
+  const _flatPair_e=_isFlat_e&&pairLoanMode;
+  const loanYrsV=_isFlat_e?(_flatPair_e?Math.max(iv('flat-loan-h-yrs')||35,iv('flat-loan-w-yrs')||35):(iv('flat-loan-yrs')||35)):(iv('loan-yrs')||35);
   const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
   const rates=_isFlat_e?getFlat35Rates():getRates();
-  const rateDisp=_isFlat_e?`${rateBaseV}%(フラット${flat35Sub==='flat20'?'20':'35'} ${calcFlat35Points()}pt)`:(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
+  const _flatTypeLabel=`フラット${flat35Sub==='flat20'?'20':'35'}`;
+  const rateDisp=_isFlat_e?`${rateBaseV}%(${_flatTypeLabel}${_flatPair_e?' ペア':''} ${calcFlat35Points()}pt)`:(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
   const deliveryYrV=iv('delivery-year')||0;
   const emptyFill=Array(disp-1).fill('');
 

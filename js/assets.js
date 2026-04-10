@@ -341,14 +341,23 @@ function setLoanMode(mode){
   pairLoanMode=mode==='pair';
   document.getElementById('loan-single-tab')?.classList.toggle('on',!pairLoanMode);
   document.getElementById('loan-pair-tab')?.classList.toggle('on',pairLoanMode);
-  // フラット35選択時は標準ローンbodyを非表示
+  // フラット35選択時は標準ローンbodyを非表示、フラット内で単独/ペア切替
   if(loanCategory==='flat35'){
     document.getElementById('loan-single-body').style.display='none';
     document.getElementById('loan-pair-body').style.display='none';
+    const fsp=document.getElementById('flat-single-panel');
+    const fpp=document.getElementById('flat-pair-panel');
+    if(fsp)fsp.style.display=pairLoanMode?'none':'';
+    if(fpp)fpp.style.display=pairLoanMode?'':'none';
   } else {
     document.getElementById('loan-single-body').style.display=pairLoanMode?'none':'';
     document.getElementById('loan-pair-body').style.display=pairLoanMode?'':'none';
+    const fsp=document.getElementById('flat-single-panel');
+    const fpp=document.getElementById('flat-pair-panel');
+    if(fsp)fsp.style.display='none';
+    if(fpp)fpp.style.display='none';
   }
   if(typeof updateMGDansinUI==='function')updateMGDansinUI();
+  if(loanCategory==='flat35')updateFlat35Info();
   live();
 }

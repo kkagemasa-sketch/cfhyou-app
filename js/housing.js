@@ -363,9 +363,9 @@ function setLoanCategory(cat){
   loanCategory=cat;
   $('lcat-std')?.classList.toggle('on',cat==='standard');
   $('lcat-flat')?.classList.toggle('on',cat==='flat35');
-  // 標準ローンUI表示切替
+  // 単独/ペアトグルは常に表示（フラット35でもペアローン可）
   const toggle=$('loan-mode-toggle');
-  if(toggle)toggle.style.display=cat==='standard'?'':'none';
+  if(toggle)toggle.style.display='';
   if(cat==='standard'){
     $('loan-single-body').style.display=pairLoanMode?'none':'';
     $('loan-pair-body').style.display=pairLoanMode?'':'none';
@@ -375,6 +375,11 @@ function setLoanCategory(cat){
   }
   const fb=$('flat35-body');
   if(fb)fb.style.display=cat==='flat35'?'':'none';
+  // フラット内の単独/ペアパネル切替
+  const fsp=$('flat-single-panel');
+  const fpp=$('flat-pair-panel');
+  if(fsp)fsp.style.display=(cat==='flat35'&&!pairLoanMode)?'':'none';
+  if(fpp)fpp.style.display=(cat==='flat35'&&pairLoanMode)?'':'none';
   if(cat==='flat35')updateFlat35Info();
   live();
 }
@@ -383,14 +388,11 @@ function setFlat35Sub(sub){
   flat35Sub=sub;
   $('flat-sub-35')?.classList.toggle('on',sub==='flat35');
   $('flat-sub-20')?.classList.toggle('on',sub==='flat20');
-  const yrsEl=$('flat-loan-yrs');
-  if(yrsEl){
-    if(sub==='flat20'){
-      yrsEl.max=20; if(parseInt(yrsEl.value)>20)yrsEl.value=20;
-    } else {
-      yrsEl.max=35;
-    }
-  }
+  const maxYrs=sub==='flat20'?20:35;
+  ['flat-loan-yrs','flat-loan-h-yrs','flat-loan-w-yrs'].forEach(id=>{
+    const el=$(id);
+    if(el){el.max=maxYrs;if(parseInt(el.value)>maxYrs)el.value=maxYrs;}
+  });
   // 金利テーブルから選択中なら再適用
   if($('flat-rate-month')?.value)applyFlatRateFromTable();
   updateFlat35Info();
@@ -442,9 +444,10 @@ function updateFlat35Info(){
   const pt=calcFlat35Points();
   const red=getFlat35Reductions(pt);
   const base=fv('flat-rate-base')||1.94;
-  const loanAmt=fv('loan-amt')||0;
-  const yrs=iv('flat-loan-yrs')||35;
-  const loanType=$('flat-loan-type')?.value||'equal_payment';
+  const isPair=pairLoanMode;
+  const loanAmt=isPair?((fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)):fv('loan-amt')||0;
+  const yrs=isPair?Math.max(iv('flat-loan-h-yrs')||35,iv('flat-loan-w-yrs')||35):(iv('flat-loan-yrs')||35);
+  const loanType=isPair?'equal_payment':($('flat-loan-type')?.value||'equal_payment');
   // 合計ポイント
   const ptEl=$('flat-total-pt');
   if(ptEl)ptEl.textContent=pt;
@@ -509,33 +512,57 @@ function applyFlatRateFromTable(){
   live();
 }
 function updateFlat35PayInfo(){
-  const loanAmt=fv('loan-amt')||0;
-  const yrs=iv('flat-loan-yrs')||35;
-  const loanType=$('flat-loan-type')?.value||'equal_payment';
+  const isPair=pairLoanMode;
   const rates=getFlat35Rates();
   const rate0=rates[0]?.rate??1.94;
-  // 月返済額（当初）— ヘッダー欄用
-  let mPay;
-  if(loanType==='equal_payment'){
-    mPay=mpay(loanAmt,yrs,rate0);
-  } else {
-    mPay=mpay_gankin_year(loanAmt,yrs,rate0,0)/12;
-  }
-  const mEl=$('flat-monthly-pay');
-  if(mEl)mEl.value=mPay>0?mPay.toFixed(2):'―';
-  // 総返済額（各年の返済額を合算）
-  let total=0;
-  for(let yr=0;yr<yrs;yr++){
-    const r=effRate(yr,rates);
-    if(loanType==='equal_payment'){
-      total+=mpay(loanAmt,yrs,r)*12;
-    } else {
-      total+=mpay_gankin_year(loanAmt,yrs,r,yr);
+
+  if(isPair){
+    // ペアローン：合算で月返済額・総返済額を算出
+    const hAmt=fv('flat-loan-h-amt')||0, wAmt=fv('flat-loan-w-amt')||0;
+    const hYrs=iv('flat-loan-h-yrs')||35, wYrs=iv('flat-loan-w-yrs')||35;
+    const hType=$('flat-loan-h-type')?.value||'equal_payment';
+    const wType=$('flat-loan-w-type')?.value||'equal_payment';
+    const mH=hAmt>0?(hType==='equal_payment'?mpay(hAmt,hYrs,rate0):mpay_gankin_year(hAmt,hYrs,rate0,0)/12):0;
+    const mW=wAmt>0?(wType==='equal_payment'?mpay(wAmt,wYrs,rate0):mpay_gankin_year(wAmt,wYrs,rate0,0)/12):0;
+    const mEl=$('flat-monthly-pay');
+    if(mEl)mEl.value=(mH+mW)>0?(mH+mW).toFixed(2):'―';
+    // 総返済額
+    let total=0;
+    const maxYrs=Math.max(hYrs,wYrs);
+    for(let yr=0;yr<maxYrs;yr++){
+      const r=effRate(yr,rates);
+      if(hAmt>0&&yr<hYrs)total+=(hType==='equal_payment'?mpay(hAmt,hYrs,r)*12:mpay_gankin_year(hAmt,hYrs,r,yr));
+      if(wAmt>0&&yr<wYrs)total+=(wType==='equal_payment'?mpay(wAmt,wYrs,r)*12:mpay_gankin_year(wAmt,wYrs,r,yr));
     }
+    const tEl=$('flat-result-total');
+    if(tEl)tEl.textContent=total>0?Math.round(total).toLocaleString():'―';
+    const hEl=$('flat-monthly-hint');
+    if(hEl)hEl.textContent='✓ ペアローン合算（当初金利）';
+  } else {
+    // 単独ローン
+    const loanAmt=fv('loan-amt')||0;
+    const yrs=iv('flat-loan-yrs')||35;
+    const loanType=$('flat-loan-type')?.value||'equal_payment';
+    let mPay;
+    if(loanType==='equal_payment'){
+      mPay=mpay(loanAmt,yrs,rate0);
+    } else {
+      mPay=mpay_gankin_year(loanAmt,yrs,rate0,0)/12;
+    }
+    const mEl=$('flat-monthly-pay');
+    if(mEl)mEl.value=mPay>0?mPay.toFixed(2):'―';
+    let total=0;
+    for(let yr=0;yr<yrs;yr++){
+      const r=effRate(yr,rates);
+      if(loanType==='equal_payment'){
+        total+=mpay(loanAmt,yrs,r)*12;
+      } else {
+        total+=mpay_gankin_year(loanAmt,yrs,r,yr);
+      }
+    }
+    const tEl=$('flat-result-total');
+    if(tEl)tEl.textContent=total>0?Math.round(total).toLocaleString():'―';
+    const hEl=$('flat-monthly-hint');
+    if(hEl)hEl.textContent=loanType==='equal_payment'?'✓ 元利均等返済（当初金利）':'✓ 元金均等返済（1年目月額）';
   }
-  const tEl=$('flat-result-total');
-  if(tEl)tEl.textContent=total>0?Math.round(total).toLocaleString():'―';
-  // ヒント
-  const hEl=$('flat-monthly-hint');
-  if(hEl)hEl.textContent=loanType==='equal_payment'?'✓ 元利均等返済（当初金利）':'✓ 元金均等返済（1年目月額）';
 }

@@ -76,13 +76,37 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
 }
 function renderLoanTab(){
   const rb=$('right-body');
-  // ペアローン時はH側、単独時は共通の値を使用
-  const loanAmt=(pairLoanMode?_lpf('loan-h-amt'):((_lpf('loan-amt'))||4500))*10000;
-  const loanRate=(pairLoanMode?(_lpf('rate-h-base')||0.5):(_lpf('rate-base')||0.5))/100;
-  const loanYrs=pairLoanMode?(_lpi('loan-h-yrs')||35):(_lpi('loan-yrs')||35);
-  const loanAmtB=_lpf('loan-w-amt')*10000;
-  const loanRateB=(_lpf('rate-w-base')||loanRate*100)/100;
-  const loanYrsB=_lpi('loan-w-yrs')||loanYrs;
+  // フラット35/ペアローン対応
+  const _lpFlat=loanCategory==='flat35';
+  const _lpFlatPair=_lpFlat&&pairLoanMode;
+  let loanAmt,loanRate,loanYrs,loanAmtB,loanRateB,loanYrsB;
+  if(_lpFlatPair){
+    loanAmt=(_lpf('flat-loan-h-amt')||0)*10000;
+    const _fRates=getFlat35Rates();
+    loanRate=(_fRates[0]?.rate??1.94)/100;
+    loanYrs=_lpi('flat-loan-h-yrs')||35;
+    loanAmtB=(_lpf('flat-loan-w-amt')||0)*10000;
+    loanRateB=loanRate;
+    loanYrsB=_lpi('flat-loan-w-yrs')||35;
+  } else if(_lpFlat){
+    loanAmt=((_lpf('loan-amt'))||4500)*10000;
+    const _fRates=getFlat35Rates();
+    loanRate=(_fRates[0]?.rate??1.94)/100;
+    loanYrs=_lpi('flat-loan-yrs')||35;
+    loanAmtB=0;loanRateB=loanRate;loanYrsB=loanYrs;
+  } else if(pairLoanMode){
+    loanAmt=_lpf('loan-h-amt')*10000;
+    loanRate=(_lpf('rate-h-base')||0.5)/100;
+    loanYrs=_lpi('loan-h-yrs')||35;
+    loanAmtB=_lpf('loan-w-amt')*10000;
+    loanRateB=(_lpf('rate-w-base')||loanRate*100)/100;
+    loanYrsB=_lpi('loan-w-yrs')||loanYrs;
+  } else {
+    loanAmt=((_lpf('loan-amt'))||4500)*10000;
+    loanRate=(_lpf('rate-base')||0.5)/100;
+    loanYrs=_lpi('loan-yrs')||35;
+    loanAmtB=0;loanRateB=loanRate;loanYrsB=loanYrs;
+  }
   let h=`<div style="padding:16px;max-width:1400px">
     <h2 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px">🏦 返済計画シミュレーション</h2>
     <!-- ペアローン切替 -->

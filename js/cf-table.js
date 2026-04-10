@@ -6,11 +6,12 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 前提条件の値を取得
   const housePrice=fv('house-price')||0;
   const downPay=fv('down-payment')||0;
-  const loanYrsV=iv('loan-yrs')||35;
-  const rateBaseV=fv('rate-base')||0.5;
+  const _isFlat_t=loanCategory==='flat35';
+  const loanYrsV=_isFlat_t?(iv('flat-loan-yrs')||35):(iv('loan-yrs')||35);
+  const rateBaseV=_isFlat_t?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
   const deliveryYrV=iv('delivery-year')||0;
   // 金利変更ステップ
-  const rates=getRates();
+  const rates=_isFlat_t?getFlat35Rates():getRates();
   const rateDisp=rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`;
   // 段階金利詳細チップ生成ヘルパー
   const _rateChips=(rArr)=>{
@@ -97,7 +98,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   </div>`;
 
   // 行2：住宅ローン条件
-  if(pairLoanMode){
+  const _flatLabel=_isFlat_t?`フラット${flat35Sub==='flat20'?'20':'35'}`:'';
+  const _flatPt=_isFlat_t?calcFlat35Points():0;
+  if(pairLoanMode&&!_isFlat_t){
     const lhAmtV=fv('loan-h-amt')||0, lwAmtV=fv('loan-w-amt')||0;
     const rHBaseV=fv('rate-h-base')||0.5, rWBaseV=fv('rate-w-base')||0.5;
     const lhYrsV=iv('loan-h-yrs')||35, lwYrsV=iv('loan-w-yrs')||35;
@@ -120,6 +123,45 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         ${chip('📊','当初金利',`${rWBaseV}%`)}
         ${_rateChips(getPairRates('w'))}
         ${chip('📅','期間',`${lwYrsV}年`)}
+      </div>
+    </div>`;
+  } else if(_isFlat_t&&pairLoanMode){
+    // フラット35 ペアローン
+    const _fhAmtV=fv('flat-loan-h-amt')||0, _fwAmtV=fv('flat-loan-w-amt')||0;
+    const _fhYrsV=iv('flat-loan-h-yrs')||35, _fwYrsV=iv('flat-loan-w-yrs')||35;
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（${_flatLabel} ペアローン）</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('📊','ベース金利',`${rateBaseV}%`)}
+        ${_flatPt>0?chip('⭐','ポイント',`${_flatPt}pt`,'#d63a2a'):''}
+        ${_rateChips(rates)}
+        ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
+      </div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ${_rl('age-h','ご主人様')}</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chip('🏦','借入額',`${_fhAmtV.toLocaleString()}万円`)}
+        ${chip('📅','期間',`${_fhYrsV}年`)}
+      </div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">👩 ${_rl('age-w','奥様')}</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chip('🏦','借入額',`${_fwAmtV.toLocaleString()}万円`)}
+        ${chip('📅','期間',`${_fwYrsV}年`)}
+      </div>
+    </div>`;
+  } else if(_isFlat_t){
+    // フラット35/20 単独の条件表示
+    const _red=getFlat35Reductions(_flatPt);
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（${_flatLabel}）</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('🏦','借入総額',`${loanAmt.toLocaleString()}万円`)}
+        ${chip('📊','ベース金利',`${rateBaseV}%`)}
+        ${_flatPt>0?chip('⭐','ポイント',`${_flatPt}pt`,'#d63a2a'):''}
+        ${_rateChips(rates)}
+        ${chip('📅','借入期間',`${loanYrsV}年`)}
+        ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
       </div>
     </div>`;
   } else {

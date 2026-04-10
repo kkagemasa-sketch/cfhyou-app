@@ -799,6 +799,8 @@ if(authExp&&Date.now()<Number(authExp)){
             <div class="tc-lbl" style="font-size:11px">フラット20（〜20年）</div>
           </div>
         </div>
+        <!-- フラット35 単独ローン -->
+        <div id="flat-single-panel">
         <div class="g3">
           <div class="fg"><label class="lbl">返済期間</label>
             <div class="suf"><input class="inp age-inp" id="flat-loan-yrs" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="35" min="5" max="35" oninput="live()"><span class="sl">年</span></div></div>
@@ -810,6 +812,38 @@ if(authExp&&Date.now()<Number(authExp)){
           <div class="fg"><label class="lbl">月返済額（自動計算）</label>
             <div class="suf"><input class="inp" id="flat-monthly-pay" readonly><span class="sl">万円</span></div>
             <span class="hint ok" id="flat-monthly-hint">✓ 元利均等返済</span></div>
+        </div>
+        </div>
+        <!-- フラット35 ペアローン -->
+        <div id="flat-pair-panel" style="display:none">
+          <div style="background:#f0f6ff;border:1px solid #b8d0f0;border-radius:var(--rs);padding:10px;margin-bottom:8px">
+            <div style="font-size:10px;font-weight:700;color:#1e5a9a;margin-bottom:6px">👔 ご主人</div>
+            <div class="g3">
+              <div class="fg"><label class="lbl">借入額</label>
+                <div class="suf"><input class="inp amt-inp" id="flat-loan-h-amt" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" placeholder="例:2500" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+              <div class="fg"><label class="lbl">返済期間</label>
+                <div class="suf"><input class="inp age-inp" id="flat-loan-h-yrs" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="35" min="5" max="35" oninput="live()"><span class="sl">年</span></div></div>
+              <div class="fg"><label class="lbl">返済方式</label>
+                <select class="sel" id="flat-loan-h-type" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" onchange="live()">
+                  <option value="equal_payment">元利均等返済</option>
+                  <option value="equal_principal">元金均等返済</option>
+                </select></div>
+            </div>
+          </div>
+          <div style="background:#fff0f6;border:1px solid #f0b8d0;border-radius:var(--rs);padding:10px;margin-bottom:8px">
+            <div style="font-size:10px;font-weight:700;color:#9a1e5a;margin-bottom:6px">👩 奥様</div>
+            <div class="g3">
+              <div class="fg"><label class="lbl">借入額</label>
+                <div class="suf"><input class="inp amt-inp" id="flat-loan-w-amt" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" placeholder="例:1500" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+              <div class="fg"><label class="lbl">返済期間</label>
+                <div class="suf"><input class="inp age-inp" id="flat-loan-w-yrs" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="35" min="5" max="35" oninput="live()"><span class="sl">年</span></div></div>
+              <div class="fg"><label class="lbl">返済方式</label>
+                <select class="sel" id="flat-loan-w-type" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" onchange="live()">
+                  <option value="equal_payment">元利均等返済</option>
+                  <option value="equal_principal">元金均等返済</option>
+                </select></div>
+            </div>
+          </div>
         </div>
         <div class="divider"></div>
         <div class="g2">
@@ -1407,28 +1441,28 @@ if(authExp&&Date.now()<Number(authExp)){
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=8"></script>
-<script src="js/constants.js?v=9"></script>
+<script src="js/constants.js?v=10"></script>
 <script src="js/utils.js?v=6"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=6"></script>
 <script src="js/education.js"></script>
-<script src="js/housing.js?v=4"></script>
+<script src="js/housing.js?v=5"></script>
 <script src="js/loan-calc.js?v=3"></script>
 <script src="js/living-cost.js"></script>
-<script src="js/assets.js?v=9"></script>
+<script src="js/assets.js?v=10"></script>
 <script src="js/extras.js"></script>
-<script src="js/contingency.js?v=22"></script>
+<script src="js/contingency.js?v=23"></script>
 <script src="js/cf-ui.js?v=2"></script>
-<script src="js/cf-calc.js?v=13"></script>
-<script src="js/cf-table.js?v=7"></script>
+<script src="js/cf-calc.js?v=14"></script>
+<script src="js/cf-table.js?v=8"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js?v=2"></script>
-<script src="js/export.js?v=18"></script>
-<script src="js/loan-plan.js?v=6"></script>
+<script src="js/export.js?v=19"></script>
+<script src="js/loan-plan.js?v=7"></script>
 <script src="js/handbook.js"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=26"></script>
+<script src="js/save-load.js?v=27"></script>
 <script src="js/ui.js?v=3"></script>
 <script src="js/app.js?v=29"></script>
 <script>

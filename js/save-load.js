@@ -35,7 +35,7 @@ function onJSONImport(input){
     try{
       const d = JSON.parse(e.target.result);
       setType(d.type || 'mansion');
-      Object.entries(d.fields || {}).forEach(([id, val]) => { const el=$(id); if(el) el.value=val; });
+      Object.entries(d.fields || {}).forEach(([id, val]) => { const el=$(id); if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val;} });
       cfOverrides=d.cfOverrides||{};
       mgOverrides=d.mgOverrides||{};
       cfCustomRows=d.cfCustomRows||[];
@@ -663,7 +663,7 @@ async function dbEstimateSize(){
 
 function _collectSaveData(){
   const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,version:'9'};
-  _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value});
+  _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   return d;
 }
 function _updateUndoRedoBtns(){
@@ -700,7 +700,7 @@ function redoState(){
 function _applyData(d){
   try{
     setType(d.type||'mansion');
-    Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el)el.value=val});
+    Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val;}});
     cfOverrides=d.cfOverrides||{};
     mgOverrides=d.mgOverrides||{};
     cfCustomRows=d.cfCustomRows||[];

@@ -196,13 +196,18 @@ function renderContingency(){
   const nm=_v('client-name')||'お客様';
 
   // ── 万が一CF表の計算 ──
-  const loanAmt=fv('loan-amt'), loanYrs=iv('loan-yrs')||35, delivery=iv('delivery');
-  const lhAmt=pairLoanMode?fv('loan-h-amt')||0:0;
-  const lwAmt=pairLoanMode?fv('loan-w-amt')||0:0;
-  const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
-  const rates=getRates();
+  const _mgIsFlat=loanCategory==='flat35';
+  const _mgFlatPair=_mgIsFlat&&pairLoanMode;
+  const loanAmt=fv('loan-amt'), delivery=iv('delivery');
+  const loanYrs=_mgIsFlat?(_mgFlatPair?Math.max(iv('flat-loan-h-yrs')||35,iv('flat-loan-w-yrs')||35):(iv('flat-loan-yrs')||35)):(iv('loan-yrs')||35);
+  const lhAmt=_mgFlatPair?(fv('flat-loan-h-amt')||0):(pairLoanMode?fv('loan-h-amt')||0:0);
+  const lwAmt=_mgFlatPair?(fv('flat-loan-w-amt')||0):(pairLoanMode?fv('loan-w-amt')||0:0);
+  const lhYrs=_mgFlatPair?(iv('flat-loan-h-yrs')||35):(iv('loan-h-yrs')||35);
+  const lwYrs=_mgFlatPair?(iv('flat-loan-w-yrs')||35):(iv('loan-w-yrs')||35);
+  const rates=_mgIsFlat?getFlat35Rates():getRates();
   const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
-  const ratesH=pairLoanMode?getPairRates('h'):[], ratesW=pairLoanMode?getPairRates('w'):[];
+  const ratesH=_mgFlatPair?rates:(pairLoanMode?getPairRates('h'):[]);
+  const ratesW=_mgFlatPair?rates:(pairLoanMode?getPairRates('w'):[]);
   const mgLCMode=getMGLCMode();
   const lcRatio=(parseInt($('mg-lc-ratio')?.value)||70)/100;
   const mgLCSteps=mgLCMode==='step'?getMGLCSteps():[];
@@ -620,19 +625,21 @@ function renderContingency(){
 
     // ローン返済
     let lRep=0,_mlRepH=0,_mlRepW=0;
-    if(pairLoanMode){
+    if(pairLoanMode||_mgFlatPair){
       if(active){
         let hLA=true,wLA=true;
         if(isDead&&targetIsH&&mgDansinH)hLA=false;
         if(isDead&&!targetIsH&&mgDansinW)wLA=false;
-        if(hLA&&lcYr<lhYrs){const lt=document.getElementById('loan-h-type')?.value||'equal_payment';_mlRepH=ri(lt==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));}
-        if(wLA&&lcYr<lwYrs){const lt=document.getElementById('loan-w-type')?.value||'equal_payment';_mlRepW=ri(lt==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));}
+        const _lhType=_mgFlatPair?($('flat-loan-h-type')?.value||'equal_payment'):(document.getElementById('loan-h-type')?.value||'equal_payment');
+        const _lwType=_mgFlatPair?($('flat-loan-w-type')?.value||'equal_payment'):(document.getElementById('loan-w-type')?.value||'equal_payment');
+        if(hLA&&lhAmt>0&&lcYr<lhYrs){_mlRepH=ri(_lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));}
+        if(wLA&&lwAmt>0&&lcYr<lwYrs){_mlRepW=ri(_lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));}
       }
       lRep=_mlRepH+_mlRepW;
     }else{
       if(active&&lcYr<loanYrs){
         const dansinApplies=isDead&&targetIsH&&mgDansin;
-        if(!dansinApplies){const lt=document.getElementById('loan-type')?.value||'equal_payment';const r=effRate(lcYr,rates);lRep=ri(lt==='equal_payment'?mpay(loanAmt,loanYrs,r)*12:mpay_gankin_year(loanAmt,loanYrs,r,lcYr));}
+        if(!dansinApplies){const lt=_mgIsFlat?($('flat-loan-type')?.value||'equal_payment'):(document.getElementById('loan-type')?.value||'equal_payment');const r=effRate(lcYr,rates);lRep=ri(lt==='equal_payment'?mpay(loanAmt,loanYrs,r)*12:mpay_gankin_year(loanAmt,loanYrs,r,lcYr));}
       }
     }
     MR.lRep.push(lRep);MR.lRepH.push(_mlRepH);MR.lRepW.push(_mlRepW);
@@ -762,9 +769,9 @@ function renderContingency(){
     MR.sav.push(ri(sav));
 
     // ローン残高
-    const loanType_mg=document.getElementById('loan-type')?.value||'equal_payment';
+    const loanType_mg=_mgIsFlat?($('flat-loan-type')?.value||'equal_payment'):(document.getElementById('loan-type')?.value||'equal_payment');
     let lb=0;
-    if(pairLoanMode){
+    if(pairLoanMode||_mgFlatPair){
       let hLB=0,wLB=0;
       if(active){
         if(!(isDead&&targetIsH&&mgDansinH)&&lhAmt>0&&lcYr<lhYrs)hLB=lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1);
@@ -916,7 +923,27 @@ function renderContingency(){
     if(rArr.length<=1)return '';
     return rArr.slice(1).map(s=>mgChip('📈',`${s.from+1}年目〜`,`${s.rate}%`)).join('');
   };
-  if(pairLoanMode){
+  const _mgFlatLabel2=_mgIsFlat?`フラット${flat35Sub==='flat20'?'20':'35'}`:'';
+  const _mgFlatPt2=_mgIsFlat?calcFlat35Points():0;
+  if(_mgFlatPair){
+    const _fhAmtV2=fv('flat-loan-h-amt')||0, _fwAmtV2=fv('flat-loan-w-amt')||0;
+    const _fhYrsV2=iv('flat-loan-h-yrs')||35, _fwYrsV2=iv('flat-loan-w-yrs')||35;
+    const _mgFRateBase=fv('flat-rate-base')||1.94;
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（${_mgFlatLabel2} ペアローン）</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}${mgChip('📊','ベース金利',_mgFRateBase+'%')}${_mgFlatPt2>0?mgChip('⭐','ポイント',_mgFlatPt2+'pt','#d63a2a'):''}${_mgRateChips(rates)}
+      </div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ご主人様</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${mgChip('🏦','借入額',_fhAmtV2.toLocaleString()+'万円')}${mgChip('📅','期間',_fhYrsV2+'年')}
+      </div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">👩 奥様</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${mgChip('🏦','借入額',_fwAmtV2.toLocaleString()+'万円')}${mgChip('📅','期間',_fwYrsV2+'年')}
+      </div>
+    </div>`;
+  } else if(pairLoanMode){
     const lhAmtV2=fv('loan-h-amt')||0, lwAmtV2=fv('loan-w-amt')||0;
     const rHBaseV2=fv('rate-h-base')||0.5, rWBaseV2=fv('rate-w-base')||0.5;
     const lhYrsV2=iv('loan-h-yrs')||35, lwYrsV2=iv('loan-w-yrs')||35;
@@ -934,6 +961,15 @@ function renderContingency(){
         ${mgChip('🏦','借入額',lwAmtV2.toLocaleString()+'万円')}${mgChip('📊','当初金利',rWBaseV2+'%')}${_mgRateChips(getPairRates('w'))}${mgChip('📅','期間',lwYrsV2+'年')}
       </div>
     </div>`;
+  } else if(_mgIsFlat){
+    const _mgFRateBase=fv('flat-rate-base')||1.94;
+    const _mgFLoanYrs=iv('flat-loan-yrs')||35;
+    const _mgDelivery=iv('delivery-year')||0;
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（${_mgFlatLabel2}）</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}${mgChip('🏦','借入総額',loanAmt.toLocaleString()+'万円')}${mgChip('📊','ベース金利',_mgFRateBase+'%')}${_mgFlatPt2>0?mgChip('⭐','ポイント',_mgFlatPt2+'pt','#d63a2a'):''}${_mgRateChips(rates)}${mgChip('📅','借入期間',_mgFLoanYrs+'年')}${_mgDelivery>0?mgChip('🔑','引き渡し',_mgDelivery+'年'):''}
+      </div></div>`;
   } else {
     const _mgRates=getRates();
     const _mgRateBase=fv('rate-base')||0.5;
