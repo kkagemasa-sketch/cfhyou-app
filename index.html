@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=overlays-content">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -20,6 +20,12 @@
 <body>
 
 <!-- パスワードロック画面 -->
+<script>
+// 認証済みならロック画面を描画前に非表示（チラつき防止）
+if(localStorage.getItem('cf-auth-exp')&&Date.now()<Number(localStorage.getItem('cf-auth-exp'))){
+  document.write('<style>#pw-lock{display:none!important}</style>');
+}
+</script>
 <div id="pw-lock" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#1e3a5f 0%,#0f2744 100%);display:flex;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:40px 36px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center">
     <div style="font-size:36px;margin-bottom:12px">🔒</div>
@@ -44,11 +50,7 @@ function checkPW(){
     document.getElementById('pw-input').style.borderColor='#d63a2a';
   }
 }
-// 30日間記憶（localStorage）
-const authExp=localStorage.getItem('cf-auth-exp');
-if(authExp&&Date.now()<Number(authExp)){
-  document.addEventListener('DOMContentLoaded',()=>{document.getElementById('pw-lock').style.display='none';});
-}
+// 30日間記憶 — チラつき防止は上部のインラインscriptで処理済み
 </script>
 
 <!-- ヘッダー -->
@@ -1464,7 +1466,7 @@ if(authExp&&Date.now()<Number(authExp)){
 <script src="js/scenario.js?v=2"></script>
 <script src="js/save-load.js?v=27"></script>
 <script src="js/ui.js?v=3"></script>
-<script src="js/app.js?v=29"></script>
+<script src="js/app.js?v=30"></script>
 <script>
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{

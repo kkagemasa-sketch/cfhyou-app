@@ -382,3 +382,16 @@ document.addEventListener('keydown',function(e){
     }
   });
 })();
+
+// ===== iPadキーボード表示時にsec-jumpを非表示 =====
+(function(){
+  if(!window.visualViewport)return;
+  var secJump=document.querySelector('.sec-jump');
+  if(!secJump)return;
+  var origDisplay=secJump.style.display||'';
+  window.visualViewport.addEventListener('resize',function(){
+    // ビューポートがウィンドウより小さい＝キーボード表示中
+    var kbVisible=window.visualViewport.height<window.innerHeight*0.85;
+    secJump.style.display=kbVisible?'none':origDisplay;
+  });
+})();
