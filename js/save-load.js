@@ -34,6 +34,10 @@ function onJSONImport(input){
   reader.onload = e => {
     try{
       const d = JSON.parse(e.target.result);
+      // 万が一タブのキャッシュをクリア（前データの残留を防ぐ）
+      window._mgStore=null;
+      window._mgMRStore=null;
+      window.lastMR=null;
       setType(d.type || 'mansion');
       Object.entries(d.fields || {}).forEach(([id, val]) => { const el=$(id); if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val;} });
       cfOverrides=d.cfOverrides||{};
@@ -56,6 +60,8 @@ function onJSONImport(input){
       calcLoanAmt(); calcDelivery(); initLCComma();
       if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
       if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
+      // 読込後は必ずメインCF表タブに戻す
+      if(typeof setRTab==='function')setRTab('cf');
       live();
       alert(`「${d.fields?.['client-name'] || 'データ'}」を読み込みました`);
     }catch(err){ alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n')); console.error('Import error:',err); }
@@ -701,6 +707,10 @@ function redoState(){
 }
 function _applyData(d){
   try{
+    // 万が一タブのキャッシュをクリア（前データの残留を防ぐ）
+    window._mgStore=null;
+    window._mgMRStore=null;
+    window.lastMR=null;
     setType(d.type||'mansion');
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val;}});
     cfOverrides=d.cfOverrides||{};
@@ -719,6 +729,8 @@ function _applyData(d){
     calcLoanAmt();calcDelivery();initLCComma();
     if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
     if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
+    // 読込後は必ずメインCF表タブに戻す
+    if(typeof setRTab==='function')setRTab('cf');
     live();render();
   }catch(err){
     alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n'));
