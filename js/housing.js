@@ -372,8 +372,8 @@ function addRepStep(){
   const row=document.createElement('div');
   row.id='rps-'+sid;
   row.style.cssText='display:flex;align-items:center;gap:4px;margin-bottom:4px';
-  row.innerHTML='<div class="suf" style="flex:0 0 72px"><input class="inp" id="rpsy-'+sid+'" type="number" min="2" placeholder="例:6" oninput="_renderRepManualPreview();live()" style="font-size:11px"><span class="sl" style="font-size:9px">年目〜</span></div>'
-    +'<div class="suf" style="flex:1"><input class="inp amt-inp" id="rpsa-'+sid+'" type="number" min="0" placeholder="例:20000" oninput="_renderRepManualPreview();live()" style="font-size:11px"><span class="sl" style="font-size:9px">円/月</span></div>'
+  row.innerHTML='<div class="suf" style="flex:0 0 110px"><input class="inp age-inp" id="rpsy-'+sid+'" type="number" min="2" placeholder="例:6" oninput="_renderRepManualPreview();live()" style="font-size:12px"><span class="sl" style="font-size:9px">年目〜</span></div>'
+    +'<div class="suf" style="flex:1;min-width:0"><input class="inp amt-inp" id="rpsa-'+sid+'" type="number" min="0" placeholder="例:20000" oninput="_renderRepManualPreview();live()" style="font-size:11px"><span class="sl" style="font-size:9px">円/月</span></div>'
     +'<button class="btn-del" onclick="document.getElementById(\'rps-'+sid+'\').remove();_renderRepManualPreview();live()" style="flex-shrink:0;font-size:10px;padding:2px 6px">×</button>';
   cont.appendChild(row);
 }
