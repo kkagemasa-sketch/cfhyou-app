@@ -1011,6 +1011,20 @@ function render(){
         Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
       });
     }
+    // 車両費の個別行（複数台）への上書きを反映 → R.carTotal を再計算してexpTに反映
+    if(R.carRows&&R.carRows.length>0){
+      R.carRows.forEach(row=>{
+        if(!cfOverrides[row.key])return;
+        Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
+      });
+      if(R.carRows.length>1){
+        for(let i=0;i<R.carTotal.length;i++){
+          let sum=0;
+          R.carRows.forEach(row=>sum+=ri(row.vals[i]||0));
+          R.carTotal[i]=sum;
+        }
+      }
+    }
     let newSav=initSav;
     for(let i=0;i<R.incT.length;i++){
       if(cfOverrides['incT']?.[i]!==undefined){R.incT[i]=cfOverrides['incT'][i];}

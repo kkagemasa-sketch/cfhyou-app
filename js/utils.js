@@ -46,15 +46,23 @@ function cellEdit(td){
   const ovr=isMG?mgOverrides:cfOverrides;
   const raw=td.textContent.replace(/,/g,'').trim();
   const num=parseFloat(raw);
-  if(raw==='-'||raw===''){
-    // 上書き削除（自動計算に戻す）
-    if(ovr[row])delete ovr[row][col];
-    td.classList.remove('cell-ovr');
+  const hadOvr=ovr[row]?.[col]!==undefined;
+  if(raw===''){
+    // 明示的に空にした → 0として上書き（自動計算値に戻さない）
+    if(!ovr[row])ovr[row]={};
+    ovr[row][col]=0;
+    td.classList.add('cell-ovr');
+    td.textContent='0';
+  } else if(raw==='-'){
+    // '-' のまま blur（変更なし） → 既存上書きは維持、無ければ何もしない
+    if(!hadOvr)return;
   } else if(!isNaN(num)){
     if(!ovr[row])ovr[row]={};
     ovr[row][col]=num;
     td.classList.add('cell-ovr');
     td.textContent=num.toLocaleString();
+  } else {
+    return;
   }
   pushUndoSnap();
   if(isMG)renderContingency();
