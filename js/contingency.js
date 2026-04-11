@@ -1263,12 +1263,12 @@ function renderContingency(){
 
   // タブボタンを表示（シナリオ名入り）
   const tabId=targetIsH?'rt-mg-h':'rt-mg-w';
-  const wrapId=tabId+'-wrap';
-  const _wrapEl=$(wrapId);
-  if(_wrapEl)_wrapEl.style.display='';
+  const _tabEl=$(tabId);
+  if(_tabEl)_tabEl.style.display='';
   const _mgScenName=scenarios?.find(s=>s.id===activeScenarioId)?.name||'';
   const _mgPersonLbl=targetIsH?'ご主人様':'奥様';
-  $(tabId).textContent=`🛡️ ${_mgScenName?_mgScenName+' ':''}万が一（${_mgPersonLbl}）`;
+  const _lblEl=$(tabId+'-label');
+  if(_lblEl)_lblEl.textContent=`🛡️ ${_mgScenName?_mgScenName+' ':''}万が一（${_mgPersonLbl}）`;
 
   // スクロール位置を保存してから表示、復元
   const _mgRb=$('right-body');
@@ -1296,8 +1296,8 @@ function closeMgTab(key){
   if(window._mgMRStore)delete window._mgMRStore[key];
   if(window.lastMR&&window.lastMR._targetIsH===(key==='h'))window.lastMR=null;
   // タブを非表示
-  const wrap=document.getElementById('rt-mg-'+key+'-wrap');
-  if(wrap)wrap.style.display='none';
+  const tabBtn=document.getElementById('rt-mg-'+key);
+  if(tabBtn)tabBtn.style.display='none';
   // このタブが選択中だったらCF表に戻す
   if(rTab==='mg-'+key){
     if(typeof setRTab==='function')setRTab('cf');

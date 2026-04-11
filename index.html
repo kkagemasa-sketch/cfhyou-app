@@ -1427,14 +1427,8 @@ function checkPW(){
       <button class="rtab" id="rt-graph" onclick="setRTab('graph')">📈 グラフ</button>
       <button class="rtab" id="rt-loan" onclick="setRTab('loan')">🏦 返済計画</button>
       <button class="rtab" id="rt-memo" onclick="setRTab('memo')">📝 メモ</button>
-      <span id="rt-mg-h-wrap" style="display:none;position:relative">
-        <button class="rtab" id="rt-mg-h" onclick="setRTab('mg-h')" style="padding-right:28px">🛡️ 万が一（ご主人様）</button>
-        <button class="mg-tab-close" onclick="closeMgTab('h')" title="この万が一CF表を閉じる" style="position:absolute;right:3px;top:50%;transform:translateY(-50%);background:#dc2626;color:#fff;border:1.5px solid #fff;border-radius:50%;width:18px;height:18px;font-size:13px;font-weight:900;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.4);z-index:2">×</button>
-      </span>
-      <span id="rt-mg-w-wrap" style="display:none;position:relative">
-        <button class="rtab" id="rt-mg-w" onclick="setRTab('mg-w')" style="padding-right:28px">🛡️ 万が一（奥様）</button>
-        <button class="mg-tab-close" onclick="closeMgTab('w')" title="この万が一CF表を閉じる" style="position:absolute;right:3px;top:50%;transform:translateY(-50%);background:#dc2626;color:#fff;border:1.5px solid #fff;border-radius:50%;width:18px;height:18px;font-size:13px;font-weight:900;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.4);z-index:2">×</button>
-      </span>
+      <button class="rtab" id="rt-mg-h" onclick="setRTab('mg-h')" style="display:none"><span id="rt-mg-h-label">🛡️ 万が一（ご主人様）</span><span class="stab-rm" onclick="event.stopPropagation();closeMgTab('h')" title="この万が一CF表を閉じる">×</span></button>
+      <button class="rtab" id="rt-mg-w" onclick="setRTab('mg-w')" style="display:none"><span id="rt-mg-w-label">🛡️ 万が一（奥様）</span><span class="stab-rm" onclick="event.stopPropagation();closeMgTab('w')" title="この万が一CF表を閉じる">×</span></button>
     </div>
     <div style="display:flex;align-items:center;gap:6px;padding-right:10px;padding-bottom:4px">
       <button id="btn-fin-toggle" onclick="toggleFinAsset()"
@@ -1468,10 +1462,10 @@ function checkPW(){
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=10"></script>
 <script src="js/extras.js"></script>
-<script src="js/contingency.js?v=25"></script>
+<script src="js/contingency.js?v=26"></script>
 <script src="js/cf-ui.js?v=9"></script>
 <script src="js/cf-calc.js?v=17"></script>
-<script src="js/cf-table.js?v=11"></script>
+<script src="js/cf-table.js?v=12"></script>
 <script src="js/cf-highlight.js"></script>
 <script src="js/graphs.js?v=2"></script>
 <script src="js/export.js?v=20"></script>
