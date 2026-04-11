@@ -118,7 +118,7 @@ function render(){
 
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
-    hInc:[],wInc:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
+    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
@@ -144,19 +144,20 @@ function render(){
     children.forEach((c,ci)=>R.cA[ci].push(c.age+i));
 
     // ─── ご主人収入 ───
-    let hInc=0;
+    let hInc=0, hDCSaving=0;
     if(!(hDeathAge>0&&ha>hDeathAge)){
       hInc=getIncomeAtAge(hSteps,ha);
-      // DC・iDeCo節税効果（拠出期間中のみ）
+      // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
       if(hInc>0&&ha<dcIdeco.h.retAge){
         const ded=(dcIdeco.h.matching+dcIdeco.h.idecoMonthly)*12;
-        if(ded>0){const sv=estimateTaxSaving(hInc,ded);hInc+=sv.total;}
+        if(ded>0){const sv=estimateTaxSaving(hInc,ded);hDCSaving=sv.total;}
       }
     }
     R.hInc.push(ri(hInc));
+    R.dcTaxSavingH.push(ri(hDCSaving));
 
     // ─── 奥様収入（産休・育休・時短対応） ───
-    let wInc=0;
+    let wInc=0, wDCSaving=0;
     if(!(wDeathAge>0&&wa>wDeathAge)){
       const leave=leaves.find(l=>wa>=l.startAge&&wa<l.endAge);
       if(leave){
@@ -164,13 +165,14 @@ function render(){
       } else {
         wInc=getIncomeAtAge(wSteps,wa);
       }
-      // DC・iDeCo節税効果（拠出期間中のみ）
+      // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
       if(wInc>0&&wa<dcIdeco.w.retAge){
         const ded=(dcIdeco.w.matching+dcIdeco.w.idecoMonthly)*12;
-        if(ded>0){const sv=estimateTaxSaving(wInc,ded);wInc+=sv.total;}
+        if(ded>0){const sv=estimateTaxSaving(wInc,ded);wDCSaving=sv.total;}
       }
     }
     R.wInc.push(ri(wInc));
+    R.dcTaxSavingW.push(ri(wDCSaving));
 
     // ─── その他収入 ───
     R.rPay.push(ha===retPayAge?ri(retPay):0);
@@ -448,7 +450,7 @@ function render(){
     });
     R.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap[row.key]?.val||0));});
     R.secRedeem.push(ri(secRedeemTotal));
-    R.incT.push(ri(hInc)+ri(wInc)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)?ri(pWife):0)+t+lc2+survP);
+    R.incT.push(ri(hInc)+ri(wInc)+ri(hDCSaving)+ri(wDCSaving)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)?ri(pWife):0)+t+lc2+survP);
     // DC・iDeCo受取は後でfinRowMap計算後にincTに加算される（Pass2でincKeysに含む）
 
     // ─── 生活費（段階別複利計算） ───
@@ -986,7 +988,7 @@ function render(){
 
   // ─── cfOverrides後処理: サブ行上書きを合計・収支・残高に反映 ───
   if(Object.keys(cfOverrides).length>0||cfCustomRows.length>0){
-    const incKeys=['hInc','wInc','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;

@@ -496,9 +496,16 @@ function getIncomeSteps(person){
   ids.forEach(base=>{
     const ageFrom=parseInt(document.getElementById(`${base}-from`)?.value)||0;
     const ageTo=parseInt(document.getElementById(`${base}-to`)?.value)||0;
-    const netFrom=parseFloat(document.getElementById(`${base}-net-from`)?.value)||0;
-    const netTo=parseFloat(document.getElementById(`${base}-net-to`)?.value)||netFrom;
-    if(netFrom>0||netTo>0)steps.push({ageFrom,ageTo,netFrom,netTo});
+    const nfRaw=document.getElementById(`${base}-net-from`)?.value;
+    const ntRaw=document.getElementById(`${base}-net-to`)?.value;
+    const netFrom=parseFloat(nfRaw)||0;
+    const netTo=parseFloat(ntRaw)||netFrom;
+    // 「明示的に0と入力された」ステップも有効として扱う（産休・育休の0万円表現を保持）
+    const hasNF=typeof nfRaw==='string'&&nfRaw.trim()!=='';
+    const hasNT=typeof ntRaw==='string'&&ntRaw.trim()!=='';
+    if(ageFrom>0&&ageTo>=ageFrom&&(hasNF||hasNT||netFrom>0||netTo>0)){
+      steps.push({ageFrom,ageTo,netFrom,netTo});
+    }
   });
   return steps.sort((a,b)=>a.ageFrom-b.ageFrom);
 }

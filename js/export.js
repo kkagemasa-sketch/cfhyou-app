@@ -824,6 +824,7 @@ async function exportExcel(){
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
   addI(_rl('hInc','ご主人手取年収'),R.hInc);addI(_rl('wInc','奥様手取年収'),R.wInc);
+  addI(_rl('dcTaxSavingH','iDeCo/DC節税(主)'),R.dcTaxSavingH);addI(_rl('dcTaxSavingW','iDeCo/DC節税(奥様)'),R.dcTaxSavingW);
   addI(_rl('otherInc','副業・その他収入'),R.otherInc);addI(_rl('insMat','保険満期金'),R.insMat);
   if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(row.lbl,row.vals);});
   addI(_rl('rPay','退職金（ご主人）'),R.rPay);addI(_rl('wRPay','退職金（奥様）'),R.wRPay);

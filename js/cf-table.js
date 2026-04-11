@@ -244,7 +244,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rcat inc-cat"><td></td><td>収　　入</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   const iRow=(lbl,arr,rowKey)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(tot===0&&vals.every(v=>v===0||v===undefined))return'';let r=`<tr class="rinc"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
   // 収入行：年収 → 退職金 → 年金系 → 金融商品解約系 → 奨学金 → 児童手当 → 控除
-  h+=iRow('ご主人手取年収',R.hInc,'hInc')+iRow('奥様手取年収',R.wInc,'wInc')+iRow('副業・その他収入',R.otherInc,'otherInc');
+  h+=iRow('ご主人手取年収',R.hInc,'hInc')+iRow('奥様手取年収',R.wInc,'wInc');
+  h+=iRow('iDeCo/DC節税(主)',R.dcTaxSavingH,'dcTaxSavingH')+iRow('iDeCo/DC節税(奥様)',R.dcTaxSavingW,'dcTaxSavingW');
+  h+=iRow('副業・その他収入',R.otherInc,'otherInc');
   h+=iRow('退職金（ご主人）',R.rPay,'rPay')+iRow('退職金（奥様）',R.wRPay,'wRPay');
   h+=iRow('本人年金',R.pS,'pS')+iRow('配偶者年金',R.pW,'pW')+iRow('遺族年金',R.survPension,'survPension');
   h+=iRow('DC受取(主)',R.dcReceiptH,'dcReceiptH');
