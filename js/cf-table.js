@@ -370,8 +370,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   _rb.innerHTML=h;
 
   // 万が一タブが存在すればタブボタンを表示維持
-  if(window._mgStore?.h)$('rt-mg-h').style.display='';
-  if(window._mgStore?.w)$('rt-mg-w').style.display='';
+  if(window._mgStore?.h){const w=$('rt-mg-h-wrap');if(w)w.style.display='';}
+  if(window._mgStore?.w){const w=$('rt-mg-w-wrap');if(w)w.style.display='';}
 
   // スクロール位置を復元
   if(_rb&&_prevTop>0)_rb.scrollTop=_prevTop;

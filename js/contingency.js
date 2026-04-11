@@ -1263,7 +1263,9 @@ function renderContingency(){
 
   // タブボタンを表示（シナリオ名入り）
   const tabId=targetIsH?'rt-mg-h':'rt-mg-w';
-  $(tabId).style.display='';
+  const wrapId=tabId+'-wrap';
+  const _wrapEl=$(wrapId);
+  if(_wrapEl)_wrapEl.style.display='';
   const _mgScenName=scenarios?.find(s=>s.id===activeScenarioId)?.name||'';
   const _mgPersonLbl=targetIsH?'ご主人様':'奥様';
   $(tabId).textContent=`🛡️ ${_mgScenName?_mgScenName+' ':''}万が一（${_mgPersonLbl}）`;
@@ -1283,3 +1285,22 @@ function renderContingency(){
   if(_mgNewTw&&_mgPrevLeft>0)_mgNewTw.scrollLeft=_mgPrevLeft;
   _applyFinAssetVisibility();
 }
+
+// 万が一CF表タブを閉じる
+function closeMgTab(key){
+  if(key!=='h'&&key!=='w')return;
+  // 確認ダイアログ
+  if(!confirm('この万が一CF表を閉じますか？\n（再生成すれば再度表示できます）'))return;
+  // ストアから削除
+  if(window._mgStore)delete window._mgStore[key];
+  if(window._mgMRStore)delete window._mgMRStore[key];
+  if(window.lastMR&&window.lastMR._targetIsH===(key==='h'))window.lastMR=null;
+  // タブを非表示
+  const wrap=document.getElementById('rt-mg-'+key+'-wrap');
+  if(wrap)wrap.style.display='none';
+  // このタブが選択中だったらCF表に戻す
+  if(rTab==='mg-'+key){
+    if(typeof setRTab==='function')setRTab('cf');
+  }
+}
+window.closeMgTab=closeMgTab;
