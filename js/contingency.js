@@ -249,13 +249,13 @@ function renderContingency(){
 
   let sav=initSav;
   const MR={yr:[],hA:[],wA:[],
-    hInc:[],wInc:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],finLiquid:[],otherInc:[],scholarship:[],
+    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],finLiquid:[],otherInc:[],scholarship:[],
     lCtrl:[],pS:[],pW:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
     dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:[],rent:[],
     secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],
     dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],
-    carTotal:[],prk:[],wedding:[],ext:[],houseCostArr:[],moveInCost:[],expT:[],
+    carTotal:[],carRows:null,prk:[],wedding:[],ext:[],houseCostArr:[],moveInCost:[],expT:[],
     bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],
     finAsset:[],totalAsset:[],finAssetRows:null,
     evH:[],evW:[],evC:[],
@@ -407,21 +407,24 @@ function renderContingency(){
       hInc=getIncomeAtAge(hSteps,ha);
       wInc=isDead?0:(()=>{const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);return leave?ri(leave.income):getIncomeAtAge(wSteps,wa);})();
     }
-    // 生存者のDC/iDeCo節税効果
+    // 生存者のDC/iDeCo節税効果（通常CFと同じく独立した収入行として表示）
+    let dcTaxSaveH=0, dcTaxSaveW=0;
     if(!isDead||!targetIsH){
       if(hInc>0&&dcIdeco_mg.h&&ha<dcIdeco_mg.h.retAge){
         const ded=(dcIdeco_mg.h.matching+dcIdeco_mg.h.idecoMonthly)*12;
-        if(ded>0){const sv=estimateTaxSaving(hInc,ded);hInc+=sv.total;}
+        if(ded>0){const sv=estimateTaxSaving(hInc,ded);dcTaxSaveH=ri(sv.total);}
       }
     }
     if(!isDead||targetIsH){
       if(wInc>0&&dcIdeco_mg.w&&wa<dcIdeco_mg.w.retAge){
         const ded=(dcIdeco_mg.w.matching+dcIdeco_mg.w.idecoMonthly)*12;
-        if(ded>0){const sv=estimateTaxSaving(wInc,ded);wInc+=sv.total;}
+        if(ded>0){const sv=estimateTaxSaving(wInc,ded);dcTaxSaveW=ri(sv.total);}
       }
     }
     MR.hInc.push(ri(hInc));
     MR.wInc.push(ri(wInc));
+    MR.dcTaxSavingH.push(dcTaxSaveH);
+    MR.dcTaxSavingW.push(dcTaxSaveW);
 
     // 退職金（死亡後は受け取れない）
     const rPayH=targetIsH?(isDead?0:(ha===retPayAge?ri(retPay):0)):(ha===retPayAge?ri(retPay):0);
@@ -606,7 +609,7 @@ function renderContingency(){
     MR.idecoReceiptH.push(ri(idecoReceiptH_mg));MR.idecoReceiptW.push(ri(idecoReceiptW_mg));
 
     // 収入合計
-    const incTotal=ri(hInc)+ri(wInc)+rPayH+rPayW+insPayVal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg);
+    const incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg);
     MR.incT.push(incTotal);
 
     // ── 支出（個別計算） ──
@@ -668,6 +671,19 @@ function renderContingency(){
       else{const yrsFromDeath=i-(deathYearOffset-1);if(yrsFromDeath>=0){if(yrsFromDeath>0&&yrsFromDeath%mgCarCycle===0)nCar+=mgCarPrice;const carAge=yrsFromDeath%mgCarCycle;if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=mgCarInsp;}}
     }else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
+    // 複数台の個別行：通常CFのcarRowsを継承し、死亡後は1行目に集約
+    if(normalR.carRows&&normalR.carRows.length>0){
+      if(!MR.carRows){MR.carRows=normalR.carRows.map(row=>({key:row.key,lbl:row.lbl,vals:[]}));}
+      if(isDead){
+        // 死亡後は1行目に survivor 用集約値、それ以外は0
+        MR.carRows.forEach((row,ri2)=>row.vals.push(ri2===0?nCar:0));
+      }else{
+        MR.carRows.forEach((row,ri2)=>{
+          const src=normalR.carRows[ri2];
+          row.vals.push(src&&i<src.vals.length?(src.vals[i]||0):0);
+        });
+      }
+    }
 
     // 駐車場
     let nPrk=0;
@@ -1064,6 +1080,8 @@ function renderContingency(){
   // 収入行
   h+=mgRow('ご主人手取年収',MR.hInc,N.hInc,'hInc');
   h+=mgRow('奥様手取年収',MR.wInc,N.wInc,'wInc');
+  h+=mgRow('iDeCo/DC節税(主)',MR.dcTaxSavingH,N.dcTaxSavingH,'dcTaxSavingH');
+  h+=mgRow('iDeCo/DC節税(奥様)',MR.dcTaxSavingW,N.dcTaxSavingW,'dcTaxSavingW');
   h+=mgRow('副業・その他収入',MR.otherInc,N.otherInc,'otherInc');
   h+=mgRow('退職金（ご主人）',MR.rPay,N.rPay,'rPay');
   h+=mgRow('退職金（奥様）',MR.wRPay,N.wRPay,'wRPay');
@@ -1134,8 +1152,12 @@ function renderContingency(){
       h+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;
     }h+=`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
   });
-  // 車両費：MG独自計算のため集約行で表示（mgCarKeep等で再計算済み）
-  h+=mgERow('車両費（購入・車検）',MR.carTotal,N.carTotal,'carTotal');
+  // 車両費：複数台ある場合は個別行、それ以外は集約行（mgCarKeep等で再計算済み）
+  if(MR.carRows&&MR.carRows.length>1){
+    MR.carRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgERow(row.lbl,row.vals,null,row.key);});
+  }else{
+    h+=mgERow('車両費（購入・車検）',MR.carTotal,N.carTotal,'carTotal');
+  }
   h+=mgERow('駐車場代',MR.prk,N.prk,'prk');
   // 積立投資額：通常CF表と同じく個別行（死亡者除外）
   const _mgDeadP=targetIsH?'h':'w';
