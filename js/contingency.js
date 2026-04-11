@@ -61,7 +61,7 @@ function setMGSurvMode(m){
   $('mg-surv-manual')?.classList.toggle('on',m==='manual');
   if($('mg-surv-auto-note'))$('mg-surv-auto-note').style.display=m==='auto'?'':'none';
   if($('mg-surv-manual-wrap'))$('mg-surv-manual-wrap').style.display=m==='manual'?'':'none';
-  const hints={auto:'③収入欄の月収・ボーナス設定から自動計算します',manual:'手入力した金額を使用します'};
+  const hints={auto:'③収入欄の年収設定から自動計算します',manual:'手入力した金額を使用します'};
   if($('mg-surv-hint'))$('mg-surv-hint').textContent=hints[m]||hints.auto;
   live(true);
 }
