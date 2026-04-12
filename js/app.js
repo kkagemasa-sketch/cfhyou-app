@@ -150,6 +150,8 @@ document.addEventListener('keydown',function(e){
   var _srcVal=0;      // ドラッグ元の値
   var _dragging=false;
   var _preview=[];    // プレビュー中のセル
+  var _fhMousePos=null; // マウス位置（自動スクロール用）
+  var _fhScrollRAF=null;
 
   // フォーカス時にfill handleを表示
   document.addEventListener('focusin',function(e){
@@ -169,8 +171,10 @@ document.addEventListener('keydown',function(e){
       var raw=td.textContent.replace(/,/g,'').trim();
       _srcVal=parseFloat(raw)||0;
       _preview=[];
+      _fhMousePos={x:ev.clientX,y:ev.clientY};
       document.addEventListener('mousemove',_onMove);
       document.addEventListener('mouseup',_onUp);
+      _startFHScroll();
     });
   });
 
@@ -179,16 +183,39 @@ document.addEventListener('keydown',function(e){
     _fh=null;
   }
 
-  function _onMove(e){
-    if(!_dragging||!_srcTd)return;
-    // プレビュークリア
+  // フィルハンドル用自動スクロール
+  function _startFHScroll(){
+    var EDGE=40,SPEED=8;
+    function tick(){
+      _fhScrollRAF=null;
+      if(!_dragging||!_fhMousePos)return;
+      var rb=$('right-body');
+      if(!rb)return;
+      var rect=rb.getBoundingClientRect();
+      var scrolled=false;
+      if(_fhMousePos.x>rect.right-EDGE){rb.scrollLeft+=SPEED;scrolled=true;}
+      if(_fhMousePos.x<rect.left+191+EDGE){rb.scrollLeft-=SPEED;scrolled=true;}
+      if(scrolled){
+        // スクロール後にプレビュー更新
+        _updatePreview();
+      }
+      if(_dragging)_fhScrollRAF=requestAnimationFrame(tick);
+    }
+    if(_fhScrollRAF)cancelAnimationFrame(_fhScrollRAF);
+    _fhScrollRAF=requestAnimationFrame(tick);
+  }
+  function _stopFHScroll(){
+    if(_fhScrollRAF){cancelAnimationFrame(_fhScrollRAF);_fhScrollRAF=null;}
+  }
+
+  function _updatePreview(){
+    if(!_dragging||!_srcTd||!_fhMousePos)return;
     _preview.forEach(function(t){t.classList.remove('fill-preview');});
     _preview=[];
-    // マウス位置から対象セルを特定（同じ行の右方向のみ）
     var row=_srcTd.parentElement;
     var cells=Array.from(row.children);
     var si=cells.indexOf(_srcTd);
-    var mouseX=e.clientX;
+    var mouseX=_fhMousePos.x;
     for(var i=si+1;i<cells.length;i++){
       var c=cells[i];
       if(!c.hasAttribute('contenteditable'))continue;
@@ -199,9 +226,16 @@ document.addEventListener('keydown',function(e){
     }
   }
 
+  function _onMove(e){
+    if(!_dragging||!_srcTd)return;
+    _fhMousePos={x:e.clientX,y:e.clientY};
+    _updatePreview();
+  }
+
   function _onUp(){
     document.removeEventListener('mousemove',_onMove);
     document.removeEventListener('mouseup',_onUp);
+    _stopFHScroll();
     if(!_dragging)return;
     _dragging=false;
     // プレビューセルに値を適用
@@ -217,6 +251,7 @@ document.addEventListener('keydown',function(e){
     _preview=[];
     if(_srcTd){pushUndoSnap();if(isMG)renderContingency();else render();}
     _srcTd=null;
+    _fhMousePos=null;
   }
 })();
 
@@ -259,6 +294,48 @@ document.addEventListener('keydown',function(e){
   var _draggingSel=false;
   var _dragMoved=false;
   var _skipNextClick=false;
+  var _autoScrollRAF=null;
+
+  // ドラッグ中の自動スクロール（端に近づくとスクロール）
+  function _startAutoScroll(getMousePos){
+    var EDGE=40; // 端からの距離（px）
+    var SPEED=8; // スクロール速度（px/frame）
+    function tick(){
+      _autoScrollRAF=null;
+      var rb=$('right-body');
+      if(!rb||!_draggingSel)return;
+      var pos=getMousePos();
+      if(!pos)return;
+      var rect=rb.getBoundingClientRect();
+      var scrolled=false;
+      // 右端
+      if(pos.x>rect.right-EDGE){rb.scrollLeft+=SPEED;scrolled=true;}
+      // 左端（行ヘッダ分を考慮）
+      if(pos.x<rect.left+191+EDGE){rb.scrollLeft-=SPEED;scrolled=true;}
+      // 下端
+      if(pos.y>rect.bottom-EDGE){rb.scrollTop+=SPEED;scrolled=true;}
+      // 上端
+      if(pos.y<rect.top+EDGE){rb.scrollTop-=SPEED;scrolled=true;}
+      if(scrolled||_draggingSel){
+        // スクロール後に新しいセルを検出
+        if(scrolled){
+          var el=document.elementFromPoint(pos.x,pos.y);
+          if(el){
+            var target=el.closest?el.closest('td[contenteditable]'):null;
+            if(target&&target.dataset.row&&target!==_anchorTd){
+              _selectRange(_anchorTd,target);
+            }
+          }
+        }
+        _autoScrollRAF=requestAnimationFrame(tick);
+      }
+    }
+    if(_autoScrollRAF)cancelAnimationFrame(_autoScrollRAF);
+    _autoScrollRAF=requestAnimationFrame(tick);
+  }
+  function _stopAutoScroll(){
+    if(_autoScrollRAF){cancelAnimationFrame(_autoScrollRAF);_autoScrollRAF=null;}
+  }
 
   // mousedown → ドラッグ選択開始（captureフェーズ）
   document.addEventListener('mousedown',function(e){
@@ -283,6 +360,14 @@ document.addEventListener('keydown',function(e){
     _draggingSel=true;
     _dragMoved=false;
 
+    // マウス位置を追跡（自動スクロール用）
+    var _mousePos={x:e.clientX,y:e.clientY};
+
+    var onMove=function(ev){
+      _mousePos.x=ev.clientX;
+      _mousePos.y=ev.clientY;
+    };
+
     // mouseover（イベント委譲）でセル検出 — elementFromPointはスクロールコンテナ内で失敗するため
     var onOver=function(ev){
       if(!_draggingSel)return;
@@ -295,9 +380,11 @@ document.addEventListener('keydown',function(e){
       }
     };
     var onUp=function(){
+      document.removeEventListener('mousemove',onMove);
       document.removeEventListener('mouseover',onOver,true);
       document.removeEventListener('mouseup',onUp);
       _draggingSel=false;
+      _stopAutoScroll();
       if(!_dragMoved){
         // クリックのみ → 通常の編集モード（フォーカスを手動で当てる）
         _clearSel();
@@ -311,8 +398,11 @@ document.addEventListener('keydown',function(e){
         document.body.focus();
       }
     };
+    document.addEventListener('mousemove',onMove);
     document.addEventListener('mouseover',onOver,true);
     document.addEventListener('mouseup',onUp);
+    // 自動スクロール開始
+    _startAutoScroll(function(){return _mousePos;});
   },true); // captureフェーズ
 
   // セル外クリックで選択解除
