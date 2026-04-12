@@ -1488,6 +1488,11 @@ if('serviceWorker' in navigator){
     // ページ読込のたびに新しいSWがないかチェック
     reg.update();
   });
+  // 新しいSWが有効になったら自動リロード（1回だけ）
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(refreshing)return;refreshing=true;location.reload();
+  });
 }
 </script>
 </body>
