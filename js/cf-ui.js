@@ -143,7 +143,11 @@ function live(force){
     }
     _lastInputHash=hash;
     pushUndoSnap();
-    validate();updateHints();calcLC();updateEdu();render();
+    validate();updateHints();calcLC();updateEdu();
+    // 万が一タブ表示中はrenderContingency()（内部でrender()も呼ばれる）
+    if((rTab==='mg-h'||rTab==='mg-w')&&typeof renderContingency==='function'){
+      renderContingency();
+    }else{render();}
     document.querySelectorAll('.amt-inp').forEach(el=>{const v=el.value.trim();el.classList.toggle('is-zero',v===''||v==='0');});
     if(ind){
       ind.textContent='✓ 完了';ind.style.background='rgba(74,222,128,0.25)';ind.style.color='#4ade80';
