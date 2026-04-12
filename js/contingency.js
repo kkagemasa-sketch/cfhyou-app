@@ -882,11 +882,13 @@ function renderContingency(){
   const targetLabel=targetIsH?'ご主人様':'奥様';
 
   // 逝去・退職列インデックス計算（通常CF表と同じ col-death / col-retire クラス）
+  // 万が一CF表では、シミュレーション対象者の逝去列は入力パネルの死亡時期(mg-death-year)に合わせる
   const wAge0_mg=wAge;
   const hDeathAge_mg=iv('h-death-age'),wDeathAge_mg=iv('w-death-age');
   const wRetireAge_mg=iv('w-retire-age');
-  const hDeathCol_mg=hDeathAge_mg>hAge?hDeathAge_mg-hAge:-1;
-  const wDeathCol_mg=wDeathAge_mg>wAge0_mg?wDeathAge_mg-wAge0_mg:-1;
+  const _mgDeathCol=deathYearOffset-1;
+  const hDeathCol_mg=targetIsH?_mgDeathCol:(hDeathAge_mg>hAge?hDeathAge_mg-hAge:-1);
+  const wDeathCol_mg=!targetIsH?_mgDeathCol:(wDeathAge_mg>wAge0_mg?wDeathAge_mg-wAge0_mg:-1);
   const hRetireCol_mg=retAge_mg>hAge?retAge_mg-hAge:-1;
   const wRetireCol_mg=wRetireAge_mg>wAge0_mg?wRetireAge_mg-wAge0_mg:-1;
   const getMgColCls=i=>{let c='';if(i===hDeathCol_mg||i===wDeathCol_mg)c+=' col-death';if(i===hRetireCol_mg||i===wRetireCol_mg)c+=' col-retire';return c;};
