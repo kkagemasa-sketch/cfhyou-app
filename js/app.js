@@ -89,6 +89,8 @@ window.onload=()=>{
       // 万が一CF表を復元（ページリロードで_mgStoreが消えるため再生成）
       if(_autoSaveRestored&&typeof renderContingency==='function'){
         try{renderContingency();}catch(e){}
+        // 復元後は通常CF表タブに戻す
+        if(typeof setRTab==='function')setRTab('cf');
       }
     }catch(e){console.warn('初期化エラー:',e);}
   })();
