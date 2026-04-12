@@ -234,12 +234,12 @@ function _renderContingencyInner(){
   const pSelf=fv('pension-h')||186, pWife=fv('pension-w')||66;
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=iv('pension-w-receive')||65;
-  const retPay=fv('retire-pay'), retPayAge=iv('retire-pay-age')||iv('retire-age')||65;
+  const retPay=fv('retire-pay'), retPayAge=iv('retire-pay-age')||iv('retire-age')||60;
   const wRetPay=fv('w-retire-pay')||0, wRetPayAge=iv('w-retire-pay-age')||iv('w-retire-age')||60;
   const survManualAmt=fv('mg-surv-amt')||0;
   // 老齢基礎年金概算（2024年度満額81.6万円 × 加入年数/40年）
   const KISO_FULL=81.6;
-  const retAge_mg=iv('retire-age')||65, wRetAge_mg=iv('w-retire-age')||60;
+  const retAge_mg=iv('retire-age')||60, wRetAge_mg=iv('w-retire-age')||60;
   const pHStart_mg=iv('pension-h-start')||22, pWStart_mg=iv('pension-w-start')||22;
   const kisoH_mg=ri(KISO_FULL*Math.min(retAge_mg-pHStart_mg,40)/40);
   const kisoW_mg=ri(KISO_FULL*Math.min(wRetAge_mg-pWStart_mg,40)/40);

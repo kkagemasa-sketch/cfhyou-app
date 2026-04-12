@@ -12,7 +12,7 @@ function updateSurvHint(p){
     return;
   }
   const start=iv(`pension-${p}-start`)||22;
-  const retA=p==='h'?(iv('retire-age')||65):(iv('w-retire-age')||60);
+  const retA=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
   const joinM=Math.min(480,Math.max((retA-start)*12,300));
   // 収入ステップがあれば精密計算、なければ額面月収×0.75で推定
   let hyojun;
@@ -111,7 +111,7 @@ function calcTakeHome(){
 function calcPension(person){
   const isH = person==='h';
   const startAge = iv(`pension-${person}-start`)||22;
-  const retireAge = isH ? (iv('retire-age')||65) : (iv('w-retire-age')||60);
+  const retireAge = isH ? (iv('retire-age')||60) : (iv('w-retire-age')||60);
   // 加入月数（最大480ヶ月=40年）
   const months = Math.min(480, Math.max(0, retireAge - startAge) * 12);
   // 生涯平均標準報酬月額を精密計算（収入ステップ活用）
@@ -436,7 +436,7 @@ function updateDCTaxHint(p){
 function updateDCReceiptHint(p){
   const method=document.getElementById(`dc-${p}-method`)?.value||'lump';
   const receiveAge=iv(`dc-${p}-receive-age`)||60;
-  const retAge=p==='h'?(iv('retire-age')||65):(iv('w-retire-age')||60);
+  const retAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
   const joinYrs=Math.max(1,retAge-(p==='h'?(iv('pension-h-start')||22):(iv('pension-w-start')||22)));
   const hint=document.getElementById(`dc-${p}-receipt-hint`);
   if(!hint)return;

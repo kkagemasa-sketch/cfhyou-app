@@ -5,7 +5,7 @@ function renderBasisTab(){
   const rb=$('right-body');
   if(!rb)return;
   const hAge=iv('husband-age')||30, wAge=iv('wife-age')||29;
-  const retAge=iv('retire-age')||65, wRetAge=iv('w-retire-age')||60;
+  const retAge=iv('retire-age')||60, wRetAge=iv('w-retire-age')||60;
   const pHStart=iv('pension-h-start')||22, pWStart=iv('pension-w-start')||22;
   const KISO_FULL=81.6;
   const nm=_v('client-name')||'お客様';

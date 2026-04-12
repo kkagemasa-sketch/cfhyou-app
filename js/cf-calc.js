@@ -28,7 +28,7 @@ function render(){
   // ※ getIncomeSteps / getIncomeAtAge はグローバル版を使用
   const hSteps=getIncomeSteps('h');
   const wSteps=getIncomeSteps('w');
-  const retAge=iv('retire-age')||65, retPay=fv('retire-pay'), pSelf=$('pension-h')?.value===''?0:(fv('pension-h')||186);
+  const retAge=iv('retire-age')||60, retPay=fv('retire-pay'), pSelf=$('pension-h')?.value===''?0:(fv('pension-h')||186);
   const retPayAge=iv('retire-pay-age')||retAge;
   const hDeathAge=iv('h-death-age')||83;
   const wDeathAge=iv('w-death-age')||88;
@@ -721,7 +721,7 @@ function render(){
     // 財形貯蓄（主人・奥様）
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
-      const pRetAge=p==='h'?(iv('retire-age')||65):(iv('w-retire-age')||60);
+      const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
       const zm=fv(`zaikei-${p}-monthly`)||0;
       const ze=iv(`zaikei-${p}-end`)||0;
       if(zm>0&&(ze===0||pAge<(ze||pRetAge))){sav+=zm*12;_savExtra+=zm*12;}
