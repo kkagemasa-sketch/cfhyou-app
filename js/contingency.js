@@ -1115,7 +1115,7 @@ function renderContingency(){
   // カスタム収入行（万が一専用）
   mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
-    const tot=vals.reduce((a,b)=>a+b,0);if(tot===0)return;
+    const tot=vals.reduce((a,b)=>a+b,0);
     let rr=`<tr class="rinc"><td><button onclick="deleteCustomRow('${r.id}')" class="btn-del-row" title="行を削除">×</button></td><td ${_ce} data-custom-id="${r.id}" onblur="customLabelEdit(this)" class="custom-lbl">${r.label}</td>`;
     for(let i2=0;i2<mgDisp;i2++){const v=vals[i2];const isOvr=mgOverrides[r.id]?.[i2]!==undefined;rr+=`<td class="${v===0?'vz':''}${isOvr?' cell-ovr':''}${getMgColCls(i2)}" ${_ce} data-row="${r.id}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;}
     h+=rr+`<td>${tot>0?ri(tot).toLocaleString():'-'}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${r.label}</span></td></tr>`;
@@ -1222,7 +1222,7 @@ function renderContingency(){
   // カスタム支出行（万が一専用）
   mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
-    const tot=vals.reduce((a,b)=>a+b,0);if(tot===0)return;
+    const tot=vals.reduce((a,b)=>a+b,0);
     let rr=`<tr class="rexp"><td><button onclick="deleteCustomRow('${r.id}')" class="btn-del-row" title="行を削除">×</button></td><td ${_ce} data-custom-id="${r.id}" onblur="customLabelEdit(this)" class="custom-lbl">${r.label}</td>`;
     for(let i2=0;i2<mgDisp;i2++){const v=vals[i2];const isOvr=mgOverrides[r.id]?.[i2]!==undefined;rr+=`<td class="${v===0?'vz':''}${isOvr?' cell-ovr':''}${getMgColCls(i2)}" ${_ce} data-row="${r.id}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;}
     h+=rr+`<td>${tot>0?ri(tot).toLocaleString():'-'}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${r.label}</span></td></tr>`;
