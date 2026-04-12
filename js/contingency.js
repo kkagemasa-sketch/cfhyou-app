@@ -509,12 +509,10 @@ function _renderContingencyInner(){
     }
     MR.lCtrl.push(lctrlVal);
 
-    // 本人年金（老齢年金は手取り率を適用、遺族年金は非課税で別行）
+    // 本人年金（入力値が手取りのためそのまま使用、遺族年金は非課税で別行）
     let pSelfVal=0, pWifeVal=0;
     if(targetIsH){pSelfVal=isDead?0:(ha>=pHReceive?ri(pSelf):0);pWifeVal=wa>=pWReceive?ri(pWife):0;}
     else{pSelfVal=ha>=pHReceive?ri(pSelf):0;pWifeVal=isDead?0:(wa>=pWReceive?ri(pWife):0);}
-    if(pSelfVal>0)pSelfVal=ri(pSelfVal*pensionNetRate(pSelfVal,hInc>0));
-    if(pWifeVal>0)pWifeVal=ri(pWifeVal*pensionNetRate(pWifeVal,wInc>0));
     MR.pS.push(pSelfVal);
     MR.pW.push(pWifeVal);
 
