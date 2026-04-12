@@ -90,9 +90,9 @@ function updateHints(){
   const hp=document.getElementById('h-pension-hint');
   const hPRcv=iv('pension-h-receive')||65;
   if(hp)hp.textContent=fv('pension-h')>0?`✓ ${fv('pension-h').toLocaleString()}万円/年（${hPRcv}歳〜）`:`${hPRcv}歳〜 受給`;
-  const hDa=iv('h-death-age');
+  const hDa=iv('h-death-age')||83;
   const hdh=document.getElementById('h-death-hint');
-  if(hdh)hdh.textContent=hDa>0?`✓ ${hDa}歳まで計算`:'設定なし';
+  if(hdh)hdh.textContent=hDa>0?`✓ ${hDa}歳まで計算`:'83歳（デフォルト）';
   const sinfo=document.getElementById('survivor-info');
   if(sinfo)sinfo.style.display=hDa>0?'':'none';
   const d=iv('delivery'),y=new Date().getFullYear();
@@ -171,9 +171,9 @@ function updateHints(){
   const wph=document.getElementById('w-pension-hint');
   const wPRcv=iv('pension-w-receive')||65;
   if(wph)wph.textContent=fv('pension-w')>0?`✓ ${fv('pension-w').toLocaleString()}万円/年（${wPRcv}歳〜）`:`${wPRcv}歳〜 受給`;
-  const wDa=iv('w-death-age');
+  const wDa=iv('w-death-age')||88;
   const wdh=document.getElementById('w-death-hint');
-  if(wdh)wdh.textContent=wDa>0?`✓ ${wDa}歳まで計算`:'設定なし';
+  if(wdh)wdh.textContent=wDa>0?`✓ ${wDa}歳まで計算`:'88歳（デフォルト）';
 
 
   // マンション管理費を生活費欄に反映

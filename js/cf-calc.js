@@ -30,8 +30,8 @@ function render(){
   const wSteps=getIncomeSteps('w');
   const retAge=iv('retire-age')||65, retPay=fv('retire-pay'), pSelf=$('pension-h')?.value===''?0:(fv('pension-h')||186);
   const retPayAge=iv('retire-pay-age')||retAge;
-  const hDeathAge=iv('h-death-age');
-  const wDeathAge=iv('w-death-age');
+  const hDeathAge=iv('h-death-age')||83;
+  const wDeathAge=iv('w-death-age')||88;
   const wRetAge=iv('w-retire-age')||60;
   const wRetPay=fv('w-retire-pay')||0;
   const wRetPayAge=iv('w-retire-pay-age')||wRetAge;

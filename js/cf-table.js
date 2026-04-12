@@ -24,7 +24,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
 
   // 逝去・退職列インデックス計算
   const wAge0=iv('wife-age');
-  const hDeathAge=iv('h-death-age'),wDeathAge=iv('w-death-age');
+  const hDeathAge=iv('h-death-age')||83,wDeathAge=iv('w-death-age')||88;
   const wRetireAge=iv('w-retire-age');
   const hDeathCol=hDeathAge>hAge?hDeathAge-hAge:-1;
   const wDeathCol=wDeathAge>wAge0?wDeathAge-wAge0:-1;

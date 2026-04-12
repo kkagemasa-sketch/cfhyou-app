@@ -888,7 +888,7 @@ function _renderContingencyInner(){
   // 逝去・退職列インデックス計算（通常CF表と同じ col-death / col-retire クラス）
   // 万が一CF表では、シミュレーション対象者の逝去列は入力パネルの死亡時期(mg-death-year)に合わせる
   const wAge0_mg=wAge;
-  const hDeathAge_mg=iv('h-death-age'),wDeathAge_mg=iv('w-death-age');
+  const hDeathAge_mg=iv('h-death-age')||83,wDeathAge_mg=iv('w-death-age')||88;
   const wRetireAge_mg=iv('w-retire-age');
   const _mgDeathCol=deathYearOffset-1;
   const hDeathCol_mg=targetIsH?_mgDeathCol:(hDeathAge_mg>hAge?hDeathAge_mg-hAge:-1);
