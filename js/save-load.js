@@ -733,7 +733,8 @@ function _applyData(d){
     window._mgMRStore=null;
     window.lastMR=null;
     setType(d.type||'mansion');
-    Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val;}});
+    var _defs={'h-death-age':'83','w-death-age':'88'};
+    Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val||_defs[id]||'';}});
     cfOverrides=d.cfOverrides||{};
     mgOverrides=d.mgOverrides||{};
     cfCustomRows=d.cfCustomRows||[];
@@ -796,8 +797,9 @@ async function newCFSheet(){
   }
   if(!confirm('本当に全データをリセットして新規作成しますか？\nこの操作は元に戻せません。'))return;
 
-  // 全フィールドをクリア
-  _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)el.value='';});
+  // 全フィールドをクリア（デフォルト値があるものは復元）
+  var _defaults={'h-death-age':'83','w-death-age':'88'};
+  _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)el.value=_defaults[id]||'';});
 
   // グローバル状態リセット
   cfOverrides={};
