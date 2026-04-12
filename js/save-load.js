@@ -204,8 +204,8 @@ function _collectDynamic(){
     scholarshipOn:$('mg-scholarship-yes')?.classList.contains('on')||false,
     scholarshipAmt:$('mg-scholarship-amt')?.value||'',scholarshipAge:$('mg-scholarship-age')?.value||'',
     carOn:$('mg-car-keep')?.classList.contains('on')!==false,
-    carHPrice:$('mg-car-h-price')?.value||'',carHCycle:$('mg-car-h-cycle')?.value||'',carHInsp:$('mg-car-h-insp')?.value||'',carHEndAge:$('mg-car-h-end-age')?.value||'',
-    carWPrice:$('mg-car-w-price')?.value||'',carWCycle:$('mg-car-w-cycle')?.value||'',carWInsp:$('mg-car-w-insp')?.value||'',carWEndAge:$('mg-car-w-end-age')?.value||'',
+    carHPrice:$('mg-car-h-price')?.value||'',carHCycle:$('mg-car-h-cycle')?.value||'',carHInsp:$('mg-car-h-insp')?.value||'',carHEndAge:$('mg-car-h-end-age')?.value||'',carHFirst:$('mg-car-h-first')?.value||'',
+    carWPrice:$('mg-car-w-price')?.value||'',carWCycle:$('mg-car-w-cycle')?.value||'',carWInsp:$('mg-car-w-insp')?.value||'',carWEndAge:$('mg-car-w-end-age')?.value||'',carWFirst:$('mg-car-w-first')?.value||'',
     parkOn:$('mg-park-keep')?.classList.contains('on')!==false,parking:$('mg-parking')?.value||'',
     parkHFromAge:$('mg-park-h-from-age')?.value||'',parkHToAge:$('mg-park-h-to-age')?.value||'',
     parkWFromAge:$('mg-park-w-from-age')?.value||'',parkWToAge:$('mg-park-w-to-age')?.value||'',
@@ -524,10 +524,12 @@ function _restoreDynamic(d){
       if($('mg-car-h-cycle'))$('mg-car-h-cycle').value=mg.carHCycle||'7';
       if($('mg-car-h-insp'))$('mg-car-h-insp').value=mg.carHInsp||'10';
       if($('mg-car-h-end-age'))$('mg-car-h-end-age').value=mg.carHEndAge||'';
+      if($('mg-car-h-first'))$('mg-car-h-first').value=mg.carHFirst||'';
       if($('mg-car-w-price'))$('mg-car-w-price').value=mg.carWPrice||'300';
       if($('mg-car-w-cycle'))$('mg-car-w-cycle').value=mg.carWCycle||'7';
       if($('mg-car-w-insp'))$('mg-car-w-insp').value=mg.carWInsp||'10';
       if($('mg-car-w-end-age'))$('mg-car-w-end-age').value=mg.carWEndAge||'';
+      if($('mg-car-w-first'))$('mg-car-w-first').value=mg.carWFirst||'';
     }else{
       ['h','w'].forEach(p=>{
         if($(`mg-car-${p}-price`))$(`mg-car-${p}-price`).value=mg.carPrice||'300';

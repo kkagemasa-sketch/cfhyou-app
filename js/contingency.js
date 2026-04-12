@@ -666,8 +666,19 @@ function renderContingency(){
       const cp=targetIsH?'h':'w';
       const mgCarPrice=fv(`mg-car-${cp}-price`)||300;const mgCarCycle=iv(`mg-car-${cp}-cycle`)||7;
       const mgCarInsp=fv(`mg-car-${cp}-insp`)||10;const mgCarEndAge=iv(`mg-car-${cp}-end-age`)||0;
+      const mgCarFirst=iv(`mg-car-${cp}-first`)||0;
+      // 生存配偶者の年齢を基準に購入時期を判定
       const survivorAge=targetIsH?wa:ha;
       if(mgCarEndAge>0&&survivorAge>mgCarEndAge){nCar=0;}
+      else if(mgCarFirst>0){
+        // 初回購入年齢ベース：生存配偶者がmgCarFirst歳以上になったら有効
+        if(survivorAge>=mgCarFirst){
+          const ageFromFirst=survivorAge-mgCarFirst;
+          if(ageFromFirst%mgCarCycle===0)nCar+=mgCarPrice;
+          const carAge=ageFromFirst%mgCarCycle;
+          if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=mgCarInsp;
+        }
+      }
       else{const yrsFromDeath=i-(deathYearOffset-1);if(yrsFromDeath>=0){if(yrsFromDeath>0&&yrsFromDeath%mgCarCycle===0)nCar+=mgCarPrice;const carAge=yrsFromDeath%mgCarCycle;if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=mgCarInsp;}}
     }else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
