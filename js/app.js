@@ -299,70 +299,65 @@ document.addEventListener('keydown',function(e){
   var _draggingSel=false;
   var _dragMoved=false;
   var _skipNextClick=false;
-  var _autoScrollRAF=null;
+  var _scrollInterval=null;
+  var _lastMousePos=null;
 
-  // ドラッグ中の自動スクロール（端に近づくとスクロール）
-  // マウスがコンテナ端 or ビューポート端に近い場合に自動スクロール
-  function _startAutoScroll(getMousePos){
-    var EDGE=80; // 端からの距離（px）
-    var BASE_SPEED=6; // 基本スクロール速度（px/frame）
-    var MAX_SPEED=24; // 最大スクロール速度（px/frame）
-    function tick(){
-      _autoScrollRAF=null;
-      var rb=$('right-body');
-      if(!rb||!_draggingSel)return;
-      var pos=getMousePos();
-      if(!pos)return;
-      var rect=rb.getBoundingClientRect();
-      var scrolled=false;
-      // 右端: コンテナ端 or ビューポート端に近い場合（速度は距離に比例）
-      var distR=Math.min(rect.right,window.innerWidth)-pos.x;
-      if(distR<EDGE){
-        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-distR/EDGE));
-        rb.scrollLeft+=speed;scrolled=true;
-      }
-      // 左端（行ヘッダ幅191pxを考慮）
-      var leftEdge=rect.left+191;
-      var distL=pos.x-leftEdge;
-      if(distL<EDGE&&distL<pos.x){
-        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-Math.max(0,distL)/EDGE));
-        rb.scrollLeft-=speed;scrolled=true;
-      }
-      // 下端
-      var distB=Math.min(rect.bottom,window.innerHeight)-pos.y;
-      if(distB<EDGE){
-        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-distB/EDGE));
-        rb.scrollTop+=speed;scrolled=true;
-      }
-      // 上端
-      var distT=pos.y-rect.top;
-      if(distT<EDGE&&distT>=0){
-        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-distT/EDGE));
-        rb.scrollTop-=speed;scrolled=true;
-      }
-      // スクロール後に新しいセルを検出
-      if(scrolled){
-        // マウス位置を少し内側に補正してelementFromPointで確実にセルを拾う
-        var findX=Math.min(pos.x,rect.right-20);
-        var findY=Math.min(pos.y,rect.bottom-5);
-        findX=Math.max(findX,rect.left+195);
-        findY=Math.max(findY,rect.top+5);
-        var el=document.elementFromPoint(findX,findY);
-        if(el){
-          var target=el.closest?el.closest('td[contenteditable]'):null;
-          if(target&&target.dataset.row&&target!==_anchorTd){
-            _selectRange(_anchorTd,target);
-          }
-        }
-      }
-      // ドラッグ中は常にループ継続
-      if(_draggingSel)_autoScrollRAF=requestAnimationFrame(tick);
+  var SCROLL_EDGE=80;
+  var SCROLL_BASE=4;
+  var SCROLL_MAX=20;
+
+  // マウス位置からスクロール量を計算して実行。スクロールしたらセルも更新
+  function _doEdgeScroll(){
+    var rb=$('right-body');
+    if(!rb||!_lastMousePos)return false;
+    var rect=rb.getBoundingClientRect();
+    var scrolled=false;
+    // 右端
+    var distR=Math.min(rect.right,window.innerWidth)-_lastMousePos.x;
+    if(distR<SCROLL_EDGE){
+      var s=Math.round(SCROLL_BASE+(SCROLL_MAX-SCROLL_BASE)*(1-Math.max(0,distR)/SCROLL_EDGE));
+      rb.scrollLeft+=s;scrolled=true;
     }
-    if(_autoScrollRAF)cancelAnimationFrame(_autoScrollRAF);
-    _autoScrollRAF=requestAnimationFrame(tick);
+    // 左端（行ヘッダ幅191px考慮）
+    var distL=_lastMousePos.x-(rect.left+191);
+    if(distL<SCROLL_EDGE&&_lastMousePos.x>rect.left){
+      var s=Math.round(SCROLL_BASE+(SCROLL_MAX-SCROLL_BASE)*(1-Math.max(0,distL)/SCROLL_EDGE));
+      rb.scrollLeft-=s;scrolled=true;
+    }
+    // 下端
+    var distB=Math.min(rect.bottom,window.innerHeight)-_lastMousePos.y;
+    if(distB<SCROLL_EDGE){
+      var s=Math.round(SCROLL_BASE+(SCROLL_MAX-SCROLL_BASE)*(1-Math.max(0,distB)/SCROLL_EDGE));
+      rb.scrollTop+=s;scrolled=true;
+    }
+    // 上端
+    var distT=_lastMousePos.y-rect.top;
+    if(distT<SCROLL_EDGE&&distT>=0){
+      var s=Math.round(SCROLL_BASE+(SCROLL_MAX-SCROLL_BASE)*(1-Math.max(0,distT)/SCROLL_EDGE));
+      rb.scrollTop-=s;scrolled=true;
+    }
+    // スクロール後にセル検出・選択更新
+    if(scrolled)_detectCellAtMouse(rb,rect);
+    return scrolled;
   }
+
+  // マウス位置からセルを検出して選択範囲を更新
+  function _detectCellAtMouse(rb,rect){
+    if(!_anchorTd||!_lastMousePos)return;
+    var fx=Math.min(Math.max(_lastMousePos.x,rect.left+195),rect.right-10);
+    var fy=Math.min(Math.max(_lastMousePos.y,rect.top+5),rect.bottom-5);
+    var el=document.elementFromPoint(fx,fy);
+    if(el){
+      var target=el.closest?el.closest('td[contenteditable]'):null;
+      if(target&&target.dataset.row&&target!==_anchorTd){
+        if(!_dragMoved)_dragMoved=true;
+        _selectRange(_anchorTd,target);
+      }
+    }
+  }
+
   function _stopAutoScroll(){
-    if(_autoScrollRAF){cancelAnimationFrame(_autoScrollRAF);_autoScrollRAF=null;}
+    if(_scrollInterval){clearInterval(_scrollInterval);_scrollInterval=null;}
   }
 
   // mousedown → ドラッグ選択開始（captureフェーズ）
@@ -387,50 +382,52 @@ document.addEventListener('keydown',function(e){
     _anchorTd=td;
     _draggingSel=true;
     _dragMoved=false;
+    _lastMousePos={x:e.clientX,y:e.clientY};
 
-    // マウス位置を追跡（自動スクロール用）
-    var _mousePos={x:e.clientX,y:e.clientY};
-
+    // mousemove: 位置追跡 + 即時スクロール + セル検出
     var onMove=function(ev){
-      _mousePos.x=ev.clientX;
-      _mousePos.y=ev.clientY;
-    };
-
-    // mouseover（イベント委譲）でセル検出 — elementFromPointはスクロールコンテナ内で失敗するため
-    var onOver=function(ev){
       if(!_draggingSel)return;
+      _lastMousePos.x=ev.clientX;
+      _lastMousePos.y=ev.clientY;
+      // 端に近ければ即スクロール
+      _doEdgeScroll();
+      // セル検出（mouseover代替 — スクロール後のセルも拾える）
       var target=ev.target.closest?ev.target.closest('td[contenteditable]'):null;
-      if(target&&target.dataset.row&&target!==_anchorTd){
-        if(!_dragMoved){
-          _dragMoved=true;
-        }
+      if(!target||!target.dataset.row){
+        // マウス直下にセルがなければelementFromPointで探す
+        var rb=$('right-body');
+        if(rb)_detectCellAtMouse(rb,rb.getBoundingClientRect());
+        return;
+      }
+      if(target!==_anchorTd){
+        if(!_dragMoved)_dragMoved=true;
         _selectRange(_anchorTd,target);
       }
     };
+
     var onUp=function(){
       document.removeEventListener('mousemove',onMove);
-      document.removeEventListener('mouseover',onOver,true);
       document.removeEventListener('mouseup',onUp);
       _draggingSel=false;
       _stopAutoScroll();
       if(!_dragMoved){
-        // クリックのみ → 通常の編集モード（フォーカスを手動で当てる）
         _clearSel();
         _anchorTd=td;
         td.focus();
         selectAll(td);
       }else{
-        // ドラッグ選択完了 → 直後のclickで解除されないようにガード
         _skipNextClick=true;
-        // bodyにフォーカスを移してキーボードイベント（Delete等）を受け取れるようにする
         document.body.focus();
       }
     };
     document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseover',onOver,true);
     document.addEventListener('mouseup',onUp);
-    // 自動スクロール開始
-    _startAutoScroll(function(){return _mousePos;});
+    // マウスが端で止まっている場合のための定期スクロール（16ms≒60fps）
+    _stopAutoScroll();
+    _scrollInterval=setInterval(function(){
+      if(!_draggingSel){_stopAutoScroll();return;}
+      _doEdgeScroll();
+    },16);
   },true); // captureフェーズ
 
   // セル外クリックで選択解除
