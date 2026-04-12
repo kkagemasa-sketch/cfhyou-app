@@ -733,7 +733,7 @@ function _applyData(d){
     window._mgMRStore=null;
     window.lastMR=null;
     setType(d.type||'mansion');
-    var _defs={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60'};
+    var _defs={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val||_defs[id]||'';}});
     cfOverrides=d.cfOverrides||{};
     mgOverrides=d.mgOverrides||{};
@@ -798,7 +798,7 @@ async function newCFSheet(){
   if(!confirm('本当に全データをリセットして新規作成しますか？\nこの操作は元に戻せません。'))return;
 
   // 全フィールドをクリア（デフォルト値があるものは復元）
-  var _defaults={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60'};
+  var _defaults={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)el.value=_defaults[id]||'';});
 
   // グローバル状態リセット
