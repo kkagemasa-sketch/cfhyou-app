@@ -299,10 +299,12 @@ document.addEventListener('keydown',function(e){
   var _draggingSel=false;
   var _dragMoved=false;
   var _skipNextClick=false;
+  var _dragScrollIv=null;
+  var _dragMouseX=0;
+  var _dragMouseY=0;
+  var _lastDragTarget=null;
 
   // mousedown → ドラッグ選択開始（captureフェーズ）
-  // ★ e.preventDefault()を呼ばず、ブラウザのネイティブドラッグスクロールを活用
-  //   テキスト選択はCSSの::selectionで非表示にする
   document.addEventListener('mousedown',function(e){
     var td=e.target.closest?e.target.closest('td[contenteditable]'):null;
     if(!td||!td.dataset.row){
@@ -316,27 +318,28 @@ document.addEventListener('keydown',function(e){
       return;
     }
 
-    // ★ preventDefault()を呼ばない → ブラウザの自動スクロールが有効
-    // テーブルにドラッグ中クラスを付けてCSS::selectionで文字選択を非表示にする
-    var tbl=td.closest('table');
-    if(tbl)tbl.classList.add('cf-dragging');
+    // テキスト選択を防止
+    e.preventDefault();
 
     // ドラッグ選択開始
     _clearSel();
     _anchorTd=td;
     _draggingSel=true;
     _dragMoved=false;
+    _dragMouseX=e.clientX;
+    _dragMouseY=e.clientY;
+    _lastDragTarget=null;
 
-    // mousemoveでセル検出
-    // ★ ev.targetはブラウザのテキスト選択中は常に最初のセルを返すため
-    //   elementFromPointで実際のマウス位置からセルを特定する
+    // mousemoveでマウス位置追跡 + セル検出
     var onMove=function(ev){
       if(!_draggingSel)return;
-      var el=document.elementFromPoint(ev.clientX,ev.clientY);
-      if(!el)return;
-      var target=el.closest?el.closest('td[contenteditable]'):null;
+      _dragMouseX=ev.clientX;
+      _dragMouseY=ev.clientY;
+      // セル検出
+      var target=ev.target.closest?ev.target.closest('td[contenteditable]'):null;
       if(target&&target.dataset.row&&target!==_anchorTd){
         if(!_dragMoved)_dragMoved=true;
+        _lastDragTarget=target;
         _selectRange(_anchorTd,target);
       }
     };
@@ -345,11 +348,8 @@ document.addEventListener('keydown',function(e){
       document.removeEventListener('mousemove',onMove);
       document.removeEventListener('mouseup',onUp);
       _draggingSel=false;
-      // ドラッグ中クラス除去
-      if(tbl)tbl.classList.remove('cf-dragging');
-      // ブラウザのテキスト選択をクリア
-      var sel=window.getSelection();
-      if(sel)sel.removeAllRanges();
+      _lastDragTarget=null;
+      if(_dragScrollIv){clearInterval(_dragScrollIv);_dragScrollIv=null;}
       if(!_dragMoved){
         _clearSel();
         _anchorTd=td;
@@ -362,6 +362,43 @@ document.addEventListener('keydown',function(e){
     };
     document.addEventListener('mousemove',onMove);
     document.addEventListener('mouseup',onUp);
+
+    // 自動スクロール: setIntervalで30ms毎にチェック
+    if(_dragScrollIv)clearInterval(_dragScrollIv);
+    _dragScrollIv=setInterval(function(){
+      if(!_draggingSel){clearInterval(_dragScrollIv);_dragScrollIv=null;return;}
+      var rb=$('right-body');
+      if(!rb)return;
+      var rect=rb.getBoundingClientRect();
+      var EDGE=80,speed=0,scrolled=false;
+      // 右方向スクロール
+      var distR=rect.right-_dragMouseX;
+      if(distR<EDGE&&distR>=0){speed=Math.max(4,Math.round(20*(1-distR/EDGE)));rb.scrollLeft+=speed;scrolled=true;}
+      // 左方向スクロール
+      var distL=_dragMouseX-(rect.left+191);
+      if(distL<EDGE&&distL>=0){speed=Math.max(4,Math.round(20*(1-distL/EDGE)));rb.scrollLeft-=speed;scrolled=true;}
+      // 下方向スクロール
+      var distB=rect.bottom-_dragMouseY;
+      if(distB<EDGE&&distB>=0){speed=Math.max(4,Math.round(20*(1-distB/EDGE)));rb.scrollTop+=speed;scrolled=true;}
+      // 上方向スクロール
+      var distT=_dragMouseY-rect.top;
+      if(distT<EDGE&&distT>=0){speed=Math.max(4,Math.round(20*(1-distT/EDGE)));rb.scrollTop-=speed;scrolled=true;}
+      // スクロール後、新しいセルを検出して選択更新
+      if(scrolled&&_anchorTd){
+        var el=document.elementFromPoint(
+          Math.min(Math.max(_dragMouseX,rect.left+195),rect.right-10),
+          Math.min(Math.max(_dragMouseY,rect.top+5),rect.bottom-5)
+        );
+        if(el){
+          var t=el.closest?el.closest('td[contenteditable]'):null;
+          if(t&&t.dataset.row&&t!==_anchorTd){
+            if(!_dragMoved)_dragMoved=true;
+            _lastDragTarget=t;
+            _selectRange(_anchorTd,t);
+          }
+        }
+      }
+    },30);
   },true); // captureフェーズ
 
   // セル外クリックで選択解除
