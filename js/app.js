@@ -328,9 +328,13 @@ document.addEventListener('keydown',function(e){
     _dragMoved=false;
 
     // mousemoveでセル検出
+    // ★ ev.targetはブラウザのテキスト選択中は常に最初のセルを返すため
+    //   elementFromPointで実際のマウス位置からセルを特定する
     var onMove=function(ev){
       if(!_draggingSel)return;
-      var target=ev.target.closest?ev.target.closest('td[contenteditable]'):null;
+      var el=document.elementFromPoint(ev.clientX,ev.clientY);
+      if(!el)return;
+      var target=el.closest?el.closest('td[contenteditable]'):null;
       if(target&&target.dataset.row&&target!==_anchorTd){
         if(!_dragMoved)_dragMoved=true;
         _selectRange(_anchorTd,target);
