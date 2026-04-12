@@ -3,6 +3,7 @@
   "short_name": "Housing FP",
   "description": "住宅購入キャッシュフロー表作成アプリ",
   "start_url": "./",
+  "id": "./",
   "display": "standalone",
   "background_color": "#1e3a5f",
   "theme_color": "#1e3a5f",
