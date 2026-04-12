@@ -4,7 +4,16 @@
 async function exportJSON(){
   const rawNm = _v('client-name') || 'CF表データ';
   const nm = rawNm.endsWith('様') ? rawNm : rawNm+'様';
-  const json = JSON.stringify(_collectSaveData(), null, 2);
+  // 現在のシナリオデータを更新してから全シナリオを含めて保存
+  // （メモ・複数シナリオ・万が一CF表の手編集も含む完全保存）
+  const _curScen = scenarios.find(s=>s.id===activeScenarioId);
+  if(_curScen) _curScen.data = _collectSaveData();
+  const _saveData = {
+    ..._collectSaveData(),
+    scenarios: JSON.parse(JSON.stringify(scenarios)),
+    activeScenarioId
+  };
+  const json = JSON.stringify(_saveData, null, 2);
   const fileName = `${nm}_CF表.json`;
   // File System Access API が使えれば保存先を選択できる（OneDriveフォルダ等）
   if(window.showSaveFilePicker){
@@ -38,32 +47,30 @@ function onJSONImport(input){
       window._mgStore=null;
       window._mgMRStore=null;
       window.lastMR=null;
-      setType(d.type || 'mansion');
-      Object.entries(d.fields || {}).forEach(([id, val]) => { const el=$(id); if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val;} });
-      cfOverrides=d.cfOverrides||{};
-      mgOverrides=d.mgOverrides||{};
-      cfCustomRows=d.cfCustomRows||[];
-      _cfCustomId=d._cfCustomId||0;
-      _lcBikou=d.lcBikou||{};
-      _cfRowLabels=d.cfRowLabels||{};
-      loanCategory=d.loanCategory||'standard';
-      flat35Sub=d.flat35Sub||'flat35';
-      _selectedMansionId=d._selectedMansionId||'';
-      if(_selectedMansionId){const msel=$('mansion-select');if(msel)msel.value=_selectedMansionId;}
-      // v7以前の後方互換（extrasが直接ある場合）
-      if(d.extras && !d.dynamic){
-        $('extra-cont').innerHTML = ''; extraCnt = 0;
-        d.extras.forEach(it => addExtraItem(it.yr, it.amt, it.lbl, it.yr2||''));
-      } else {
-        _restoreDynamic(d.dynamic);
+      // シナリオが含まれている場合：シナリオを復元してアクティブシナリオを適用
+      if(Array.isArray(d.scenarios)&&d.scenarios.length>0){
+        scenarios=JSON.parse(JSON.stringify(d.scenarios));
+        activeScenarioId=d.activeScenarioId||scenarios[0].id;
+        scenarioCnt=Math.max(...scenarios.map(s=>s.id));
+        // アクティブシナリオのデータを適用
+        const activeScen=scenarios.find(s=>s.id===activeScenarioId)||scenarios[0];
+        if(activeScen&&activeScen.data){
+          _applyData(activeScen.data);
+        }
+        if(typeof renderScenarioTabs==='function')renderScenarioTabs();
+      }else{
+        // 旧フォーマット：シナリオなし、ルートデータをそのまま適用
+        _applyData(d);
+        scenarios=[{id:1,name:'CF表1',data:_collectSaveData(),memo:''}];
+        activeScenarioId=1;scenarioCnt=1;
+        if(typeof renderScenarioTabs==='function')renderScenarioTabs();
       }
-      calcLoanAmt(); calcDelivery(); initLCComma();
-      if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
-      if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
       // 読込後は必ずメインCF表タブに戻す
       if(typeof setRTab==='function')setRTab('cf');
       live();
-      alert(`「${d.fields?.['client-name'] || 'データ'}」を読み込みました`);
+      const _nm=d.fields?.['client-name']||scenarios.find(s=>s.id===activeScenarioId)?.data?.fields?.['client-name']||'データ';
+      const _scenCount=scenarios.length;
+      alert(`「${_nm}」を読み込みました${_scenCount>1?`\n（${_scenCount}個のシナリオを復元）`:''}`);
     }catch(err){ alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n')); console.error('Import error:',err); }
     input.value = '';
   };
