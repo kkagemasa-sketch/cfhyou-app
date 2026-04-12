@@ -660,19 +660,16 @@ function renderContingency(){
     // 教育費（通常CFと同じ）
     children.forEach((c,ci)=>{MR.edu[ci].push(normalR.edu[ci]?.[i]||0);});
 
-    // 車両費
+    // 車両費（万が一では死亡前も含めて万が一設定を使用）
     let nCar=0;
-    if(!mgCarKeep&&isDead){nCar=0;}
-    else if(mgCarKeep&&isDead){
+    if(mgCarKeep){
       const cp=targetIsH?'h':'w';
       const mgCarPrice=fv(`mg-car-${cp}-price`)||300;const mgCarCycle=iv(`mg-car-${cp}-cycle`)||7;
       const mgCarInsp=fv(`mg-car-${cp}-insp`)||10;const mgCarEndAge=iv(`mg-car-${cp}-end-age`)||0;
       const mgCarFirst=iv(`mg-car-${cp}-first`)||0;
-      // 生存配偶者の年齢を基準に購入時期を判定
       const survivorAge=targetIsH?wa:ha;
-      if(mgCarEndAge>0&&survivorAge>mgCarEndAge){nCar=0;}
+      if(mgCarEndAge>0&&survivorAge>=mgCarEndAge){nCar=0;}
       else if(mgCarFirst>0){
-        // 初回購入年齢ベース：生存配偶者がmgCarFirst歳以上になったら有効
         if(survivorAge>=mgCarFirst){
           const ageFromFirst=survivorAge-mgCarFirst;
           if(ageFromFirst%mgCarCycle===0)nCar+=mgCarPrice;
@@ -680,8 +677,10 @@ function renderContingency(){
           if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=mgCarInsp;
         }
       }
-      else{const yrsFromDeath=i-(deathYearOffset-1);if(yrsFromDeath>=0){if(yrsFromDeath>0&&yrsFromDeath%mgCarCycle===0)nCar+=mgCarPrice;const carAge=yrsFromDeath%mgCarCycle;if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=mgCarInsp;}}
-    }else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
+      else if(isDead){const yrsFromDeath=i-(deathYearOffset-1);if(yrsFromDeath>=0){if(yrsFromDeath>0&&yrsFromDeath%mgCarCycle===0)nCar+=mgCarPrice;const carAge=yrsFromDeath%mgCarCycle;if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=mgCarInsp;}}
+      else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
+    }else if(isDead){nCar=0;}
+    else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
     // 複数台の個別行：通常CFのcarRowsを継承し、死亡後は1行目に集約
     if(normalR.carRows&&normalR.carRows.length>0){
@@ -697,10 +696,14 @@ function renderContingency(){
       }
     }
 
-    // 駐車場
+    // 駐車場（万が一では死亡前も含めて万が一設定を使用）
     let nPrk=0;
-    if(!mgParkKeep&&isDead){nPrk=0;}
-    else if(mgParkKeep&&isDead){const cp=targetIsH?'h':'w';const mgParkAmt=fv('mg-parking')||15000;const mgParkFromAge=iv(`mg-park-${cp}-from-age`)||0;const mgParkToAge=iv(`mg-park-${cp}-to-age`)||0;const survivorAge2=targetIsH?wa:ha;nPrk=((mgParkFromAge<=0||survivorAge2>=mgParkFromAge)&&(mgParkToAge<=0||survivorAge2<=mgParkToAge))?ri(mgParkAmt*12/10000):0;}
+    if(mgParkKeep){
+      const cp=targetIsH?'h':'w';const mgParkAmt=fv('mg-parking')||15000;
+      const mgParkFromAge=iv(`mg-park-${cp}-from-age`)||0;const mgParkToAge=iv(`mg-park-${cp}-to-age`)||0;
+      const survivorAge2=targetIsH?wa:ha;
+      nPrk=((mgParkFromAge<=0||survivorAge2>=mgParkFromAge)&&(mgParkToAge<=0||survivorAge2<=mgParkToAge))?ri(mgParkAmt*12/10000):0;
+    }else if(isDead){nPrk=0;}
     else{nPrk=i<normalR.prk.length?(normalR.prk[i]||0):0;}
     MR.prk.push(nPrk);
 
