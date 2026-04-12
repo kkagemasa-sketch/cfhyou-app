@@ -194,6 +194,7 @@ function setRTab(t){
   $('rt-graph')?.classList.toggle('on',t==='graph');
   $('rt-loan')?.classList.toggle('on',t==='loan');
   $('rt-memo')?.classList.toggle('on',t==='memo');
+  $('rt-basis')?.classList.toggle('on',t==='basis');
   $('rt-mg-h')?.classList.toggle('on',t==='mg-h');
   $('rt-mg-w')?.classList.toggle('on',t==='mg-w');
   // rt-mansion removed — now in header
@@ -204,6 +205,7 @@ function setRTab(t){
   if(finBtn)finBtn.style.display=(t==='cf'||t==='mg-h'||t==='mg-w')?'':'none';
   if(t==='lctab'){renderLCTab();return;}
   if(t==='memo'){renderMemo();return;}
+  if(t==='basis'){renderBasisTab();return;}
   if(t==='loan'){
     renderLoanTab();
     return;
