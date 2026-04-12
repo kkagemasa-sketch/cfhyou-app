@@ -185,7 +185,7 @@ document.addEventListener('keydown',function(e){
 
   // フィルハンドル用自動スクロール
   function _startFHScroll(){
-    var EDGE=40,SPEED=8;
+    var EDGE=80,BASE_SPEED=6,MAX_SPEED=24;
     function tick(){
       _fhScrollRAF=null;
       if(!_dragging||!_fhMousePos)return;
@@ -193,12 +193,17 @@ document.addEventListener('keydown',function(e){
       if(!rb)return;
       var rect=rb.getBoundingClientRect();
       var scrolled=false;
-      if(_fhMousePos.x>rect.right-EDGE){rb.scrollLeft+=SPEED;scrolled=true;}
-      if(_fhMousePos.x<rect.left+191+EDGE){rb.scrollLeft-=SPEED;scrolled=true;}
-      if(scrolled){
-        // スクロール後にプレビュー更新
-        _updatePreview();
+      var distR=Math.min(rect.right,window.innerWidth)-_fhMousePos.x;
+      if(distR<EDGE){
+        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-distR/EDGE));
+        rb.scrollLeft+=speed;scrolled=true;
       }
+      var distL=_fhMousePos.x-(rect.left+191);
+      if(distL<EDGE&&distL<_fhMousePos.x){
+        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-Math.max(0,distL)/EDGE));
+        rb.scrollLeft-=speed;scrolled=true;
+      }
+      if(scrolled)_updatePreview();
       if(_dragging)_fhScrollRAF=requestAnimationFrame(tick);
     }
     if(_fhScrollRAF)cancelAnimationFrame(_fhScrollRAF);
@@ -297,9 +302,11 @@ document.addEventListener('keydown',function(e){
   var _autoScrollRAF=null;
 
   // ドラッグ中の自動スクロール（端に近づくとスクロール）
+  // マウスがコンテナ端 or ビューポート端に近い場合に自動スクロール
   function _startAutoScroll(getMousePos){
-    var EDGE=40; // 端からの距離（px）
-    var SPEED=8; // スクロール速度（px/frame）
+    var EDGE=80; // 端からの距離（px）
+    var BASE_SPEED=6; // 基本スクロール速度（px/frame）
+    var MAX_SPEED=24; // 最大スクロール速度（px/frame）
     function tick(){
       _autoScrollRAF=null;
       var rb=$('right-body');
@@ -308,27 +315,48 @@ document.addEventListener('keydown',function(e){
       if(!pos)return;
       var rect=rb.getBoundingClientRect();
       var scrolled=false;
-      // 右端
-      if(pos.x>rect.right-EDGE){rb.scrollLeft+=SPEED;scrolled=true;}
-      // 左端（行ヘッダ分を考慮）
-      if(pos.x<rect.left+191+EDGE){rb.scrollLeft-=SPEED;scrolled=true;}
+      // 右端: コンテナ端 or ビューポート端に近い場合（速度は距離に比例）
+      var distR=Math.min(rect.right,window.innerWidth)-pos.x;
+      if(distR<EDGE){
+        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-distR/EDGE));
+        rb.scrollLeft+=speed;scrolled=true;
+      }
+      // 左端（行ヘッダ幅191pxを考慮）
+      var leftEdge=rect.left+191;
+      var distL=pos.x-leftEdge;
+      if(distL<EDGE&&distL<pos.x){
+        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-Math.max(0,distL)/EDGE));
+        rb.scrollLeft-=speed;scrolled=true;
+      }
       // 下端
-      if(pos.y>rect.bottom-EDGE){rb.scrollTop+=SPEED;scrolled=true;}
+      var distB=Math.min(rect.bottom,window.innerHeight)-pos.y;
+      if(distB<EDGE){
+        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-distB/EDGE));
+        rb.scrollTop+=speed;scrolled=true;
+      }
       // 上端
-      if(pos.y<rect.top+EDGE){rb.scrollTop-=SPEED;scrolled=true;}
-      if(scrolled||_draggingSel){
-        // スクロール後に新しいセルを検出
-        if(scrolled){
-          var el=document.elementFromPoint(pos.x,pos.y);
-          if(el){
-            var target=el.closest?el.closest('td[contenteditable]'):null;
-            if(target&&target.dataset.row&&target!==_anchorTd){
-              _selectRange(_anchorTd,target);
-            }
+      var distT=pos.y-rect.top;
+      if(distT<EDGE&&distT>=0){
+        var speed=Math.round(BASE_SPEED+(MAX_SPEED-BASE_SPEED)*(1-distT/EDGE));
+        rb.scrollTop-=speed;scrolled=true;
+      }
+      // スクロール後に新しいセルを検出
+      if(scrolled){
+        // マウス位置を少し内側に補正してelementFromPointで確実にセルを拾う
+        var findX=Math.min(pos.x,rect.right-20);
+        var findY=Math.min(pos.y,rect.bottom-5);
+        findX=Math.max(findX,rect.left+195);
+        findY=Math.max(findY,rect.top+5);
+        var el=document.elementFromPoint(findX,findY);
+        if(el){
+          var target=el.closest?el.closest('td[contenteditable]'):null;
+          if(target&&target.dataset.row&&target!==_anchorTd){
+            _selectRange(_anchorTd,target);
           }
         }
-        _autoScrollRAF=requestAnimationFrame(tick);
       }
+      // ドラッグ中は常にループ継続
+      if(_draggingSel)_autoScrollRAF=requestAnimationFrame(tick);
     }
     if(_autoScrollRAF)cancelAnimationFrame(_autoScrollRAF);
     _autoScrollRAF=requestAnimationFrame(tick);
