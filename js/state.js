@@ -70,6 +70,7 @@ let mgSurvMode='auto';
 let mgInsCnt=1;
 
 let mgCarOn=true, mgParkOn=true;
+let _mgRendering=false; // setRTab↔renderContingency 再帰防止フラグ
 
 let _mgLCStepCount=0;
 

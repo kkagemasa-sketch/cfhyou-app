@@ -180,8 +180,11 @@ function getMGInsuranceTotal(){
 
 // ===== 万が一CF表の計算・描画 =====
 function renderContingency(){
-  window._mgRendering=true;
-  // 先に通常CF表を最新化
+  _mgRendering=true;
+  try{ return _renderContingencyInner(); }
+  finally{ _mgRendering=false; }
+}
+function _renderContingencyInner(){
   render();
   if(!window.lastR){alert('先にCF表を生成してください');return;}
   const hAge=iv('husband-age')||30, wAge=iv('wife-age')||29;
@@ -214,6 +217,16 @@ function renderContingency(){
   const mgLCSteps=mgLCMode==='step'?getMGLCSteps():[];
   const mgCarKeep=getMGCarOn();
   const mgParkKeep=getMGParkOn();
+  // 車両・駐車場のループ不変値（DOM読み取りを1回にまとめる）
+  const _cp=targetIsH?'h':'w';
+  const _mgCarPrice=mgCarKeep?(fv(`mg-car-${_cp}-price`)||300):0;
+  const _mgCarCycle=mgCarKeep?(iv(`mg-car-${_cp}-cycle`)||7):7;
+  const _mgCarInsp=mgCarKeep?(fv(`mg-car-${_cp}-insp`)||10):0;
+  const _mgCarEndAge=mgCarKeep?(iv(`mg-car-${_cp}-end-age`)||0):0;
+  const _mgCarFirst=mgCarKeep?(iv(`mg-car-${_cp}-first`)||(targetIsH?wAge:hAge)):0;
+  const _mgParkFrom=mgParkKeep?(iv(`mg-park-${_cp}-from-age`)||0):0;
+  const _mgParkTo=mgParkKeep?(iv(`mg-park-${_cp}-to-age`)||0):0;
+  const _mgParkAnnual=mgParkKeep?ri((fv('mg-parking')||15000)*12/10000):0;
   const mgScholarOn=document.getElementById('mg-scholarship-yes')?.classList.contains('on');
   const mgScholarAmt=mgScholarOn?(fv('mg-scholarship-amt')||0):0;
   const mgScholarAge=iv('mg-scholarship-age')||19;
@@ -660,30 +673,23 @@ function renderContingency(){
     // 教育費（通常CFと同じ）
     children.forEach((c,ci)=>{MR.edu[ci].push(normalR.edu[ci]?.[i]||0);});
 
-    // 車両費（万が一では死亡前も含めて万が一設定を使用）
+    // 車両費
     let nCar=0;
     if(mgCarKeep){
-      const cp=targetIsH?'h':'w';
-      const mgCarPrice=fv(`mg-car-${cp}-price`)||300;const mgCarCycle=iv(`mg-car-${cp}-cycle`)||7;
-      const mgCarInsp=fv(`mg-car-${cp}-insp`)||10;const mgCarEndAge=iv(`mg-car-${cp}-end-age`)||0;
-      // デフォルト=生存配偶者の現在年齢（経過年1の年齢）
-      const mgCarFirst=iv(`mg-car-${cp}-first`)||(targetIsH?wAge:hAge);
-      const survivorAge=targetIsH?wa:ha;
-      if(mgCarEndAge>0&&survivorAge>=mgCarEndAge){nCar=0;}
-      else if(survivorAge>=mgCarFirst){
-        const ageFromFirst=survivorAge-mgCarFirst;
-        if(ageFromFirst%mgCarCycle===0)nCar+=mgCarPrice;
-        const carAge=ageFromFirst%mgCarCycle;
-        if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=mgCarInsp;
+      const sAge=targetIsH?wa:ha;
+      if(_mgCarEndAge>0&&sAge>=_mgCarEndAge){nCar=0;}
+      else if(sAge>=_mgCarFirst){
+        const ageFromFirst=sAge-_mgCarFirst;
+        if(ageFromFirst%_mgCarCycle===0)nCar+=_mgCarPrice;
+        const carAge=ageFromFirst%_mgCarCycle;
+        if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=_mgCarInsp;
       }
     }else if(isDead){nCar=0;}
     else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
-    // 複数台の個別行：通常CFのcarRowsを継承し、死亡後は1行目に集約
     if(normalR.carRows&&normalR.carRows.length>0){
       if(!MR.carRows){MR.carRows=normalR.carRows.map(row=>({key:row.key,lbl:row.lbl,vals:[]}));}
       if(isDead){
-        // 死亡後は1行目に survivor 用集約値、それ以外は0
         MR.carRows.forEach((row,ri2)=>row.vals.push(ri2===0?nCar:0));
       }else{
         MR.carRows.forEach((row,ri2)=>{
@@ -693,13 +699,12 @@ function renderContingency(){
       }
     }
 
-    // 駐車場（万が一では死亡前も含めて万が一設定を使用）
+    // 駐車場
     let nPrk=0;
     if(mgParkKeep){
-      const cp=targetIsH?'h':'w';const mgParkAmt=fv('mg-parking')||15000;
-      const mgParkFromAge=iv(`mg-park-${cp}-from-age`)||0;const mgParkToAge=iv(`mg-park-${cp}-to-age`)||0;
-      const survivorAge2=targetIsH?wa:ha;
-      nPrk=((mgParkFromAge<=0||survivorAge2>=mgParkFromAge)&&(mgParkToAge<=0||survivorAge2<=mgParkToAge))?ri(mgParkAmt*12/10000):0;
+      const sAge=targetIsH?wa:ha;
+      const inRange=(_mgParkFrom<=0||sAge>=_mgParkFrom)&&(_mgParkTo<=0||sAge<=_mgParkTo);
+      nPrk=inRange?_mgParkAnnual:0;
     }else if(isDead){nPrk=0;}
     else{nPrk=i<normalR.prk.length?(normalR.prk[i]||0):0;}
     MR.prk.push(nPrk);
@@ -1320,7 +1325,6 @@ function renderContingency(){
   const _mgNewTw=_mgRb?_mgRb.querySelector('.tbl-wrap'):null;
   if(_mgNewTw&&_mgPrevLeft>0)_mgNewTw.scrollLeft=_mgPrevLeft;
   _applyFinAssetVisibility();
-  window._mgRendering=false;
 }
 
 // 万が一CF表タブを閉じる

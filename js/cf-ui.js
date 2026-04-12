@@ -215,9 +215,7 @@ function setRTab(t){
     return;
   }
   if(t==='mg-h'||t==='mg-w'){
-    // 常に最新データで再描画（入力変更がリアルタイム反映されるように）
-    // _mgRenderingガードで setRTab↔renderContingency の無限ループを防止
-    if(!window._mgRendering&&typeof renderContingency==='function'){
+    if(!_mgRendering&&typeof renderContingency==='function'){
       renderContingency();
     } else {
       const key=t==='mg-h'?'h':'w';
