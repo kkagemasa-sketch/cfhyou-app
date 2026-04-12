@@ -860,9 +860,9 @@ function renderContingency(){
     let newSav=initSav;
     for(let i=0;i<MR.incT.length;i++){
       if(mgOverrides['incT']?.[i]!==undefined){MR.incT[i]=mgOverrides['incT'][i];}
-      else{let t=incKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));MR.incT[i]=t;}
+      else{let t=incKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.incT[i]=t;}
       if(mgOverrides['expT']?.[i]!==undefined){MR.expT[i]=mgOverrides['expT'][i];}
-      else{let t=expKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(MR.edu[ci]?.[i]||0));MR.expT[i]=t;}
+      else{let t=expKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(MR.edu[ci]?.[i]||0));mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.expT[i]=t;}
       MR.bal[i]=MR.incT[i]-MR.expT[i];
       newSav+=MR.bal[i]+(MR.savExtra[i]||0);
       MR.sav[i]=ri(newSav);
@@ -1112,8 +1112,8 @@ function renderContingency(){
   h+=mgRow('奨学金',MR.scholarship,N.scholarship,'scholarship');
   h+=mgRow('児童手当',MR.teate,null,'teate');
   h+=mgRow('住宅ローン控除',MR.lCtrl,N.lCtrl,'lCtrl');
-  // カスタム収入行
-  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{
+  // カスタム収入行（万が一専用）
+  mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
     const tot=vals.reduce((a,b)=>a+b,0);if(tot===0)return;
     let rr=`<tr class="rinc"><td><button onclick="deleteCustomRow('${r.id}')" class="btn-del-row" title="行を削除">×</button></td><td ${_ce} data-custom-id="${r.id}" onblur="customLabelEdit(this)" class="custom-lbl">${r.label}</td>`;
@@ -1219,8 +1219,8 @@ function renderContingency(){
   if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgERow(row.lbl,row.vals,row.vals,row.key);});}
   else if(N.extRows&&N.extRows.length===1){h+=mgERow(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals,N.extRows[0].key);}
   else{h+=mgERow('特別支出',MR.ext,null,'ext');}
-  // カスタム支出行
-  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{
+  // カスタム支出行（万が一専用）
+  mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
     const tot=vals.reduce((a,b)=>a+b,0);if(tot===0)return;
     let rr=`<tr class="rexp"><td><button onclick="deleteCustomRow('${r.id}')" class="btn-del-row" title="行を削除">×</button></td><td ${_ce} data-custom-id="${r.id}" onblur="customLabelEdit(this)" class="custom-lbl">${r.label}</td>`;

@@ -81,14 +81,17 @@ function rowLabelEdit(td){
 // カスタム行操作
 function addCustomRow(type){
   _cfCustomId++;
-  const id=type==='inc'?'cinc_'+_cfCustomId:'cexp_'+_cfCustomId;
-  cfCustomRows.push({id:id,type:type,label:type==='inc'?'カスタム収入':'カスタム支出'});
+  const isMG=rTab==='mg-h'||rTab==='mg-w';
+  const prefix=isMG?'m':'c';
+  const id=type==='inc'?prefix+'inc_'+_cfCustomId:prefix+'exp_'+_cfCustomId;
+  const target=isMG?mgCustomRows:cfCustomRows;
+  target.push({id:id,type:type,label:type==='inc'?'カスタム収入':'カスタム支出'});
   pushUndoSnap();
-  if(rTab==='mg-h'||rTab==='mg-w')renderContingency();else render();
+  if(isMG)renderContingency();else render();
 }
 function customLabelEdit(td){
   const id=td.dataset.customId;
-  const row=cfCustomRows.find(r=>r.id===id);
+  const row=cfCustomRows.find(r=>r.id===id)||mgCustomRows.find(r=>r.id===id);
   if(!row)return;
   const txt=td.textContent.trim();
   row.label=txt||(row.type==='inc'?'カスタム収入':'カスタム支出');
@@ -97,9 +100,9 @@ function customLabelEdit(td){
 }
 function deleteCustomRow(id){
   if(!confirm('この行を削除しますか？'))return;
-  cfCustomRows=cfCustomRows.filter(r=>r.id!==id);
-  delete cfOverrides[id];
-  delete mgOverrides[id];
+  const inMg=mgCustomRows.some(r=>r.id===id);
+  if(inMg){mgCustomRows=mgCustomRows.filter(r=>r.id!==id);delete mgOverrides[id];}
+  else{cfCustomRows=cfCustomRows.filter(r=>r.id!==id);delete cfOverrides[id];}
   pushUndoSnap();
   if(rTab==='mg-h'||rTab==='mg-w')renderContingency();else render();
 }

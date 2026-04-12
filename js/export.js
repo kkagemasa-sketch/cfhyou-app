@@ -314,7 +314,7 @@ async function exportExcelMG(){
   addISkip('奨学金',MR.scholarship,N.scholarship);
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
-  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addI(r.label,vals);});
+  mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...MR.incT.slice(0,disp).map(v=>ri(v)),ri(MR.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
   // ── 支出 ──
@@ -377,7 +377,7 @@ async function exportExcelMG(){
   if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{addESkip(row.lbl,row.vals,row.vals);});}
   else if(N.extRows&&N.extRows.length===1){addESkip(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals);}
   else{addESkip(_rl('mg-ext','特別支出'),MR.ext,null);}
-  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addE(r.label,vals);});
+  mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
   // ── 収支・残高 ──
