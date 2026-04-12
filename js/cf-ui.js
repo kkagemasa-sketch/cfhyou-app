@@ -215,12 +215,18 @@ function setRTab(t){
     return;
   }
   if(t==='mg-h'||t==='mg-w'){
-    const key=t==='mg-h'?'h':'w';
-    const html=window._mgStore&&window._mgStore[key];
-    if(html){
-      const _rb=$('right-body');
-      _rb.innerHTML=html;
-      _applyFinAssetVisibility();
+    // 常に最新データで再描画（入力変更がリアルタイム反映されるように）
+    // _mgRenderingガードで setRTab↔renderContingency の無限ループを防止
+    if(!window._mgRendering&&typeof renderContingency==='function'){
+      renderContingency();
+    } else {
+      const key=t==='mg-h'?'h':'w';
+      const html=window._mgStore&&window._mgStore[key];
+      if(html){
+        const _rb=$('right-body');
+        _rb.innerHTML=html;
+        _applyFinAssetVisibility();
+      }
     }
     return;
   }

@@ -180,6 +180,7 @@ function getMGInsuranceTotal(){
 
 // ===== 万が一CF表の計算・描画 =====
 function renderContingency(){
+  window._mgRendering=true;
   // 先に通常CF表を最新化
   render();
   if(!window.lastR){alert('先にCF表を生成してください');return;}
@@ -1319,6 +1320,7 @@ function renderContingency(){
   const _mgNewTw=_mgRb?_mgRb.querySelector('.tbl-wrap'):null;
   if(_mgNewTw&&_mgPrevLeft>0)_mgNewTw.scrollLeft=_mgPrevLeft;
   _applyFinAssetVisibility();
+  window._mgRendering=false;
 }
 
 // 万が一CF表タブを閉じる
