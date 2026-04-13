@@ -249,7 +249,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* ============================================================
    CF表：テーブル共通
    ============================================================ */
-.cf{border-collapse:collapse;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace;contain:layout style;table-layout:fixed}
+.cf{border-collapse:separate;border-spacing:0;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace;contain:layout style;table-layout:fixed}
 .cf th,.cf td{border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;padding:3px 6px;white-space:nowrap;min-width:48px;width:48px;text-align:right}
 
 /* 固定左2列（contain:paintはz-indexを壊すため使用禁止） */
@@ -274,6 +274,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .cf thead th,.cf thead td{position:-webkit-sticky;position:sticky;z-index:9}
 .cf thead th:first-child,.cf thead td:first-child,
 .cf thead th:nth-child(2),.cf thead td:nth-child(2){z-index:11}
+/* thead内の半透明列を不透明に（スクロール時に透けない）*/
+.cf thead .rage td.col-death{background:#cddbe8!important}
+.cf thead .rage td.col-retire{background:#e8efc8!important}
+.cf thead .rev-h td.col-death,.cf thead .rev-w td.col-death,.cf thead .rev-c td.col-death{background:#e8e4df!important}
+.cf thead .rev-h td.col-retire,.cf thead .rev-w td.col-retire,.cf thead .rev-c td.col-retire{background:#fff8e0!important}
+.cf thead .relapsed td.col-death,.cf thead .relapsed td.col-retire{background:var(--navy-d)!important}
 
 /* 年ヘッダー */
 .ryr th{background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:3px 6px;border-right:1px solid #2d5282;border-bottom:2px solid var(--navy)}
@@ -407,7 +413,7 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
 
   /* CF表：複数ページOK、読みやすいサイズ */
   .tbl-wrap{overflow:visible;box-shadow:none;border:1px solid #ccd4e0}
-  .cf{font-size:9px;table-layout:auto;border-collapse:collapse}
+  .cf{font-size:9px;table-layout:auto;border-collapse:separate;border-spacing:0}
   .cf th,.cf td{padding:3px 5px;min-width:40px;white-space:nowrap;border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;font-size:9px}
   .cf thead th,.cf thead td{position:static!important}
   .cf th:first-child,.cf td:first-child{position:static;min-width:70px;max-width:none;font-size:9px;text-align:left}
