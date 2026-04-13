@@ -273,7 +273,9 @@ function setCarPay(id,t){
   live();
 }
 function addCar(defaults){
-  carCnt++;
+  // 既存の車要素数から次の番号を決定（全削除後に1から始まるように）
+  const existing=document.querySelectorAll('#car-list>[id^="car-"]');
+  carCnt=existing.length>0?Math.max(...[...existing].map(e=>parseInt(e.id.replace('car-',''))))+1:1;
   const id=carCnt;
   const d=defaults||{};
   const cont=document.getElementById('car-list');
