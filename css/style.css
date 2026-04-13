@@ -115,7 +115,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .r-body::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
 .r-summary{margin-bottom:8px}
 /* テーブル：横スクロール */
-.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border:1px solid var(--border);will-change:transform}
+.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border:1px solid var(--border)}
 .tbl-wrap::-webkit-scrollbar{height:10px}
 .tbl-wrap::-webkit-scrollbar-track{background:#e8ecf0}
 .tbl-wrap::-webkit-scrollbar-thumb{background:#7b8fa3;border-radius:5px}
