@@ -898,31 +898,7 @@ function _renderContingencyInner(){
   const getMgColCls=i=>{let c='';if(i===hDeathCol_mg||i===wDeathCol_mg)c+=' col-death';if(i===hRetireCol_mg||i===wRetireCol_mg)c+=' col-retire';return c;};
 
   // サマリーカード（通常CF表と同じ4枚 + 必要保障額）
-  const totI_mg=MR.incT.slice(0,mgDisp).reduce((a,b)=>a+b,0);
-  const totE_mg=MR.expT.slice(0,mgDisp).reduce((a,b)=>a+b,0);
-  const finSav_mg=MR.sav[mgDisp-1]||0;
-  const redYrs_mg=MR.bal.slice(0,mgDisp).filter(v=>v<0).length;
-  const sc_mg=(icon,lbl,val,unit,color,sub)=>`<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;flex:1;min-width:140px;position:relative;overflow:hidden">
-    <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${color};border-radius:4px 0 0 4px"></div>
-    <div style="margin-left:8px">
-      <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em">${icon} ${lbl}</div>
-      <div style="font-size:20px;font-weight:800;font-family:'Cascadia Code','Consolas','Menlo',monospace;color:${color};margin-top:2px">${val}<span style="font-size:11px;font-weight:600;margin-left:3px">${unit}</span></div>
-      ${sub?`<div style="font-size:9px;color:var(--muted);margin-top:1px">${sub}</div>`:''}
-    </div>
-  </div>`;
-
   let h=`<div class="r-summary" style="margin-top:30px;border-top:3px solid #c2185b;padding-top:16px">`;
-  h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-    <span style="background:#c2185b;color:#fff;padding:5px 14px;border-radius:99px;font-size:13px;font-weight:700">🛡️ 万が一CF表</span>
-    <span style="font-size:13px;font-weight:600;color:#1e3a5f">${nm} 様 ─ ${targetLabel}が${deathAge}歳で死亡した場合</span>
-  </div>`;
-  h+=`<div class="cf-summary" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-    ${sc_mg('💰','総収入',ri(totI_mg).toLocaleString(),'万円','#2d7dd2',`${mgDisp}年間合計`)}
-    ${sc_mg('💸','総支出',ri(totE_mg).toLocaleString(),'万円','#fc5b4a',`${mgDisp}年間合計`)}
-    ${sc_mg('🏦','最終残高',ri(finSav_mg).toLocaleString(),'万円',finSav_mg>=0?'#0d8a20':'#d63a2a',`${hAge+mgDisp-1}歳時点`)}
-    ${sc_mg('⚠️','赤字年数',redYrs_mg,'年',redYrs_mg===0?'#0d8a20':'#d63a2a',redYrs_mg===0?'赤字なし':`${mgDisp}年中${redYrs_mg}年が赤字`)}
-    ${MR.needCoverage>0?sc_mg('🛡️','必要保障額',ri(MR.needCoverage).toLocaleString(),'万円','#c2185b','不足分を補う保険金額の目安'):''}
-  </div>`;
 
   // 対象者ラベル + 自己資金内訳 + 住宅ローン条件（通常CF表と同じ）
   const mgTargetLabel2=targetIsH?'ご主人様':'奥様';
