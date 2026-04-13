@@ -16,7 +16,7 @@ function calcLoanAmt(){
   const hint=document.getElementById('loan-breakdown-hint');
   if(hint){
     if(costType==='loan')
-      hint.textContent=`（${price.toLocaleString()} − ${down.toLocaleString()} 頭金 ＋ ${cost.toLocaleString()} 諸費用）`;
+      hint.textContent=`住宅価格${price.toLocaleString()}万円 − 頭金${down.toLocaleString()}万円 ＋ 諸費用${cost.toLocaleString()}万円`;
     else
       hint.textContent=`（${price.toLocaleString()} − ${down.toLocaleString()} 頭金）　諸費用 ${cost.toLocaleString()}万円は現金`;
   }
