@@ -115,7 +115,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .r-body::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
 .r-summary{margin-bottom:8px}
 /* テーブル：横スクロール */
-.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border:1px solid var(--border);will-change:scroll-position}
+.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border:1px solid var(--border);will-change:transform}
 .tbl-wrap::-webkit-scrollbar{height:10px}
 .tbl-wrap::-webkit-scrollbar-track{background:#e8ecf0}
 .tbl-wrap::-webkit-scrollbar-thumb{background:#7b8fa3;border-radius:5px}
@@ -267,9 +267,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
    CF表：行スタイル
    ============================================================ */
 
-/* 年ヘッダー（sticky top:0 + z-index無し → 左固定列z-index:8の下に描画される） */
-.ryr th{background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:3px 6px;border-right:1px solid #2d5282;border-bottom:2px solid var(--navy);position:-webkit-sticky;position:sticky;top:0}
-.ryr th:first-child,.ryr th:nth-child(2){position:-webkit-sticky;position:sticky;text-align:left;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;background:var(--navy)!important;z-index:10;}
+/* thead固定ヘッダ：top値はJSで動的計算（applyStickyTop） */
+.cf thead th,.cf thead td{position:-webkit-sticky;position:sticky;z-index:9}
+.cf thead th:first-child,.cf thead td:first-child,
+.cf thead th:nth-child(2),.cf thead td:nth-child(2){z-index:11}
+
+/* 年ヘッダー */
+.ryr th{background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:3px 6px;border-right:1px solid #2d5282;border-bottom:2px solid var(--navy)}
+.ryr th:first-child,.ryr th:nth-child(2){text-align:left;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;background:var(--navy)!important}
 
 /* 経過年数：ネイビー地で年ヘッダーと連続 */
 .relapsed td{background:var(--navy-d);color:#a0b4c8;font-size:10px;text-align:center;border-bottom:1px solid #2d5282;padding:2px 6px}
@@ -401,6 +406,7 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   .tbl-wrap{overflow:visible;box-shadow:none;border:1px solid #ccd4e0}
   .cf{font-size:9px;table-layout:auto;border-collapse:collapse}
   .cf th,.cf td{padding:3px 5px;min-width:40px;white-space:nowrap;border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;font-size:9px}
+  .cf thead th,.cf thead td{position:static!important}
   .cf th:first-child,.cf td:first-child{position:static;min-width:70px;max-width:none;font-size:9px;text-align:left}
   .cf th:nth-child(2),.cf td:nth-child(2){position:static;min-width:90px;max-width:none;font-size:9px;border-right:2px solid #6b8cae!important;box-shadow:none;text-align:left}
   .cf th:last-child,.cf tr:not(.ryr) td:last-child{min-width:60px;padding:3px 6px!important;border-left:3px solid rgba(0,0,0,.15)!important;font-size:9px}

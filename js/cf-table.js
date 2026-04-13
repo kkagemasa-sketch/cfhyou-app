@@ -153,7 +153,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     </div>`;
   }
 
-  h+=`</div><div class="tbl-wrap"><table class="cf">`;
+  h+=`</div><div class="tbl-wrap"><table class="cf"><thead>`;
   // 年ヘッダー
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
   for(let i=0;i<disp;i++)h+=`<th>${R.yr[i]}</th>`;
@@ -201,6 +201,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     }
     h+=`<td></td></tr>`;
   });
+  h+=`</thead><tbody>`;
 
   // カスタム行レンダラー
   const _customRow=(row,disp,cls)=>{
@@ -323,7 +324,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     }
   } else if(loanAmt>0){h+=`<tr class="rloan"><td>ローン残高</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBal[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;}
 
-  h+=`</table></div>`;
+  h+=`</tbody></table></div>`;
 
   // 印刷フッター
   const pi=getPrintInfo();
@@ -348,11 +349,27 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(window._mgStore?.h){const b=$('rt-mg-h');if(b)b.style.display='';}
   if(window._mgStore?.w){const b=$('rt-mg-w');if(b)b.style.display='';}
 
+  // thead各行のsticky top値を動的計算
+  applyStickyTop(_rb);
+
   // スクロール位置を復元
   if(_rb&&_prevTop>0)_rb.scrollTop=_prevTop;
   const _newTw=_rb?_rb.querySelector('.tbl-wrap'):null;
   if(_newTw&&_prevLeft>0)_newTw.scrollLeft=_prevLeft;
   _applyFinAssetVisibility();
   _reapplyHighlightAfterRender();
+}
+
+// thead行にsticky top値を設定（行高さが可変のため動的計算）
+function applyStickyTop(container){
+  const thead=container?.querySelector('.cf thead');
+  if(!thead)return;
+  const rows=thead.querySelectorAll('tr');
+  let cumTop=0;
+  rows.forEach(tr=>{
+    const cells=tr.querySelectorAll('th,td');
+    cells.forEach(c=>{c.style.top=cumTop+'px'});
+    cumTop+=tr.offsetHeight;
+  });
 }
 
