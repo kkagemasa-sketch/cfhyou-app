@@ -24,7 +24,23 @@ function calcLoanAmt(){
   const rateDummy=document.getElementById('rate-base-dummy');
   const rateBase=document.getElementById('rate-base');
   if(rateDummy&&rateBase)rateDummy.value=rateBase.value;
+  // 頭金・諸費用のオプション表示を同期
+  toggleDownOpts();toggleCostOpts();
   live();
+}
+
+// ===== 頭金・諸費用のオプション表示切替 =====
+function toggleDownOpts(){
+  const el=document.getElementById('down-opts');
+  const hint=document.getElementById('down-type-hint');
+  const v=fv('down-payment')||0;
+  if(el)el.style.display=v>0?'flex':'none';
+  if(hint)hint.style.display=v>0?'':'none';
+}
+function toggleCostOpts(){
+  const el=document.getElementById('cost-opts');
+  const v=fv('house-cost')||0;
+  if(el)el.style.display=v>0?'flex':'none';
 }
 
 // ===== 住宅：頭金の資金区分切替 =====
