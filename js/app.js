@@ -476,33 +476,6 @@ document.addEventListener('keydown',function(e){
   });
 })();
 
-// ===== 年ヘッダーJS sticky（iPad Safari対策） =====
-// CSSのsticky topとsticky leftが同テーブル内で競合しz-indexが壊れるため、
-// 年ヘッダーの縦固定をJSのtranslateYで実装する。
-(function(){
-  var _rb=document.getElementById('right-body');
-  if(!_rb)return;
-  var _raf=null;
-  var _cache=null;   // キャッシュした.ryr th要素
-  var _lastSt=-1;    // 前回のscrollTop（変化なしならスキップ）
-  _rb.addEventListener('scroll',function(){
-    if(_raf)return;
-    _raf=requestAnimationFrame(function(){
-      _raf=null;
-      var st=_rb.scrollTop;
-      if(st===_lastSt)return;
-      _lastSt=st;
-      // DOM変更時にキャッシュを再取得
-      if(!_cache||!_cache.length||!_cache[0].isConnected){
-        _cache=_rb.querySelectorAll('.ryr th');
-      }
-      if(!_cache.length)return;
-      var v=st>0?'translateY('+st+'px)':'none';
-      for(var i=0;i<_cache.length;i++)_cache[i].style.transform=v;
-    });
-  },{passive:true});
-})();
-
 // ===== iPadキーボード表示時にsec-jumpを非表示 =====
 (function(){
   if(!window.visualViewport)return;
