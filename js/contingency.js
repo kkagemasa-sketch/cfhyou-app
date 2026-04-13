@@ -1023,7 +1023,7 @@ function _renderContingencyInner(){
   const cLbls=['第一子','第二子','第三子','第四子'];
   // N=normalR は上で定義済み
 
-  h+=`</div><div class="tbl-wrap"><table class="cf">`;
+  h+=`</div><div class="tbl-wrap"><table class="cf"><thead>`;
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
   for(let i=0;i<mgDisp;i++)h+=`<th>${MR.yr[i]}</th>`;
   h+=`<th>合計</th></tr>`;
@@ -1073,6 +1073,7 @@ function _renderContingencyInner(){
       h+=`<td class="${cls}${getMgColCls(i)}">${label}</td>`;
     }h+=`<td></td></tr>`;
   });
+  h+=`</thead><tbody>`;
 
   // ─ 収入 ─（contenteditable対応 + 通常との差分ハイライト）
   h+=`<tr class="rcat inc-cat"><td></td><td>収　　入</td>`;for(let i=0;i<mgDisp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
@@ -1282,11 +1283,11 @@ function _renderContingencyInner(){
     }
   }
 
-  h+=`</table></div>`;
-  // 印刷フッター
+  h+=`</tbody></table>`;
+  // 印刷フッター（tbl-wrap内に配置）
   const pi_mg=getPrintInfo();
   h+=`<div class="print-footer"><div class="pf-left">${pi_mg.name?`<div style="font-weight:700">${pi_mg.name}</div>`:''}${pi_mg.company?`<div>${pi_mg.company}</div>`:''}${pi_mg.address?`<div>${pi_mg.address}</div>`:''}${pi_mg.tel||pi_mg.email?`<div>${pi_mg.tel?'TEL：'+pi_mg.tel+'　':''}${pi_mg.email?'E-mail：'+pi_mg.email:''}</div>`:''}</div><div class="pf-notes">${pi_mg.notes.filter(n=>n.trim()).map(n=>`<div>・${n}</div>`).join('')}</div></div>`;
-  h+=`</div>`;
+  h+=`</div></div>`;
 
   // タブ別に保存
   if(!window._mgStore)window._mgStore={};
@@ -1311,17 +1312,23 @@ function _renderContingencyInner(){
 
   // スクロール位置を保存してから表示、復元
   const _mgRb=$('right-body');
-  const _mgPrevTop=_mgRb?_mgRb.scrollTop:0;
   const _mgOldTw=_mgRb?_mgRb.querySelector('.tbl-wrap'):null;
+  const _mgPrevTop=_mgOldTw?_mgOldTw.scrollTop:(_mgRb?_mgRb.scrollTop:0);
   const _mgPrevLeft=_mgOldTw?_mgOldTw.scrollLeft:0;
 
   // 自動でそのタブに切り替え
   setRTab(targetIsH?'mg-h':'mg-w');
 
-  // スクロール位置を復元
-  if(_mgRb&&_mgPrevTop>0)_mgRb.scrollTop=_mgPrevTop;
+  // cf-mode + sticky top計算
+  if(_mgRb)_mgRb.classList.add('cf-mode');
+  applyStickyTop(_mgRb);
+
+  // スクロール位置を復元（cf-modeではtbl-wrapが縦横スクロール）
   const _mgNewTw=_mgRb?_mgRb.querySelector('.tbl-wrap'):null;
-  if(_mgNewTw&&_mgPrevLeft>0)_mgNewTw.scrollLeft=_mgPrevLeft;
+  if(_mgNewTw){
+    if(_mgPrevTop>0)_mgNewTw.scrollTop=_mgPrevTop;
+    if(_mgPrevLeft>0)_mgNewTw.scrollLeft=_mgPrevLeft;
+  }
   _applyFinAssetVisibility();
 }
 
