@@ -1041,7 +1041,7 @@ function checkPW(){
               <option value="1">あり（軽減5年）</option>
             </select></div>
           <div class="fg"><label class="lbl" style="font-size:9px;color:var(--muted)">修繕費について</label>
-            <span class="hint ok" style="font-size:10px">✓ イベント・修繕タブの修繕費設定と連動</span></div>
+            <span class="hint ok" style="font-size:10px">✓ 下部の修繕費設定と連動</span></div>
         </div>
       </div>
 
@@ -1053,6 +1053,24 @@ function checkPW(){
           <span class="hint ok">✓ 軽減期間は自動適用</span></div>
         <div></div>
       </div>
+
+      <!-- 家具家電買い替え -->
+      <div class="divider"></div>
+      <div class="sub">🪑 家具家電の買い替え</div>
+      <div class="g2">
+        <div class="fg"><label class="lbl">買い替え周期</label>
+          <div class="suf"><input class="inp age-inp" id="furn-cycle" type="number" onfocus="scrollToCFRow('furn')" onblur="cfRowBlur()" value="10" min="1" max="30" oninput="live()"><span class="sl">年に1回</span></div>
+          <span class="hint ok" id="furn-hint">✓ 10年ごとに80万円</span></div>
+        <div class="fg"><label class="lbl">1回あたりの費用</label>
+          <div class="suf"><input class="inp amt-inp" id="furn-cost" type="number" onfocus="scrollToCFRow('furn')" onblur="cfRowBlur()" value="80" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 修繕費（マンション：専有部分／戸建て：修繕費） -->
+      <div class="sub" id="repair-sub">🔨 <span id="repair-sub-lbl">専有部分の修繕費</span></div>
+      <div id="repair-cont"></div>
+      <button class="btn-add" onclick="addRepairCycle()" id="btn-add-repair" style="font-size:11px;margin-bottom:7px">＋ 修繕周期を追加</button>
 
     </div>
   </div>
@@ -1118,42 +1136,18 @@ function checkPW(){
       <div id="edu-sec"></div>
     </div>
   </div>
+  <!-- ===== セクション7：その他支出 ===== -->
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#475569"><span class="sh-tab" style="background:#475569">⑦修繕</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">7</span>✏️ イベント・修繕<span class="stog on">▾</span></div>
-    <div class="sb">
-
-      <!-- 家具家電買い替え -->
-      <div class="sub">🪑 家具家電の買い替え</div>
-      <div class="g2">
-        <div class="fg"><label class="lbl">買い替え周期</label>
-          <div class="suf"><input class="inp age-inp" id="furn-cycle" type="number" onfocus="scrollToCFRow('furn')" onblur="cfRowBlur()" value="10" min="1" max="30" oninput="live()"><span class="sl">年に1回</span></div>
-          <span class="hint ok" id="furn-hint">✓ 10年ごとに80万円</span></div>
-        <div class="fg"><label class="lbl">1回あたりの費用</label>
-          <div class="suf"><input class="inp amt-inp" id="furn-cost" type="number" onfocus="scrollToCFRow('furn')" onblur="cfRowBlur()" value="80" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- 修繕費（マンション：専有部分／戸建て：修繕費） -->
-      <div class="sub" id="repair-sub">🔨 <span id="repair-sub-lbl">専有部分の修繕費</span></div>
-      <div id="repair-cont"></div>
-      <button class="btn-add" onclick="addRepairCycle()" id="btn-add-repair" style="font-size:11px;margin-bottom:7px">＋ 修繕周期を追加</button>
-
-    </div>
-  </div>
-
-  <!-- ===== セクション8：その他支出 ===== -->
-  <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#7c3aed"><span class="sh-tab" style="background:#7c3aed">⑧支出</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">8</span>💸 その他支出<span class="stog on">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#7c3aed"><span class="sh-tab" style="background:#7c3aed">⑦支出</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">7</span>💸 その他支出<span class="stog on">▾</span></div>
     <div class="sb">
       <div id="extra-cont"></div>
       <button class="btn-add" onclick="addExtraItem()">＋ その他支出を追加</button>
     </div>
   </div>
 
-  <!-- ===== セクション9：万が一シミュレーション ===== -->
+  <!-- ===== セクション8：万が一シミュレーション ===== -->
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#c2185b"><span class="sh-tab" style="background:#c2185b">⑨万一</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">9</span>🛡️ 万が一シミュレーション<span class="stog">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#c2185b"><span class="sh-tab" style="background:#c2185b">⑧万一</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">8</span>🛡️ 万が一シミュレーション<span class="stog">▾</span></div>
     <div class="sb col">
 
       <!-- 対象選択 -->
@@ -1402,9 +1396,8 @@ function checkPW(){
   <button class="sec-jump-btn" onclick="scrollToSec(3)" style="background:#6b5ea8"><span class="sj-em">🚗</span><span class="sj-lbl">④車</span></button>
   <button class="sec-jump-btn" onclick="scrollToSec(4)" style="background:#0e7490"><span class="sj-em">🏠</span><span class="sj-lbl">⑤住宅</span></button>
   <button class="sec-jump-btn" onclick="scrollToSec(5)" style="background:#b45309"><span class="sj-em">🛒</span><span class="sj-lbl">⑥生活</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(6)" style="background:#475569"><span class="sj-em">✏️</span><span class="sj-lbl">⑦修繕</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(7)" style="background:#7c3aed"><span class="sj-em">💸</span><span class="sj-lbl">⑧支出</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(8)" style="background:#c2185b"><span class="sj-em">🛡️</span><span class="sj-lbl">⑨万一</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(6)" style="background:#7c3aed"><span class="sj-em">💸</span><span class="sj-lbl">⑦支出</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(7)" style="background:#c2185b"><span class="sj-em">🛡️</span><span class="sj-lbl">⑧万一</span></button>
 </div>
 </div><!-- /panel-l -->
 
