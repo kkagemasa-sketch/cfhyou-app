@@ -1056,7 +1056,7 @@ function checkPW(){
 
       <!-- 家具家電買い替え -->
       <div class="divider"></div>
-      <div class="sub">🪑 家具家電の買い替え</div>
+      <div class="sub" title="引き渡し年を起点に、設定した周期で費用が発生します" style="cursor:help">🪑 家具家電の買い替え <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
       <div class="g2">
         <div class="fg"><label class="lbl">買い替え周期</label>
           <div class="suf"><input class="inp age-inp" id="furn-cycle" type="number" onfocus="scrollToCFRow('furn')" onblur="cfRowBlur()" value="10" min="1" max="30" oninput="live()"><span class="sl">年に1回</span></div>
@@ -1068,7 +1068,7 @@ function checkPW(){
       <div class="divider"></div>
 
       <!-- 修繕費（マンション：専有部分／戸建て：修繕費） -->
-      <div class="sub" id="repair-sub">🔨 <span id="repair-sub-lbl">専有部分の修繕費</span></div>
+      <div class="sub" id="repair-sub" title="引き渡し年を起点に、設定した周期で修繕費が発生します" style="cursor:help">🔨 <span id="repair-sub-lbl">専有部分の修繕費</span> <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
       <div id="repair-cont"></div>
       <button class="btn-add" onclick="addRepairCycle()" id="btn-add-repair" style="font-size:11px;margin-bottom:7px">＋ 修繕周期を追加</button>
 
