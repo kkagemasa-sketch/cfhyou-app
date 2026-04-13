@@ -38,8 +38,8 @@ function addRate(){
   const prevEl=document.getElementById(`rsr-${id-1}`);
   if(prevEl)prevRate=parseFloat(prevEl.value)||prevRate;
   const newRate=(prevRate+1).toFixed(2);
-  const prevFrom=id>1?parseInt(document.getElementById(`rsf-${id-1}`)?.value)||5:0;
-  const newFrom=prevFrom+5;
+  const prevFrom=id>1?parseInt(document.getElementById(`rsf-${id-1}`)?.value)||11:0;
+  const newFrom=id===1?11:prevFrom+5;
   el.innerHTML=`<span class="dlbl" style="color:var(--amber)">変更${id}</span>
     <div class="suf"><input class="inp" id="rsf-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${newFrom}" min="1" max="50" oninput="live()" class="inp age-inp"><span class="sl">年目〜</span></div>
     <div class="suf"><input class="inp" id="rsr-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${newRate}" min="0" max="15" step="0.01" oninput="live()" class="inp amt-inp"><span class="sl">%</span></div>
@@ -73,8 +73,8 @@ function addPairRate(p){
   const prevEl=document.getElementById(`rsr-${p}-${id-1}`);
   if(prevEl)prevRate=parseFloat(prevEl.value)||prevRate;
   const newRate=(prevRate+1).toFixed(2);
-  const prevFrom=id>1?parseInt(document.getElementById(`rsf-${p}-${id-1}`)?.value)||5:0;
-  const newFrom=prevFrom+5;
+  const prevFrom=id>1?parseInt(document.getElementById(`rsf-${p}-${id-1}`)?.value)||11:0;
+  const newFrom=id===1?11:prevFrom+5;
   el.innerHTML=`<span class="dlbl" style="color:var(--amber)">変更${id}</span>
     <div class="suf"><input class="inp" id="rsf-${p}-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${newFrom}" min="1" max="50" oninput="live()" class="inp age-inp"><span class="sl">年目〜</span></div>
     <div class="suf"><input class="inp" id="rsr-${p}-${id}" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" type="number" value="${newRate}" min="0" max="15" step="0.01" oninput="live()" class="inp amt-inp"><span class="sl">%</span></div>
