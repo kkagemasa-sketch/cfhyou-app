@@ -995,33 +995,31 @@ function checkPW(){
         <div class="divider"></div>
 
         <div class="sub">🔧 修繕積立金</div>
-        <div style="display:flex;gap:10px;align-items:flex-start">
-          <!-- 左：自動計算表示（マンション管理より） -->
-          <div style="flex:1;min-width:0">
-            <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">自動計算（マンション管理より）</div>
-            <div id="rep-auto-display" style="background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:8px;min-height:56px;font-size:11px;line-height:1.5;color:var(--muted)">
-              マンションを選択すると自動表示されます
-            </div>
+        <!-- モード選択トグル -->
+        <div style="display:flex;gap:4px;margin-bottom:8px">
+          <div class="tc on" id="rep-mode-auto" onclick="setRepMode('auto')" style="flex:1;padding:4px 8px;min-height:0;opacity:1;transform:none">
+            <div class="tc-lbl" style="font-size:10px">📊 自動計算</div>
           </div>
-          <!-- 右：手入力チェックボックス＋段階入力 -->
-          <div style="flex:1;min-width:0">
-            <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ink);margin-bottom:6px;cursor:pointer">
-              <input type="checkbox" id="rep-manual-toggle" onchange="toggleRepManual()" style="width:14px;height:14px;cursor:pointer">
-              <span>✏️ 手入力</span>
-            </label>
-            <div id="rep-manual-input-wrap" style="display:none">
-              <!-- 1年目〜 基準金額 -->
-              <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
-                <span style="font-size:10px;color:var(--muted);width:46px;flex-shrink:0">1年目〜</span>
-                <div class="suf" style="flex:1"><input class="inp amt-inp" id="rep-manual-base" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" placeholder="例:15000" min="0" value="" oninput="_renderRepManualPreview();live()" style="font-size:11px"><span class="sl" style="font-size:9px">円/月</span></div>
-              </div>
-              <!-- 追加ステップ -->
-              <div id="rep-steps-cont"></div>
-              <button class="btn-add" onclick="addRepStep()" style="font-size:10px;padding:3px 10px;margin-top:2px">＋ 段階追加</button>
-              <!-- プレビュー -->
-              <div id="rep-manual-preview" style="margin-top:6px;padding:6px 8px;background:#f0fdf4;border-left:3px solid #16a34a;border-radius:3px;font-size:10px;color:#166534;line-height:1.5;display:none"></div>
-            </div>
+          <div class="tc" id="rep-mode-manual" onclick="setRepMode('manual')" style="flex:1;padding:4px 8px;min-height:0">
+            <div class="tc-lbl" style="font-size:10px">✏️ 手入力</div>
           </div>
+        </div>
+        <!-- 自動計算表示 -->
+        <div id="rep-auto-wrap">
+          <div id="rep-auto-display" style="background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:8px;font-size:11px;line-height:1.5;color:var(--muted)">
+            マンションを選択すると自動表示されます
+          </div>
+        </div>
+        <!-- 手入力 -->
+        <input type="checkbox" id="rep-manual-toggle" style="display:none">
+        <div id="rep-manual-input-wrap" style="display:none">
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+            <span style="font-size:10px;color:var(--muted);width:46px;flex-shrink:0">1年目〜</span>
+            <div class="suf" style="flex:1"><input class="inp amt-inp" id="rep-manual-base" type="number" onfocus="scrollToCFRow('rep')" onblur="cfRowBlur()" placeholder="例:15000" min="0" value="" oninput="_renderRepManualPreview();live()" style="font-size:11px"><span class="sl" style="font-size:9px">円/月</span></div>
+          </div>
+          <div id="rep-steps-cont"></div>
+          <button class="btn-add" onclick="addRepStep()" style="font-size:10px;padding:3px 10px;margin-top:2px">＋ 段階追加</button>
+          <div id="rep-manual-preview" style="margin-top:6px;padding:6px 8px;background:#f0fdf4;border-left:3px solid #16a34a;border-radius:3px;font-size:10px;color:#166534;line-height:1.5;display:none"></div>
         </div>
         <!-- 専有面積（自動計算用、既存ID維持） -->
         <div style="margin-top:9px">
@@ -1456,7 +1454,7 @@ function checkPW(){
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=7"></script>
 <script src="js/education.js"></script>
-<script src="js/housing.js?v=15"></script>
+<script src="js/housing.js?v=16"></script>
 <script src="js/loan-calc.js?v=3"></script>
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=10"></script>

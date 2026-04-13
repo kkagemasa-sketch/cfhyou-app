@@ -269,11 +269,23 @@ function updateLctrlHint(){
 
 // ===== 修繕積立金 =====
 // 手入力チェックボックス切替
+function setRepMode(mode){
+  const isManual=mode==='manual';
+  const chk=document.getElementById('rep-manual-toggle');
+  if(chk)chk.checked=isManual;
+  const autoWrap=document.getElementById('rep-auto-wrap');
+  const manualWrap=document.getElementById('rep-manual-input-wrap');
+  if(autoWrap)autoWrap.style.display=isManual?'none':'';
+  if(manualWrap)manualWrap.style.display=isManual?'':'none';
+  const btnAuto=document.getElementById('rep-mode-auto');
+  const btnManual=document.getElementById('rep-mode-manual');
+  if(btnAuto)btnAuto.classList.toggle('on',!isManual);
+  if(btnManual)btnManual.classList.toggle('on',isManual);
+  live();
+}
 function toggleRepManual(){
   const chk=document.getElementById('rep-manual-toggle');
-  const wrap=document.getElementById('rep-manual-input-wrap');
-  if(wrap)wrap.style.display=chk?.checked?'':'none';
-  live();
+  setRepMode(chk?.checked?'manual':'auto');
 }
 // 選択中のマンションマスターを取得
 function _getSelectedMansion(){
