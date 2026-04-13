@@ -109,13 +109,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .scen-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:center;justify-content:center}
 .scen-modal{background:#fff;border-radius:12px;padding:24px;width:300px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 /* 右パネル本体：シンプルに縦スクロールのみ */
-.r-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px 16px}
+.r-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px 16px;will-change:scroll-position}
 .r-body::-webkit-scrollbar{width:6px}
 .r-body::-webkit-scrollbar-track{background:#f0f4f8}
 .r-body::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
 .r-summary{margin-bottom:8px}
 /* テーブル：横スクロール */
-.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border:1px solid var(--border)}
+.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border:1px solid var(--border);will-change:scroll-position}
 .tbl-wrap::-webkit-scrollbar{height:10px}
 .tbl-wrap::-webkit-scrollbar-track{background:#e8ecf0}
 .tbl-wrap::-webkit-scrollbar-thumb{background:#7b8fa3;border-radius:5px}
@@ -246,7 +246,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* ============================================================
    CF表：テーブル共通
    ============================================================ */
-.cf{border-collapse:collapse;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace;contain:layout style}
+.cf{border-collapse:collapse;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace;contain:layout style;table-layout:fixed}
 .cf th,.cf td{border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;padding:3px 6px;white-space:nowrap;min-width:48px;width:48px;text-align:right}
 
 /* 固定左2列（contain:paintはz-indexを壊すため使用禁止） */
