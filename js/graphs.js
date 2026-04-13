@@ -90,9 +90,9 @@ function renderGraphsMG(MR,disp,isM,hAge,targetLabel){
 }
 
 function renderGraphs(R,disp,isM,total,hAge){
-  const totI=R.incT.reduce((a,b)=>a+b,0), totE=R.expT.reduce((a,b)=>a+b,0);
-  const finS=R.sav[R.sav.length-1], redY=R.bal.filter(v=>v<0).length;
   const n=disp;
+  const totI=R.incT.slice(0,n).reduce((a,b)=>a+b,0), totE=R.expT.slice(0,n).reduce((a,b)=>a+b,0);
+  const finS=R.sav[n-1]||0, redY=R.bal.slice(0,n).filter(v=>v<0).length;
   const lbls=Array.from({length:n},(_,i)=>`${hAge+i}歳`);
   const pr=n>25?0:1.5;
 
@@ -110,10 +110,10 @@ function renderGraphs(R,disp,isM,total,hAge){
 
   // ── サマリー HTML ───────────────────────────────────
   const sumHtml=`
-    <div class="sc inc"><div class="sc-lbl">総収入（${total}年）</div><div class="sc-val" style="color:#2d7dd2">${ri(totI).toLocaleString()}</div><div class="sc-sub">万円</div></div>
-    <div class="sc exp"><div class="sc-lbl">総支出（${total}年）</div><div class="sc-val" style="color:var(--red-l)">${ri(totE).toLocaleString()}</div><div class="sc-sub">万円</div></div>
-    <div class="sc ${finS>=0?'bal':'dng'}"><div class="sc-lbl">最終預貯金残高</div><div class="sc-val" style="color:${finS>=0?'var(--green)':'var(--red)'}">${ri(finS).toLocaleString()}</div><div class="sc-sub">万円（${hAge+total-1}歳時点）</div></div>
-    <div class="sc ${redY>0?'dng':'bal'}"><div class="sc-lbl">マイナスの年</div><div class="sc-val" style="color:${redY>0?'var(--red)':'var(--green)'}">${redY}</div><div class="sc-sub">年 / ${total}年中</div></div>`;
+    <div class="sc inc"><div class="sc-lbl">総収入（${n}年）</div><div class="sc-val" style="color:#2d7dd2">${ri(totI).toLocaleString()}</div><div class="sc-sub">万円</div></div>
+    <div class="sc exp"><div class="sc-lbl">総支出（${n}年）</div><div class="sc-val" style="color:var(--red-l)">${ri(totE).toLocaleString()}</div><div class="sc-sub">万円</div></div>
+    <div class="sc ${finS>=0?'bal':'dng'}"><div class="sc-lbl">最終預貯金残高</div><div class="sc-val" style="color:${finS>=0?'var(--green)':'var(--red)'}">${ri(finS).toLocaleString()}</div><div class="sc-sub">万円（${hAge+n-1}歳時点）</div></div>
+    <div class="sc ${redY>0?'dng':'bal'}"><div class="sc-lbl">マイナスの年</div><div class="sc-val" style="color:${redY>0?'var(--red)':'var(--green)'}">${redY}</div><div class="sc-sub">年 / ${n}年中</div></div>`;
 
   // ── データセット計算 ─────────────────────────────────
   // Chart1: 収入・支出・年間収支（常に3系列）
