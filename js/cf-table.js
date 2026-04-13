@@ -324,9 +324,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     }
   } else if(loanAmt>0){h+=`<tr class="rloan"><td>ローン残高</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBal[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;}
 
-  h+=`</tbody></table></div>`;
+  h+=`</tbody></table>`;
 
-  // 印刷フッター
+  // 印刷フッター（tbl-wrap内に配置）
   const pi=getPrintInfo();
   h+=`<div class="print-footer">
     <div class="pf-left">
@@ -336,12 +336,15 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       ${pi.tel||pi.email?`<div>${pi.tel?'TEL：'+pi.tel+'　':''}${pi.email?'E-mail：'+pi.email:''}</div>`:''}
     </div>
     <div class="pf-notes">${pi.notes.filter(n=>n.trim()).map(n=>`<div>・${n}</div>`).join('')}</div>
-  </div>`;
+  </div></div>`;
+
+  // CF表モード（thead sticky用のflex列レイアウト）
+  const _rb=$('right-body');
+  if(_rb)_rb.classList.add('cf-mode');
 
   // スクロール位置を保存してからDOM置換 → 復元
-  const _rb=$('right-body');
-  const _prevTop=_rb?_rb.scrollTop:0;
   const _oldTw=_rb?_rb.querySelector('.tbl-wrap'):null;
+  const _prevTop=_oldTw?_oldTw.scrollTop:(_rb?_rb.scrollTop:0);
   const _prevLeft=_oldTw?_oldTw.scrollLeft:0;
   _rb.innerHTML=h;
 
@@ -352,10 +355,12 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // thead各行のsticky top値を動的計算
   applyStickyTop(_rb);
 
-  // スクロール位置を復元
-  if(_rb&&_prevTop>0)_rb.scrollTop=_prevTop;
+  // スクロール位置を復元（cf-modeではtbl-wrapが縦横スクロール）
   const _newTw=_rb?_rb.querySelector('.tbl-wrap'):null;
-  if(_newTw&&_prevLeft>0)_newTw.scrollLeft=_prevLeft;
+  if(_newTw){
+    if(_prevTop>0)_newTw.scrollTop=_prevTop;
+    if(_prevLeft>0)_newTw.scrollLeft=_prevLeft;
+  }
   _applyFinAssetVisibility();
   _reapplyHighlightAfterRender();
 }

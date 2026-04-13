@@ -97,6 +97,8 @@ function _applyHighlight(doScroll){
   if(!_cfActive) return;
   const body = document.getElementById('right-body');
   if(!body) return;
+  // cf-modeではtbl-wrapがスクロールコンテナ
+  const scroller = body.querySelector('.tbl-wrap') || body;
   const targetRow = _findTargetRow(body, _cfActive.rowKey);
   if(!targetRow) return;
 
@@ -120,12 +122,12 @@ function _applyHighlight(doScroll){
   if(!doScroll) return;
 
   // 縦スクロール（getBoundingClientRect で確実に計算）
-  const bodyRect = body.getBoundingClientRect();
+  const scrollRect = scroller.getBoundingClientRect();
   const rowRect  = targetRow.getBoundingClientRect();
-  const scrollTop = Math.max(0, body.scrollTop + (rowRect.top - bodyRect.top) - body.clientHeight / 3);
+  const scrollTop = Math.max(0, scroller.scrollTop + (rowRect.top - scrollRect.top) - scroller.clientHeight / 3);
 
   // 横スクロール：fromAge の列が見えるように調整（getBoundingClientRect でオフセット誤差を排除）
-  let scrollLeft = body.scrollLeft;
+  let scrollLeft = scroller.scrollLeft;
   if(_cfActive.fromAge != null){
     const focusHAge = _W_ROWS.includes(_cfActive.rowKey) ? (_cfActive.fromAge - wAge + hAge) : _cfActive.fromAge;
     const colIdx = focusHAge - hAge;
@@ -134,13 +136,12 @@ function _applyHighlight(doScroll){
       const th  = ths[colIdx + 2];
       if(th){
         const thRect = th.getBoundingClientRect();
-        // th の現在の視覚的位置 → 固定列(191px)の直後に来るよう調整
-        scrollLeft = Math.max(0, body.scrollLeft + (thRect.left - bodyRect.left) - 191 - 8);
+        scrollLeft = Math.max(0, scroller.scrollLeft + (thRect.left - scrollRect.left) - 191 - 8);
       }
     }
   }
 
-  body.scrollTo({ top: scrollTop, left: scrollLeft, behavior: 'smooth' });
+  scroller.scrollTo({ top: scrollTop, left: scrollLeft, behavior: 'smooth' });
 }
 
 function _findTargetRow(body, rowKey){

@@ -85,6 +85,8 @@ function setRTab(t){
   // グラフタブの場合、直前のタブコンテキストを記憶
   if(t!=='graph')window._lastCFTab=t;
   rTab=t;
+  // CF表タブのみflex列レイアウト（thead sticky用）
+  $('right-body')?.classList.toggle('cf-mode',t==='cf');
   $('rt-lctab')?.classList.toggle('on',t==='lctab');
   $('rt-graph')?.classList.toggle('on',t==='graph');
   $('rt-loan')?.classList.toggle('on',t==='loan');
