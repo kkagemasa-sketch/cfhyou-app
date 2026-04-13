@@ -204,7 +204,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .hint{font-size:10px;color:var(--muted);line-height:1.5}
 .hint.ok{color:#3a8a3a}
 .hint.ng{color:var(--red);font-weight:600}
-.divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+.divider{border:none;border-top:1px solid var(--border);margin:6px 0}
 .sub{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
 
 /* ペルソナヘッダー（ご主人様・奥様） */

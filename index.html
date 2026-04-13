@@ -12,7 +12,7 @@
 <script src="js/vendors/jszip.min.js"></script>
 <script src="js/vendors/xlsx-style.min.js"></script>
 <script src="js/vendors/FileSaver.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=12">
+<link rel="stylesheet" href="css/style.css?v=13">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -272,15 +272,15 @@ function checkPW(){
 
           <!-- 退職金 -->
           <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
-            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">💴 退職金</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <div class="tc on" id="rp-yes" onclick="setRetirePay(true)" style="flex:1;padding:6px 10px">
-                <span class="tc-icon" style="font-size:14px">✅</span>
-                <div><div class="tc-lbl" style="font-size:11px">あり</div></div>
-              </div>
-              <div class="tc" id="rp-no" onclick="setRetirePay(false)" style="flex:1;padding:6px 10px">
-                <span class="tc-icon" style="font-size:14px">❌</span>
-                <div><div class="tc-lbl" style="font-size:11px">なし</div></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <div style="font-size:11px;font-weight:700;color:var(--navy)">💴 退職金</div>
+              <div style="display:flex;gap:4px">
+                <div class="tc on" id="rp-yes" onclick="setRetirePay(true)" style="padding:2px 10px;min-height:0;opacity:1;transform:none">
+                  <div class="tc-lbl" style="font-size:10px">あり</div>
+                </div>
+                <div class="tc" id="rp-no" onclick="setRetirePay(false)" style="padding:2px 10px;min-height:0">
+                  <div class="tc-lbl" style="font-size:10px">なし</div>
+                </div>
               </div>
             </div>
             <div id="rp-fields">
@@ -338,10 +338,12 @@ function checkPW(){
                   <div class="fg"><label class="lbl" style="font-size:9px">月額掛金</label>
                     <div class="suf"><input class="inp amt-inp" id="ideco-h-monthly" type="number" value="" placeholder="0" min="0" step="0.1" oninput="validateiDeCo('h');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
                 </div>
-                <div class="fg" style="margin-bottom:6px"><label class="lbl" style="font-size:9px">想定利回り</label>
-                  <div class="suf"><input class="inp" id="ideco-h-rate" type="number" value="3" min="0" max="10" step="0.5" oninput="live()" style="font-size:11px;width:60px"><span class="sl">%</span></div></div>
-                <div class="fg" style="margin-bottom:6px"><label class="lbl" style="font-size:9px">現在の残高</label>
-                  <div class="suf"><input class="inp amt-inp" id="ideco-h-bal" type="number" value="" placeholder="0" min="0" step="1" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+                <div class="g2">
+                  <div class="fg"><label class="lbl" style="font-size:9px">想定利回り</label>
+                    <div class="suf"><input class="inp" id="ideco-h-rate" type="number" value="3" min="0" max="10" step="0.5" oninput="live()" style="font-size:11px;width:60px"><span class="sl">%</span></div></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">現在の残高</label>
+                    <div class="suf"><input class="inp amt-inp" id="ideco-h-bal" type="number" value="" placeholder="0" min="0" step="1" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+                </div>
                 <div id="ideco-h-hint" style="font-size:10px;color:#3a8a3a;margin-top:2px"></div>
               </div>
               <!-- 受取設定 -->
@@ -441,15 +443,15 @@ function checkPW(){
 
           <!-- 奥様退職金 -->
           <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
-            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">💴 退職金（奥様）</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <div class="tc on" id="w-rp-yes" onclick="setWRetirePay(true)" style="flex:1;padding:6px 10px">
-                <span class="tc-icon" style="font-size:14px">✅</span>
-                <div><div class="tc-lbl" style="font-size:11px">あり</div></div>
-              </div>
-              <div class="tc" id="w-rp-no" onclick="setWRetirePay(false)" style="flex:1;padding:6px 10px">
-                <span class="tc-icon" style="font-size:14px">❌</span>
-                <div><div class="tc-lbl" style="font-size:11px">なし</div></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <div style="font-size:11px;font-weight:700;color:var(--navy)">💴 退職金（奥様）</div>
+              <div style="display:flex;gap:4px">
+                <div class="tc on" id="w-rp-yes" onclick="setWRetirePay(true)" style="padding:2px 10px;min-height:0;opacity:1;transform:none">
+                  <div class="tc-lbl" style="font-size:10px">あり</div>
+                </div>
+                <div class="tc" id="w-rp-no" onclick="setWRetirePay(false)" style="padding:2px 10px;min-height:0">
+                  <div class="tc-lbl" style="font-size:10px">なし</div>
+                </div>
               </div>
             </div>
             <div id="w-rp-fields">
@@ -507,10 +509,12 @@ function checkPW(){
                   <div class="fg"><label class="lbl" style="font-size:9px">月額掛金</label>
                     <div class="suf"><input class="inp amt-inp" id="ideco-w-monthly" type="number" value="" placeholder="0" min="0" step="0.1" oninput="validateiDeCo('w');live()" style="font-size:11px"><span class="sl">万円/月</span></div></div>
                 </div>
-                <div class="fg" style="margin-bottom:6px"><label class="lbl" style="font-size:9px">想定利回り</label>
-                  <div class="suf"><input class="inp" id="ideco-w-rate" type="number" value="3" min="0" max="10" step="0.5" oninput="live()" style="font-size:11px;width:60px"><span class="sl">%</span></div></div>
-                <div class="fg" style="margin-bottom:6px"><label class="lbl" style="font-size:9px">現在の残高</label>
-                  <div class="suf"><input class="inp amt-inp" id="ideco-w-bal" type="number" value="" placeholder="0" min="0" step="1" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+                <div class="g2">
+                  <div class="fg"><label class="lbl" style="font-size:9px">想定利回り</label>
+                    <div class="suf"><input class="inp" id="ideco-w-rate" type="number" value="3" min="0" max="10" step="0.5" oninput="live()" style="font-size:11px;width:60px"><span class="sl">%</span></div></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">現在の残高</label>
+                    <div class="suf"><input class="inp amt-inp" id="ideco-w-bal" type="number" value="" placeholder="0" min="0" step="1" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+                </div>
                 <div id="ideco-w-hint" style="font-size:10px;color:#3a8a3a;margin-top:2px"></div>
               </div>
               <!-- 受取設定 -->
@@ -596,15 +600,12 @@ function checkPW(){
         </div>
       </div>
       <div id="park-fields">
-        <div class="g2">
+        <div class="g3">
           <div class="fg"><label class="lbl">月額駐車場代</label>
             <div class="suf"><input class="inp amt-inp" id="parking" type="number" onfocus="scrollToCFRow('prk')" onblur="cfRowBlur()" value="15000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
-          <div></div>
-        </div>
-        <div class="g2">
-          <div class="fg"><label class="lbl">開始年齢（ご主人様）</label>
+          <div class="fg"><label class="lbl">開始年齢</label>
             <div class="suf"><input class="inp age-inp" id="park-from-age" type="number" onfocus="scrollToCFRow('prk')" onblur="cfRowBlur()" placeholder="現在年齢" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
-          <div class="fg"><label class="lbl">終了年齢（ご主人様）</label>
+          <div class="fg"><label class="lbl">終了年齢</label>
             <div class="suf"><input class="inp age-inp" id="park-to-age" type="number" onfocus="scrollToCFRow('prk')" onblur="cfRowBlur()" placeholder="空欄=ずっと" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
         </div>
       </div>
