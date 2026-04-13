@@ -650,29 +650,25 @@ function checkPW(){
           <div class="suf"><input class="inp amt-inp" id="house-price" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="5000" min="0" oninput="calcLoanAmt()"><span class="sl">万円</span></div></div>
         <!-- 頭金 -->
         <div class="fg"><label class="lbl">頭金</label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <div class="suf" style="flex:0 0 auto;width:120px"><input class="inp amt-inp" id="down-payment" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="500" min="0" oninput="calcLoanAmt();toggleDownOpts()"><span class="sl">万円</span></div>
-            <div id="down-opts" style="display:flex;gap:4px">
-              <div class="tc on" id="down-own" onclick="setDownType('own')" style="padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
-                <div class="tc-lbl" style="font-size:10px">💰 自己資金</div>
-              </div>
-              <div class="tc" id="down-gift" onclick="setDownType('gift')" style="padding:3px 8px;gap:3px;min-height:0">
-                <div class="tc-lbl" style="font-size:10px">🎁 住宅資金贈与</div>
-              </div>
+          <div class="suf"><input class="inp amt-inp" id="down-payment" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="500" min="0" oninput="calcLoanAmt();toggleDownOpts()"><span class="sl">万円</span></div>
+          <div id="down-opts" style="display:flex;gap:4px;margin-top:4px">
+            <div class="tc on" id="down-own" onclick="setDownType('own')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
+              <div class="tc-lbl" style="font-size:10px">💰 自己資金</div>
+            </div>
+            <div class="tc" id="down-gift" onclick="setDownType('gift')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
+              <div class="tc-lbl" style="font-size:10px">🎁 住宅資金贈与</div>
             </div>
           </div>
           <span class="hint" id="down-type-hint" style="font-size:9px;color:var(--muted)"></span></div>
         <!-- 諸費用 -->
         <div class="fg"><label class="lbl">諸費用</label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <div class="suf" style="flex:0 0 auto;width:120px"><input class="inp amt-inp" id="house-cost" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="200" min="0" oninput="calcLoanAmt();toggleCostOpts()"><span class="sl">万円</span></div>
-            <div id="cost-opts" style="display:flex;gap:4px">
-              <div class="tc on" id="cost-cash" onclick="setCostType('cash')" style="padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
-                <div class="tc-lbl" style="font-size:10px">💴 現金払い</div>
-              </div>
-              <div class="tc" id="cost-loan" onclick="setCostType('loan')" style="padding:3px 8px;gap:3px;min-height:0">
-                <div class="tc-lbl" style="font-size:10px">🏦 ローン組込</div>
-              </div>
+          <div class="suf"><input class="inp amt-inp" id="house-cost" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="200" min="0" oninput="calcLoanAmt();toggleCostOpts()"><span class="sl">万円</span></div>
+          <div id="cost-opts" style="display:flex;gap:4px;margin-top:4px">
+            <div class="tc on" id="cost-cash" onclick="setCostType('cash')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
+              <div class="tc-lbl" style="font-size:10px">💴 現金払い</div>
+            </div>
+            <div class="tc" id="cost-loan" onclick="setCostType('loan')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
+              <div class="tc-lbl" style="font-size:10px">🏦 ローン組込</div>
             </div>
           </div></div>
       </div>
