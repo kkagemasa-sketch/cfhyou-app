@@ -594,14 +594,11 @@ function addRepairCycle(cycle='',cost=''){
   if(repairCnt>=5)$('btn-add-repair').style.display='none';
   const el=document.createElement('div');
   el.id=`rep-${id}`;
-  el.style.cssText='background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px';
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><div style="font-size:10px;font-weight:600;color:var(--muted)">修繕${id}</div><button class="btn-rm" onclick="rmRepairCycle(${id})">×</button></div>
-    <div class="g2">
-      <div class="fg"><label class="lbl">修繕周期</label>
-        <div class="suf"><input class="inp age-inp" id="repair-cycle${id}" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="${cycle||30}" min="1" max="50" oninput="live()"><span class="sl">年に1回</span></div></div>
-      <div class="fg"><label class="lbl">1回あたりの費用</label>
-        <div class="suf"><input class="inp amt-inp" id="repair-cost${id}" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="${cost||200}" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-    </div>`;
+  el.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap';
+  el.innerHTML=`<span style="font-size:10px;font-weight:600;color:var(--muted);flex-shrink:0">修繕${id}</span>
+    <div class="suf" style="flex:0 0 auto;width:100px"><input class="inp age-inp" id="repair-cycle${id}" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="${cycle||30}" min="1" max="50" oninput="live()" style="font-size:11px"><span class="sl" style="font-size:9px">年毎</span></div>
+    <div class="suf" style="flex:0 0 auto;width:110px"><input class="inp amt-inp" id="repair-cost${id}" type="number" onfocus="scrollToCFRow('senyu')" onblur="cfRowBlur()" value="${cost||200}" min="0" oninput="live()" style="font-size:11px"><span class="sl" style="font-size:9px">万円/回</span></div>
+    <button class="btn-rm" onclick="rmRepairCycle(${id})" style="flex-shrink:0">×</button>`;
   $('repair-cont').appendChild(el);live();
 }
 function rmRepairCycle(id){$(`rep-${id}`)?.remove();repairCnt--;$('btn-add-repair').style.display='';live()}
