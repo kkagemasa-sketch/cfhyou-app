@@ -483,15 +483,22 @@ document.addEventListener('keydown',function(e){
   var _rb=document.getElementById('right-body');
   if(!_rb)return;
   var _raf=null;
+  var _cache=null;   // キャッシュした.ryr th要素
+  var _lastSt=-1;    // 前回のscrollTop（変化なしならスキップ）
   _rb.addEventListener('scroll',function(){
     if(_raf)return;
     _raf=requestAnimationFrame(function(){
       _raf=null;
-      var ths=_rb.querySelectorAll('.ryr th');
-      if(!ths.length)return;
       var st=_rb.scrollTop;
-      var v=st>0?'translateY('+st+'px)':'';
-      for(var i=0;i<ths.length;i++)ths[i].style.transform=v;
+      if(st===_lastSt)return;
+      _lastSt=st;
+      // DOM変更時にキャッシュを再取得
+      if(!_cache||!_cache.length||!_cache[0].isConnected){
+        _cache=_rb.querySelectorAll('.ryr th');
+      }
+      if(!_cache.length)return;
+      var v=st>0?'translateY('+st+'px)':'none';
+      for(var i=0;i<_cache.length;i++)_cache[i].style.transform=v;
     });
   },{passive:true});
 })();

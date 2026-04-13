@@ -246,7 +246,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* ============================================================
    CF表：テーブル共通
    ============================================================ */
-.cf{border-collapse:separate;border-spacing:0;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace}
+.cf{border-collapse:collapse;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace}
 .cf th,.cf td{border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;padding:3px 6px;white-space:nowrap;min-width:48px;width:48px;text-align:right}
 
 /* 固定左2列 */
@@ -268,7 +268,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
    ============================================================ */
 
 /* 年ヘッダー（縦固定はJS側で処理 — iPad Safari sticky競合回避） */
-.ryr th{background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:3px 6px;border-right:1px solid #2d5282;border-bottom:2px solid var(--navy);position:relative;z-index:5}
+.ryr th{background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:3px 6px;border-right:1px solid #2d5282;border-bottom:2px solid var(--navy);position:relative;z-index:5;will-change:transform}
 .ryr th:first-child,.ryr th:nth-child(2){position:-webkit-sticky;position:sticky;text-align:left;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;background:var(--navy)!important;z-index:10;}
 
 /* 経過年数：ネイビー地で年ヘッダーと連続 */
