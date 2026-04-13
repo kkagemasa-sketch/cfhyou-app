@@ -267,8 +267,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
    CF表：行スタイル
    ============================================================ */
 
-/* 年ヘッダー（縦固定はJS側で処理 — iPad Safari sticky競合回避） */
-.ryr th{background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:3px 6px;border-right:1px solid #2d5282;border-bottom:2px solid var(--navy);position:relative;z-index:5;will-change:transform}
+/* 年ヘッダー（縦固定はJS側でtranslateY処理 — iPad Safari sticky競合回避） */
+/* position/z-indexを付けない → 左固定列(z-index:8)が確実に上に来る */
+.ryr th{background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:3px 6px;border-right:1px solid #2d5282;border-bottom:2px solid var(--navy)}
 .ryr th:first-child,.ryr th:nth-child(2){position:-webkit-sticky;position:sticky;text-align:left;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;background:var(--navy)!important;z-index:10;}
 
 /* 経過年数：ネイビー地で年ヘッダーと連続 */
