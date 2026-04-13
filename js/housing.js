@@ -18,7 +18,7 @@ function calcLoanAmt(){
     if(costType==='loan')
       hint.textContent=`住宅価格${price.toLocaleString()}万円 − 頭金${down.toLocaleString()}万円 ＋ 諸費用${cost.toLocaleString()}万円`;
     else
-      hint.textContent=`（${price.toLocaleString()} − ${down.toLocaleString()} 頭金）　諸費用 ${cost.toLocaleString()}万円は現金`;
+      hint.textContent=`住宅価格${price.toLocaleString()}万円 − 頭金${down.toLocaleString()}万円（諸費用${cost.toLocaleString()}万円は現金）`;
   }
   // rate-base-dummy同期
   const rateDummy=document.getElementById('rate-base-dummy');
