@@ -961,12 +961,11 @@ function checkPW(){
               <option value="used_eco">中古（省エネ基準適合以上）</option>
               <option value="used_other">中古（その他）</option>
             </select></div>
-          <div class="fg"><label class="lbl">世帯属性</label>
+          <div class="fg"><label class="lbl" title="子育て・若者夫婦世帯：19歳未満の子 or 夫婦どちらか40歳未満" style="cursor:help">世帯属性 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></label>
             <select class="sel" id="lctrl-household" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
               <option value="general">一般世帯</option>
               <option value="kosodate">子育て・若者夫婦世帯</option>
-            </select>
-            <span style="font-size:9px;color:var(--muted)">19歳未満の子 or 夫婦どちらか40歳未満</span></div>
+            </select></div>
         </div>
         <div id="lctrl-hint" style="font-size:10px;font-weight:600;padding:6px 10px;background:#e8f2fc;border-radius:5px;line-height:1.8"></div>
         <!-- 自動計算/自由入力切替 -->
