@@ -184,8 +184,8 @@ function getStepsForPension(person){
     if(m)ids.add(`${person}-is-${m[1]}`);
   });
   ids.forEach(base=>{
-    const nf=parseFloat(document.getElementById(`${base}-net-from`)?.value)||0;
-    const nt=parseFloat(document.getElementById(`${base}-net-to`)?.value)||nf;
+    const nf=_amtVal(document.getElementById(`${base}-net-from`));
+    const nt=_amtVal(document.getElementById(`${base}-net-to`))||nf;
     if(nf>0)nets.push(nf,nt);
   });
   return nets;
@@ -267,9 +267,15 @@ function addIncomeStep(person){
   document.getElementById(`${person}-income-cont`).appendChild(el);
   live();
 }
+// カンマ付きamt-inp対応：_rawValueがあればそちらを使う
+function _amtVal(el){
+  if(!el)return 0;
+  if(el._rawValue!==undefined)return el._rawValue;
+  return parseFloat(String(el.value).replace(/,/g,''))||0;
+}
 function calcStepHint(id){
-  const nf=parseFloat(document.getElementById(`${id}-net-from`)?.value)||0;
-  const nt=parseFloat(document.getElementById(`${id}-net-to`)?.value)||0;
+  const nf=_amtVal(document.getElementById(`${id}-net-from`));
+  const nt=_amtVal(document.getElementById(`${id}-net-to`));
   const af=parseInt(document.getElementById(`${id}-from`)?.value)||0;
   const at=parseInt(document.getElementById(`${id}-to`)?.value)||0;
   const hint=document.getElementById(`${id}-hint`);
@@ -322,7 +328,7 @@ function calcPctIncome(id){
   steps.forEach(el=>{
     if(el.id===id){foundSelf=true;return;}
     if(!foundSelf){
-      const nt=parseFloat($(`${el.id}-net-to`)?.value)||parseFloat($(`${el.id}-net-from`)?.value)||0;
+      const nt=_amtVal($(`${el.id}-net-to`))||_amtVal($(`${el.id}-net-from`));
       if(nt>0)prevIncome=nt;
     }
   });
@@ -531,13 +537,15 @@ function getIncomeSteps(person){
   ids.forEach(base=>{
     const ageFrom=parseInt(document.getElementById(`${base}-from`)?.value)||0;
     const ageTo=parseInt(document.getElementById(`${base}-to`)?.value)||0;
-    const nfRaw=document.getElementById(`${base}-net-from`)?.value;
-    const ntRaw=document.getElementById(`${base}-net-to`)?.value;
-    const netFrom=parseFloat(nfRaw)||0;
-    const netTo=parseFloat(ntRaw)||netFrom;
+    const nfEl=document.getElementById(`${base}-net-from`);
+    const ntEl=document.getElementById(`${base}-net-to`);
+    const nfRaw=nfEl?.value;
+    const ntRaw=ntEl?.value;
+    const netFrom=_amtVal(nfEl);
+    const netTo=ntEl?_amtVal(ntEl):netFrom;
     // 「明示的に0と入力された」ステップも有効として扱う（産休・育休の0万円表現を保持）
-    const hasNF=typeof nfRaw==='string'&&nfRaw.trim()!=='';
-    const hasNT=typeof ntRaw==='string'&&ntRaw.trim()!=='';
+    const hasNF=typeof nfRaw==='string'&&nfRaw.replace(/,/g,'').trim()!=='';
+    const hasNT=typeof ntRaw==='string'&&ntRaw.replace(/,/g,'').trim()!=='';
     if(ageFrom>0&&ageTo>=ageFrom&&(hasNF||hasNT||netFrom>0||netTo>0)){
       steps.push({ageFrom,ageTo,netFrom,netTo});
     }
