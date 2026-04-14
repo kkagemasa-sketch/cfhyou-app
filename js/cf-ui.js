@@ -4,7 +4,7 @@ function _rl(key,def){return _cfRowLabels[key]||def;}
 // ===== CF表ズーム =====
 let cfZoomLevel=100;
 function setCfZoom(v){
-  cfZoomLevel=Math.max(30,Math.min(100,v));
+  cfZoomLevel=Math.max(20,Math.min(100,v));
   const rb=document.getElementById('right-body');
   if(rb){
     const s=cfZoomLevel/100;
@@ -12,12 +12,27 @@ function setCfZoom(v){
     rb.style.transform=s<1?`scale(${s})`:'';
     // スケール縮小時にコンテナの実効サイズを補正（スクロール領域が縮まないように）
     rb.style.width=s<1?`${Math.round(100/s)}%`:'';
-    rb.style.height=s<1?'auto':'';
   }
   const slider=document.getElementById('cf-zoom-slider');
   if(slider)slider.value=cfZoomLevel;
   const label=document.getElementById('cf-zoom-label');
   if(label)label.textContent=cfZoomLevel+'%';
+}
+// 全体表示：テーブル全高が画面内に収まるズーム率を自動計算
+function cfZoomFit(){
+  const rb=document.getElementById('right-body');
+  if(!rb)return;
+  // 一旦100%に戻して実サイズを計測
+  setCfZoom(100);
+  requestAnimationFrame(()=>{
+    const contentH=rb.scrollHeight;
+    const containerH=rb.parentElement.getBoundingClientRect().height
+      - (rb.offsetTop - rb.parentElement.getBoundingClientRect().top);
+    if(contentH<=0||containerH<=0)return;
+    // 縦に全体が収まるズーム率を計算（最小20%）
+    const fitScale=Math.floor(Math.max(20, Math.min(100, (containerH/contentH)*100)));
+    setCfZoom(fitScale);
+  });
 }
 
 function toggleFinAsset(){
