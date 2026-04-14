@@ -1,5 +1,45 @@
 // ui.js — UI制御・パネル・iOS対策・初期化ヘルパー
 
+// ===== 世帯タイプ（単身/夫婦）=====
+// householdType は state.js で定義
+function setHouseholdType(type){
+  householdType=type;
+  const single=type==='single';
+  document.getElementById('ht-couple')?.classList.toggle('on',!single);
+  document.getElementById('ht-single')?.classList.toggle('on',single);
+  // wife-only 要素の表示切替
+  document.querySelectorAll('.wife-only').forEach(el=>{el.style.display=single?'none':''});
+  // 単身時は奥様年齢をクリア（計算に影響させない）
+  const wAgeEl=document.getElementById('wife-age');
+  const wDeathEl=document.getElementById('w-death-age');
+  if(single){
+    if(wAgeEl)wAgeEl._savedValue=wAgeEl.value;
+    if(wDeathEl)wDeathEl._savedValue=wDeathEl.value;
+    if(wAgeEl)wAgeEl.value='';
+    if(wDeathEl)wDeathEl.value='';
+  } else {
+    if(wAgeEl&&wAgeEl._savedValue)wAgeEl.value=wAgeEl._savedValue;
+    if(wDeathEl&&wDeathEl._savedValue)wDeathEl.value=wDeathEl._savedValue;
+  }
+  // ラベル変更
+  const hLabel=single?'ご本人':'ご主人様';
+  const hIcon=single?'👤':'👔';
+  const el=id=>document.getElementById(id);
+  if(el('lbl-h-age'))el('lbl-h-age').innerHTML=`${hLabel} 現在年齢<span class="req">*</span>`;
+  if(el('lbl-h-death'))el('lbl-h-death').textContent=`${hLabel} ご逝去想定`;
+  if(el('lbl-h-card'))el('lbl-h-card').textContent=hLabel;
+  if(el('icon-h-card'))el('icon-h-card').textContent=hIcon;
+  if(el('lbl-asset-h'))el('lbl-asset-h').textContent=hLabel;
+  if(el('icon-asset-h'))el('icon-asset-h').textContent=hIcon;
+  if(el('lbl-cash-h'))el('lbl-cash-h').textContent=hLabel;
+  if(el('lbl-mg-h'))el('lbl-mg-h').textContent=hLabel;
+  // 単身時はペアローン無効化＆万が一はhのみ
+  if(single){
+    if(typeof pairLoanMode!=='undefined'&&pairLoanMode)togglePairLoan(false);
+    if(typeof mgTarget!=='undefined'&&mgTarget==='w')setMGTarget('h');
+  }
+  if(typeof live==='function')live();
+}
 
 function togglePanel(){
   const pl=document.querySelector('.panel-l');

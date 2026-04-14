@@ -64,6 +64,7 @@ let _autoSaveTimer=null;
 
 let _amtObserverTimer=null;
 
+let householdType='couple'; // 'couple' | 'single'
 let mgTarget='h'; // h=ご主人, w=奥様
 let mgDansin=true, mgDansinH=true, mgDansinW=true;
 let mgSurvMode='auto';
