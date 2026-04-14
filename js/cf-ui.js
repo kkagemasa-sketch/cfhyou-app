@@ -1,6 +1,25 @@
 // cf-ui.js — UI操作・ライブ更新・バリデーション
 function _rl(key,def){return _cfRowLabels[key]||def;}
 
+// ===== CF表ズーム =====
+let cfZoomLevel=100;
+function setCfZoom(v){
+  cfZoomLevel=Math.max(30,Math.min(100,v));
+  const rb=document.getElementById('right-body');
+  if(rb){
+    const s=cfZoomLevel/100;
+    rb.style.transformOrigin='top left';
+    rb.style.transform=s<1?`scale(${s})`:'';
+    // スケール縮小時にコンテナの実効サイズを補正（スクロール領域が縮まないように）
+    rb.style.width=s<1?`${Math.round(100/s)}%`:'';
+    rb.style.height=s<1?'auto':'';
+  }
+  const slider=document.getElementById('cf-zoom-slider');
+  if(slider)slider.value=cfZoomLevel;
+  const label=document.getElementById('cf-zoom-label');
+  if(label)label.textContent=cfZoomLevel+'%';
+}
+
 function toggleFinAsset(){
   finAssetVisible=!finAssetVisible;
   _applyFinAssetVisibility();
