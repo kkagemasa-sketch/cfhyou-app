@@ -62,7 +62,25 @@ function setWRetirePay(on){
 }
 
 // ===== 手取り計算機 =====
-function calcTakeHomeBase(gross, resultId, detailId){
+let _calcTypeH='emp', _calcTypeW='emp'; // 'emp'=正社員, 'fuyo'=扶養内パート
+function setCalcType(person,type){
+  if(person==='h'){
+    _calcTypeH=type;
+    $('calc-type-emp')?.classList.toggle('on',type==='emp');
+    $('calc-type-fuyo')?.classList.toggle('on',type==='fuyo');
+    const note=$('calc-note');
+    if(note)note.textContent=type==='fuyo'?'※扶養内パート：社会保険は配偶者の扶養に加入（自己負担なし）':'※会社員・協会けんぽ標準モデルによる概算';
+    calcTakeHome();
+  }else{
+    _calcTypeW=type;
+    $('w-calc-type-emp')?.classList.toggle('on',type==='emp');
+    $('w-calc-type-fuyo')?.classList.toggle('on',type==='fuyo');
+    const note=$('w-calc-note');
+    if(note)note.textContent=type==='fuyo'?'※扶養内パート：社会保険は配偶者の扶養に加入（自己負担なし）':'※会社員・協会けんぽ標準モデルによる概算';
+    calcTakeHomeW();
+  }
+}
+function calcTakeHomeBase(gross, resultId, detailId, isFuyo){
   const result = document.getElementById(resultId);
   const detail = document.getElementById(detailId);
   if(!gross||gross<=0){
@@ -70,7 +88,8 @@ function calcTakeHomeBase(gross, resultId, detailId){
     if(detail)detail.style.display='none';
     return;
   }
-  const shakai = Math.round(gross * 0.1437 * 10) / 10;
+  // 扶養内パート：社会保険料なし（配偶者の社保に加入）
+  const shakai = isFuyo ? 0 : Math.round(gross * 0.1437 * 10) / 10;
   let kyuyo;
   if(gross<=180)kyuyo=Math.max(55,gross*0.4);
   else if(gross<=360)kyuyo=gross*0.3+18;
@@ -81,30 +100,46 @@ function calcTakeHomeBase(gross, resultId, detailId){
   const taxableBase = Math.max(0, gross - kyuyo - shakai - 48);
   const taxable = Math.max(0, taxableBase - 38);
   let income_tax = 0;
-  if(taxable<=195)income_tax=taxable*0.05;
-  else if(taxable<=330)income_tax=taxable*0.1-9.75;
-  else if(taxable<=695)income_tax=taxable*0.2-42.75;
-  else if(taxable<=900)income_tax=taxable*0.23-63.6;
-  else if(taxable<=1800)income_tax=taxable*0.33-153.6;
-  else if(taxable<=4000)income_tax=taxable*0.4-279.6;
-  else income_tax=taxable*0.45-479.6;
-  income_tax = Math.round(income_tax * 1.021 * 10) / 10;
-  const jumin = Math.max(0, Math.round((taxableBase * 0.1 - 2.5) * 10) / 10);
+  // 扶養内パート：給与収入103万以下は所得税0（給与所得控除55万+基礎控除48万=103万）
+  if(!isFuyo || gross > 103){
+    if(taxable<=195)income_tax=taxable*0.05;
+    else if(taxable<=330)income_tax=taxable*0.1-9.75;
+    else if(taxable<=695)income_tax=taxable*0.2-42.75;
+    else if(taxable<=900)income_tax=taxable*0.23-63.6;
+    else if(taxable<=1800)income_tax=taxable*0.33-153.6;
+    else if(taxable<=4000)income_tax=taxable*0.4-279.6;
+    else income_tax=taxable*0.45-479.6;
+  }
+  income_tax = Math.max(0, Math.round(income_tax * 1.021 * 10) / 10);
+  // 住民税：非課税基準は自治体によるが概ね100万以下で非課税
+  let jumin;
+  if(isFuyo && gross <= 100){
+    jumin = 0; // 住民税非課税
+  } else {
+    jumin = Math.max(0, Math.round((taxableBase * 0.1 - 2.5) * 10) / 10);
+  }
   const takeHome = Math.round((gross - shakai - income_tax - jumin) * 10) / 10;
   if(result)result.textContent = takeHome.toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}) + '万円';
   if(detail){
     detail.style.display='block';
-    const shakaiD=(Math.round(gross*0.1437*10)/10).toLocaleString();
-    const itaxD=(Math.round(income_tax*10)/10).toLocaleString();
-    const juminD=(Math.round(jumin*10)/10).toLocaleString();
-    detail.innerHTML = `社会保険料：<strong>${shakaiD}万円</strong>　所得税：<strong>${itaxD}万円</strong>　住民税：<strong>${juminD}万円</strong>`;
+    const shakaiD=Math.round(shakai*10)/10;
+    const itaxD=Math.round(income_tax*10)/10;
+    const juminD=Math.round(jumin*10)/10;
+    let html = `社会保険料：<strong>${shakaiD.toLocaleString()}万円</strong>　所得税：<strong>${itaxD.toLocaleString()}万円</strong>　住民税：<strong>${juminD.toLocaleString()}万円</strong>`;
+    // 扶養内パートで壁を超えている場合に注意表示
+    if(isFuyo && gross > 130){
+      html += `<div style="color:#d63a2a;font-weight:600;margin-top:4px">⚠ 年収130万超：社会保険の扶養から外れる可能性があります</div>`;
+    } else if(isFuyo && gross > 106){
+      html += `<div style="color:#e67e22;font-weight:600;margin-top:4px">⚠ 年収106万超：従業員51人以上の会社では社保加入の可能性あり</div>`;
+    }
+    detail.innerHTML = html;
   }
 }
 function calcTakeHomeW(){
-  calcTakeHomeBase(parseFloat(document.getElementById('w-calc-gross')?.value)||0,'w-calc-result','w-calc-detail');
+  calcTakeHomeBase(parseFloat(document.getElementById('w-calc-gross')?.value)||0,'w-calc-result','w-calc-detail',_calcTypeW==='fuyo');
 }
 function calcTakeHome(){
-  calcTakeHomeBase(parseFloat(document.getElementById('calc-gross')?.value)||0,'calc-result','calc-detail');
+  calcTakeHomeBase(parseFloat(document.getElementById('calc-gross')?.value)||0,'calc-result','calc-detail',_calcTypeH==='fuyo');
 }
 
 // ===== 年金概算計算 =====

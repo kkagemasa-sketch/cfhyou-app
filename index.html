@@ -122,16 +122,21 @@ function checkPW(){
         <div class="fg" style="grid-column:span 2"><label class="lbl">お客様氏名<span class="req">*</span></label>
           <input class="inp" id="client-name" placeholder="例：田中" onfocus="scrollToCFRowSelf('hInc',this)" onblur="cfRowBlur()" oninput="live()"></div>
       </div>
+      <!-- 世帯タイプ -->
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn-tog" id="ht-couple" onclick="setHouseholdType('couple')" style="flex:1">👫 夫婦世帯</button>
+        <button class="btn-tog" id="ht-single" onclick="setHouseholdType('single')" style="flex:1">👤 単身世帯</button>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div class="fg"><label class="lbl" style="font-size:9px">ご主人様 現在年齢<span class="req">*</span></label>
+        <div class="fg"><label class="lbl" style="font-size:9px" id="lbl-h-age">ご主人様 現在年齢<span class="req">*</span></label>
           <div class="suf"><input class="inp age-inp" id="husband-age" type="number" onfocus="scrollToCFRowSelf('hAge',this)" onblur="cfRowBlur()" value="30" min="20" max="80" oninput="scrollToCFRowSelf('hAge',this);syncStep1From('h',this);live()"><span class="sl">歳</span></div></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">奥様 現在年齢</label>
+        <div class="fg wife-only"><label class="lbl" style="font-size:9px">奥様 現在年齢</label>
           <div class="suf"><input class="inp age-inp" id="wife-age" type="number" onfocus="scrollToCFRowSelf('wAge',this)" onblur="cfRowBlur()" value="29" min="20" max="80" oninput="scrollToCFRowSelf('wAge',this);syncStep1From('w',this);live()"><span class="sl">歳</span></div></div>
         <div></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">ご主人様 ご逝去想定</label>
+        <div class="fg"><label class="lbl" style="font-size:9px" id="lbl-h-death">ご主人様 ご逝去想定</label>
           <div class="suf"><input class="inp age-inp" id="h-death-age" type="number" onfocus="scrollToCFRowSelf('hAge',this)" onblur="cfRowBlur()" value="83" min="50" max="110" oninput="scrollToCFRowSelf('hAge',this);live()"><span class="sl">歳</span></div>
           <span class="hint ok" id="h-death-hint" style="font-size:9px">✓ 83歳まで計算</span></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">奥様 ご逝去想定</label>
+        <div class="fg wife-only"><label class="lbl" style="font-size:9px">奥様 ご逝去想定</label>
           <div class="suf"><input class="inp age-inp" id="w-death-age" type="number" onfocus="scrollToCFRowSelf('wAge',this)" onblur="cfRowBlur()" value="88" min="50" max="110" oninput="scrollToCFRowSelf('wAge',this);live()"><span class="sl">歳</span></div>
           <span class="hint ok" id="w-death-hint" style="font-size:9px">✓ 88歳まで計算</span></div>
         <div></div>
@@ -153,9 +158,9 @@ function checkPW(){
       <!-- 1. 現預金 -->
       <div class="sub">🏦 現預金</div>
       <div class="g3">
-        <div class="fg"><label class="lbl" style="font-size:9px">ご主人様</label>
+        <div class="fg"><label class="lbl" style="font-size:9px" id="lbl-cash-h">ご主人様</label>
           <div class="suf"><input class="inp amt-inp" id="cash-h" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">奥様</label>
+        <div class="fg wife-only"><label class="lbl" style="font-size:9px">奥様</label>
           <div class="suf"><input class="inp amt-inp" id="cash-w" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
         <div class="fg"><label class="lbl" style="font-size:9px">共有</label>
           <div class="suf"><input class="inp amt-inp" id="cash-joint" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
@@ -169,10 +174,10 @@ function checkPW(){
       <!-- ペルソナタブ -->
       <div style="display:flex;gap:6px;margin-bottom:10px">
         <div class="tc on" id="asset-tab-h" onclick="setAssetTab('h')" style="flex:1;padding:7px;gap:5px">
-          <span style="font-size:15px">👔</span>
-          <div class="tc-lbl" style="font-size:11px">ご主人様</div>
+          <span style="font-size:15px" id="icon-asset-h">👔</span>
+          <div class="tc-lbl" style="font-size:11px" id="lbl-asset-h">ご主人様</div>
         </div>
-        <div class="tc" id="asset-tab-w" onclick="setAssetTab('w')" style="flex:1;padding:7px;gap:5px">
+        <div class="tc wife-only" id="asset-tab-w" onclick="setAssetTab('w')" style="flex:1;padding:7px;gap:5px">
           <span style="font-size:15px">👗</span>
           <div class="tc-lbl" style="font-size:11px">奥様</div>
         </div>
@@ -234,6 +239,10 @@ function checkPW(){
           <button onclick="toggleCalc('calc-body',this)" style="font-size:10px;color:#2d7dd2;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">▼ 閉じる</button>
         </div>
         <div id="calc-body">
+          <div style="display:flex;gap:3px;margin-bottom:8px">
+            <button class="btn-tog on" id="calc-type-emp" onclick="setCalcType('h','emp')" style="font-size:10px;padding:3px 10px">💼 正社員</button>
+            <button class="btn-tog" id="calc-type-fuyo" onclick="setCalcType('h','fuyo')" style="font-size:10px;padding:3px 10px">🏠 扶養内パート</button>
+          </div>
           <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center">
             <div class="fg">
               <label class="lbl" style="font-size:9px">額面年収</label>
@@ -246,15 +255,15 @@ function checkPW(){
             </div>
           </div>
           <div id="calc-detail" style="display:none;margin-top:8px;font-size:10px;color:var(--muted);background:#fff;border-radius:var(--rs);padding:8px 10px;line-height:2"></div>
-          <div style="font-size:9px;color:var(--light);margin-top:6px">※会社員・扶養あり・協会けんぽ標準モデルによる概算</div>
+          <div id="calc-note" style="font-size:9px;color:var(--light);margin-top:6px">※会社員・協会けんぽ標準モデルによる概算</div>
         </div>
       </div>
 
       <!-- 👔 ご主人様カード -->
       <div style="border:2px solid #b8d4f8;border-radius:var(--r);overflow:hidden;margin-bottom:12px">
         <div style="background:#2d7dd2;padding:8px 12px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">👔</span>
-          <span style="font-size:13px;font-weight:700;color:#fff">ご主人様</span>
+          <span style="font-size:18px" id="icon-h-card">👔</span>
+          <span style="font-size:13px;font-weight:700;color:#fff" id="lbl-h-card">ご主人様</span>
         </div>
         <div style="padding:12px">
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">手取り年収の段階を入力（上の計算機で確認できます）</div>
@@ -399,7 +408,7 @@ function checkPW(){
       </div>
 
       <!-- 👗 奥様カード -->
-      <div style="border:2px solid #b8d4f8;border-radius:var(--r);overflow:hidden;margin-bottom:16px">
+      <div class="wife-only" style="border:2px solid #b8d4f8;border-radius:var(--r);overflow:hidden;margin-bottom:16px">
         <div style="background:#2d7dd2;padding:8px 12px;display:flex;align-items:center;gap:8px">
           <span style="font-size:18px">👗</span>
           <span style="font-size:13px;font-weight:700;color:#fff">奥様</span>
@@ -412,6 +421,10 @@ function checkPW(){
               <button onclick="toggleCalc('w-calc-body',this)" style="font-size:10px;color:#2d7dd2;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">▼ 閉じる</button>
             </div>
             <div id="w-calc-body">
+              <div style="display:flex;gap:3px;margin-bottom:8px">
+                <button class="btn-tog on" id="w-calc-type-emp" onclick="setCalcType('w','emp')" style="font-size:10px;padding:3px 10px">💼 正社員</button>
+                <button class="btn-tog" id="w-calc-type-fuyo" onclick="setCalcType('w','fuyo')" style="font-size:10px;padding:3px 10px">🏠 扶養内パート</button>
+              </div>
               <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center">
                 <div class="fg">
                   <label class="lbl" style="font-size:9px">額面年収</label>
@@ -424,7 +437,7 @@ function checkPW(){
                 </div>
               </div>
               <div id="w-calc-detail" style="display:none;margin-top:8px;font-size:10px;color:var(--muted);background:#fff;border-radius:var(--rs);padding:8px 10px;line-height:2"></div>
-              <div style="font-size:9px;color:var(--light);margin-top:6px">※会社員・扶養あり・協会けんぽ標準モデルによる概算</div>
+              <div id="w-calc-note" style="font-size:9px;color:var(--light);margin-top:6px">※会社員・協会けんぽ標準モデルによる概算</div>
             </div>
           </div>
 
@@ -1169,8 +1182,8 @@ function checkPW(){
       <div class="g2">
         <div class="fg"><label class="lbl">万が一の対象</label>
           <div style="display:flex;gap:6px">
-            <button class="btn-tog on" id="mg-target-h" onclick="setMGTarget('h')">ご主人様</button>
-            <button class="btn-tog" id="mg-target-w" onclick="setMGTarget('w')">奥様</button>
+            <button class="btn-tog on" id="mg-target-h" onclick="setMGTarget('h')"><span id="lbl-mg-h">ご主人様</span></button>
+            <button class="btn-tog wife-only" id="mg-target-w" onclick="setMGTarget('w')">奥様</button>
           </div>
         </div>
         <div class="fg"><label class="lbl">死亡時期（何年後）</label>
