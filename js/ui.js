@@ -81,11 +81,20 @@ function initScrollSpy(){
 function initLCComma(){
   document.querySelectorAll('.lc-m,.lc-y').forEach(inp=>{
     if(!inp._lcCommaInit){
-      inp.type='text';inp.inputMode='numeric';
+      // IME composition ガード（Mac日本語入力対策）
+      let composing=false;
+      inp.addEventListener('compositionstart',()=>{composing=true});
+      inp.addEventListener('compositionend',()=>{composing=false;live()});
       inp.addEventListener('focus',function(){this.value=this.value.replace(/,/g,'');this.select()});
       inp.addEventListener('blur',function(){
         const v=parseFloat(this.value.replace(/,/g,''))||0;
         this.value=v?v.toLocaleString():'';
+      });
+      inp.addEventListener('input',function(){
+        if(composing)return;
+        // 数字・カンマ・ピリオド以外を除去
+        this.value=this.value.replace(/[^\d.,]/g,'');
+        live();
       });
       inp._lcCommaInit=true;
     }
