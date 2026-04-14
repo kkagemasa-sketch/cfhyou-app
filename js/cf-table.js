@@ -20,8 +20,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   };
 
   // 逝去・退職列インデックス計算
+  const _isSingle_t=householdType==='single';
   const wAge0=iv('wife-age');
-  const hDeathAge=iv('h-death-age')||83,wDeathAge=iv('w-death-age')||88;
+  const hDeathAge=iv('h-death-age')||83,wDeathAge=_isSingle_t?0:(iv('w-death-age')||88);
   const wRetireAge=iv('w-retire-age');
   const hDeathCol=hDeathAge>hAge?hDeathAge-hAge:-1;
   const wDeathCol=wDeathAge>wAge0?wDeathAge-wAge0:-1;
@@ -165,15 +166,15 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
 
   // 年齢
   h+=`<tr class="rage"><td data-row="hAge">年齢</td><td contenteditable="true" data-rowlbl="age-h" data-default="ご主人様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('age-h','ご主人様')}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.hA[i]}</td>`;h+=`<td></td></tr>`;
-  h+=`<tr class="rage"><td data-row="wAge"></td><td contenteditable="true" data-rowlbl="age-w" data-default="奥様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('age-w','奥様')}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.wA[i]}</td>`;h+=`<td></td></tr>`;
+  if(!_isSingle_t){h+=`<tr class="rage"><td data-row="wAge"></td><td contenteditable="true" data-rowlbl="age-w" data-default="奥様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('age-w','奥様')}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.wA[i]}</td>`;h+=`<td></td></tr>`;}
   children.forEach((c,ci)=>{h+=`<tr class="rage"><td data-row="cAge${ci}"></td><td contenteditable="true" data-rowlbl="age-c${ci}" data-default="${cLbls[ci]}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('age-c'+ci,cLbls[ci])}</td>`;for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.cA[ci][i]}</td>`;h+=`<td></td></tr>`});
 
   // イベント：ご主人様
   h+=`<tr class="rev-h"><td>イベント</td><td contenteditable="true" data-rowlbl="ev-h" data-default="ご主人様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('ev-h','ご主人様')}</td>`;
   for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.evH[i]}</td>`;h+=`<td></td></tr>`;
   // イベント：奥様
-  h+=`<tr class="rev-w"><td></td><td contenteditable="true" data-rowlbl="ev-w" data-default="奥様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('ev-w','奥様')}</td>`;
-  for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.evW[i]}</td>`;h+=`<td></td></tr>`;
+  if(!_isSingle_t){h+=`<tr class="rev-w"><td></td><td contenteditable="true" data-rowlbl="ev-w" data-default="奥様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('ev-w','奥様')}</td>`;
+  for(let i=0;i<disp;i++)h+=`<td class="${getColCls(i).trim()}">${R.evW[i]}</td>`;h+=`<td></td></tr>`;}
   // イベント：子ども（フェーズ別色クラス付与）
   children.forEach((c,ci)=>{
     h+=`<tr class="rev-c"><td></td><td contenteditable="true" data-rowlbl="ev-c${ci}" data-default="${cLbls[ci]}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('ev-c'+ci,cLbls[ci])}</td>`;
@@ -220,15 +221,20 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rcat inc-cat"><td></td><td>収　　入</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   const iRow=(lbl,arr,rowKey)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(tot===0&&vals.every(v=>v===0||v===undefined))return'';let r=`<tr class="rinc"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
   // 収入行：年収 → 退職金 → 年金系 → 金融商品解約系 → 奨学金 → 児童手当 → 控除
-  h+=iRow('ご主人手取年収',R.hInc,'hInc')+iRow('奥様手取年収',R.wInc,'wInc');
-  h+=iRow('iDeCo/DC節税(主)',R.dcTaxSavingH,'dcTaxSavingH')+iRow('iDeCo/DC節税(奥様)',R.dcTaxSavingW,'dcTaxSavingW');
+  const _hLbl=_isSingle_t?'手取年収':'ご主人手取年収';
+  h+=iRow(_hLbl,R.hInc,'hInc');
+  if(!_isSingle_t)h+=iRow('奥様手取年収',R.wInc,'wInc');
+  h+=iRow(_isSingle_t?'iDeCo/DC節税':'iDeCo/DC節税(主)',R.dcTaxSavingH,'dcTaxSavingH');
+  if(!_isSingle_t)h+=iRow('iDeCo/DC節税(奥様)',R.dcTaxSavingW,'dcTaxSavingW');
   h+=iRow('副業・その他収入',R.otherInc,'otherInc');
-  h+=iRow('退職金（ご主人）',R.rPay,'rPay')+iRow('退職金（奥様）',R.wRPay,'wRPay');
-  h+=iRow('本人年金',R.pS,'pS')+iRow('配偶者年金',R.pW,'pW')+iRow('遺族年金',R.survPension,'survPension');
-  h+=iRow('DC受取(主)',R.dcReceiptH,'dcReceiptH');
-  h+=iRow('DC受取(奥様)',R.dcReceiptW,'dcReceiptW');
-  h+=iRow('iDeCo受取(主)',R.idecoReceiptH,'idecoReceiptH');
-  h+=iRow('iDeCo受取(奥様)',R.idecoReceiptW,'idecoReceiptW');
+  h+=iRow(_isSingle_t?'退職金':'退職金（ご主人）',R.rPay,'rPay');
+  if(!_isSingle_t)h+=iRow('退職金（奥様）',R.wRPay,'wRPay');
+  h+=iRow(_isSingle_t?'老齢年金':'本人年金',R.pS,'pS');
+  if(!_isSingle_t){h+=iRow('配偶者年金',R.pW,'pW');h+=iRow('遺族年金',R.survPension,'survPension');}
+  h+=iRow(_isSingle_t?'DC受取':'DC受取(主)',R.dcReceiptH,'dcReceiptH');
+  if(!_isSingle_t)h+=iRow('DC受取(奥様)',R.dcReceiptW,'dcReceiptW');
+  h+=iRow(_isSingle_t?'iDeCo受取':'iDeCo受取(主)',R.idecoReceiptH,'idecoReceiptH');
+  if(!_isSingle_t)h+=iRow('iDeCo受取(奥様)',R.idecoReceiptW,'idecoReceiptW');
   h+=iRow('保険満期金',R.insMat,'insMat');
   // 有価証券解約：銘柄ごとに個別行で表示
   if(R.secRedeemRows){R.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
@@ -268,7 +274,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   };
   // 支出行：生活費 → 住宅系 → 教育費 → 車 → 駐車場 → 積立投資 → その他
   h+=eRow('生活費',R.lc,'lc')+eRow('家賃（引渡前）',R.rent,'rent');
-  if(pairLoanMode){h+=eRow('ローン返済(主)',R.lRepH,'lRepH')+eRow('ローン返済(奥様)',R.lRepW,'lRepW');}
+  if(pairLoanMode&&!_isSingle_t){h+=eRow('ローン返済(主)',R.lRepH,'lRepH')+eRow('ローン返済(奥様)',R.lRepW,'lRepW');}
   else{h+=eRow('住宅ローン返済',R.lRep,'lRep');}
   if(isM)h+=eRow('修繕積立金',R.rep,'rep');
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
@@ -280,10 +286,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(R.insMonthlyRows&&R.insMonthlyRows.length>1){R.insMonthlyRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.insMonthlyRows&&R.insMonthlyRows.length===1){h+=eRow(R.insMonthlyRows[0].lbl,R.insMonthlyRows[0].vals,R.insMonthlyRows[0].key);}else{h+=eRow('保険料（積立）',R.insMonthly,'insMonthly');}
   if(R.insLumpExpRows&&R.insLumpExpRows.length>1){R.insLumpExpRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.insLumpExpRows&&R.insLumpExpRows.length===1){h+=eRow(R.insLumpExpRows[0].lbl,R.insLumpExpRows[0].vals,R.insLumpExpRows[0].key);}else{h+=eRow('一時払い保険',R.insLumpExp,'insLumpExp');}
   h+=eRow('結婚のお祝い',R.wedding,'wedding');
-  h+=eRow('DC拠出(主)',R.dcMatchExpH,'dcMatchExpH');
-  h+=eRow('DC拠出(奥様)',R.dcMatchExpW,'dcMatchExpW');
-  h+=eRow('iDeCo拠出(主)',R.idecoExpH,'idecoExpH');
-  h+=eRow('iDeCo拠出(奥様)',R.idecoExpW,'idecoExpW');
+  h+=eRow(_isSingle_t?'DC拠出':'DC拠出(主)',R.dcMatchExpH,'dcMatchExpH');
+  if(!_isSingle_t)h+=eRow('DC拠出(奥様)',R.dcMatchExpW,'dcMatchExpW');
+  h+=eRow(_isSingle_t?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH,'idecoExpH');
+  if(!_isSingle_t)h+=eRow('iDeCo拠出(奥様)',R.idecoExpW,'idecoExpW');
   if(R.extRows&&R.extRows.length>1){R.extRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.extRows&&R.extRows.length===1){h+=eRow(R.extRows[0].lbl,R.extRows[0].vals,R.extRows[0].key);}else{h+=eRow('特別支出',R.ext,'ext');}
   // カスタム支出行
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{h+=_customRow(r,disp,'rexp');});
@@ -317,7 +323,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   for(let i=0;i<disp;i++){const v=ri(R.totalAsset[i]);h+=`<td class="${v<0?'vn':''}">${v.toLocaleString()}</td>`}
   h+=`<td>${ri(R.totalAsset[disp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">総金融資産</span></td></tr>`;
   // ローン残高（一番下）
-  if(pairLoanMode||_isFlat_t&&pairLoanMode){
+  if(!_isSingle_t&&(pairLoanMode||_isFlat_t&&pairLoanMode)){
     if(loanAmt>0||(_isFlat_t&&(fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)>0)){
       h+=`<tr class="rloan"><td>ローン残高(主)</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBalH[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;
       h+=`<tr class="rloan"><td>ローン残高(奥様)</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBalW[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;
