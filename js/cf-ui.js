@@ -8,10 +8,17 @@ function setCfZoom(v){
   const rb=document.getElementById('right-body');
   if(rb){
     const s=cfZoomLevel/100;
+    const zoomed=s<1;
     rb.style.transformOrigin='top left';
-    rb.style.transform=s<1?`scale(${s})`:'';
-    // スケール縮小時にコンテナの実効サイズを補正（スクロール領域が縮まないように）
-    rb.style.width=s<1?`${Math.round(100/s)}%`:'';
+    rb.style.transform=zoomed?`scale(${s})`:'';
+    rb.style.width=zoomed?`${Math.round(100/s)}%`:'';
+    // ズーム時：tbl-wrapのoverflowをvisibleにして全行表示、r-bodyでスクロール
+    rb.style.overflow=zoomed?'auto':'';
+    const tw=rb.querySelector('.tbl-wrap');
+    if(tw){
+      tw.style.overflow=zoomed?'visible':'';
+      tw.style.flex=zoomed?'none':'';
+    }
   }
   const slider=document.getElementById('cf-zoom-slider');
   if(slider)slider.value=cfZoomLevel;
@@ -25,7 +32,13 @@ function cfZoomFit(){
   // 一旦100%に戻して実サイズを計測
   setCfZoom(100);
   requestAnimationFrame(()=>{
+    // tbl-wrapのoverflowを一時的にvisibleにして正確なコンテンツ高さを取得
+    const tw=rb.querySelector('.tbl-wrap');
+    const origOvf=tw?tw.style.overflow:'';
+    const origFlex=tw?tw.style.flex:'';
+    if(tw){tw.style.overflow='visible';tw.style.flex='none';}
     const contentH=rb.scrollHeight;
+    if(tw){tw.style.overflow=origOvf;tw.style.flex=origFlex;}
     const containerH=rb.parentElement.getBoundingClientRect().height
       - (rb.offsetTop - rb.parentElement.getBoundingClientRect().top);
     if(contentH<=0||containerH<=0)return;
