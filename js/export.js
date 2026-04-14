@@ -295,8 +295,11 @@ async function exportExcelMG(){
     if(tot===0&&nTot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
+  // 収入行順序：万が一CF表(contingency.js)と同じ順序で出力
   addI('ご主人手取年収',MR.hInc);
   addI('奥様手取年収',MR.wInc);
+  addISkip('iDeCo/DC節税(主)',MR.dcTaxSavingH,N.dcTaxSavingH);
+  addISkip('iDeCo/DC節税(奥様)',MR.dcTaxSavingW,N.dcTaxSavingW);
   addISkip('副業・その他収入',MR.otherInc,N.otherInc);
   addISkip('退職金（ご主人）',MR.rPay,N.rPay);
   addISkip('退職金（奥様）',MR.wRPay,N.wRPay);
@@ -797,8 +800,9 @@ async function exportExcel(){
   // 経過年数
   push(['経過年','',... R.yr.slice(0,disp).map((_,i)=>i+1),'-'],'elapsed');
   // 年齢
-  push(['年齢','ご主人様',...R.hA.slice(0,disp),''],'age');
-  push(['','奥様',...R.wA.slice(0,disp),''],'age');
+  const _isSingle_e=householdType==='single';
+  push(['年齢',_isSingle_e?'ご本人':'ご主人様',...R.hA.slice(0,disp),''],'age');
+  if(!_isSingle_e)push(['','奥様',...R.wA.slice(0,disp),''],'age');
   // 子ども年齢
   const children=[];
   document.querySelectorAll('[id^="ca-"]').forEach(el=>{children.push({age:parseInt(el.value)||0});});
@@ -806,8 +810,8 @@ async function exportExcel(){
     if(R.cA&&R.cA[ci])push(['',cLbls[ci],...R.cA[ci].slice(0,disp),''],'age');
   });
   // イベント
-  push(['イベント','ご主人様',...R.evH.slice(0,disp),''],'event');
-  push(['','奥様',...R.evW.slice(0,disp),''],'event');
+  push(['イベント',_isSingle_e?'ご本人':'ご主人様',...R.evH.slice(0,disp),''],'event');
+  if(!_isSingle_e)push(['','奥様',...R.evW.slice(0,disp),''],'event');
   // 子どもイベント行の行番号と年齢配列を記録（教育段階色分け用）
   const childEvRows=[];
   if(R.evC)R.evC.forEach((ev,ci)=>{
@@ -823,15 +827,23 @@ async function exportExcel(){
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
-  addI(_rl('hInc','ご主人手取年収'),R.hInc);addI(_rl('wInc','奥様手取年収'),R.wInc);
-  addI(_rl('dcTaxSavingH','iDeCo/DC節税(主)'),R.dcTaxSavingH);addI(_rl('dcTaxSavingW','iDeCo/DC節税(奥様)'),R.dcTaxSavingW);
-  addI(_rl('otherInc','副業・その他収入'),R.otherInc);addI(_rl('insMat','保険満期金'),R.insMat);
+  // 収入行順序：CF表(cf-table.js)と同じ順序で出力
+  addI(_rl('hInc',_isSingle_e?'手取年収':'ご主人手取年収'),R.hInc);
+  if(!_isSingle_e)addI(_rl('wInc','奥様手取年収'),R.wInc);
+  addI(_rl('dcTaxSavingH',_isSingle_e?'iDeCo/DC節税':'iDeCo/DC節税(主)'),R.dcTaxSavingH);
+  if(!_isSingle_e)addI(_rl('dcTaxSavingW','iDeCo/DC節税(奥様)'),R.dcTaxSavingW);
+  addI(_rl('otherInc','副業・その他収入'),R.otherInc);
+  addI(_rl('rPay',_isSingle_e?'退職金':'退職金（ご主人）'),R.rPay);
+  if(!_isSingle_e)addI(_rl('wRPay','退職金（奥様）'),R.wRPay);
+  addI(_rl('pS',_isSingle_e?'老齢年金':'本人年金'),R.pS);
+  if(!_isSingle_e){addI(_rl('pW','配偶者年金'),R.pW);addI(_rl('survPension','遺族年金'),R.survPension);}
+  addI(_rl('dcReceiptH',_isSingle_e?'DC受取':'DC受取(主)'),R.dcReceiptH);
+  if(!_isSingle_e)addI(_rl('dcReceiptW','DC受取(奥様)'),R.dcReceiptW);
+  addI(_rl('idecoReceiptH',_isSingle_e?'iDeCo受取':'iDeCo受取(主)'),R.idecoReceiptH);
+  if(!_isSingle_e)addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW);
+  addI(_rl('insMat','保険満期金'),R.insMat);
   if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(row.lbl,row.vals);});
-  addI(_rl('rPay','退職金（ご主人）'),R.rPay);addI(_rl('wRPay','退職金（奥様）'),R.wRPay);
-  addI(_rl('pS','本人年金'),R.pS);addI(_rl('pW','配偶者年金'),R.pW);addI(_rl('survPension','遺族年金'),R.survPension);
   addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
-  addI(_rl('dcReceiptH','DC受取(主)'),R.dcReceiptH);addI(_rl('dcReceiptW','DC受取(奥様)'),R.dcReceiptW);
-  addI(_rl('idecoReceiptH','iDeCo受取(主)'),R.idecoReceiptH);addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW);
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -842,11 +854,10 @@ async function exportExcel(){
     if(tot===0)return;
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
+  // 支出行順序：CF表(cf-table.js)と同じ順序で出力
   addE(_rl('lc','生活費'),R.lc);
-  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
-  addE(_rl('secBuy','一括投資額'),R.secBuy);
   addE(_rl('rent','家賃（引渡前）'),R.rent);
-  if(pairLoanMode){addE(_rl('lRepH','ローン返済(主)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
+  if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(主)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
   else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
   if(isM)addE(_rl('rep','修繕積立金'),R.rep);
   addE(_rl('ptx','固定資産税'),R.ptx);addE(_rl('furn','家具家電買替'),R.furn);
@@ -857,14 +868,18 @@ async function exportExcel(){
     const ages=arr.slice(0,disp).map((_,i)=>c.age+i);
     push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
   });
-  addE(_rl('prk','駐車場代'),R.prk);
   if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
   else{addE('車両費（購入・車検）',R.carTotal);}
+  addE(_rl('prk','駐車場代'),R.prk);
+  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
+  addE(_rl('secBuy','一括投資額'),R.secBuy);
   if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
   if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('一時払い保険',R.insLumpExp);}
   addE('結婚のお祝い',R.wedding);
-  addE('DC拠出(主)',R.dcMatchExpH);addE('DC拠出(奥様)',R.dcMatchExpW);
-  addE('iDeCo拠出(主)',R.idecoExpH);addE('iDeCo拠出(奥様)',R.idecoExpW);
+  addE(_isSingle_e?'DC拠出':'DC拠出(主)',R.dcMatchExpH);
+  if(!_isSingle_e)addE('DC拠出(奥様)',R.dcMatchExpW);
+  addE(_isSingle_e?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH);
+  if(!_isSingle_e)addE('iDeCo拠出(奥様)',R.idecoExpW);
   if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('特別支出',R.ext);}
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
