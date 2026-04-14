@@ -657,16 +657,16 @@ function calcFlat35Points(){
 function getFlat35Reductions(totalPt){
   // 各5年期間の最大引き下げ=0.50%
   // 1pt=0.25%(5yr), 2pt=0.50%(5yr), 3pt=0.50%+0.25%, 4pt=0.50%+0.50%
-  // 5pt以上: 11-15年にオーバーフロー
+  const children=iv('flat-children')||0;
   let r1=0,r2=0,r3=0;
   if(totalPt>=1)r1=0.25;
   if(totalPt>=2)r1=0.50;
   if(totalPt>=3)r2=0.25;
   if(totalPt>=4)r2=0.50;
-  // 5pt以降は11-15年目にオーバーフロー（子育てプラス）
-  if(totalPt>=5)r3=0.25;
-  if(totalPt>=6)r3=0.50;
-  // 7pt以上でも各期間最大0.50%
+  // 11-15年目は子育てプラス利用時のみ（住宅金融支援機構 公式制度準拠）
+  // ※5pt以上は子育てプラスを含む場合に限り11年目以降の引下げ可
+  if(children>0&&totalPt>=5)r3=0.25;
+  if(children>0&&totalPt>=6)r3=0.50;
   return {y0_5:r1, y6_10:r2, y11_15:r3};
 }
 
