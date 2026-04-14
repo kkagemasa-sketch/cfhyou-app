@@ -212,10 +212,16 @@ async function exportExcelMG(){
   const infoRow2=['🏦 住宅ローン条件','',
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
     `借入額: ${loanAmtV}万円`,..._pad(infoSpan),
-    `金利: ${rateDisp}`,..._pad(infoSpan),
+    `当初金利: ${rateDisp}`,..._pad(infoSpan),
     `期間: ${loanYrsV}年`,..._pad(infoSpan),
   ];
   if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+  // 段階金利がある場合は追加
+  if(rates.length>1){
+    rates.slice(1).forEach(s=>{
+      infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
+    });
+  }
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
   push(infoRow2,'info');
@@ -445,9 +451,11 @@ async function exportExcelMG(){
   // info行(row1,row2)のA+B結合＋各項目をinfoSpan列統合
   const infoRowIndices=[];
   types.forEach((t,i)=>{if(t==='info')infoRowIndices.push(i);});
-  infoRowIndices.forEach(ri=>{
+  infoRowIndices.forEach((ri,idx)=>{
     ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}});
-    for(let k=0;k<6;k++){
+    const dataLen=idx<infoDataLens.length?infoDataLens[idx]:20;
+    const chipCount=Math.ceil(Math.max(0,dataLen-2)/infoSpan);
+    for(let k=0;k<chipCount;k++){
       const sc=2+k*infoSpan;
       const ec=Math.min(sc+infoSpan-1,disp+2);
       if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
@@ -780,10 +788,16 @@ async function exportExcel(){
   const infoRow2=['🏦 住宅ローン条件','',
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
     `借入額: ${loanAmtV}万円`,..._pad(infoSpan),
-    `金利: ${rateDisp}`,..._pad(infoSpan),
+    `当初金利: ${rateDisp}`,..._pad(infoSpan),
     `期間: ${loanYrsV}年`,..._pad(infoSpan),
   ];
   if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+  // 段階金利がある場合は追加
+  if(rates.length>1){
+    rates.slice(1).forEach(s=>{
+      infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
+    });
+  }
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
   push(infoRow2,'info');
@@ -938,9 +952,11 @@ async function exportExcel(){
   // info行(row1,row2)のA+B結合＋各項目をinfoSpan列統合
   const infoRowIndices=[];
   types.forEach((t,i)=>{if(t==='info')infoRowIndices.push(i);});
-  infoRowIndices.forEach(ri=>{
+  infoRowIndices.forEach((ri,idx)=>{
     ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}});
-    for(let k=0;k<6;k++){
+    const dataLen=idx<infoDataLens.length?infoDataLens[idx]:20;
+    const chipCount=Math.ceil(Math.max(0,dataLen-2)/infoSpan);
+    for(let k=0;k<chipCount;k++){
       const sc=2+k*infoSpan;
       const ec=Math.min(sc+infoSpan-1,disp+2);
       if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
