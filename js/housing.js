@@ -634,7 +634,8 @@ function setFlat35Sub(sub){
   flat35Sub=sub;
   $('flat-sub-35')?.classList.toggle('on',sub==='flat35');
   $('flat-sub-20')?.classList.toggle('on',sub==='flat20');
-  const maxYrs=sub==='flat20'?20:35;
+  $('flat-sub-50')?.classList.toggle('on',sub==='flat50');
+  const maxYrs=sub==='flat50'?50:sub==='flat20'?20:35;
   ['flat-loan-yrs','flat-loan-h-yrs','flat-loan-w-yrs'].forEach(id=>{
     const el=$(id);
     if(el){el.max=maxYrs;if(parseInt(el.value)>maxYrs)el.value=maxYrs;}
@@ -671,11 +672,12 @@ function getFlat35Rates(){
   const base=fv('flat-rate-base')||1.94;
   const pt=calcFlat35Points();
   const red=getFlat35Reductions(pt);
-  const rates=[{from:0, rate:Math.max(0,base-red.y0_5)}];
+  const rnd=v=>Math.round(Math.max(0,v)*100)/100; // 浮動小数点丸め
+  const rates=[{from:0, rate:rnd(base-red.y0_5)}];
   if(red.y6_10>0||red.y0_5!==red.y6_10)
-    rates.push({from:5, rate:Math.max(0,base-red.y6_10)});
+    rates.push({from:5, rate:rnd(base-red.y6_10)});
   if(red.y11_15>0)
-    rates.push({from:10, rate:Math.max(0,base-red.y11_15)});
+    rates.push({from:10, rate:rnd(base-red.y11_15)});
   // 引き下げ期間終了後はベース金利に戻る
   const lastRedEnd=red.y11_15>0?15:red.y6_10>0?10:red.y0_5>0?5:0;
   if(lastRedEnd>0&&lastRedEnd<50)
@@ -746,7 +748,7 @@ function initFlatRateSelect(){
     const r=FLAT_RATE_TABLE[i];
     const [y,m]=r[0].split('-');
     const label=`${y}年${parseInt(m)}月`;
-    sel.insertAdjacentHTML('beforeend',`<option value="${r[0]}">${label}（35: ${r[1]}% / 20: ${r[2]}%）</option>`);
+    sel.insertAdjacentHTML('beforeend',`<option value="${r[0]}">${label}（35: ${r[1]}% / 20: ${r[2]}% / 50: ${r[3]}%）</option>`);
   }
   // 最新月をデフォルト選択
   const latest=FLAT_RATE_TABLE[FLAT_RATE_TABLE.length-1];
@@ -756,13 +758,15 @@ function applyFlatRateFromTable(){
   const sel=$('flat-rate-month');if(!sel||!sel.value)return;
   const row=FLAT_RATE_TABLE.find(r=>r[0]===sel.value);
   if(!row)return;
-  const isFl20=flat35Sub==='flat20';
-  const rate=isFl20?row[2]:row[1];
+  const sub=flat35Sub;
+  const rate=sub==='flat20'?row[2]:sub==='flat50'?row[3]:row[1];
+  if(rate==null){alert('この月のフラット50金利データがありません');return;}
   const rateEl=$('flat-rate-base');
   if(rateEl)rateEl.value=rate;
   const hint=$('flat-rate-hint');
   const [y,m]=row[0].split('-');
-  if(hint)hint.textContent=`✓ ${y}年${parseInt(m)}月の${isFl20?'フラット20':'フラット35'}金利を適用`;
+  const subLabel=sub==='flat20'?'フラット20':sub==='flat50'?'フラット50':'フラット35';
+  if(hint)hint.textContent=`✓ ${y}年${parseInt(m)}月の${subLabel}金利を適用`;
   updateFlat35Info();
   live();
 }

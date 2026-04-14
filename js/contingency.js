@@ -934,9 +934,9 @@ function _renderContingencyInner(){
   // 段階金利チップ生成ヘルパー
   const _mgRateChips=(rArr)=>{
     if(rArr.length<=1)return '';
-    return rArr.slice(1).map(s=>mgChip('📈',`${s.from+1}年目〜`,`${s.rate}%`)).join('');
+    return rArr.slice(1).map(s=>mgChip('📈',`${s.from+1}年目〜`,`${s.rate.toFixed(2)}%`)).join('');
   };
-  const _mgFlatLabel2=_mgIsFlat?`フラット${flat35Sub==='flat20'?'20':'35'}`:'';
+  const _mgFlatLabel2=_mgIsFlat?`フラット${flat35Sub==='flat50'?'50':flat35Sub==='flat20'?'20':'35'}`:'';
   const _mgFlatPt2=_mgIsFlat?calcFlat35Points():0;
   if(_mgFlatPair){
     const _fhAmtV2=fv('flat-loan-h-amt')||0, _fwAmtV2=fv('flat-loan-w-amt')||0;

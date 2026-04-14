@@ -15,7 +15,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     if(rArr.length<=1)return '';
     return rArr.slice(1).map(s=>{
       const yr=s.from+1;
-      return chip('📈',`${yr}年目〜`,`${s.rate}%`);
+      return chip('📈',`${yr}年目〜`,`${s.rate.toFixed(2)}%`);
     }).join('');
   };
 
@@ -75,7 +75,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   </div>`;
 
   // 行2：住宅ローン条件
-  const _flatLabel=_isFlat_t?`フラット${flat35Sub==='flat20'?'20':'35'}`:'';
+  const _flatLabel=_isFlat_t?`フラット${flat35Sub==='flat50'?'50':flat35Sub==='flat20'?'20':'35'}`:'';
   const _flatPt=_isFlat_t?calcFlat35Points():0;
   if(pairLoanMode&&!_isFlat_t){
     const lhAmtV=fv('loan-h-amt')||0, lwAmtV=fv('loan-w-amt')||0;
