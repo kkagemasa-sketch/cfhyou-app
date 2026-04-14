@@ -211,13 +211,36 @@ async function exportExcelMG(){
   // ── 住宅ローン条件 ──
   const infoRow2=['🏦 住宅ローン条件','',
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
-    `借入額: ${loanAmtV}万円`,..._pad(infoSpan),
-    `当初金利: ${rateDisp}`,..._pad(infoSpan),
-    `期間: ${loanYrsV}年`,..._pad(infoSpan),
   ];
+  if(_flatPair_e){
+    const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
+    const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
+    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
+    infoRow2.push(`主人借入: ${fhAmt}万円/${fhYrs}年`,..._pad(infoSpan));
+    infoRow2.push(`奥様借入: ${fwAmt}万円/${fwYrs}年`,..._pad(infoSpan));
+  } else if(pairLoanMode){
+    const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
+    const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
+    const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
+    const ratesH=getPairRates('h'), ratesW=getPairRates('w');
+    infoRow2.push(`主人: ${lhAmt}万円 ${rHBase}% ${lhYrs}年`,..._pad(infoSpan));
+    infoRow2.push(`奥様: ${lwAmt}万円 ${rWBase}% ${lwYrs}年`,..._pad(infoSpan));
+    if(ratesH.length>1)ratesH.slice(1).forEach(s=>{infoRow2.push(`主人${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));});
+    if(ratesW.length>1)ratesW.slice(1).forEach(s=>{infoRow2.push(`奥様${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));});
+  } else {
+    infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
+    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
+    infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
+  }
   if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-  // 段階金利がある場合は追加
-  if(rates.length>1){
+  // 段階金利がある場合は追加（ペアローン以外 — ペアは上で個別出力済み）
+  if(!pairLoanMode&&rates.length>1){
+    rates.slice(1).forEach(s=>{
+      infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
+    });
+  }
+  // フラット35ペアの段階金利（共通金利）
+  if(_flatPair_e&&rates.length>1){
     rates.slice(1).forEach(s=>{
       infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
     });
@@ -787,13 +810,38 @@ async function exportExcel(){
   // 住宅ローン条件
   const infoRow2=['🏦 住宅ローン条件','',
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
-    `借入額: ${loanAmtV}万円`,..._pad(infoSpan),
-    `当初金利: ${rateDisp}`,..._pad(infoSpan),
-    `期間: ${loanYrsV}年`,..._pad(infoSpan),
   ];
+  if(_flatPair_e){
+    // フラット35ペアローン
+    const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
+    const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
+    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
+    infoRow2.push(`主人借入: ${fhAmt}万円/${fhYrs}年`,..._pad(infoSpan));
+    infoRow2.push(`奥様借入: ${fwAmt}万円/${fwYrs}年`,..._pad(infoSpan));
+  } else if(pairLoanMode){
+    // 変動ペアローン
+    const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
+    const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
+    const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
+    const ratesH=getPairRates('h'), ratesW=getPairRates('w');
+    infoRow2.push(`主人: ${lhAmt}万円 ${rHBase}% ${lhYrs}年`,..._pad(infoSpan));
+    infoRow2.push(`奥様: ${lwAmt}万円 ${rWBase}% ${lwYrs}年`,..._pad(infoSpan));
+    if(ratesH.length>1)ratesH.slice(1).forEach(s=>{infoRow2.push(`主人${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));});
+    if(ratesW.length>1)ratesW.slice(1).forEach(s=>{infoRow2.push(`奥様${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));});
+  } else {
+    infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
+    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
+    infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
+  }
   if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-  // 段階金利がある場合は追加
-  if(rates.length>1){
+  // 段階金利がある場合は追加（ペアローン以外 — ペアは上で個別出力済み）
+  if(!pairLoanMode&&rates.length>1){
+    rates.slice(1).forEach(s=>{
+      infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
+    });
+  }
+  // フラット35ペアの段階金利（共通金利）
+  if(_flatPair_e&&rates.length>1){
     rates.slice(1).forEach(s=>{
       infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
     });
