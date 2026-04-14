@@ -147,7 +147,7 @@ async function exportExcelMG(){
   if(!MR){alert('先に万が一CF表を生成してください');return;}
   const N=window.lastR;
   const disp=MR.yr.length;
-  const infoSpan=3; // info行1項目あたりの列数（shrinkToFitで収める）
+  const infoSpan=5; // info行1項目あたりの列数（shrinkToFitで収める）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=(_v('client-name')||'').trim()||'CF表';
@@ -431,7 +431,12 @@ async function exportExcelMG(){
   // 総金融資産
   if(MR.totalAsset)push(['総金融資産','',...MR.totalAsset.slice(0,disp).map(v=>ri(v)),ri(MR.totalAsset[disp-1])],'savings');
   // ローン残高
-  if(MR.lBal&&MR.lBal.some(v=>v>0))push(['ローン残高','',...MR.lBal.slice(0,disp).map(v=>ri(v)),ri(MR.lBal[disp-1]||0)],'balance');
+  if(pairLoanMode){
+    if(MR.lBalH&&MR.lBalH.some(v=>v>0))push(['ローン残高(主)','',...MR.lBalH.slice(0,disp).map(v=>ri(v)),ri(MR.lBalH[disp-1]||0)],'balance');
+    if(MR.lBalW&&MR.lBalW.some(v=>v>0))push(['ローン残高(奥様)','',...MR.lBalW.slice(0,disp).map(v=>ri(v)),ri(MR.lBalW[disp-1]||0)],'balance');
+  } else {
+    if(MR.lBal&&MR.lBal.some(v=>v>0))push(['ローン残高','',...MR.lBal.slice(0,disp).map(v=>ri(v)),ri(MR.lBal[disp-1]||0)],'balance');
+  }
 
   // ── 注意文章・使用者情報（通常CFと同じ形式） ──
   const pi=getPrintInfo();
@@ -748,7 +753,7 @@ async function exportExcel(){
   }
   if(!window.lastR){alert('先にCF表を生成してください');return;}
   const R=window.lastR, disp=window.lastDisp, cYear=window.lastCYear;
-  const infoSpan=3; // info行1項目あたりの列数（shrinkToFitで収める）
+  const infoSpan=5; // info行1項目あたりの列数（shrinkToFitで収める）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=_v('client-name')||'';
@@ -958,7 +963,12 @@ async function exportExcel(){
     if(R.finAsset.some(v=>v>0))push(['その他金融資産','',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
     push(['総金融資産','',...R.totalAsset.slice(0,disp).map(v=>ri(v)),ri(R.totalAsset[disp-1])],'totalAsset');
   }
-  if(fv('loan-amt')>0)push(['ローン残高','',...R.lBal.slice(0,disp).map(v=>ri(v)),''],'loan');
+  if(pairLoanMode&&!_isSingle_e){
+    if(R.lBalH&&R.lBalH.some(v=>v>0))push(['ローン残高(主)','',...R.lBalH.slice(0,disp).map(v=>ri(v)),''],'loan');
+    if(R.lBalW&&R.lBalW.some(v=>v>0))push(['ローン残高(奥様)','',...R.lBalW.slice(0,disp).map(v=>ri(v)),''],'loan');
+  } else if(fv('loan-amt')>0){
+    push(['ローン残高','',...R.lBal.slice(0,disp).map(v=>ri(v)),''],'loan');
+  }
 
   // ── 注意文章・使用者情報 ──
   const pi=getPrintInfo();
