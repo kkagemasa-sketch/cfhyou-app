@@ -213,30 +213,29 @@ async function exportExcelMG(){
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
   ];
   if(_flatPair_e){
-    // フラット35ペアローン — 金利共通、段階金利も共通でまとめて表示
+    // フラット35ペアローン — 金額→年数→金利→段階金利
     const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
     const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
-    let flatRateLabel=`金利: ${rateDisp}`;
-    if(rates.length>1)flatRateLabel+=rates.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
-    infoRow2.push(flatRateLabel,..._pad(infoSpan));
-    infoRow2.push(`主人借入: ${fhAmt}万円/${fhYrs}年`,..._pad(infoSpan));
-    infoRow2.push(`奥様借入: ${fwAmt}万円/${fwYrs}年`,..._pad(infoSpan));
+    const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join(''):'';
+    infoRow2.push(`主人: ${fhAmt}万円 ${fhYrs}年 ${rateDisp}${stepStr}`,..._pad(infoSpan));
+    infoRow2.push(`奥様: ${fwAmt}万円 ${fwYrs}年 ${rateDisp}${stepStr}`,..._pad(infoSpan));
   } else if(pairLoanMode){
-    // 変動ペアローン — 人ごとに金額・金利・段階金利をまとめて表示
+    // 変動ペアローン — 人ごとに金額→年数→金利→段階金利
     const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
     const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
     const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
     const ratesH=getPairRates('h'), ratesW=getPairRates('w');
-    let hLabel=`主人: ${lhAmt}万円 ${rHBase}% ${lhYrs}年`;
+    let hLabel=`主人: ${lhAmt}万円 ${lhYrs}年 ${rHBase}%`;
     if(ratesH.length>1)hLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
     infoRow2.push(hLabel,..._pad(infoSpan));
-    let wLabel=`奥様: ${lwAmt}万円 ${rWBase}% ${lwYrs}年`;
+    let wLabel=`奥様: ${lwAmt}万円 ${lwYrs}年 ${rWBase}%`;
     if(ratesW.length>1)wLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
     infoRow2.push(wLabel,..._pad(infoSpan));
   } else {
+    // 通常ローン — 金額→年数→金利→段階金利
     infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
-    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
     infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
+    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
   }
   if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
   // 段階金利（通常ローン・フラット35単独）
@@ -817,32 +816,29 @@ async function exportExcel(){
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
   ];
   if(_flatPair_e){
-    // フラット35ペアローン — 金利共通、段階金利も共通でまとめて表示
+    // フラット35ペアローン — 金額→年数→金利→段階金利
     const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
     const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
-    let flatRateLabel=`金利: ${rateDisp}`;
-    if(rates.length>1)flatRateLabel+=rates.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
-    infoRow2.push(flatRateLabel,..._pad(infoSpan));
-    infoRow2.push(`主人借入: ${fhAmt}万円/${fhYrs}年`,..._pad(infoSpan));
-    infoRow2.push(`奥様借入: ${fwAmt}万円/${fwYrs}年`,..._pad(infoSpan));
+    const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join(''):'';
+    infoRow2.push(`主人: ${fhAmt}万円 ${fhYrs}年 ${rateDisp}${stepStr}`,..._pad(infoSpan));
+    infoRow2.push(`奥様: ${fwAmt}万円 ${fwYrs}年 ${rateDisp}${stepStr}`,..._pad(infoSpan));
   } else if(pairLoanMode){
-    // 変動ペアローン — 人ごとに金額・金利・段階金利をまとめて表示
+    // 変動ペアローン — 人ごとに金額→年数→金利→段階金利
     const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
     const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
     const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
     const ratesH=getPairRates('h'), ratesW=getPairRates('w');
-    // 主人まとめ
-    let hLabel=`主人: ${lhAmt}万円 ${rHBase}% ${lhYrs}年`;
+    let hLabel=`主人: ${lhAmt}万円 ${lhYrs}年 ${rHBase}%`;
     if(ratesH.length>1)hLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
     infoRow2.push(hLabel,..._pad(infoSpan));
-    // 奥様まとめ
-    let wLabel=`奥様: ${lwAmt}万円 ${rWBase}% ${lwYrs}年`;
+    let wLabel=`奥様: ${lwAmt}万円 ${lwYrs}年 ${rWBase}%`;
     if(ratesW.length>1)wLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
     infoRow2.push(wLabel,..._pad(infoSpan));
   } else {
+    // 通常ローン — 金額→年数→金利→段階金利
     infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
-    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
     infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
+    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
   }
   if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
   // 段階金利（通常ローン・フラット35単独）
