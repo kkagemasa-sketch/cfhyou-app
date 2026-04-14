@@ -879,9 +879,11 @@ function checkPW(){
             <span style="font-size:11px;font-weight:600;min-width:80px">住宅性能</span>
             <select class="sel" id="flat-perf" onchange="updateFlat35Info();live()" style="flex:1;font-size:11px">
               <option value="none">なし（0pt）</option>
-              <option value="b">Bプラン — 劣化対策等級3等（1pt）</option>
-              <option value="a">Aプラン — 耐震等級3等（2pt）</option>
-              <option value="zeh" selected>ZEH（3pt）</option>
+              <option value="b">S Bプラン — 劣化対策等級3等（1pt）</option>
+              <option value="a">S Aプラン — 耐震等級3等（2pt）</option>
+              <option value="zeh" selected>S ZEH（3pt）</option>
+              <option value="reno-b">リノベ Bプラン（2pt）</option>
+              <option value="reno-a">リノベ Aプラン（4pt）</option>
             </select>
           </div>
           <!-- 維持保全型 -->
@@ -900,16 +902,25 @@ function checkPW(){
           </div>
           <!-- 地域連携型 -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-            <label style="font-size:11px;font-weight:600;min-width:80px;cursor:pointer">
-              <input type="checkbox" id="flat-region" onchange="updateFlat35Info();live()"> 地域連携型
-            </label>
-            <span style="font-size:10px;color:var(--muted)">地方移住支援等（1pt）</span>
+            <span style="font-size:11px;font-weight:600;min-width:80px">地域連携型</span>
+            <select class="sel" id="flat-region" onchange="updateFlat35Info();live()" style="flex:1;font-size:11px">
+              <option value="0">なし（0pt）</option>
+              <option value="1">地域活性化（1pt）</option>
+              <option value="2">子育て支援・空き家対策（2pt）</option>
+              <option value="2m">地方移住支援型（2pt）</option>
+            </select>
           </div>
           <!-- 子育てプラス -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
             <span style="font-size:11px;font-weight:600;min-width:80px">子育てプラス</span>
             <div class="suf" style="width:80px"><input class="inp age-inp" id="flat-children" type="number" value="0" min="0" max="10" oninput="updateFlat35Info();live()"><span class="sl">人</span></div>
-            <span style="font-size:10px;color:var(--muted)">子ども1人につき1pt</span>
+            <span style="font-size:10px;color:var(--muted)">子ども1人=1pt</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;padding-left:88px">
+            <label style="font-size:11px;cursor:pointer">
+              <input type="checkbox" id="flat-young-couple" onchange="updateFlat35Info();live()"> 若年夫婦世帯（40歳未満）
+            </label>
+            <span style="font-size:10px;color:var(--muted)">+1pt</span>
           </div>
         </div>
         <!-- 計算結果表示 -->
@@ -1440,12 +1451,12 @@ function checkPW(){
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=10"></script>
-<script src="js/constants.js?v=12"></script>
+<script src="js/constants.js?v=13"></script>
 <script src="js/utils.js?v=8"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=7"></script>
 <script src="js/education.js"></script>
-<script src="js/housing.js?v=19"></script>
+<script src="js/housing.js?v=20"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js"></script>
 <script src="js/assets.js?v=11"></script>

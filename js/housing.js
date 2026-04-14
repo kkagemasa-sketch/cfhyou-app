@@ -646,12 +646,13 @@ function setFlat35Sub(sub){
 }
 
 function calcFlat35Points(){
-  const perf={'none':0,'b':1,'a':2,'zeh':3}[$('flat-perf')?.value||'none'];
+  const perf={'none':0,'b':1,'a':2,'zeh':3,'reno-b':2,'reno-a':4}[$('flat-perf')?.value||'none'];
   const maintain=$('flat-maintain')?.checked?1:0;
   const usedPlus=$('flat-used-plus')?.checked?1:0;
-  const region=$('flat-region')?.checked?1:0;
+  const region=parseInt($('flat-region')?.value)||0;
   const children=iv('flat-children')||0;
-  return perf+maintain+usedPlus+region+children;
+  const youngCouple=$('flat-young-couple')?.checked?1:0;
+  return perf+maintain+usedPlus+region+children+youngCouple;
 }
 
 function getFlat35Reductions(totalPt){

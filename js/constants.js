@@ -132,7 +132,7 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'ideco-h-job','ideco-h-monthly','ideco-h-rate',
   'dc-w-employer','dc-w-matching','dc-w-other-pension','dc-w-rate','dc-w-receive-age','dc-w-method',
   'ideco-w-job','ideco-w-monthly','ideco-w-rate',
-  'flat-loan-yrs','flat-loan-type','flat-rate-base','flat-rate-month','flat-perf','flat-maintain','flat-used-plus','flat-region','flat-children',
+  'flat-loan-yrs','flat-loan-type','flat-rate-base','flat-rate-month','flat-perf','flat-maintain','flat-used-plus','flat-region','flat-children','flat-young-couple',
   'flat-loan-h-amt','flat-loan-h-yrs','flat-loan-h-type','flat-loan-w-amt','flat-loan-w-yrs','flat-loan-w-type',
   'mansion-sqm',
   'pi-name','pi-company','pi-address','pi-tel','pi-email','pi-notes'];
