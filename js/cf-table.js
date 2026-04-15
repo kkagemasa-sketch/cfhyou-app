@@ -369,6 +369,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   }
   _applyFinAssetVisibility();
   _reapplyHighlightAfterRender();
+  // ズーム再適用（再描画でtableが差し替わるため）
+  if(typeof setCfZoom==='function'&&typeof cfZoomLevel!=='undefined'&&cfZoomLevel!==100)setCfZoom(cfZoomLevel);
 }
 
 // thead行にsticky top値を設定（行高さが可変のため動的計算）

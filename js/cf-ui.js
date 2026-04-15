@@ -7,9 +7,13 @@ function setCfZoom(v){
   cfZoomLevel=Math.max(20,Math.min(100,v));
   const rb=document.getElementById('right-body');
   if(rb){
-    const s=cfZoomLevel/100;
-    // CSS zoom はレイアウトサイズも変わるため全行表示が可能
-    rb.style.zoom=s<1?s:'';
+    // zoom を .tbl-wrap 直下の table に適用（scroll container自体は非ズーム）
+    // これによりタッチパッドの縦スクロールが横に流れる問題を回避
+    const tbl=rb.querySelector('.tbl-wrap > table.cf');
+    if(tbl){
+      const s=cfZoomLevel/100;
+      tbl.style.zoom=s<1?s:'';
+    }
   }
   const slider=document.getElementById('cf-zoom-slider');
   if(slider)slider.value=cfZoomLevel;
@@ -20,12 +24,13 @@ function setCfZoom(v){
 function cfZoomFit(){
   const rb=document.getElementById('right-body');
   if(!rb)return;
+  const tw=rb.querySelector('.tbl-wrap');
+  if(!tw)return;
   // 一旦100%に戻して実サイズを計測
   setCfZoom(100);
   requestAnimationFrame(()=>{
-    const contentH=rb.scrollHeight;
-    const containerH=rb.parentElement.getBoundingClientRect().height
-      - (rb.offsetTop - rb.parentElement.getBoundingClientRect().top);
+    const contentH=tw.scrollHeight;
+    const containerH=tw.clientHeight;
     if(contentH<=0||containerH<=0)return;
     const fitScale=Math.floor(Math.max(20, Math.min(100, (containerH/contentH)*100)));
     setCfZoom(fitScale);
