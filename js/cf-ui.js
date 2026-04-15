@@ -224,6 +224,8 @@ function _renderMansionList(){
         h+=sorted.map(s=>s.fromYear+'年目〜'+s.unit+'円').join('、 ');
         h+='</div>';
       }
+      // 添付ファイル表示（サムネイル）
+      if(typeof _mfFilesDisplayHTML==='function')h+=_mfFilesDisplayHTML(m.id);
       h+='</div>';
     });
   }
@@ -282,6 +284,10 @@ function editMansion(id){
     +'<div id="med-steps-preview-'+id+'" style="font-size:11px;color:#1e293b;line-height:1.6"></div>'
     +'</div>'
     +'</div></div>'
+    // 添付ファイル
+    +'<div style="border-top:1px dashed #cbd5e1;padding-top:10px;margin-top:4px">'
+    +'<div id="med-files-'+id+'"></div>'
+    +'</div>'
     // 保存・キャンセル
     +'<div style="display:flex;gap:6px;justify-content:flex-end;border-top:1px solid #e2e8f0;padding-top:8px">'
     +'<button onclick="saveMansionEdit(\''+id+'\')" style="background:#16a34a;color:#fff;border:none;border-radius:4px;padding:5px 18px;font-size:12px;font-weight:600;cursor:pointer">保存</button>'
@@ -290,6 +296,8 @@ function editMansion(id){
   // 既存ステップを描画
   m.repSteps.forEach(s=>_appendMansionStepRow(id,s.fromYear,s.unit));
   _updateMansionPreview(id);
+  // 添付ファイルUIを描画
+  if(typeof _renderMansionFilesInEdit==='function')_renderMansionFilesInEdit(id);
   document.getElementById('med-name-'+id)?.focus();
 }
 // ステップ入力行を追加
@@ -379,7 +387,11 @@ async function saveMansionEdit(id){
 async function deleteMansion(id){
   const m=_mansionMaster.find(x=>x.id===id);
   if(!m)return;
-  if(!confirm('「'+m.name+'」を削除しますか？\n※ チーム全員のデータから削除されます'))return;
+  const fcount=Array.isArray(m.files)?m.files.length:0;
+  const msg='「'+m.name+'」を削除しますか？\n※ チーム全員のデータから削除されます'+(fcount>0?'\n※ 添付ファイル'+fcount+'件もStorageから削除されます':'');
+  if(!confirm(msg))return;
+  // 添付ファイルをStorageから削除
+  if(typeof deleteAllMansionFiles==='function')await deleteAllMansionFiles(m);
   _mansionMaster=_mansionMaster.filter(x=>x.id!==id);
   saveMansionMaster(); // ローカルキャッシュ即時更新
   populateMansionSelect();

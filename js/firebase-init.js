@@ -12,6 +12,13 @@ import {
   setDoc,
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 // Firebase設定（公開されても問題ない識別子）
 const firebaseConfig = {
@@ -26,6 +33,7 @@ const firebaseConfig = {
 // Firebase初期化
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 // Firestoreをオフライン永続化付きで初期化（ネット切断時もキャッシュから動作）
 let db;
@@ -42,8 +50,9 @@ try {
 
 // グローバル公開（他のJSファイルから使えるように）
 window._firebase = {
-  app, auth, db,
+  app, auth, db, storage,
   collection, doc, getDocs, setDoc, deleteDoc,
+  storageRef, uploadBytes, getDownloadURL, deleteObject,
   signInAnonymously
 };
 
