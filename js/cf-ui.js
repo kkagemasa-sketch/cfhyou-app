@@ -226,6 +226,12 @@ function _renderMansionList(){
       }
       // 添付ファイル表示（サムネイル）
       if(typeof _mfFilesDisplayHTML==='function')h+=_mfFilesDisplayHTML(m.id);
+      // 最終編集者表示
+      if(m.lastEditor||m.lastEditedAt){
+        h+='<div style="font-size:10px;color:#64748b;margin-top:6px;padding:3px 8px;background:#f1f5f9;border-radius:4px">';
+        h+='📝 最終編集: <strong>'+_escH(m.lastEditor||'（未入力）')+'</strong>'+(m.lastEditedAt?' — '+_fmtEditDate(m.lastEditedAt):'');
+        h+='</div>';
+      }
       h+='</div>';
     });
   }
@@ -284,6 +290,17 @@ function editMansion(id){
     +'<div id="med-steps-preview-'+id+'" style="font-size:11px;color:#1e293b;line-height:1.6"></div>'
     +'</div>'
     +'</div></div>'
+    // 編集者・日付
+    +'<div style="border-top:1px dashed #cbd5e1;padding-top:10px;margin-top:4px">'
+    +'<div style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:6px">📝 編集情報</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">'
+    +'<div><label style="font-size:10px;font-weight:600;color:#64748b">編集者名</label>'
+    +'<input id="med-editor-'+id+'" class="inp" style="font-size:12px" value="'+_escH((document.getElementById('pi-name')?.value||localStorage.getItem('cf_mansion_editor')||'').trim())+'" placeholder="例: 田中"></div>'
+    +'<div><label style="font-size:10px;font-weight:600;color:#64748b">編集日（省略可）</label>'
+    +'<input id="med-editdate-'+id+'" class="inp" type="date" style="font-size:12px" placeholder="未入力なら今日"></div>'
+    +'</div>'
+    +'<div id="med-history-'+id+'" style="font-size:10px;color:#64748b"></div>'
+    +'</div>'
     // 添付ファイル
     +'<div style="border-top:1px dashed #cbd5e1;padding-top:10px;margin-top:4px">'
     +'<div id="med-files-'+id+'"></div>'
@@ -298,7 +315,30 @@ function editMansion(id){
   _updateMansionPreview(id);
   // 添付ファイルUIを描画
   if(typeof _renderMansionFilesInEdit==='function')_renderMansionFilesInEdit(id);
+  // 編集履歴を描画
+  _renderMansionEditHistory(id);
   document.getElementById('med-name-'+id)?.focus();
+}
+// 編集履歴の描画
+function _renderMansionEditHistory(id){
+  const wrap=document.getElementById('med-history-'+id);
+  if(!wrap)return;
+  const m=_mansionMaster.find(x=>x.id===id);
+  if(!m)return;
+  const hist=Array.isArray(m.editHistory)?m.editHistory:[];
+  if(hist.length===0){
+    wrap.innerHTML='<div style="padding:4px 8px;background:#f8fafc;border-radius:4px;color:#94a3b8">編集履歴はまだありません</div>';
+    return;
+  }
+  let h='<div style="padding:6px 8px;background:#f8fafc;border-radius:4px">';
+  h+='<div style="font-weight:600;color:#475569;margin-bottom:3px">📜 編集履歴（最新'+hist.length+'件）</div>';
+  hist.forEach((e,i)=>{
+    h+='<div style="padding:1px 0;'+(i===0?'color:#0369a1;font-weight:600':'color:#64748b')+'">'
+      +(i===0?'● ':'○ ')+_escH(e.name||'（未入力）')+' — '+_fmtEditDate(e.at)
+      +'</div>';
+  });
+  h+='</div>';
+  wrap.innerHTML=h;
 }
 // ステップ入力行を追加
 function _appendMansionStepRow(id,fromYear,unit){
@@ -364,6 +404,34 @@ function _updateMansionPreview(id){
   }
   previewEl.innerHTML=html||'<div style="color:#94a3b8;font-size:10px">基準単価を入力してください</div>';
 }
+// 編集者名を取得（優先: 入力欄 > 使用者氏名 > localStorage > 確認ダイアログ）
+function _getMansionEditorName(id){
+  const inp=document.getElementById('med-editor-'+id);
+  if(inp){
+    const v=(inp.value||'').trim();
+    if(v)return v;
+  }
+  // 使用者氏名
+  const piName=(document.getElementById('pi-name')?.value||'').trim();
+  if(piName)return piName;
+  // 前回使った名前
+  const stored=(localStorage.getItem('cf_mansion_editor')||'').trim();
+  if(stored)return stored;
+  // なければプロンプト
+  const input=prompt('編集者のお名前を入力してください（今後の編集履歴に記録されます）');
+  if(input){
+    const n=input.trim();
+    if(n){localStorage.setItem('cf_mansion_editor',n);return n;}
+  }
+  return '';
+}
+// 日時フォーマット YYYY/MM/DD HH:mm
+function _fmtEditDate(ts){
+  if(!ts)return '';
+  const d=new Date(ts);
+  const pad=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'/'+pad(d.getMonth()+1)+'/'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
 async function saveMansionEdit(id){
   const m=_mansionMaster.find(x=>x.id===id);
   if(!m)return;
@@ -374,6 +442,23 @@ async function saveMansionEdit(id){
   m.repUnit=parseFloat(document.getElementById('med-rep-'+id)?.value)||0;
   m.netFee=parseFloat(document.getElementById('med-net-'+id)?.value)||0;
   m.repSteps=_collectMansionSteps(id); // NEW: 値上げステップ
+  // 編集履歴を記録
+  const editorName=_getMansionEditorName(id);
+  // 入力された日付（任意指定）、未入力なら現在時刻
+  const dateInpVal=document.getElementById('med-editdate-'+id)?.value||'';
+  let editedAt=Date.now();
+  if(dateInpVal){
+    const dt=new Date(dateInpVal);
+    if(!isNaN(dt.getTime()))editedAt=dt.getTime();
+  }
+  m.lastEditor=editorName||'（未入力）';
+  m.lastEditedAt=editedAt;
+  if(!Array.isArray(m.editHistory))m.editHistory=[];
+  m.editHistory.unshift({name:m.lastEditor,at:editedAt});
+  // 最新5件まで保持
+  m.editHistory=m.editHistory.slice(0,5);
+  // 編集者名を次回用に保存
+  if(editorName)localStorage.setItem('cf_mansion_editor',editorName);
   saveMansionMaster(); // ローカルキャッシュ即時更新
   populateMansionSelect();
   _renderMansionList();
