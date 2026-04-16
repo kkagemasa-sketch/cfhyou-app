@@ -531,33 +531,49 @@ function _renderContingencyInner(){
       insAnnuityTotal+=v;
     });
 
-    // 遺族年金（既存ロジック維持）
+    // 遺族年金
     let survP=0;
     if(isDead){
       if(mgSurvMode==='manual'){
         survP=survManualAmt;
       }else{
-        // koseiH_mg/koseiW_mg は既にcalcKosei()で精密計算済み
         const kH=koseiH_mg, kW=koseiW_mg;
         if(targetIsH){
+          // ── ご主人死亡 → 奥様が受給 ──
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           const kiso=calcKiso(childUnder18);
           const wAgeAtDeath=wAge+(deathAge-hAge);
           const hadChildren=children.some(c=>c.age+(deathYearOffset-1)<=18);
-          const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
-          const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(61.43):0;
-          // 遺族年金＝純粋な遺族厚生年金部分のみ（老齢年金は別行表示）
-          if(wa>=pWReceive){survP=Math.max(ri(kH*0.75)-koseiW_mg,0)+kiso+chukorei;}
-          else{survP=ri(kH*0.75)+kiso+chukorei;}
+
+          // 30歳未満・子なし妻の5年有期ルール（H19年改正）
+          const noChildAtDeath=!children.length&&!hadChildren;
+          const yearsSinceDeath=i-(deathYearOffset-1);
+          if(noChildAtDeath&&wAgeAtDeath<30&&yearsSinceDeath>=5){
+            survP=0; // 5年経過で遺族厚生年金失権
+          }else{
+            const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
+            const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(61.43):0;
+            if(wa>=pWReceive){survP=Math.max(ri(kH*0.75)-koseiW_mg,0)+kiso+chukorei;}
+            else{survP=ri(kH*0.75)+kiso+chukorei;}
+          }
         }else{
+          // ── 奥様死亡 → ご主人が受給 ──
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           const kiso=calcKiso(childUnder18);
           const hIncome=getIncomeAtAge(getIncomeSteps('h'),ha);
-          // 遺族年金＝純粋な遺族厚生年金部分のみ（老齢年金は別行表示）
-          if(childUnder18>0){if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0)+kiso;}else{survP=ri(kW*0.75)+kiso;}}
-          else if(ha>=60&&hIncome<850){if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0);}else{survP=ri(kW*0.75);}}
-          else if(ha>=55&&ha<60&&hIncome<850){survP=0;}
-          else{survP=kiso;}
+          // 夫の遺族厚生年金: 子ありOR(55歳以上かつ年収850万未満)が要件、支給開始は60歳から
+          if(childUnder18>0){
+            if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0)+kiso;}
+            else{survP=ri(kW*0.75)+kiso;}
+          }else if(ha>=55&&hIncome<850){
+            // 55歳以上で受給権取得、ただし支給開始は60歳から
+            if(ha>=60){
+              if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0);}
+              else{survP=ri(kW*0.75);}
+            }else{survP=0;} // 55-59歳は支給停止
+          }else{
+            survP=kiso; // 子の遺族基礎年金のみ（子がいない場合は0）
+          }
         }
       }
     }

@@ -250,7 +250,7 @@ function render(){
     // ─── 遺族年金（純粋な遺族年金部分のみ、老齢年金は別行表示）※単身時スキップ ───
     let survP=0;
     if(!_isSingle&&hDeathAge>0&&ha>hDeathAge){
-      // ご主人ご逝去後：奥様への遺族年金
+      // ── ご主人ご逝去後：奥様への遺族年金 ──
       const overrideH=fv('surv-h-amt');
       if(overrideH>0){
         survP=overrideH;
@@ -259,16 +259,24 @@ function render(){
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
         const kiso=calcKiso(childUnder18);
         const wAgeAtDeath=wAge+(hDeathAge-hAge);
-        const chukorei=(kiso===0&&wa>=40&&wa<65&&wAgeAtDeath>=40)?ri(61.43):0;
-        if(wa>=pWReceive){
-          // 差額方式：遺族厚生年金＝夫の厚生×3/4−妻の厚生（老齢年金は別行で表示）
-          survP=Math.max(ri(koseiH*0.75)-koseiW,0)+kiso+chukorei;
+        const hadChildren=children.some(c=>c.age+(hDeathAge-hAge)<=18);
+        // 30歳未満・子なし妻の5年有期ルール（H19年改正）
+        const noChildAtDeath=!children.length&&!hadChildren;
+        const yearsSinceDeath=ha-hDeathAge;
+        if(noChildAtDeath&&wAgeAtDeath<30&&yearsSinceDeath>5){
+          survP=0; // 5年経過で遺族厚生年金失権
         }else{
-          survP=ri(koseiH*0.75)+kiso+chukorei;
+          const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
+          const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(61.43):0;
+          if(wa>=pWReceive){
+            survP=Math.max(ri(koseiH*0.75)-koseiW,0)+kiso+chukorei;
+          }else{
+            survP=ri(koseiH*0.75)+kiso+chukorei;
+          }
         }
       }
     }else if(wDeathAge>0&&wa>wDeathAge){
-      // 奥様ご逝去後：ご主人への遺族年金
+      // ── 奥様ご逝去後：ご主人への遺族年金 ──
       const overrideW=fv('surv-w-amt');
       if(overrideW>0){
         survP=overrideW;
@@ -277,11 +285,17 @@ function render(){
         let childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
         const kiso=calcKiso(childUnder18);
-        if(childUnder18>0||(ha>=55&&hIncome<850)){
-          // 差額方式：ご主人の老齢年金受給中は差額のみ
+        // 夫の遺族厚生年金: 子ありOR(55歳以上かつ年収850万未満)、支給開始60歳
+        if(childUnder18>0){
           if(ha>=pHReceive){survP=Math.max(ri(koseiW*0.75)-koseiH,0)+kiso;}
           else{survP=ri(koseiW*0.75)+kiso;}
+        }else if(ha>=55&&hIncome<850){
+          if(ha>=60){
+            if(ha>=pHReceive){survP=Math.max(ri(koseiW*0.75)-koseiH,0);}
+            else{survP=ri(koseiW*0.75);}
+          }// 55-59歳は支給停止 → survP=0のまま
         }
+        // 子なし・55歳未満 → survP=0（遺族年金なし）
       }
     }
     R.survPension.push(survP);
@@ -1049,18 +1063,23 @@ function render(){
   if(survHSpan&&hDeathAge>0){
     const i0=hDeathAge-hAge+1;
     const wa0=wAge+i0;
+    const wAgeAtDeath0=wAge+(hDeathAge-hAge);
     let childUnder18=0;
     children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<=18)childUnder18++;});
     const kiso0=calcKiso(childUnder18);
-    const chukorei0=(kiso0===0&&wa0>=40&&wa0<65)?ri(61.43):0;
+    const hadChildren0=children.some(c=>c.age+(hDeathAge-hAge)<=18);
+    const routeA0=wAgeAtDeath0>=40;const routeB0=hadChildren0&&wa0>=40;
+    const chukorei0=(kiso0===0&&wa0>=40&&wa0<65&&(routeA0||routeB0))?ri(61.43):0;
     let autoH;
     if(wa0>=pWReceive){
-      // 差額方式：奥様が老齢年金を受給中は差額のみ（遺族厚生年金部分のみ）
       autoH=Math.max(ri(koseiH*0.75)-koseiW,0)+kiso0+chukorei0;
     }else{
       autoH=ri(koseiH*0.75)+kiso0+chukorei0;
     }
-    survHSpan.textContent=autoH.toLocaleString();
+    // 30歳未満子なし妻の5年有期ルール注記
+    const noChild0=!children.length&&!hadChildren0;
+    const is5yr=noChild0&&wAgeAtDeath0<30;
+    survHSpan.textContent=autoH.toLocaleString()+(is5yr?' (5年有期)':'');
   }
   const survWSpan=document.getElementById('surv-w-auto-val');
   if(survWSpan&&wDeathAge>0){
