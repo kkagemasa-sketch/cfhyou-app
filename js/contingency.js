@@ -81,15 +81,40 @@ function calcKiso(n){
   return ri(81.6+23.48*2+7.83*(n-2));
 }
 function addMGInsurance(){
-  mgInsCnt++;
+  mgInsCnt++;const id=mgInsCnt;
   const cont=$('mg-insurance-cont');
-  const d=document.createElement('div');d.className='g2';d.id=`mg-ins-${mgInsCnt}`;
-  d.innerHTML=`<div class="fg"><label class="lbl">保険金名称</label>
-    <input class="inp" id="mg-ins-name-${mgInsCnt}" placeholder="例：収入保障保険" oninput="live()"></div>
-  <div class="fg"><label class="lbl">保険金額</label>
-    <div style="display:flex;gap:4px;align-items:center"><div class="suf" style="flex:1"><input class="inp amt-inp" id="mg-ins-amt-${mgInsCnt}" type="number" value="0" min="0" oninput="live()"><span class="sl">万円</span></div>
-    <button onclick="this.parentElement.parentElement.parentElement.parentElement.remove()" style="background:#fee;color:#d63a2a;border:1px solid #fca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button></div></div>`;
+  const d=document.createElement('div');d.id=`mg-ins-${id}`;
+  d.style.cssText='background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px';
+  d.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <input class="inp" id="mg-ins-name-${id}" placeholder="例：収入保障保険" oninput="live()" style="flex:1;font-size:11px;margin-right:8px">
+      <button onclick="document.getElementById('mg-ins-${id}').remove();live()" style="background:#fee;color:#d63a2a;border:1px solid #fca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;flex-shrink:0">✕</button>
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <button class="btn-tog on" id="mg-ins-type-lump-${id}" onclick="setMGInsType(${id},'lump')" style="font-size:10px;padding:3px 10px">一時金</button>
+      <button class="btn-tog" id="mg-ins-type-annuity-${id}" onclick="setMGInsType(${id},'annuity')" style="font-size:10px;padding:3px 10px">年金型（毎年受取）</button>
+    </div>
+    <div id="mg-ins-lump-wrap-${id}">
+      <div class="fg"><label class="lbl" style="font-size:9px">保険金額（一括）</label>
+        <div class="suf"><input class="inp amt-inp" id="mg-ins-amt-${id}" type="number" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+    </div>
+    <div id="mg-ins-annuity-wrap-${id}" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div class="fg"><label class="lbl" style="font-size:9px">年額</label>
+          <div class="suf"><input class="inp amt-inp" id="mg-ins-annual-${id}" type="number" value="0" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">受取終了（受取人の年齢）</label>
+          <div class="suf"><input class="inp age-inp" id="mg-ins-end-age-${id}" type="number" value="65" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+      </div>
+    </div>`;
   cont.appendChild(d);
+}
+function setMGInsType(id,type){
+  $(`mg-ins-type-lump-${id}`)?.classList.toggle('on',type==='lump');
+  $(`mg-ins-type-annuity-${id}`)?.classList.toggle('on',type==='annuity');
+  const lw=$(`mg-ins-lump-wrap-${id}`),aw=$(`mg-ins-annuity-wrap-${id}`);
+  if(lw)lw.style.display=type==='lump'?'':'none';
+  if(aw)aw.style.display=type==='annuity'?'':'none';
+  live();
 }
 function getMGCarOn(){return document.getElementById('mg-car-keep')?.classList.contains('on')!==false;}
 function getMGParkOn(){return document.getElementById('mg-park-keep')?.classList.contains('on')!==false;}
@@ -174,8 +199,25 @@ function getMGLCSteps(){
 function getMGLCMode(){return document.getElementById('mg-lc-mode-step')?.classList.contains('on')?'step':'ratio';}
 function getMGInsuranceTotal(){
   let total=0;
-  document.querySelectorAll('[id^="mg-ins-amt-"]').forEach(el=>{total+=(parseFloat(String(el.value||'').replace(/,/g,''))||0);});
+  getMGInsurances().forEach(ins=>{if(ins.type==='lump')total+=ins.amt;});
   return total;
+}
+function getMGInsurances(){
+  const list=[];
+  document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
+    const id=el.id.split('-').pop();
+    const isAnnuity=$(`mg-ins-type-annuity-${id}`)?.classList.contains('on');
+    const name=$(`mg-ins-name-${id}`)?.value||'';
+    if(isAnnuity){
+      const annual=parseFloat(String($(`mg-ins-annual-${id}`)?.value||'').replace(/,/g,''))||0;
+      const endAge=parseInt($(`mg-ins-end-age-${id}`)?.value)||65;
+      if(annual>0)list.push({type:'annuity',name:name||'年金型保険',annual,endAge});
+    }else{
+      const amt=parseFloat(String($(`mg-ins-amt-${id}`)?.value||'').replace(/,/g,''))||0;
+      if(amt>0)list.push({type:'lump',name:name||'死亡保険金',amt});
+    }
+  });
+  return list;
 }
 
 // ===== 万が一CF表の計算・描画 =====
@@ -231,7 +273,10 @@ function _renderContingencyInner(){
   const mgScholarOn=document.getElementById('mg-scholarship-yes')?.classList.contains('on');
   const mgScholarAmt=mgScholarOn?(fv('mg-scholarship-amt')||0):0;
   const mgScholarAge=iv('mg-scholarship-age')||19;
+  const mgInsurances=getMGInsurances();
   const insTotal=getMGInsuranceTotal();
+  // 年金型保険の受取人年齢（受取人=生存者）
+  const _aliveBaseAge=targetIsH?wAge:hAge;
   const pSelf=fv('pension-h')||186, pWife=_isSingle_mg?0:(fv('pension-w')||66);
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=_isSingle_mg?99:(iv('pension-w-receive')||65);
@@ -264,7 +309,7 @@ function _renderContingencyInner(){
 
   let sav=initSav;
   const MR={yr:[],hA:[],wA:[],
-    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],finLiquid:[],otherInc:[],scholarship:[],
+    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],insAnnuityRows:[],finLiquid:[],otherInc:[],scholarship:[],
     lCtrl:[],pS:[],pW:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
     dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:[],rent:[],
@@ -276,6 +321,10 @@ function _renderContingencyInner(){
     evH:[],evW:[],evC:[],
     needCoverage:0};
   children.forEach(()=>{MR.edu.push([]);MR.evC.push([]);});
+  // 年金型保険の行データを初期化
+  mgInsurances.filter(ins=>ins.type==='annuity').forEach(ins=>{
+    MR.insAnnuityRows.push({name:ins.name,annual:ins.annual,endAge:ins.endAge,key:'insAnnuity_'+MR.insAnnuityRows.length,vals:[]});
+  });
 
   // ── 死亡者の金融資産を死亡時に現金化するための事前計算 ──
   // 死亡者(p)の有価証券・DC・iDeCoの死亡時点FVを算出
@@ -447,9 +496,17 @@ function _renderContingencyInner(){
     MR.rPay.push(rPayH);
     MR.wRPay.push(rPayW);
 
-    // 死亡保険金（死亡年のみ）
+    // 死亡保険金（一時金: 死亡年のみ）
     const insPayVal=isDeathYear?insTotal:0;
     MR.insPayArr.push(insPayVal);
+    // 年金型保険（毎年受取、受取人年齢基準）
+    const _aliveAge=targetIsH?wa:ha;
+    let insAnnuityTotal=0;
+    MR.insAnnuityRows.forEach(row=>{
+      const v=(isDead&&_aliveAge<=row.endAge)?row.annual:0;
+      row.vals.push(v);
+      insAnnuityTotal+=v;
+    });
 
     // 遺族年金（既存ロジック維持）
     let survP=0;
@@ -622,7 +679,7 @@ function _renderContingencyInner(){
     MR.idecoReceiptH.push(ri(idecoReceiptH_mg));MR.idecoReceiptW.push(ri(idecoReceiptW_mg));
 
     // 収入合計
-    const incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg);
+    const incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+insAnnuityTotal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg);
     MR.incT.push(incTotal);
 
     // ── 支出（個別計算） ──
@@ -862,6 +919,8 @@ function _renderContingencyInner(){
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR.edu[ci]&&c2<MR.edu[ci].length)MR.edu[ci][c2]=val;});
     });
     if(MR.secRedeemRows){MR.secRedeemRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});}
+    // 年金型保険override
+    if(MR.insAnnuityRows){MR.insAnnuityRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});}
     // carRows override → carTotal再計算
     if(MR.carRows&&MR.carRows.length>0){
       MR.carRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});
@@ -870,7 +929,7 @@ function _renderContingencyInner(){
     let newSav=initSav;
     for(let i=0;i<MR.incT.length;i++){
       if(mgOverrides['incT']?.[i]!==undefined){MR.incT[i]=mgOverrides['incT'][i];}
-      else{let t=incKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.incT[i]=t;}
+      else{let t=incKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));if(MR.insAnnuityRows)MR.insAnnuityRows.forEach(row=>t+=(row.vals[i]||0));mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.incT[i]=t;}
       if(mgOverrides['expT']?.[i]!==undefined){MR.expT[i]=mgOverrides['expT'][i];}
       else{let t=expKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(MR.edu[ci]?.[i]||0));mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.expT[i]=t;}
       MR.bal[i]=MR.incT[i]-MR.expT[i];
@@ -1092,7 +1151,9 @@ function _renderContingencyInner(){
   if(!_isSingle_mg)h+=mgRow('退職金（奥様）',MR.wRPay,N.wRPay,'wRPay');
   h+=mgRow(_isSingle_mg?'老齢年金':'本人年金',MR.pS,N.pS,'pS');
   if(!_isSingle_mg){h+=mgRow('配偶者年金',MR.pW,N.pW,'pW');h+=mgRow('遺族年金',MR.survPension,N.survPension,'survPension');}
-  h+=mgRow('死亡保険金',MR.insPayArr,null,'insPayArr');
+  const _hasAnnuity=MR.insAnnuityRows&&MR.insAnnuityRows.length>0;
+  h+=mgRow(_hasAnnuity?'死亡保険金(一時金)':'死亡保険金',MR.insPayArr,null,'insPayArr');
+  if(_hasAnnuity)MR.insAnnuityRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgRow(row.name,row.vals,null,row.key);});
   h+=mgRow('金融資産現金化',MR.finLiquid,null,'finLiquid');
   h+=mgRow(_isSingle_mg?'DC受取':'DC受取(主)',MR.dcReceiptH,N.dcReceiptH,'dcReceiptH');
   if(!_isSingle_mg)h+=mgRow('DC受取(奥様)',MR.dcReceiptW,N.dcReceiptW,'dcReceiptW');

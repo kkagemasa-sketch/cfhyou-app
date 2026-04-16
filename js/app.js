@@ -7,6 +7,8 @@ window.onload=()=>{
   addIncomeStep('w');addIncomeStep('w');
   // 特別支出の初期値（1件）
   addExtraItem(new Date().getFullYear(),'','');
+  // 死亡保険金の初期値（1件）
+  addMGInsurance();
   // 初期値を設定
   loadMansionMaster();
   initFlatRateSelect();

@@ -219,7 +219,9 @@ function _collectDynamic(){
     insurances:[],lcSteps:[]};
   document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
     const id=el.id.split('-').pop();
-    d.mg.insurances.push({name:$(`mg-ins-name-${id}`)?.value||'',amt:$(`mg-ins-amt-${id}`)?.value||''});
+    const isAnnuity=$(`mg-ins-type-annuity-${id}`)?.classList.contains('on')||false;
+    d.mg.insurances.push({name:$(`mg-ins-name-${id}`)?.value||'',amt:$(`mg-ins-amt-${id}`)?.value||'',
+      insType:isAnnuity?'annuity':'lump',annual:$(`mg-ins-annual-${id}`)?.value||'',endAge:$(`mg-ins-end-age-${id}`)?.value||''});
   });
   let _mgIdx=0;
   document.querySelectorAll('#mg-lc-steps-container>.mg-lc-step').forEach(el=>{
@@ -562,7 +564,13 @@ function _restoreDynamic(d){
       (mg.insurances).forEach(s=>{
         if(typeof addMGInsurance==='function')addMGInsurance();
         if($(`mg-ins-name-${mgInsCnt}`))$(`mg-ins-name-${mgInsCnt}`).value=s.name;
-        if($(`mg-ins-amt-${mgInsCnt}`))$(`mg-ins-amt-${mgInsCnt}`).value=s.amt;
+        if(s.insType==='annuity'){
+          if(typeof setMGInsType==='function')setMGInsType(mgInsCnt,'annuity');
+          if($(`mg-ins-annual-${mgInsCnt}`))$(`mg-ins-annual-${mgInsCnt}`).value=s.annual||'';
+          if($(`mg-ins-end-age-${mgInsCnt}`))$(`mg-ins-end-age-${mgInsCnt}`).value=s.endAge||'65';
+        }else{
+          if($(`mg-ins-amt-${mgInsCnt}`))$(`mg-ins-amt-${mgInsCnt}`).value=s.amt;
+        }
       });
     } else {
       if(typeof addMGInsurance==='function')addMGInsurance();

@@ -68,7 +68,7 @@ let householdType='couple'; // 'couple' | 'single'
 let mgTarget='h'; // h=ご主人, w=奥様
 let mgDansin=true, mgDansinH=true, mgDansinW=true;
 let mgSurvMode='auto';
-let mgInsCnt=1;
+let mgInsCnt=0;
 
 let mgCarOn=true, mgParkOn=true;
 let _mgRendering=false; // setRTab↔renderContingency 再帰防止フラグ
