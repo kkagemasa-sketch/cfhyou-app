@@ -99,8 +99,8 @@ function getLCSteps(){
   document.querySelectorAll('#lc-steps-cont>[id^="ls-"]').forEach(el=>{
     const id=el.dataset.id;
     const isPct=document.getElementById(`lsmode-pct-${id}`)?.classList.contains('on');
-    const base=isPct?0:(parseFloat(document.getElementById(`lsb-${id}`)?.value)||0);
-    const pct=isPct?(parseFloat(document.getElementById(`lspct-${id}`)?.value)||80):null;
+    const base=isPct?0:(parseFloat(String(document.getElementById(`lsb-${id}`)?.value||'').replace(/,/g,''))||0);
+    const pct=isPct?(parseFloat(String(document.getElementById(`lspct-${id}`)?.value||'').replace(/,/g,''))||80):null;
     const rate=parseFloat($(`lsr-${id}`)?.value)||0;
     const from=parseInt(document.getElementById(`lsf-${id}`)?.value)||0;
     const toEl=document.getElementById(`lst-${id}`);

@@ -241,7 +241,7 @@ function buildLctrlManualInputs(){
 }
 function getLctrlManualValues(){
   const vals=[];let y=1;
-  while(true){const el=$(`lctrl-m-${y}`);if(!el)break;vals.push(parseFloat(el.value)||0);y++;}
+  while(true){const el=$(`lctrl-m-${y}`);if(!el)break;vals.push(parseFloat(String(el.value||'').replace(/,/g,''))||0);y++;}
   return vals;
 }
 function updateLctrlHint(){

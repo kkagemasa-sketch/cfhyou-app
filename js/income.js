@@ -136,10 +136,10 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo){
   }
 }
 function calcTakeHomeW(){
-  calcTakeHomeBase(parseFloat(document.getElementById('w-calc-gross')?.value)||0,'w-calc-result','w-calc-detail',_calcTypeW==='fuyo');
+  calcTakeHomeBase(fv('w-calc-gross'),'w-calc-result','w-calc-detail',_calcTypeW==='fuyo');
 }
 function calcTakeHome(){
-  calcTakeHomeBase(parseFloat(document.getElementById('calc-gross')?.value)||0,'calc-result','calc-detail',_calcTypeH==='fuyo');
+  calcTakeHomeBase(fv('calc-gross'),'calc-result','calc-detail',_calcTypeH==='fuyo');
 }
 
 // ===== 年金概算計算 =====

@@ -4,7 +4,8 @@ function render(){
   if(rTab==='lctab'){renderLCTab();return}
   if(rTab==='loan'){if($('lp-table-wrap'))renderLoanCalc();return}
   if(rTab==='memo'){renderMemo();return}
-  const hAge=iv('husband-age')||30, wAge=iv('wife-age')||29;
+  const _isSingle=householdType==='single';
+  const hAge=iv('husband-age')||30, wAge=_isSingle?0:(iv('wife-age')||29);
   const loanAmt=fv('loan-amt'), loanYrs=iv('loan-yrs')||35, delivery=iv('delivery');
   // ペアローン用変数
   const lhAmt=pairLoanMode?fv('loan-h-amt')||0:0;
@@ -31,7 +32,7 @@ function render(){
   const retAge=iv('retire-age')||60, retPay=fv('retire-pay'), pSelf=$('pension-h')?.value===''?0:(fv('pension-h')||186);
   const retPayAge=iv('retire-pay-age')||retAge;
   const hDeathAge=iv('h-death-age')||83;
-  const wDeathAge=iv('w-death-age')||88;
+  const wDeathAge=_isSingle?0:(iv('w-death-age')||88);
   const wRetAge=iv('w-retire-age')||60;
   const wRetPay=fv('w-retire-pay')||0;
   const wRetPayAge=iv('w-retire-pay-age')||wRetAge;
@@ -156,9 +157,9 @@ function render(){
     R.hInc.push(ri(hInc));
     R.dcTaxSavingH.push(ri(hDCSaving));
 
-    // ─── 奥様収入（産休・育休・時短対応） ───
+    // ─── 奥様収入（産休・育休・時短対応）※単身時スキップ ───
     let wInc=0, wDCSaving=0;
-    if(!(wDeathAge>0&&wa>wDeathAge)){
+    if(!_isSingle&&!(wDeathAge>0&&wa>wDeathAge)){
       const leave=leaves.find(l=>wa>=l.startAge&&wa<l.endAge);
       if(leave){
         wInc=ri(leave.income);
@@ -177,7 +178,7 @@ function render(){
     // ─── その他収入 ───
     R.rPay.push(ha===retPayAge?ri(retPay):0);
     // 奥様退職金
-    R.wRPay.push(wa===wRetPayAge?ri(wRetPay):0);
+    R.wRPay.push(!_isSingle&&wa===wRetPayAge?ri(wRetPay):0);
     // 副業・不動産収入
     let oiTotal=0;
     otherIncomesCache.forEach(oi=>{if(oi.amt>0&&(oi.endAge===0||ha<oi.endAge))oiTotal+=oi.amt;});
@@ -229,7 +230,7 @@ function render(){
     R.insMat.push(insMatTotal);
     // 老齢年金（死亡後も生存配偶者の年金は継続表示、遺族年金は別行）
     R.pS.push((ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(pSelf):0);
-    R.pW.push((wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife):0);
+    R.pW.push((!_isSingle&&wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife):0);
     // ─── 児童手当（TEATE_TABLEを参照・2024年10月改正対応） ───
     let t=0;
     if(hDeathAge===0||ha<=hDeathAge){
@@ -246,11 +247,11 @@ function render(){
     }
     R.teate.push(t);
 
-    // ─── 遺族年金（純粋な遺族年金部分のみ、老齢年金は別行表示） ───
+    // ─── 遺族年金（純粋な遺族年金部分のみ、老齢年金は別行表示）※単身時スキップ ───
     let survP=0;
-    if(hDeathAge>0&&ha>hDeathAge){
+    if(!_isSingle&&hDeathAge>0&&ha>hDeathAge){
       // ご主人ご逝去後：奥様への遺族年金
-      const overrideH=parseFloat(document.getElementById('surv-h-amt')?.value)||0;
+      const overrideH=fv('surv-h-amt');
       if(overrideH>0){
         survP=overrideH;
       }else{
@@ -268,7 +269,7 @@ function render(){
       }
     }else if(wDeathAge>0&&wa>wDeathAge){
       // 奥様ご逝去後：ご主人への遺族年金
-      const overrideW=parseFloat(document.getElementById('surv-w-amt')?.value)||0;
+      const overrideW=fv('surv-w-amt');
       if(overrideW>0){
         survP=overrideW;
       }else{
@@ -516,7 +517,7 @@ function render(){
     });
     R.secBuy.push(ri(secBuyTotal));
     // ─── 家賃（引き渡し前）───
-    const rentMonthly=(parseFloat(document.getElementById('rent-before')?.value)||0)/10000;
+    const rentMonthly=fv('rent-before')/10000;
     const rentAmt=(!active&&delivery>0)?ri(rentMonthly*12):0;
     R.rent.push(rentAmt);
 
@@ -1053,8 +1054,8 @@ function render(){
     const chukorei0=(kiso0===0&&wa0>=40&&wa0<65)?ri(61.43):0;
     let autoH;
     if(wa0>=pWReceive){
-      // 2022年改正後は差額方式のみ（2/3・1/2方式は廃止）
-      autoH=kisoW+Math.max(ri(koseiH*0.75),ri(koseiW))+kiso0+chukorei0;
+      // 差額方式：奥様が老齢年金を受給中は差額のみ（遺族厚生年金部分のみ）
+      autoH=Math.max(ri(koseiH*0.75)-koseiW,0)+kiso0+chukorei0;
     }else{
       autoH=ri(koseiH*0.75)+kiso0+chukorei0;
     }
@@ -1068,7 +1069,13 @@ function render(){
     children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<=18)childUnder18++;});
     const kiso0=calcKiso(childUnder18);
     const hIncome0=getIncomeAtAge(hSteps,ha0);
-    const autoW=(childUnder18>0||(ha0>=55&&hIncome0<850))?ri(koseiW*0.75)+kiso0:kiso0;
+    let autoW;
+    if(childUnder18>0||(ha0>=55&&hIncome0<850)){
+      // 差額方式：ご主人が老齢年金を受給中は差額のみ
+      autoW=ha0>=pHReceive?Math.max(ri(koseiW*0.75)-koseiH,0)+kiso0:ri(koseiW*0.75)+kiso0;
+    }else{
+      autoW=kiso0;
+    }
     survWSpan.textContent=autoW.toLocaleString();
   }
 

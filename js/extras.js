@@ -105,7 +105,7 @@ function updateExtraTitle(id){
 function updateExtraHint(id){
   const yr=parseInt($(`ex-yr-${id}`)?.value)||0;
   const yr2=parseInt($(`ex-yr2-${id}`)?.value)||0;
-  const amt=parseFloat($(`ex-amt-${id}`)?.value)||0;
+  const amt=parseFloat(String($(`ex-amt-${id}`)?.value||'').replace(/,/g,''))||0;
   const lbl=$(`ex-lbl-${id}`)?.value||'';
   const h=$(`ex-hint-${id}`);
   if(!h)return;
@@ -124,7 +124,7 @@ function getExtraItems(){
     const id = el.id.split('-')[2];
     const yr = parseInt(el.value) || 0;
     const yr2 = parseInt(document.getElementById(`ex-yr2-${id}`)?.value) || 0;
-    const amt = parseFloat(document.getElementById(`ex-amt-${id}`)?.value) || 0;
+    const amt = parseFloat(String(document.getElementById(`ex-amt-${id}`)?.value||'').replace(/,/g,'')) || 0;
     const lbl = document.getElementById(`ex-lbl-${id}`)?.value || '特別支出';
     if(yr > 0 && amt > 0) items.push({ yr, yr2: yr2 >= yr ? yr2 : yr, amt, lbl });
   });

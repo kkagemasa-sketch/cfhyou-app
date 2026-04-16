@@ -161,12 +161,12 @@ function getMGLCSteps(){
     const toEl=el.querySelector(`[id$="lst-${idx}"]`);
     const pctEl=el.querySelector(`[id$="lspct-${idx}"]`);
     steps.push({
-      base:isPct?0:(parseFloat(baseEl?.value)||0),
+      base:isPct?0:(parseFloat(String(baseEl?.value||'').replace(/,/g,''))||0),
       rate:parseFloat(rateEl?.value)||0,
       fromYr:parseInt(fromEl?.value)||0,
       toYr:parseInt(toEl?.value)||0,
       mode:isPct?'pct':'free',
-      pct:isPct?(parseFloat(pctEl?.value)||80):null
+      pct:isPct?(parseFloat(String(pctEl?.value||'').replace(/,/g,''))||80):null
     });
   });
   return steps;
@@ -174,7 +174,7 @@ function getMGLCSteps(){
 function getMGLCMode(){return document.getElementById('mg-lc-mode-step')?.classList.contains('on')?'step':'ratio';}
 function getMGInsuranceTotal(){
   let total=0;
-  document.querySelectorAll('[id^="mg-ins-amt-"]').forEach(el=>{total+=(parseFloat(el.value)||0);});
+  document.querySelectorAll('[id^="mg-ins-amt-"]').forEach(el=>{total+=(parseFloat(String(el.value||'').replace(/,/g,''))||0);});
   return total;
 }
 
