@@ -285,17 +285,20 @@ function render(){
         let childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
         const kiso=calcKiso(childUnder18);
-        // 夫の遺族厚生年金: 子ありOR(55歳以上かつ年収850万未満)、支給開始60歳
+        const hAgeAtDeath=hAge+(wDeathAge-wAge); // 妻死亡時のご主人の年齢
+        const hadChildAtDeath=children.some(c=>c.age+(wDeathAge-wAge)<=18);
+        // 夫の遺族厚生年金要件: 死亡時に(子ありOR55歳以上)が必須
         if(childUnder18>0){
           if(ha>=pHReceive){survP=Math.max(ri(koseiW*0.75)-koseiH,0)+kiso;}
           else{survP=ri(koseiW*0.75)+kiso;}
-        }else if(ha>=55&&hIncome<850){
-          if(ha>=60){
+        }else if(hadChildAtDeath||hAgeAtDeath>=55){
+          // 死亡時に子ありだった or 55歳以上→受給権あり、60歳から支給
+          if(ha>=60&&hIncome<850){
             if(ha>=pHReceive){survP=Math.max(ri(koseiW*0.75)-koseiH,0);}
             else{survP=ri(koseiW*0.75);}
-          }// 55-59歳は支給停止 → survP=0のまま
+          }// 60歳未満 or 高収入は支給停止
         }
-        // 子なし・55歳未満 → survP=0（遺族年金なし）
+        // 死亡時55歳未満・子なし → survP=0（受給権なし）
       }
     }
     R.survPension.push(survP);
@@ -1090,13 +1093,21 @@ function render(){
     const kiso0=calcKiso(childUnder18);
     const hIncome0=getIncomeAtAge(hSteps,ha0);
     let autoW;
-    if(childUnder18>0||(ha0>=55&&hIncome0<850)){
-      // 差額方式：ご主人が老齢年金を受給中は差額のみ
+    const hAgeAtWDeath=hAge+(wDeathAge-wAge); // 妻死亡時のご主人の年齢
+    const hadChildAtWDeath=children.some(c=>c.age+(wDeathAge-wAge)<=18);
+    if(childUnder18>0){
       autoW=ha0>=pHReceive?Math.max(ri(koseiW*0.75)-koseiH,0)+kiso0:ri(koseiW*0.75)+kiso0;
+    }else if(hadChildAtWDeath||hAgeAtWDeath>=55){
+      // 死亡時に子あり or 55歳以上→受給権あり
+      const hInc0=getIncomeAtAge(hSteps,ha0);
+      if(ha0>=60&&hInc0<850){
+        autoW=ha0>=pHReceive?Math.max(ri(koseiW*0.75)-koseiH,0):ri(koseiW*0.75);
+      }else{autoW=0;}
     }else{
-      autoW=kiso0;
+      autoW=0; // 死亡時55歳未満・子なし→受給権なし
     }
-    survWSpan.textContent=autoW.toLocaleString();
+    const noRightW=!hadChildAtWDeath&&hAgeAtWDeath<55&&!children.length;
+    survWSpan.textContent=autoW.toLocaleString()+(noRightW?' (受給権なし)':'');
   }
 
   // Excel出力用にグローバル保存

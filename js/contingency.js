@@ -561,18 +561,22 @@ function _renderContingencyInner(){
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           const kiso=calcKiso(childUnder18);
           const hIncome=getIncomeAtAge(getIncomeSteps('h'),ha);
-          // 夫の遺族厚生年金: 子ありOR(55歳以上かつ年収850万未満)が要件、支給開始は60歳から
+          const hAgeAtDeath=hAge+deathYearOffset-1;
+          const hadChildAtDeath=children.some(c=>c.age+(deathYearOffset-1)<=18);
+          // 夫の遺族厚生年金要件: 死亡時に(子ありOR55歳以上)が必須
+          // 死亡時55歳未満・子なし→受給権自体が発生しない（永久に）
           if(childUnder18>0){
             if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0)+kiso;}
             else{survP=ri(kW*0.75)+kiso;}
-          }else if(ha>=55&&hIncome<850){
-            // 55歳以上で受給権取得、ただし支給開始は60歳から
-            if(ha>=60){
+          }else if(hadChildAtDeath||hAgeAtDeath>=55){
+            // 死亡時に子ありだった→子が18歳超後も厚生年金部分は残る
+            // 死亡時55歳以上→受給権あり、支給開始は60歳から
+            if(ha>=60&&hIncome<850){
               if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0);}
               else{survP=ri(kW*0.75);}
-            }else{survP=0;} // 55-59歳は支給停止
+            }else{survP=0;} // 60歳未満 or 高収入は支給停止
           }else{
-            survP=kiso; // 子の遺族基礎年金のみ（子がいない場合は0）
+            survP=0; // 死亡時55歳未満・子なし→受給権なし
           }
         }
       }
