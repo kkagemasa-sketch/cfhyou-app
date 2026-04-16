@@ -1327,6 +1327,12 @@ function checkPW(){
       <!-- ご主人様の万が一（遺族＝奥様） -->
       <div id="mg-car-fields-h">
         <div style="font-size:10px;font-weight:700;color:#1a5fa0;margin-bottom:4px">🚗 奥様基準</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <div class="tc on" id="mg-car-h-new" onclick="setMGCarType('h','new')" style="flex:1;padding:5px 6px;gap:2px">
+            <span style="font-size:13px">✨</span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検:初回3年・以降2年</div></div>
+          <div class="tc" id="mg-car-h-used" onclick="setMGCarType('h','used')" style="flex:1;padding:5px 6px;gap:2px">
+            <span style="font-size:13px">🔄</span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検:2年ごと</div></div>
+        </div>
         <div class="g3" style="margin-bottom:6px">
           <div class="fg"><label class="lbl">車両価格</label>
             <div class="suf"><input class="inp amt-inp" id="mg-car-h-price" type="number" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
@@ -1345,6 +1351,12 @@ function checkPW(){
       <!-- 奥様の万が一（遺族＝ご主人様） -->
       <div id="mg-car-fields-w">
         <div style="font-size:10px;font-weight:700;color:#a01a5f;margin-bottom:4px">🚗 ご主人様基準</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <div class="tc on" id="mg-car-w-new" onclick="setMGCarType('w','new')" style="flex:1;padding:5px 6px;gap:2px">
+            <span style="font-size:13px">✨</span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検:初回3年・以降2年</div></div>
+          <div class="tc" id="mg-car-w-used" onclick="setMGCarType('w','used')" style="flex:1;padding:5px 6px;gap:2px">
+            <span style="font-size:13px">🔄</span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検:2年ごと</div></div>
+        </div>
         <div class="g3" style="margin-bottom:6px">
           <div class="fg"><label class="lbl">車両価格</label>
             <div class="suf"><input class="inp amt-inp" id="mg-car-w-price" type="number" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
@@ -1481,7 +1493,7 @@ function checkPW(){
 <script src="js/living-cost.js?v=2"></script>
 <script src="js/assets.js?v=11"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=46"></script>
+<script src="js/contingency.js?v=47"></script>
 <script src="js/cf-ui.js?v=19"></script>
 <script src="js/cf-calc.js?v=23"></script>
 <script src="js/cf-table.js?v=18"></script>
@@ -1491,7 +1503,7 @@ function checkPW(){
 <script src="js/loan-plan.js?v=7"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=2"></script>
-<script src="js/save-load.js?v=36"></script>
+<script src="js/save-load.js?v=37"></script>
 <script src="js/ui.js?v=4"></script>
 <script src="js/app.js?v=38"></script>
 <!-- Firebase (マンションマスター共有) -->

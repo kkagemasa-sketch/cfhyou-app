@@ -47,18 +47,27 @@ function syncMGCarFromNormal(){
   const cycle=iv(`car-${firstId}-cycle`)||7;
   const insp=fv(`car-${firstId}-insp`)||10;
   const endAge=iv(`car-${firstId}-end-age`)||70;
+  const carType=cars[0].dataset.type||'new';
   // 両方のフィールドに反映（h=ご主人死亡時→奥様基準、w=奥様死亡時→ご主人基準）
   ['h','w'].forEach(p=>{
     const ep=$(`mg-car-${p}-price`);if(ep&&(ep.value==='300'||ep.value==='0'||ep.value===''))ep.value=price;
     const ec=$(`mg-car-${p}-cycle`);if(ec&&(ec.value==='7'||ec.value==='0'||ec.value===''))ec.value=cycle;
     const ei=$(`mg-car-${p}-insp`);if(ei&&(ei.value==='10'||ei.value==='0'||ei.value===''))ei.value=insp;
     const ee=$(`mg-car-${p}-end-age`);if(ee&&!ee.value)ee.value=endAge;
+    // 新車/中古も連動
+    if(typeof setMGCarType==='function')setMGCarType(p,carType);
   });
   // 駐車場も連動
   const parkEl=$('mg-parking');
   const normPark=$('parking');
   if(parkEl&&normPark&&(parkEl.value==='15000'||parkEl.value==='0'||parkEl.value===''))parkEl.value=normPark.value||'15000';
 }
+function setMGCarType(p,type){
+  $(`mg-car-${p}-new`)?.classList.toggle('on',type==='new');
+  $(`mg-car-${p}-used`)?.classList.toggle('on',type==='used');
+  live();
+}
+function getMGCarType(p){return $(`mg-car-${p}-used`)?.classList.contains('on')?'used':'new';}
 function setMGDansin(on){
   mgDansin=on;
   $('mg-dansin-yes').classList.toggle('on',on);
@@ -290,6 +299,7 @@ function _renderContingencyInner(){
   const _mgCarInsp=mgCarKeep?(fv(`mg-car-${_cp}-insp`)||10):0;
   const _mgCarEndAge=mgCarKeep?(iv(`mg-car-${_cp}-end-age`)||0):0;
   const _mgCarFirst=mgCarKeep?(iv(`mg-car-${_cp}-first`)||(targetIsH?wAge:hAge)):0;
+  const _mgCarType=getMGCarType(_cp); // 'new' or 'used'
   const _mgParkFrom=mgParkKeep?(iv(`mg-park-${_cp}-from-age`)||0):0;
   const _mgParkTo=mgParkKeep?(iv(`mg-park-${_cp}-to-age`)||0):0;
   const _mgParkAnnual=mgParkKeep?ri((fv('mg-parking')||15000)*12/10000):0;
@@ -781,7 +791,12 @@ function _renderContingencyInner(){
         const ageFromFirst=sAge-_mgCarFirst;
         if(ageFromFirst%_mgCarCycle===0)nCar+=_mgCarPrice;
         const carAge=ageFromFirst%_mgCarCycle;
-        if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=_mgCarInsp;
+        // 新車: 初回3年後、以降2年ごと / 中古: 2年ごと
+        if(_mgCarType==='used'){
+          if(carAge>0&&carAge%2===0)nCar+=_mgCarInsp;
+        }else{
+          if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=_mgCarInsp;
+        }
       }
     }else if(isDead){nCar=0;}
     else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
