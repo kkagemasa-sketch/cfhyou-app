@@ -1018,7 +1018,7 @@ function render(){
         if(!cfOverrides[row.key])return;
         Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
       });
-      if(R.carRows.length>1){
+      if(R.carRows&&R.carRows.length>0){
         for(let i=0;i<R.carTotal.length;i++){
           let sum=0;
           R.carRows.forEach(row=>sum+=ri(row.vals[i]||0));

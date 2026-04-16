@@ -851,7 +851,7 @@ function _renderContingencyInner(){
 
   // ── mgOverrides後処理 ──
   if(Object.keys(mgOverrides).length>0){
-    const incKeys=['hInc','wInc','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pS','pW','survPension','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pS','pW','survPension','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
@@ -862,6 +862,11 @@ function _renderContingencyInner(){
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR.edu[ci]&&c2<MR.edu[ci].length)MR.edu[ci][c2]=val;});
     });
     if(MR.secRedeemRows){MR.secRedeemRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});}
+    // carRows override → carTotal再計算
+    if(MR.carRows&&MR.carRows.length>0){
+      MR.carRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});
+      for(let ci=0;ci<MR.carTotal.length;ci++){let sum=0;MR.carRows.forEach(row=>sum+=ri(row.vals[ci]||0));MR.carTotal[ci]=sum;}
+    }
     let newSav=initSav;
     for(let i=0;i<MR.incT.length;i++){
       if(mgOverrides['incT']?.[i]!==undefined){MR.incT[i]=mgOverrides['incT'][i];}
