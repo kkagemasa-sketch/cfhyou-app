@@ -466,8 +466,9 @@ function render(){
           let runBase=baseLc;
           for(let i=0;i<=ai;i++){
             const s=lcSteps[i];const sb=s.mode==='pct'?runBase*(s.pct/100):(s.base>0?s.base:runBase);
-            if(i<ai){// 前段階：終了年まで複利を累積（to指定があればその年数、なければ0）
-              runBase=sb*Math.pow(1+s.rate/100,s.to!==null?Math.max(0,s.to-s.from):0);
+            if(i<ai){// 前段階：終了年まで複利を累積（to指定があれば年数、なければ次段階開始前年まで）
+              const effTo=s.to!==null?s.to:(lcSteps[i+1].from-1);
+              runBase=sb*Math.pow(1+s.rate/100,Math.max(0,effTo-s.from));
             }else{// アクティブ段階：yr時点の値
               lcVal=ri(sb*Math.pow(1+s.rate/100,Math.max(0,yr-s.from)));
             }

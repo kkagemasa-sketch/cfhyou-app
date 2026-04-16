@@ -37,6 +37,28 @@ function updateMGCarParkVisibility(){
     if(pwF)pwF.style.display=t==='w'?'':'none';
   }
 }
+// 通常CF表の車設定を万が一タブの車フィールドに反映
+function syncMGCarFromNormal(){
+  const cars=document.querySelectorAll('#car-list>[id^="car-"]');
+  if(!cars.length)return;
+  // 1台目の設定を取得
+  const firstId=cars[0].id.replace('car-','');
+  const price=fv(`car-${firstId}-price`)||300;
+  const cycle=iv(`car-${firstId}-cycle`)||7;
+  const insp=fv(`car-${firstId}-insp`)||10;
+  const endAge=iv(`car-${firstId}-end-age`)||70;
+  // 両方のフィールドに反映（h=ご主人死亡時→奥様基準、w=奥様死亡時→ご主人基準）
+  ['h','w'].forEach(p=>{
+    const ep=$(`mg-car-${p}-price`);if(ep&&(ep.value==='300'||ep.value==='0'||ep.value===''))ep.value=price;
+    const ec=$(`mg-car-${p}-cycle`);if(ec&&(ec.value==='7'||ec.value==='0'||ec.value===''))ec.value=cycle;
+    const ei=$(`mg-car-${p}-insp`);if(ei&&(ei.value==='10'||ei.value==='0'||ei.value===''))ei.value=insp;
+    const ee=$(`mg-car-${p}-end-age`);if(ee&&!ee.value)ee.value=endAge;
+  });
+  // 駐車場も連動
+  const parkEl=$('mg-parking');
+  const normPark=$('parking');
+  if(parkEl&&normPark&&(parkEl.value==='15000'||parkEl.value==='0'||parkEl.value===''))parkEl.value=normPark.value||'15000';
+}
 function setMGDansin(on){
   mgDansin=on;
   $('mg-dansin-yes').classList.toggle('on',on);
@@ -223,6 +245,7 @@ function getMGInsurances(){
 // ===== 万が一CF表の計算・描画 =====
 function renderContingency(){
   _mgRendering=true;
+  syncMGCarFromNormal();
   try{ return _renderContingencyInner(); }
   finally{ _mgRendering=false; }
 }
