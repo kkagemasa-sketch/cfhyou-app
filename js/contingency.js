@@ -255,12 +255,27 @@ function getMGInsurances(){
 function renderContingency(){
   _mgRendering=true;
   syncMGCarFromNormal();
-  try{ return _renderContingencyInner(); }
-  finally{ _mgRendering=false; }
+  render();
+  if(!window.lastR){_mgRendering=false;alert('先にCF表を生成してください');return;}
+  try{
+    const _isSingle_mg=householdType==='single';
+    if(_isSingle_mg){
+      _mgRendering=false;
+      return _renderContingencyInner();
+    }
+    // 夫婦: 両方のCF表を生成（render()は上で1回だけ）
+    const origTarget=mgTarget;
+    mgTarget='h';
+    _renderContingencyInner();
+    mgTarget='w';
+    _renderContingencyInner();
+    mgTarget=origTarget;
+  }finally{ _mgRendering=false; }
+  // 両方生成後、選択中のタブを表示
+  const showTab=mgTarget==='w'?'mg-w':'mg-h';
+  setRTab(showTab);
 }
 function _renderContingencyInner(){
-  render();
-  if(!window.lastR){alert('先にCF表を生成してください');return;}
   const _isSingle_mg=householdType==='single';
   const hAge=iv('husband-age')||30, wAge=_isSingle_mg?0:(iv('wife-age')||29);
   const deathYearOffset=iv('mg-death-year')||1;
@@ -1421,20 +1436,20 @@ function _renderContingencyInner(){
   const _mgPrevTop=_mgOldTw?_mgOldTw.scrollTop:(_mgRb?_mgRb.scrollTop:0);
   const _mgPrevLeft=_mgOldTw?_mgOldTw.scrollLeft:0;
 
-  // 自動でそのタブに切り替え
-  setRTab(targetIsH?'mg-h':'mg-w');
-
-  // cf-mode + sticky top計算
-  if(_mgRb)_mgRb.classList.add('cf-mode');
-  applyStickyTop(_mgRb);
-
-  // スクロール位置を復元（cf-modeではtbl-wrapが縦横スクロール）
-  const _mgNewTw=_mgRb?_mgRb.querySelector('.tbl-wrap'):null;
-  if(_mgNewTw){
-    if(_mgPrevTop>0)_mgNewTw.scrollTop=_mgPrevTop;
-    if(_mgPrevLeft>0)_mgNewTw.scrollLeft=_mgPrevLeft;
+  // バッチ生成中（夫婦モード）はsetRTab不要、生成後にrenderContingencyが呼ぶ
+  if(!_mgRendering){
+    setRTab(targetIsH?'mg-h':'mg-w');
+    // cf-mode + sticky top計算
+    if(_mgRb)_mgRb.classList.add('cf-mode');
+    applyStickyTop(_mgRb);
+    // スクロール位置を復元
+    const _mgNewTw=_mgRb?_mgRb.querySelector('.tbl-wrap'):null;
+    if(_mgNewTw){
+      if(_mgPrevTop>0)_mgNewTw.scrollTop=_mgPrevTop;
+      if(_mgPrevLeft>0)_mgNewTw.scrollLeft=_mgPrevLeft;
+    }
+    _applyFinAssetVisibility();
   }
-  _applyFinAssetVisibility();
 }
 
 // 万が一CF表タブを閉じる
