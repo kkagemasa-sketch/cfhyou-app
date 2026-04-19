@@ -499,7 +499,7 @@ async function exportExcelMG(){
   }
 
   // ── 列幅 ──
-  ws['!cols']=[{wch:10},{wch:18},...Array(disp).fill({wch:7}),{wch:8}];
+  ws['!cols']=[{wch:10},{wch:22},...Array(disp).fill({wch:7}),{wch:8}];
 
   // ── 行高さ（イベント/年齢/経過年は低め、データ行は高め）──
   ws['!rows']=types.map(t=>{
@@ -547,7 +547,7 @@ async function exportExcelMG(){
     exp:       {fill:C.expBg, font:{sz:10,color:C.black}, col0:{fill:'FFfdecea',font:{sz:10,bold:true,color:C.expFg}}},
     expTotal:  {fill:C.redL, font:{sz:10,bold:true,color:C.white}},
     balance:   {fill:C.white, font:{sz:10,bold:true,color:C.black}},
-    savings:   {fill:C.green, font:{sz:13,bold:true,color:C.white}},
+    savings:   {fill:C.green, font:{sz:12,bold:true,color:C.white}},
   };
 
   // 子どもイベント行マップ（入園年齢を含む）
@@ -1028,7 +1028,7 @@ async function exportExcel(){
   }
 
   // 列幅
-  ws['!cols']=[{wch:10},{wch:18},...Array(disp).fill({wch:7}),{wch:8}];
+  ws['!cols']=[{wch:10},{wch:22},...Array(disp).fill({wch:7}),{wch:8}];
 
   // 行高さ（イベント/年齢/経過年は低め、データ行は高め）
   ws['!rows']=types.map(t=>{
@@ -1076,7 +1076,7 @@ async function exportExcel(){
     exp:       {fill:C.expBg, font:{sz:10,color:C.black}, col0:{fill:'FFfdecea',font:{sz:10,bold:true,color:C.expFg}}},
     expTotal:  {fill:C.redL, font:{sz:10,bold:true,color:C.white}},
     balance:   {fill:C.white, font:{sz:10,bold:true,color:C.black}},
-    savings:   {fill:C.green, font:{sz:13,bold:true,color:C.white}},
+    savings:   {fill:C.green, font:{sz:12,bold:true,color:C.white}},
     fin:       {fill:C.finBg, font:{sz:10,bold:true,color:C.finFg}},
     finTotal:  {fill:'FFdbeeff', font:{sz:10,bold:true,color:C.finFg}},
     totalAsset:{fill:C.finHdrBg, font:{sz:10,bold:true,color:C.white}},
