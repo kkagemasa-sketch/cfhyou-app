@@ -1,6 +1,29 @@
 // housing.js — 住宅設定・修繕積立金・ローン控除
 
 function calcLoanAmt(){
+  // 住宅ローン総額モード: 簡易入力値をそのまま loan-amt に
+  const fundingMode=document.getElementById('funding-mode')?.value||'detail';
+  if(fundingMode==='loanOnly'){
+    const simpleLoan=fv('loan-total-simple')||0;
+    const loanEl=document.getElementById('loan-amt');
+    if(loanEl)loanEl.value=simpleLoan;
+    // 内部的に house-price/down/cost を同期（計算エンジンが参照するため）
+    const hp=document.getElementById('house-price');if(hp)hp.value=simpleLoan;
+    const dp=document.getElementById('down-payment');if(dp)dp.value=0;
+    const hc=document.getElementById('house-cost');if(hc)hc.value=0;
+    const ct=document.getElementById('cost-type');if(ct)ct.value='cash';
+    // 表示
+    const disp=document.getElementById('loan-amt-disp');
+    if(disp)disp.textContent=simpleLoan.toLocaleString();
+    const hint=document.getElementById('loan-breakdown-hint');
+    if(hint)hint.textContent=`ローン総額 ${simpleLoan.toLocaleString()}万円 （簡易モード）`;
+    // rate-base-dummy同期
+    const rateDummy=document.getElementById('rate-base-dummy');
+    const rateBase=document.getElementById('rate-base');
+    if(rateDummy&&rateBase)rateDummy.value=rateBase.value;
+    live();
+    return;
+  }
   const price=fv('house-price')||0;
   const down=fv('down-payment')||0;
   const cost=fv('house-cost')||0;
@@ -27,6 +50,32 @@ function calcLoanAmt(){
   // 頭金・諸費用のオプション表示を同期
   toggleDownOpts();toggleCostOpts();
   live();
+}
+
+// モード切替
+function setFundingMode(mode){
+  const fm=document.getElementById('funding-mode');
+  if(fm)fm.value=mode;
+  document.getElementById('funding-mode-detail')?.classList.toggle('on', mode==='detail');
+  document.getElementById('funding-mode-loan')?.classList.toggle('on', mode==='loanOnly');
+  const detailEl=document.getElementById('funding-detail-fields');
+  const loanEl=document.getElementById('funding-loan-only-fields');
+  if(detailEl) detailEl.style.display = mode==='detail' ? '' : 'none';
+  if(loanEl) loanEl.style.display = mode==='loanOnly' ? '' : 'none';
+  if(mode==='loanOnly'){
+    // 初回切替時: 現在の loan-amt を簡易入力に引き継ぐ
+    const currentLoan=fv('loan-amt')||0;
+    const simpleEl=document.getElementById('loan-total-simple');
+    if(simpleEl && (!simpleEl.value || simpleEl.value==='4500')) simpleEl.value=currentLoan;
+    onLoanTotalSimpleChange();
+  } else {
+    calcLoanAmt();
+  }
+}
+
+// 住宅ローン総額モード: 簡易入力の変更ハンドラ
+function onLoanTotalSimpleChange(){
+  calcLoanAmt();
 }
 
 // ===== 頭金・諸費用のオプション表示切替 =====

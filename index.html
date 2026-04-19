@@ -658,7 +658,14 @@ function checkPW(){
 
       <!-- 物件価格・資金計画 -->
       <div class="sub">💴 物件価格・資金計画</div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
+      <!-- モード切替: 詳細設定 / 住宅ローン総額 -->
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <button type="button" class="btn-tog on" id="funding-mode-detail" onclick="setFundingMode('detail')">📋 詳細設定</button>
+        <button type="button" class="btn-tog" id="funding-mode-loan" onclick="setFundingMode('loanOnly')">💰 住宅ローン総額</button>
+      </div>
+      <input type="hidden" id="funding-mode" value="detail">
+      <!-- 詳細設定モード（従来通り） -->
+      <div id="funding-detail-fields" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
         <!-- 住宅価格 -->
         <div class="fg"><label class="lbl">住宅価格<span class="req">*</span></label>
           <div class="suf"><input class="inp amt-inp" id="house-price" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="5000" min="0" oninput="calcLoanAmt()"><span class="sl">万円</span></div></div>
@@ -685,6 +692,14 @@ function checkPW(){
               <div class="tc-lbl" style="font-size:10px">🏦 ローン組込</div>
             </div>
           </div></div>
+      </div>
+      <!-- 住宅ローン総額モード（簡易シミュレーション用） -->
+      <div id="funding-loan-only-fields" style="display:none;margin-bottom:8px">
+        <div class="fg"><label class="lbl">住宅ローン総額<span class="req">*</span></label>
+          <div class="suf"><input class="inp amt-inp" id="loan-total-simple" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="4500" min="0" oninput="onLoanTotalSimpleChange()"><span class="sl">万円</span></div></div>
+        <div class="hint" style="font-size:10px;color:var(--muted);margin-top:6px;padding:6px 8px;background:#fef9e7;border-left:3px solid #f1c40f;border-radius:4px">
+          💡 簡易シミュレーション用。住宅価格=ローン総額、頭金=0、諸費用=0として扱われます。
+        </div>
       </div>
       <!-- 借入金額（自動計算） -->
       <div style="background:#eef5ff;border:1px solid #b8d4f8;border-radius:var(--rs);padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
