@@ -506,6 +506,7 @@ async function exportExcelMG(){
     if(t==='event'||t==='age'||t==='elapsed')return{hpt:14};
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
+    if(t==='savings')return{hpt:24};
     return{hpt:18};
   });
 
@@ -546,7 +547,7 @@ async function exportExcelMG(){
     exp:       {fill:C.expBg, font:{sz:10,color:C.black}, col0:{fill:'FFfdecea',font:{sz:10,bold:true,color:C.expFg}}},
     expTotal:  {fill:C.redL, font:{sz:10,bold:true,color:C.white}},
     balance:   {fill:C.white, font:{sz:10,bold:true,color:C.black}},
-    savings:   {fill:C.green, font:{sz:10,bold:true,color:C.white}},
+    savings:   {fill:C.green, font:{sz:13,bold:true,color:C.white}},
   };
 
   // 子どもイベント行マップ（入園年齢を含む）
@@ -1034,6 +1035,7 @@ async function exportExcel(){
     if(t==='event'||t==='age'||t==='elapsed')return{hpt:14};
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
+    if(t==='savings')return{hpt:24};
     return{hpt:18};
   });
 
@@ -1074,7 +1076,7 @@ async function exportExcel(){
     exp:       {fill:C.expBg, font:{sz:10,color:C.black}, col0:{fill:'FFfdecea',font:{sz:10,bold:true,color:C.expFg}}},
     expTotal:  {fill:C.redL, font:{sz:10,bold:true,color:C.white}},
     balance:   {fill:C.white, font:{sz:10,bold:true,color:C.black}},
-    savings:   {fill:C.green, font:{sz:10,bold:true,color:C.white}},
+    savings:   {fill:C.green, font:{sz:13,bold:true,color:C.white}},
     fin:       {fill:C.finBg, font:{sz:10,bold:true,color:C.finFg}},
     finTotal:  {fill:'FFdbeeff', font:{sz:10,bold:true,color:C.finFg}},
     totalAsset:{fill:C.finHdrBg, font:{sz:10,bold:true,color:C.white}},
