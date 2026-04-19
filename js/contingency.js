@@ -1350,9 +1350,9 @@ function _renderContingencyInner(){
   h+=`<td class="${bt_mg<0?'vn':'vp'}">${bt_mg>=0?bt_mg.toLocaleString():'▲'+Math.abs(bt_mg).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">年間収支</span></td></tr>`;
 
   const _mgInitSavV=ri(window._purchaseInitSav||0);const _mgInitSavTxt=_mgInitSavV>=0?_mgInitSavV.toLocaleString():'▲'+Math.abs(_mgInitSavV).toLocaleString();const _mgInitSavStyle=_mgInitSavV<0?'color:#ffaaaa':'';
-  h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:9px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:10px;font-weight:700;${_mgInitSavStyle}">${_mgInitSavTxt}万円</span></td>`;
+  h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_mgInitSavStyle}">${_mgInitSavTxt}万円</span></td>`;
   for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.sav[i2]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;}
-  const _mgSavLast=ri(MR.sav[mgDisp-1]);h+=`<td>${_mgSavLast>=0?_mgSavLast.toLocaleString():'▲'+Math.abs(_mgSavLast).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
+  const _mgSavLast=ri(MR.sav[mgDisp-1]);h+=`<td>${_mgSavLast>=0?_mgSavLast.toLocaleString():'▲'+Math.abs(_mgSavLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
 
   // その他金融資産（個別行 + 合計）
   const _hasFinAsset=MR.finAsset.some(v=>v>0);
