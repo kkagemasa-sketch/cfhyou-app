@@ -999,6 +999,98 @@ async function exportExcel(){
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
 
+  // ===== Excel関数化（レベル1：主要な合計を関数にする） =====
+  // ユーザーが個別セルを編集したら合計が自動で再計算されるように
+  (function applyFormulas(){
+    const firstYearCol = 2;      // C列（0-indexed）
+    const lastYearCol = 2+disp-1; // 最終年列
+    const totalCol = 2+disp;      // 合計列
+
+    // 各typeの行インデックス収集
+    let firstIncRow=-1,lastIncRow=-1,firstExpRow=-1,lastExpRow=-1;
+    let incTotalRow=-1,expTotalRow=-1,balanceRow=-1,savingsRow=-1;
+    let finTotalRow=-1,totalAssetRow=-1;
+    types.forEach((t,i)=>{
+      const tStr = typeof t==='object' ? t?.type : t;
+      if(tStr==='inc'){if(firstIncRow<0)firstIncRow=i; lastIncRow=i;}
+      else if(tStr==='exp'||tStr==='edu'){if(firstExpRow<0)firstExpRow=i; lastExpRow=i;}
+      else if(tStr==='incTotal')incTotalRow=i;
+      else if(tStr==='expTotal')expTotalRow=i;
+      else if(tStr==='balance')balanceRow=i;
+      else if(tStr==='savings')savingsRow=i;
+      else if(tStr==='finTotal')finTotalRow=i;
+      else if(tStr==='totalAsset')totalAssetRow=i;
+    });
+
+    const col = c => XLSX.utils.encode_col(c);
+    const R = r => r + 1;  // Excel は1-indexed
+    const setFormula = (r, c, formula) => {
+      const addr = col(c) + R(r);
+      if(!ws[addr]) ws[addr] = {t:'n'};
+      ws[addr].f = formula;
+    };
+
+    // 各収入行の合計列 = SUM(年度セル)
+    if(firstIncRow>=0){
+      for(let r=firstIncRow; r<=lastIncRow; r++){
+        setFormula(r, totalCol, `SUM(${col(firstYearCol)}${R(r)}:${col(lastYearCol)}${R(r)})`);
+      }
+    }
+    // 各支出行の合計列
+    if(firstExpRow>=0){
+      for(let r=firstExpRow; r<=lastExpRow; r++){
+        setFormula(r, totalCol, `SUM(${col(firstYearCol)}${R(r)}:${col(lastYearCol)}${R(r)})`);
+      }
+    }
+
+    // 収入合計: 年度列 = SUM(収入各行の同列)、合計列 = SUM(年度列)
+    if(incTotalRow>=0 && firstIncRow>=0){
+      for(let c=firstYearCol; c<=lastYearCol; c++){
+        setFormula(incTotalRow, c, `SUM(${col(c)}${R(firstIncRow)}:${col(c)}${R(lastIncRow)})`);
+      }
+      setFormula(incTotalRow, totalCol, `SUM(${col(firstYearCol)}${R(incTotalRow)}:${col(lastYearCol)}${R(incTotalRow)})`);
+    }
+
+    // 支出合計
+    if(expTotalRow>=0 && firstExpRow>=0){
+      for(let c=firstYearCol; c<=lastYearCol; c++){
+        setFormula(expTotalRow, c, `SUM(${col(c)}${R(firstExpRow)}:${col(c)}${R(lastExpRow)})`);
+      }
+      setFormula(expTotalRow, totalCol, `SUM(${col(firstYearCol)}${R(expTotalRow)}:${col(lastYearCol)}${R(expTotalRow)})`);
+    }
+
+    // 年間収支: 各列 = 収入合計 - 支出合計
+    if(balanceRow>=0 && incTotalRow>=0 && expTotalRow>=0){
+      for(let c=firstYearCol; c<=lastYearCol; c++){
+        setFormula(balanceRow, c, `${col(c)}${R(incTotalRow)}-${col(c)}${R(expTotalRow)}`);
+      }
+      setFormula(balanceRow, totalCol, `SUM(${col(firstYearCol)}${R(balanceRow)}:${col(lastYearCol)}${R(balanceRow)})`);
+    }
+
+    // 預貯金残高: 最初の年 = B列(初期値) + balance、以降 = 前年 + balance
+    if(savingsRow>=0 && balanceRow>=0){
+      // 最初の年 (C列)
+      setFormula(savingsRow, firstYearCol, `B${R(savingsRow)}+${col(firstYearCol)}${R(balanceRow)}`);
+      for(let c=firstYearCol+1; c<=lastYearCol; c++){
+        setFormula(savingsRow, c, `${col(c-1)}${R(savingsRow)}+${col(c)}${R(balanceRow)}`);
+      }
+      // 合計列 = 最終年の値
+      setFormula(savingsRow, totalCol, `${col(lastYearCol)}${R(savingsRow)}`);
+    }
+
+    // 総金融資産: 預貯金残高 + その他金融資産
+    if(totalAssetRow>=0 && savingsRow>=0){
+      for(let c=firstYearCol; c<=lastYearCol; c++){
+        if(finTotalRow>=0){
+          setFormula(totalAssetRow, c, `${col(c)}${R(savingsRow)}+${col(c)}${R(finTotalRow)}`);
+        } else {
+          setFormula(totalAssetRow, c, `${col(c)}${R(savingsRow)}`);
+        }
+      }
+      setFormula(totalAssetRow, totalCol, `${col(lastYearCol)}${R(totalAssetRow)}`);
+    }
+  })();
+
   // セル結合
   if(!ws['!merges'])ws['!merges']=[];
   // title行(row0)のA+B結合、C+D結合（物件タイプ）
