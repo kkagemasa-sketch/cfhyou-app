@@ -506,7 +506,7 @@ async function exportExcelMG(){
     if(t==='event'||t==='age'||t==='elapsed')return{hpt:14};
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
-    if(t==='savings')return{hpx:40};
+    if(t==='savings')return{hpt:30};
     return{hpt:18};
   });
 
@@ -1035,7 +1035,7 @@ async function exportExcel(){
     if(t==='event'||t==='age'||t==='elapsed')return{hpt:14};
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
-    if(t==='savings')return{hpx:40};
+    if(t==='savings')return{hpt:30};
     return{hpt:18};
   });
 
