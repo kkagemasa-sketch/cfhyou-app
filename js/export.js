@@ -415,7 +415,7 @@ async function exportExcelMG(){
   push(['年間収支','',...MR.bal.slice(0,disp).map(v=>ri(v)),ri(MR.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
   const _mgInitSavForXls=ri(window._purchaseInitSav||0);
   push(['預貯金残高',_mgInitSavForXls,...MR.sav.slice(0,disp).map(v=>ri(v)),ri(MR.sav[disp-1])],'savings');
-  // その他金融資産
+  // その他金融資産（通常CFと同じ型タグを使用: 'fin', 'finTotal'）
   const _hasFAMG=MR.finAsset&&MR.finAsset.some(v=>v>0);
   if(_hasFAMG){
     if(N.finAssetRows&&N.finAssetRows.length>0){
@@ -423,13 +423,13 @@ async function exportExcelMG(){
       N.finAssetRows.forEach(row=>{
         if(row.person===_deadPExp)return;
         if(!row.vals.slice(0,disp).some(v=>v>0))return;
-        push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v||0)),ri(row.vals[disp-1]||0)],'inc');
+        push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v||0)),ri(row.vals[disp-1]||0)],'fin');
       });
     }
-    push(['その他金融資産','',...MR.finAsset.slice(0,disp).map(v=>ri(v)),ri(MR.finAsset[disp-1])],'inc');
+    push(['その他金融資産','',...MR.finAsset.slice(0,disp).map(v=>ri(v)),ri(MR.finAsset[disp-1])],'finTotal');
   }
-  // 総金融資産
-  if(MR.totalAsset)push(['総金融資産','',...MR.totalAsset.slice(0,disp).map(v=>ri(v)),ri(MR.totalAsset[disp-1])],'savings');
+  // 総金融資産（通常CFと同じ型タグ: 'totalAsset'）
+  if(MR.totalAsset)push(['総金融資産','',...MR.totalAsset.slice(0,disp).map(v=>ri(v)),ri(MR.totalAsset[disp-1])],'totalAsset');
   // ローン残高
   if(pairLoanMode){
     if(MR.lBalH&&MR.lBalH.some(v=>v>0))push(['ローン残高(主)','',...MR.lBalH.slice(0,disp).map(v=>ri(v)),ri(MR.lBalH[disp-1]||0)],'balance');
@@ -483,12 +483,10 @@ async function exportExcelMG(){
       else if(tStr==='exp'||tStr==='edu'){if(firstExpRow<0)firstExpRow=i; lastExpRow=i;}
       else if(tStr==='incTotal')incTotalRow=i;
       else if(tStr==='expTotal')expTotalRow=i;
-      else if(tStr==='balance' && balanceRow<0)balanceRow=i;  // 最初のbalance(=年間収支)
-      else if(tStr==='savings'){
-        // 最初のsavings(=預貯金残高)、2つ目(=総金融資産)は別途
-        if(savingsRow<0) savingsRow=i;
-        else totalAssetRow=i;  // MG版では総金融資産も'savings'タイプで出力
-      }
+      else if(tStr==='balance' && balanceRow<0)balanceRow=i;
+      else if(tStr==='savings')savingsRow=i;
+      else if(tStr==='finTotal')finTotalRow=i;
+      else if(tStr==='totalAsset')totalAssetRow=i;
     });
 
     const col = c => XLSX.utils.encode_col(c);
@@ -539,10 +537,15 @@ async function exportExcelMG(){
       }
       setFormula(savingsRow, totalCol, `${col(lastYearCol)}${R(savingsRow)}`);
     }
-    // 総金融資産（MG版では'savings'タイプの2つ目として保存）
+    // 総金融資産 = 預貯金残高 + その他金融資産（通常CFと同じ）
+    // 万が一時も死亡者の金融資産は現金化で処理済みなので、finTotal は生存者のみ
     if(totalAssetRow>=0 && savingsRow>=0){
       for(let c=firstYearCol; c<=lastYearCol; c++){
-        setFormula(totalAssetRow, c, `${col(c)}${R(savingsRow)}`);  // finTotal行の位置が不定なのでsavings値のみ
+        if(finTotalRow>=0){
+          setFormula(totalAssetRow, c, `${col(c)}${R(savingsRow)}+${col(c)}${R(finTotalRow)}`);
+        } else {
+          setFormula(totalAssetRow, c, `${col(c)}${R(savingsRow)}`);
+        }
       }
       setFormula(totalAssetRow, totalCol, `${col(lastYearCol)}${R(totalAssetRow)}`);
     }
@@ -628,6 +631,9 @@ async function exportExcelMG(){
     expTotal:  {fill:C.redL, font:{sz:10,bold:true,color:C.white}},
     balance:   {fill:C.white, font:{sz:10,bold:true,color:C.black}},
     savings:   {fill:C.green, font:{sz:11,bold:true,color:C.white}},
+    fin:       {fill:C.finBg, font:{sz:10,bold:true,color:C.finFg}},
+    finTotal:  {fill:'FFdbeeff', font:{sz:10,bold:true,color:C.finFg}},
+    totalAsset:{fill:C.finHdrBg, font:{sz:10,bold:true,color:C.white}},
   };
 
   // 子どもイベント行マップ（入園年齢を含む）
