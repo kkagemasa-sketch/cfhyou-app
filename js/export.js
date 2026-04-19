@@ -413,7 +413,8 @@ async function exportExcelMG(){
 
   // ── 収支・残高 ──
   push(['年間収支','',...MR.bal.slice(0,disp).map(v=>ri(v)),ri(MR.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
-  push(['預貯金残高','',...MR.sav.slice(0,disp).map(v=>ri(v)),ri(MR.sav[disp-1])],'savings');
+  const _mgInitSavForXls=ri(window._purchaseInitSav||0);
+  push(['預貯金残高',_mgInitSavForXls,...MR.sav.slice(0,disp).map(v=>ri(v)),ri(MR.sav[disp-1])],'savings');
   // その他金融資産
   const _hasFAMG=MR.finAsset&&MR.finAsset.some(v=>v>0);
   if(_hasFAMG){
@@ -467,6 +468,85 @@ async function exportExcelMG(){
   }
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
+
+  // ===== Excel関数化（レベル1：主要な合計を関数にする） =====
+  (function applyFormulasMG(){
+    const firstYearCol = 2;
+    const lastYearCol = 2+disp-1;
+    const totalCol = 2+disp;
+    let firstIncRow=-1,lastIncRow=-1,firstExpRow=-1,lastExpRow=-1;
+    let incTotalRow=-1,expTotalRow=-1,balanceRow=-1,savingsRow=-1;
+    let finTotalRow=-1,totalAssetRow=-1;
+    types.forEach((t,i)=>{
+      const tStr = typeof t==='object' ? t?.type : t;
+      if(tStr==='inc'){if(firstIncRow<0)firstIncRow=i; lastIncRow=i;}
+      else if(tStr==='exp'||tStr==='edu'){if(firstExpRow<0)firstExpRow=i; lastExpRow=i;}
+      else if(tStr==='incTotal')incTotalRow=i;
+      else if(tStr==='expTotal')expTotalRow=i;
+      else if(tStr==='balance' && balanceRow<0)balanceRow=i;  // 最初のbalance(=年間収支)
+      else if(tStr==='savings'){
+        // 最初のsavings(=預貯金残高)、2つ目(=総金融資産)は別途
+        if(savingsRow<0) savingsRow=i;
+        else totalAssetRow=i;  // MG版では総金融資産も'savings'タイプで出力
+      }
+    });
+
+    const col = c => XLSX.utils.encode_col(c);
+    const R = r => r + 1;
+    const setFormula = (r, c, formula) => {
+      const addr = col(c) + R(r);
+      if(!ws[addr]) ws[addr] = {t:'n'};
+      ws[addr].f = formula;
+    };
+
+    // 各収入行の合計列
+    if(firstIncRow>=0){
+      for(let r=firstIncRow; r<=lastIncRow; r++){
+        setFormula(r, totalCol, `SUM(${col(firstYearCol)}${R(r)}:${col(lastYearCol)}${R(r)})`);
+      }
+    }
+    if(firstExpRow>=0){
+      for(let r=firstExpRow; r<=lastExpRow; r++){
+        setFormula(r, totalCol, `SUM(${col(firstYearCol)}${R(r)}:${col(lastYearCol)}${R(r)})`);
+      }
+    }
+    // 収入合計
+    if(incTotalRow>=0 && firstIncRow>=0){
+      for(let c=firstYearCol; c<=lastYearCol; c++){
+        setFormula(incTotalRow, c, `SUM(${col(c)}${R(firstIncRow)}:${col(c)}${R(lastIncRow)})`);
+      }
+      setFormula(incTotalRow, totalCol, `SUM(${col(firstYearCol)}${R(incTotalRow)}:${col(lastYearCol)}${R(incTotalRow)})`);
+    }
+    // 支出合計
+    if(expTotalRow>=0 && firstExpRow>=0){
+      for(let c=firstYearCol; c<=lastYearCol; c++){
+        setFormula(expTotalRow, c, `SUM(${col(c)}${R(firstExpRow)}:${col(c)}${R(lastExpRow)})`);
+      }
+      setFormula(expTotalRow, totalCol, `SUM(${col(firstYearCol)}${R(expTotalRow)}:${col(lastYearCol)}${R(expTotalRow)})`);
+    }
+    // 年間収支
+    if(balanceRow>=0 && incTotalRow>=0 && expTotalRow>=0){
+      for(let c=firstYearCol; c<=lastYearCol; c++){
+        setFormula(balanceRow, c, `${col(c)}${R(incTotalRow)}-${col(c)}${R(expTotalRow)}`);
+      }
+      setFormula(balanceRow, totalCol, `SUM(${col(firstYearCol)}${R(balanceRow)}:${col(lastYearCol)}${R(balanceRow)})`);
+    }
+    // 預貯金残高
+    if(savingsRow>=0 && balanceRow>=0){
+      setFormula(savingsRow, firstYearCol, `B${R(savingsRow)}+${col(firstYearCol)}${R(balanceRow)}`);
+      for(let c=firstYearCol+1; c<=lastYearCol; c++){
+        setFormula(savingsRow, c, `${col(c-1)}${R(savingsRow)}+${col(c)}${R(balanceRow)}`);
+      }
+      setFormula(savingsRow, totalCol, `${col(lastYearCol)}${R(savingsRow)}`);
+    }
+    // 総金融資産（MG版では'savings'タイプの2つ目として保存）
+    if(totalAssetRow>=0 && savingsRow>=0){
+      for(let c=firstYearCol; c<=lastYearCol; c++){
+        setFormula(totalAssetRow, c, `${col(c)}${R(savingsRow)}`);  // finTotal行の位置が不定なのでsavings値のみ
+      }
+      setFormula(totalAssetRow, totalCol, `${col(lastYearCol)}${R(totalAssetRow)}`);
+    }
+  })();
 
   // ── セル結合（通常CFと同じ + 万が一ラベル結合） ──
   if(!ws['!merges'])ws['!merges']=[];
