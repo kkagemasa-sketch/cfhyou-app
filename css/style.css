@@ -327,7 +327,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rbal td:first-child,.rbal td:nth-child(2){background:#f5f8fc!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:700;border-right:2px solid #6b8cae!important}
 
 /* 預貯金残高：Excel #14B027（緑地白文字） */
-.rsav td{background:var(--green-l);color:#fff;font-weight:700;font-size:11px;border-top:2px solid #0a7018;border-bottom:2px solid #0a7018}
+.rsav td{background:var(--green-l);color:#fff;font-weight:700;font-size:13px;padding:6px 6px;border-top:2px solid #0a7018;border-bottom:2px solid #0a7018}
 .rsav td.vn{background:#c0392b!important;color:#fff!important;}
 .rsav td:first-child,.rsav td:nth-child(2){background:var(--green-l)!important;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;border-right:2px solid #6b8cae!important}
 
