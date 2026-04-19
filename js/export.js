@@ -32,9 +32,8 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName) {
       // sheetPrがない場合: worksheetの直後に挿入
       xml = xml.replace(/(<worksheet[^>]*>)/,'$1'+sheetPrTag);
     }
-    // ② pageSetupタグを挿入/置換（万が一は1ページ幅に収める）
-    const _fitW = (sheetName && sheetName.includes('万が一')) ? '1' : '0';
-    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="${_fitW}"/>`;
+    // ② pageSetupタグを挿入/置換（1ページ幅に収める）
+    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="1"/>`;
     if(/<pageSetup/.test(xml)){
       xml = xml.replace(/<pageSetup[^/]*\/>/,setupTag);
     } else if(/<pageMargins/.test(xml)){
@@ -851,7 +850,7 @@ async function exportExcel(){
   }
   if(!window.lastR){alert('先にCF表を生成してください');return;}
   const R=window.lastR, disp=window.lastDisp, cYear=window.lastCYear;
-  const infoSpan=5; // info行1項目あたりの列数（shrinkToFitで収める）
+  const infoSpan=3; // info行1項目あたりの列数（コンパクト化）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=_v('client-name')||'';
