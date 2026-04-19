@@ -107,7 +107,8 @@ function setDownType(t){
       hint.style.color='var(--muted)';
     }
   }
-  live();
+  // downType はグローバル変数で _getInputHash が検知しないため、force=true で確実に再描画
+  live(true);
 }
 
 // ===== 住宅：諸費用支払い方法切替 =====
