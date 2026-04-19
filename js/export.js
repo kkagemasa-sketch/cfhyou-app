@@ -32,8 +32,9 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName) {
       // sheetPrがない場合: worksheetの直後に挿入
       xml = xml.replace(/(<worksheet[^>]*>)/,'$1'+sheetPrTag);
     }
-    // ② pageSetupタグを挿入/置換
-    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="0"/>`;
+    // ② pageSetupタグを挿入/置換（万が一は1ページ幅に収める）
+    const _fitW = (sheetName && sheetName.includes('万が一')) ? '1' : '0';
+    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="${_fitW}"/>`;
     if(/<pageSetup/.test(xml)){
       xml = xml.replace(/<pageSetup[^/]*\/>/,setupTag);
     } else if(/<pageMargins/.test(xml)){
@@ -146,8 +147,19 @@ async function exportExcelMG(){
   const MR=window._mgMRStore&&window._mgMRStore[mgKey];
   if(!MR){alert('先に万が一CF表を生成してください');return;}
   const N=window.lastR;
-  const disp=MR.yr.length;
-  const infoSpan=5; // info行1項目あたりの列数（shrinkToFitで収める）
+  // 表示年数: 残された配偶者のご逝去年齢まで（通常CFより短くなる場合あり）
+  const _hAgeE=iv('husband-age')||30;
+  const _wAgeE=iv('wife-age')||29;
+  const _hDeathE=iv('h-death-age')||83;
+  const _wDeathE=iv('w-death-age')||88;
+  const _targetIsH_e=rTab==='mg-h';
+  // 生存者のご逝去までをご主人様年齢スケールで算出
+  const _survivorEndHAgeE=_targetIsH_e
+    ? (_hAgeE + (_wDeathE - _wAgeE))  // 奥様が生存者
+    : _hDeathE;                        // ご主人様が生存者
+  const _survivorDispYrsE=Math.max(1, _survivorEndHAgeE - _hAgeE + 1);
+  const disp=Math.min(_survivorDispYrsE, MR.yr.length);
+  const infoSpan=3; // info行1項目あたりの列数（コンパクト化）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=(_v('client-name')||'').trim()||'CF表';
