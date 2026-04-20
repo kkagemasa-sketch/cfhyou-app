@@ -122,7 +122,7 @@ function setCostType(t){
 // ===== 住宅：引き渡し年→何年後 自動計算 =====
 function calcDelivery(){
   const yr=parseInt(document.getElementById('delivery-year')?.value)||0;
-  const curYr=new Date().getFullYear();
+  const curYr=getCfStartYear();
   const del=yr>0?Math.max(0,yr-curYr):0;
   // hidden inputに反映
   const delEl=document.getElementById('delivery');
@@ -161,7 +161,7 @@ function updateHints(){
   if(hdh)hdh.textContent=hDa>0?`✓ ${hDa}歳まで計算`:'83歳（デフォルト）';
   const sinfo=document.getElementById('survivor-info');
   if(sinfo)sinfo.style.display=hDa>0?'':'none';
-  const d=iv('delivery'),y=new Date().getFullYear();
+  const d=iv('delivery');
   // delivery-hint は calcDelivery() で管理（calcLoanAmtはoninputで管理）
   // 現預金合計ヒント＋購入後残高
   const chH=fv('cash-h')||0,chW=fv('cash-w')||0,chJ=fv('cash-joint')||0;

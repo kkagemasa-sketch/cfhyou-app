@@ -701,7 +701,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],cfStartYear:_cfStartYear,version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],mgQACounter:(typeof mgQA_counter!=='undefined')?{h:(mgQA_counter.h||0),w:(mgQA_counter.w||0)}:null,cfStartYear:_cfStartYear,version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   return d;
 }
@@ -771,6 +771,16 @@ function _applyData(d){
       if(Array.isArray(d.mgQATabs)){
         d.mgQATabs.forEach(t=>mgQA_tabs.push(JSON.parse(JSON.stringify(t))));
       }
+      // mgQA_counter（タブ名採番）復元：保存値があれば採用、無ければ既存タブから推定
+      if(typeof mgQA_counter !== 'undefined'){
+        if(d.mgQACounter && typeof d.mgQACounter==='object'){
+          mgQA_counter.h = parseInt(d.mgQACounter.h)||0;
+          mgQA_counter.w = parseInt(d.mgQACounter.w)||0;
+        } else {
+          mgQA_counter.h = mgQA_tabs.filter(t=>t.target==='h').length;
+          mgQA_counter.w = mgQA_tabs.filter(t=>t.target==='w').length;
+        }
+      }
       // activeTabId は setRTab('cf') により後でクリアされるため復元しない
       if(typeof mgQA_renderTabs==='function') mgQA_renderTabs();
     }
@@ -809,16 +819,8 @@ async function _migrateFromLocalStorage(){
   }catch(e){console.warn('localStorage移行エラー:',e);}
 }
 
-// ===== 新規作成（オールリセット） =====
-async function newCFSheet(){
-  // 未保存確認
-  const msg='現在のデータを破棄して新規作成します。\n\n先にファイルに保存しますか？';
-  const save=confirm(msg);
-  if(save){
-    await exportJSON();
-  }
-  if(!confirm('本当に全データをリセットして新規作成しますか？\nこの操作は元に戻せません。'))return;
-
+// ===== シートの全状態をリセット（ダイアログ無し、内部利用） =====
+function _resetSheetState(){
   // 全フィールドをクリア（デフォルト値があるものは復元）
   var _defaults={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)el.value=_defaults[id]||'';});
@@ -841,6 +843,10 @@ async function newCFSheet(){
     mgQA_tabs.length = 0;
     window._mgQA_activeTabId = null;
     if(typeof mgQA_renderTabs==='function') mgQA_renderTabs();
+  }
+  if(typeof mgQA_counter !== 'undefined'){
+    mgQA_counter.h = 0;
+    mgQA_counter.w = 0;
   }
 
   // 動的要素をすべて削除
@@ -914,6 +920,22 @@ async function newCFSheet(){
     if($(id))$(id).value=0;
   });
 
+  initLCComma();
+  _lastInputHash='';  // ハッシュキャッシュをリセットして強制再描画
+}
+
+// ===== 新規作成（オールリセット、ダイアログ付き・Undo履歴クリア・自動保存） =====
+async function newCFSheet(){
+  // 未保存確認
+  const msg='現在のデータを破棄して新規作成します。\n\n先にファイルに保存しますか？';
+  const save=confirm(msg);
+  if(save){
+    await exportJSON();
+  }
+  if(!confirm('本当に全データをリセットして新規作成しますか？\nこの操作は元に戻せません。'))return;
+
+  _resetSheetState();
+
   // Undo/Redo履歴もクリア
   _undoStack=[];_redoStack=[];
   _updateUndoRedoBtns();
@@ -923,8 +945,6 @@ async function newCFSheet(){
     await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:_collectSaveData()});
   }catch(e){}
 
-  initLCComma();
-  _lastInputHash='';  // ハッシュキャッシュをリセットして強制再描画
   live();
   alert('新規CF表を作成しました。');
 }

@@ -43,7 +43,7 @@ function applyLCPrevPct(id){
 }
 function addLCStep(){
   lsCnt++;const id=lsCnt;
-  const thisYear=new Date().getFullYear();
+  const thisYear=getCfStartYear();
   const existing=document.querySelectorAll('#lc-steps-cont>[id^="ls-"]');
   const isFirst=existing.length===0;
   let defFrom=thisYear, defTo=thisYear+7;

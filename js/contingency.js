@@ -189,7 +189,7 @@ function addMGLCStep(){
   ${pctWrap}
   <div class="g2">
     <div class="fg"><label class="lbl">開始年</label>
-      <div class="suf"><input class="inp age-inp" id="mg-lsf-${n}" type="number" value="" placeholder="${isFirst?new Date().getFullYear():'前段階+1'}" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
+      <div class="suf"><input class="inp age-inp" id="mg-lsf-${n}" type="number" value="" placeholder="${isFirst?getCfStartYear():'前段階+1'}" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
     <div class="fg"><label class="lbl">終了年</label>
       <div class="suf"><input class="inp age-inp" id="mg-lst-${n}" type="number" value="" placeholder="空欄=ずっと" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
   </div>`;
@@ -264,7 +264,7 @@ function _renderContingencyInner(){
   const _isSingle_mg=householdType==='single';
   const hAge=iv('husband-age')||30, wAge=_isSingle_mg?0:(iv('wife-age')||29);
   const deathYearOffset=iv('mg-death-year')||1;
-  const deathYear=new Date().getFullYear()+deathYearOffset-1;
+  const deathYear=getCfStartYear()+deathYearOffset-1;
   const targetIsH=mgTarget==='h';
   const deathAge=targetIsH?hAge+deathYearOffset-1:(_isSingle_mg?0:wAge+deathYearOffset-1);
 

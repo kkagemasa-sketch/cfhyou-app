@@ -50,7 +50,14 @@ function switchScenario(id){
   // 切替
   activeScenarioId=id;
   const target=scenarios.find(s=>s.id===id);
-  if(target&&target.data)_applyData(target.data);
+  if(target&&target.data){
+    _applyData(target.data);
+  } else {
+    // 新規作成（data=null）: 白紙化してから切替
+    if(typeof _resetSheetState==='function') _resetSheetState();
+    if(typeof live==='function') live();
+    if(typeof render==='function') render();
+  }
   setRTab('cf'); // setRTab内でrenderScenarioTabs()も呼ばれる
 }
 
