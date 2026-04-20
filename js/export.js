@@ -601,6 +601,7 @@ async function exportExcelMG(){
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
+    if(t==='incTotal'||t==='expTotal')return{hpt:24};
     return{hpt:18};
   });
 
@@ -1225,6 +1226,7 @@ async function exportExcel(){
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
+    if(t==='incTotal'||t==='expTotal')return{hpt:24};
     return{hpt:18};
   });
 
