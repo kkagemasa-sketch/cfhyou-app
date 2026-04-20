@@ -30,6 +30,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const wRetireCol=wRetireAge>wAge0?wRetireAge-wAge0:-1;
   const getColCls=i=>{let c='';if(i===hDeathCol||i===wDeathCol)c+=' col-death';if(i===hRetireCol||i===wRetireCol)c+=' col-retire';return c;};
 
+  // 詳細ボックス（自己資金の内訳＋住宅ローン条件）の折りたたみ状態
+  const _cfSumHidden = (()=>{try{return localStorage.getItem('cf_summary_collapsed')==='1'}catch(e){return false}})();
+  const _togLabel = _cfSumHidden ? '▸ 詳細を表示' : '▾ 詳細を隠す';
+
   // お客様名・物件タイプバッジ
   let h=`<div class="r-summary"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -37,7 +41,11 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       <span style="background:${isM?'var(--teal)':'var(--green)'};color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${isM?'🏢 マンション':'🏡 戸建て'}</span>
       <span style="font-size:11px;color:var(--muted)">全${total}年間 / ご主人${hAge}〜${hAge+total-1}歳</span>
     </div>
+    <button id="cf-summary-toggle" onclick="toggleCfSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:#eef5ff;color:#1e5a9a;border:1px solid #c8d6e8;padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_togLabel}</button>
   </div>`;
+
+  // 詳細ボックスをまとめて折りたたみ可能なコンテナで囲む
+  h+=`<div id="cf-summary-detail" style="${_cfSumHidden?'display:none':''}">`;
 
   // 前提条件バー：自己資金内訳 ＋ 住宅ローン条件
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
@@ -154,7 +162,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     </div>`;
   }
 
-  h+=`</div><div class="tbl-wrap"><table class="cf"><thead>`;
+  h+=`</div><!-- /cf-summary-detail --></div><div class="tbl-wrap"><table class="cf"><thead>`;
   // 年ヘッダー（先頭年はクリックで編集可能）
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
   for(let i=0;i<disp;i++){

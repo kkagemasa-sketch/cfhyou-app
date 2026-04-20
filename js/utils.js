@@ -78,6 +78,23 @@ function rowLabelEdit(td){
   scheduleAutoSave();
 }
 
+// CF表の詳細ボックス（自己資金内訳・住宅ローン条件）の折りたたみトグル
+function toggleCfSummaryDetail(){
+  const box=document.getElementById('cf-summary-detail');
+  const btn=document.getElementById('cf-summary-toggle');
+  if(!box||!btn) return;
+  const hidden=box.style.display==='none';
+  if(hidden){
+    box.style.display='';
+    btn.textContent='▾ 詳細を隠す';
+    try{localStorage.setItem('cf_summary_collapsed','0')}catch(e){}
+  }else{
+    box.style.display='none';
+    btn.textContent='▸ 詳細を表示';
+    try{localStorage.setItem('cf_summary_collapsed','1')}catch(e){}
+  }
+}
+
 // CF表の先頭年ヘッダーをクリック編集で変更
 function setCfStartYearFromCell(th){
   const raw=String(th.textContent||'').trim();
