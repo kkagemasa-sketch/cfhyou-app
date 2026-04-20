@@ -347,6 +347,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 td.col-death{background:rgba(150,150,150,.18)!important}
 td.col-retire{background:rgba(255,220,0,.16)!important}
 
+/* 年齢行・イベント行は透過させず、不透明色で上書き */
+.rage td.col-death{background:#d8dde2!important}
+.rage td.col-retire{background:#f0ebc8!important}
+.rev-h td.col-death,.rev-w td.col-death,.rev-c td.col-death{background:#eae3d8!important}
+.rev-h td.col-retire,.rev-w td.col-retire,.rev-c td.col-retire{background:#fff2c8!important}
+
 /* ============================================================
    教育費フェーズ色（イベント行・教育費明細行 共通）
    ============================================================ */

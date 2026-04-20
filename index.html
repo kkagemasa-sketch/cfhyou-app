@@ -1202,7 +1202,7 @@ function checkPW(){
           </div>
         </div>
         <div class="fg"><label class="lbl">死亡時期（何年後）</label>
-          <div class="suf"><input class="inp age-inp" id="mg-death-year" type="number" value="1" min="1" max="50" oninput="live()"><span class="sl">年後</span></div></div>
+          <div class="suf"><input class="inp age-inp" id="mg-death-year" type="number" value="1" min="1" max="50" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年後</span></div></div>
       </div>
 
       <div class="divider"></div>
@@ -1257,7 +1257,7 @@ function checkPW(){
           </div>
         </div>
         <div class="fg" id="mg-surv-manual-wrap" style="display:none"><label class="lbl">遺族年金額（年額）</label>
-          <div class="suf"><input class="inp amt-inp" id="mg-surv-amt" type="number" value="0" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
+          <div class="suf"><input class="inp amt-inp" id="mg-surv-amt" type="number" value="0" min="0" onfocus="scrollToCFRow('survPension')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円/年</span></div></div>
       </div>
       <div class="fg" style="margin-top:4px">
         <span class="hint ok" id="mg-surv-hint">遺族厚生年金＋遺族基礎年金を自動計算します</span>
@@ -1277,7 +1277,7 @@ function checkPW(){
       <div id="mg-lc-ratio-fields">
         <div class="g2">
           <div class="fg"><label class="lbl">生活費の割合</label>
-            <div class="suf"><input class="inp" id="mg-lc-ratio" type="number" value="70" min="10" max="100" oninput="live()"><span class="sl">%</span></div></div>
+            <div class="suf"><input class="inp" id="mg-lc-ratio" type="number" value="70" min="10" max="100" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">%</span></div></div>
           <div class="fg"><label class="lbl">&nbsp;</label>
             <span class="hint ok" id="mg-lc-hint">✓ 死亡後は現在の70%で計算</span></div>
         </div>
@@ -1289,13 +1289,13 @@ function checkPW(){
             <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:4px">段階1</div>
             <div class="g2" style="margin-bottom:4px">
               <div class="fg"><label class="lbl">金額</label>
-                <div class="suf"><input class="inp amt-inp" id="mg-lsb-1" type="number" value="" placeholder="万円/年" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
+                <div class="suf"><input class="inp amt-inp" id="mg-lsb-1" type="number" value="" placeholder="万円/年" min="0" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円/年</span></div></div>
               <div class="fg"><label class="lbl">上昇率（0=横ばい）</label>
-                <div class="suf"><input class="inp" id="mg-lsr-1" type="number" value="0" step="0.1" oninput="live()"><span class="sl">%/年</span></div></div>
+                <div class="suf"><input class="inp" id="mg-lsr-1" type="number" value="0" step="0.1" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">%/年</span></div></div>
               <div class="fg"><label class="lbl">開始年</label>
-                <div class="suf"><input class="inp age-inp" id="mg-lsf-1" type="number" value="" placeholder="死亡翌年" oninput="live()"><span class="sl">年</span></div></div>
+                <div class="suf"><input class="inp age-inp" id="mg-lsf-1" type="number" value="" placeholder="死亡翌年" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
               <div class="fg"><label class="lbl">終了年</label>
-                <div class="suf"><input class="inp age-inp" id="mg-lst-1" type="number" value="" placeholder="空欄=ずっと" oninput="live()"><span class="sl">年</span></div></div>
+                <div class="suf"><input class="inp age-inp" id="mg-lst-1" type="number" value="" placeholder="空欄=ずっと" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
             </div>
           </div>
         </div>
@@ -1317,9 +1317,9 @@ function checkPW(){
       <div id="mg-scholarship-fields" style="display:none">
         <div class="g2">
           <div class="fg"><label class="lbl">総額</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-scholarship-amt" type="number" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="mg-scholarship-amt" type="number" value="0" min="0" onfocus="scrollToCFRow('scholarship')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div></div>
           <div class="fg"><label class="lbl">借入時（第一子の年齢）</label>
-            <div class="suf"><input class="inp age-inp" id="mg-scholarship-age" type="number" value="19" min="15" max="25" oninput="live()"><span class="sl">歳</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="mg-scholarship-age" type="number" value="19" min="15" max="25" onfocus="scrollToCFRow('scholarship')" onblur="cfRowBlur()" oninput="live()"><span class="sl">歳</span></div></div>
         </div>
       </div>
 
@@ -1350,17 +1350,17 @@ function checkPW(){
         </div>
         <div class="g3" style="margin-bottom:6px">
           <div class="fg"><label class="lbl">車両価格</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-car-h-price" type="number" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="mg-car-h-price" type="number" value="300" min="0" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div></div>
           <div class="fg"><label class="lbl">乗り換え周期</label>
-            <div class="suf"><input class="inp age-inp" id="mg-car-h-cycle" type="number" value="7" min="1" max="20" oninput="live()"><span class="sl">年ごと</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="mg-car-h-cycle" type="number" value="7" min="1" max="20" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年ごと</span></div></div>
           <div class="fg"><label class="lbl">車検費用</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-car-h-insp" type="number" value="10" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="mg-car-h-insp" type="number" value="10" min="0" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div></div>
         </div>
         <div class="g2" style="margin-bottom:8px">
           <div class="fg"><label class="lbl">初回購入年齢（奥様）</label>
-            <div class="suf"><input class="inp age-inp" id="mg-car-h-first" type="number" value="" placeholder="空欄=現在年齢" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="mg-car-h-first" type="number" value="" placeholder="空欄=現在年齢" min="20" max="100" onfocus="scrollToCFRowSelf('wAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('wAge',this);live()"><span class="sl">歳</span></div></div>
           <div class="fg"><label class="lbl">手放す年齢（奥様）</label>
-            <div class="suf"><input class="inp age-inp" id="mg-car-h-end-age" type="number" value="" placeholder="空欄=ずっと" min="30" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="mg-car-h-end-age" type="number" value="" placeholder="空欄=ずっと" min="30" max="100" onfocus="scrollToCFRowSelf('wAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('wAge',this);live()"><span class="sl">歳</span></div></div>
         </div>
       </div>
       <!-- 奥様の万が一（遺族＝ご主人様） -->
@@ -1374,41 +1374,41 @@ function checkPW(){
         </div>
         <div class="g3" style="margin-bottom:6px">
           <div class="fg"><label class="lbl">車両価格</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-car-w-price" type="number" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="mg-car-w-price" type="number" value="300" min="0" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div></div>
           <div class="fg"><label class="lbl">乗り換え周期</label>
-            <div class="suf"><input class="inp age-inp" id="mg-car-w-cycle" type="number" value="7" min="1" max="20" oninput="live()"><span class="sl">年ごと</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="mg-car-w-cycle" type="number" value="7" min="1" max="20" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年ごと</span></div></div>
           <div class="fg"><label class="lbl">車検費用</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-car-w-insp" type="number" value="10" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="mg-car-w-insp" type="number" value="10" min="0" onfocus="scrollToCFRow('carTotal')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div></div>
         </div>
         <div class="g2" style="margin-bottom:8px">
           <div class="fg"><label class="lbl">初回購入年齢（ご主人様）</label>
-            <div class="suf"><input class="inp age-inp" id="mg-car-w-first" type="number" value="" placeholder="空欄=現在年齢" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="mg-car-w-first" type="number" value="" placeholder="空欄=現在年齢" min="20" max="100" onfocus="scrollToCFRowSelf('hAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('hAge',this);live()"><span class="sl">歳</span></div></div>
           <div class="fg"><label class="lbl">手放す年齢（ご主人様）</label>
-            <div class="suf"><input class="inp age-inp" id="mg-car-w-end-age" type="number" value="" placeholder="空欄=ずっと" min="30" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+            <div class="suf"><input class="inp age-inp" id="mg-car-w-end-age" type="number" value="" placeholder="空欄=ずっと" min="30" max="100" onfocus="scrollToCFRowSelf('hAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('hAge',this);live()"><span class="sl">歳</span></div></div>
         </div>
       </div>
       <div id="mg-park-fields">
         <div class="g2" style="margin-bottom:6px">
           <div class="fg"><label class="lbl">月額駐車場代</label>
-            <div class="suf"><input class="inp amt-inp" id="mg-parking" type="number" value="15000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
+            <div class="suf"><input class="inp amt-inp" id="mg-parking" type="number" value="15000" min="0" onfocus="scrollToCFRow('prk')" onblur="cfRowBlur()" oninput="live()"><span class="sl">円/月</span></div></div>
           <div></div>
         </div>
         <div id="mg-park-age-h">
           <div style="font-size:10px;font-weight:700;color:#1a5fa0;margin-bottom:4px">🅿️ 奥様基準</div>
           <div class="g2">
             <div class="fg"><label class="lbl">開始年齢（奥様）</label>
-              <div class="suf"><input class="inp age-inp" id="mg-park-h-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+              <div class="suf"><input class="inp age-inp" id="mg-park-h-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" onfocus="scrollToCFRowSelf('wAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('wAge',this);live()"><span class="sl">歳</span></div></div>
             <div class="fg"><label class="lbl">終了年齢（奥様）</label>
-              <div class="suf"><input class="inp age-inp" id="mg-park-h-to-age" type="number" placeholder="空欄=ずっと" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+              <div class="suf"><input class="inp age-inp" id="mg-park-h-to-age" type="number" placeholder="空欄=ずっと" min="20" max="100" step="1" onfocus="scrollToCFRowSelf('wAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('wAge',this);live()"><span class="sl">歳</span></div></div>
           </div>
         </div>
         <div id="mg-park-age-w">
           <div style="font-size:10px;font-weight:700;color:#a01a5f;margin-bottom:4px">🅿️ ご主人様基準</div>
           <div class="g2">
             <div class="fg"><label class="lbl">開始年齢（ご主人様）</label>
-              <div class="suf"><input class="inp age-inp" id="mg-park-w-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+              <div class="suf"><input class="inp age-inp" id="mg-park-w-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" onfocus="scrollToCFRowSelf('hAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('hAge',this);live()"><span class="sl">歳</span></div></div>
             <div class="fg"><label class="lbl">終了年齢（ご主人様）</label>
-              <div class="suf"><input class="inp age-inp" id="mg-park-w-to-age" type="number" placeholder="空欄=ずっと" min="20" max="100" step="1" oninput="live()"><span class="sl">歳</span></div></div>
+              <div class="suf"><input class="inp age-inp" id="mg-park-w-to-age" type="number" placeholder="空欄=ずっと" min="20" max="100" step="1" onfocus="scrollToCFRowSelf('hAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('hAge',this);live()"><span class="sl">歳</span></div></div>
           </div>
         </div>
       </div>

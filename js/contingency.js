@@ -127,14 +127,14 @@ function addMGInsurance(){
     </div>
     <div id="mg-ins-lump-wrap-${id}">
       <div class="fg"><label class="lbl" style="font-size:9px">保険金額（一括）</label>
-        <div class="suf"><input class="inp amt-inp" id="mg-ins-amt-${id}" type="number" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+        <div class="suf"><input class="inp amt-inp" id="mg-ins-amt-${id}" type="number" value="0" min="0" onfocus="scrollToCFRow('insPayArr')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div></div>
     </div>
     <div id="mg-ins-annuity-wrap-${id}" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <div class="fg"><label class="lbl" style="font-size:9px">年額</label>
-          <div class="suf"><input class="inp amt-inp" id="mg-ins-annual-${id}" type="number" value="0" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
+          <div class="suf"><input class="inp amt-inp" id="mg-ins-annual-${id}" type="number" value="0" min="0" onfocus="scrollToCFRow('insPayArr')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円/年</span></div></div>
         <div class="fg"><label class="lbl" style="font-size:9px">受取終了（受取人の年齢）</label>
-          <div class="suf"><input class="inp age-inp" id="mg-ins-end-age-${id}" type="number" value="65" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+          <div class="suf"><input class="inp age-inp" id="mg-ins-end-age-${id}" type="number" value="65" min="20" max="100" onfocus="scrollToCFRow('insPayArr')" onblur="cfRowBlur()" oninput="live()"><span class="sl">歳</span></div></div>
       </div>
     </div>`;
   cont.appendChild(d);
@@ -181,17 +181,17 @@ function addMGLCStep(){
   <div id="mg-lsfree-wrap-${n}">
     <div class="g2" style="margin-bottom:4px">
       <div class="fg"><label class="lbl">金額</label>
-        <div class="suf"><input class="inp amt-inp" id="mg-lsb-${n}" type="number" value="" placeholder="${phBase}" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
+        <div class="suf"><input class="inp amt-inp" id="mg-lsb-${n}" type="number" value="" placeholder="${phBase}" min="0" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円/年</span></div></div>
       <div class="fg"><label class="lbl">上昇率（0=横ばい）</label>
-        <div class="suf"><input class="inp" id="mg-lsr-${n}" type="number" value="0" step="0.1" oninput="live()"><span class="sl">%/年</span></div></div>
+        <div class="suf"><input class="inp" id="mg-lsr-${n}" type="number" value="0" step="0.1" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">%/年</span></div></div>
     </div>
   </div>
   ${pctWrap}
   <div class="g2">
     <div class="fg"><label class="lbl">開始年</label>
-      <div class="suf"><input class="inp age-inp" id="mg-lsf-${n}" type="number" value="" placeholder="${isFirst?new Date().getFullYear():'前段階+1'}" oninput="live()"><span class="sl">年</span></div></div>
+      <div class="suf"><input class="inp age-inp" id="mg-lsf-${n}" type="number" value="" placeholder="${isFirst?new Date().getFullYear():'前段階+1'}" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
     <div class="fg"><label class="lbl">終了年</label>
-      <div class="suf"><input class="inp age-inp" id="mg-lst-${n}" type="number" value="" placeholder="空欄=ずっと" oninput="live()"><span class="sl">年</span></div></div>
+      <div class="suf"><input class="inp age-inp" id="mg-lst-${n}" type="number" value="" placeholder="空欄=ずっと" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
   </div>`;
   cont.appendChild(d);
 }
