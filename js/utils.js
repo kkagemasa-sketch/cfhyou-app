@@ -78,6 +78,28 @@ function rowLabelEdit(td){
   scheduleAutoSave();
 }
 
+// CF表の先頭年ヘッダーをクリック編集で変更
+function setCfStartYearFromCell(th){
+  const raw=String(th.textContent||'').trim();
+  const y=parseInt(raw.replace(/[^\d]/g,''));
+  const cur=getCfStartYear();
+  if(isNaN(y) || y<1900 || y>2200){
+    // 無効値は元に戻す
+    th.textContent=cur;
+    return;
+  }
+  if(y===cur){
+    th.textContent=y;
+    return;
+  }
+  _cfStartYear=y;
+  pushUndoSnap();
+  scheduleAutoSave();
+  // CF表を即座に再描画（live() は遅延なのでここでは直接呼ぶ）
+  if(typeof render==='function') render();
+  if(typeof live==='function') live();
+}
+
 // カスタム行操作
 function addCustomRow(type){
   _cfCustomId++;

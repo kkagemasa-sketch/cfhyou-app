@@ -701,7 +701,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],cfStartYear:_cfStartYear,version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   return d;
 }
@@ -747,6 +747,7 @@ function _applyData(d){
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val||_defs[id]||'';}});
     cfOverrides=d.cfOverrides||{};
     mgOverrides=d.mgOverrides||{};
+    _cfStartYear=(d.cfStartYear===undefined||d.cfStartYear===null)?null:parseInt(d.cfStartYear);
     cfCustomRows=d.cfCustomRows||[];
     mgCustomRows=d.mgCustomRows||[];
     _cfCustomId=d._cfCustomId||0;
@@ -828,6 +829,7 @@ async function newCFSheet(){
   cfCustomRows=[];
   mgCustomRows=[];
   _cfCustomId=0;
+  _cfStartYear=null;
   _lcBikou={};
   _cfRowLabels={};
   // 万が一タブのキャッシュもクリア

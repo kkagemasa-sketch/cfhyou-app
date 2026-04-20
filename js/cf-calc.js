@@ -106,7 +106,7 @@ function render(){
   document.querySelectorAll('[id^="ca-"]').forEach(el=>{
     const cid=el.id.split('-')[1];children.push({age:parseInt(el.value)||0,costs:eduCosts(cid)});
   });
-  const cYear=new Date().getFullYear();
+  const cYear=getCfStartYear();
   // ご逝去年齢から表示年数を自動計算（夫婦どちらか高い方まで）
   const hEndYr = hDeathAge>0 ? hDeathAge-hAge+1 : 0;
   const wEndYr = wDeathAge>0 ? wDeathAge-wAge+1 : 0;

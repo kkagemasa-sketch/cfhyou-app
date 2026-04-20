@@ -3,6 +3,13 @@
 let finAssetVisible=true;
 let _lcBikou={}; // 生活費タブの備考データ
 let _cfRowLabels={}; // CF表行名のカスタムラベル {rowKey: 'カスタム名'}
+let _cfStartYear=null; // CF表の開始年（nullなら今日の年、ユーザーが変更可）
+// CF表の開始年を取得（未設定なら今日の年）
+function getCfStartYear(){
+  const y = parseInt(_cfStartYear);
+  if(y>=1900 && y<=2200) return y;
+  return new Date().getFullYear();
+}
 
 // ===== 状態 =====
 let ST={type:'mansion'};

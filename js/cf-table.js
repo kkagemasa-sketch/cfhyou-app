@@ -155,9 +155,15 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   }
 
   h+=`</div><div class="tbl-wrap"><table class="cf"><thead>`;
-  // 年ヘッダー
+  // 年ヘッダー（先頭年はクリックで編集可能）
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
-  for(let i=0;i<disp;i++)h+=`<th>${R.yr[i]}</th>`;
+  for(let i=0;i<disp;i++){
+    if(i===0){
+      h+=`<th contenteditable="true" data-cf-start-year="1" title="クリックして開始年を変更" style="cursor:text;background:rgba(255,255,255,.12)" onblur="setCfStartYearFromCell(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${R.yr[i]}</th>`;
+    }else{
+      h+=`<th>${R.yr[i]}</th>`;
+    }
+  }
   h+=`<th>合計</th></tr>`;
 
   // 経過年数（ネイビー地で年ヘッダーと連続させる）
