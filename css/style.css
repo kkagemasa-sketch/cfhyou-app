@@ -668,15 +668,26 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   overflow-anchor: none;
   scroll-behavior: auto !important;
 }
-.mgqa-tab {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
+.rtab.mgqa-tab {
+  background: linear-gradient(135deg, #3b82f6, #6366f1) !important;
   color: #fff !important;
   border: 1px solid #1d4ed8 !important;
-  font-weight: 600;
+  font-weight: 700 !important;
 }
-.mgqa-tab.pink {
-  background: linear-gradient(135deg, #ec4899, #f472b6);
+.rtab.mgqa-tab.pink {
+  background: linear-gradient(135deg, #ec4899, #f472b6) !important;
   border-color: #be185d !important;
+}
+/* アクティブ時は色を濃くして目立たせる（通常の .rtab.on より優先） */
+.rtab.mgqa-tab.on {
+  background: linear-gradient(135deg, #1d4ed8, #4338ca) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.35), inset 0 -2px 0 rgba(255,255,255,.4);
+  top: 0 !important;
+}
+.rtab.mgqa-tab.pink.on {
+  background: linear-gradient(135deg, #be185d, #db2777) !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.35), inset 0 -2px 0 rgba(255,255,255,.4);
 }
 .mgqa-panel { padding: 0; }
 .mgqa-header {
