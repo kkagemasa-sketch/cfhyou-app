@@ -701,7 +701,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   return d;
 }
@@ -764,6 +764,15 @@ function _applyData(d){
     calcLoanAmt();calcDelivery();initLCComma();
     if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
     if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
+    // 万が一Q&Aタブ（複数タブ）復元
+    if(typeof mgQA_tabs !== 'undefined' && Array.isArray(mgQA_tabs)){
+      mgQA_tabs.length = 0;  // 配列を空に（const配列の場合のみ）
+      if(Array.isArray(d.mgQATabs)){
+        d.mgQATabs.forEach(t=>mgQA_tabs.push(JSON.parse(JSON.stringify(t))));
+      }
+      // activeTabId は setRTab('cf') により後でクリアされるため復元しない
+      if(typeof mgQA_renderTabs==='function') mgQA_renderTabs();
+    }
     // 読込後は必ずメインCF表タブに戻す
     if(typeof setRTab==='function')setRTab('cf');
     live();render();
@@ -825,6 +834,12 @@ async function newCFSheet(){
   window._mgStore=null;
   window._mgMRStore=null;
   window.lastMR=null;
+  // 万が一Q&Aタブ（複数タブ）もクリア
+  if(typeof mgQA_tabs !== 'undefined' && Array.isArray(mgQA_tabs)){
+    mgQA_tabs.length = 0;
+    window._mgQA_activeTabId = null;
+    if(typeof mgQA_renderTabs==='function') mgQA_renderTabs();
+  }
 
   // 動的要素をすべて削除
   // 子ども

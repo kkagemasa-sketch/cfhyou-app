@@ -660,3 +660,189 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   }
 }
 
+/* ============================================================
+   万が一Q&Aパネル（複数タブ対応）
+   ============================================================ */
+/* CF表再描画時のスクロールアンカーを無効化（ジッター対策） */
+#right-body .tbl-wrap {
+  overflow-anchor: none;
+  scroll-behavior: auto !important;
+}
+.mgqa-tab {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff !important;
+  border: 1px solid #1d4ed8 !important;
+  font-weight: 600;
+}
+.mgqa-tab.pink {
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+  border-color: #be185d !important;
+}
+.mgqa-panel { padding: 0; }
+.mgqa-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid #c2185b;
+}
+.mgqa-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #c2185b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mgqa-title input {
+  border: 1px dashed transparent;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 800;
+  color: #c2185b;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+}
+.mgqa-title input:hover { border-color: #f8a5c2; }
+.mgqa-title input:focus { border-color: #c2185b; background: #fff; outline: none; }
+.mgqa-actions { display: flex; gap: 4px; }
+.mgqa-header .mgqa-actions { margin-top: 2px; }
+.mgqa-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-family: inherit;
+}
+.mgqa-btn:hover { background: #f1f5f9; }
+.mgqa-btn.danger { color: #dc2626; border-color: #fca5a5; }
+.mgqa-btn.danger:hover { background: #fee2e2; }
+.mgqa-item {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #c2185b;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.mgqa-q {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.mgqa-ref {
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #1e40af;
+  margin-bottom: 6px;
+  border-radius: 0 4px 4px 0;
+  line-height: 1.5;
+}
+.mgqa-hint {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #166534;
+  margin-bottom: 8px;
+  border-radius: 0 4px 4px 0;
+  line-height: 1.5;
+}
+.mgqa-auto {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 8px 0;
+}
+.mgqa-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+.mgqa-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s;
+  flex-wrap: wrap;
+  line-height: 1.4;
+}
+.mgqa-controls label:hover { background: #f8fafc; }
+.mgqa-controls input[type="number"] {
+  padding: 3px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  width: 70px;
+  font-size: 12px;
+  font-family: inherit;
+}
+.mgqa-controls select {
+  padding: 3px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+}
+.mgqa-cond {
+  margin-left: 24px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.mgqa-cond.hidden { display: none; }
+.mgqa-ins {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  background: #f8fafc;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.mgqa-footer {
+  text-align: center;
+  margin-top: 14px;
+  padding: 10px 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+.mgqa-footer .note {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.mgqa-footer .btn-gen {
+  padding: 8px 16px;
+  background: #c2185b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+}
+.mgqa-footer .btn-gen:hover { background: #a01550; }
