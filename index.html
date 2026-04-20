@@ -12,7 +12,7 @@
 <script src="js/vendors/jszip.min.js"></script>
 <script src="js/vendors/xlsx-style.min.js"></script>
 <script src="js/vendors/FileSaver.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20">
+<link rel="stylesheet" href="css/style.css?v=21">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -1191,6 +1191,8 @@ function checkPW(){
   <div class="sec">
     <div class="sh" onclick="tog(this)" style="background:#c2185b"><span class="sh-tab" style="background:#c2185b">⑧万一</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">8</span>🛡️ 万が一シミュレーション<span class="stog">▾</span></div>
     <div class="sb col">
+      <!-- 旧UI（Q&A一本化に伴い非表示） -->
+      <div id="mg-legacy-ui" style="display:none">
 
       <!-- 対象選択 -->
       <div class="sub">⚠️ シミュレーション対象</div>
@@ -1417,6 +1419,8 @@ function checkPW(){
 
       <!-- シミュレーション実行（旧UI。Q&A一本化に伴い非表示） -->
       <button class="btn-add" id="mg-run-btn" onclick="renderContingency()" style="display:none;background:#c2185b;color:#fff;border-color:#a01550;padding:8px 16px;font-size:12px;margin-top:8px;width:100%;border-radius:var(--r)">🛡️ 万が一CF表を生成</button>
+
+      </div><!-- /mg-legacy-ui -->
 
       <!-- ===== Q&A形式 万が一シミュレーション（複数タブ対応） ===== -->
       <div style="padding:10px;border:2px dashed #f59e0b;border-radius:8px;background:#fffbeb;margin-top:10px">
