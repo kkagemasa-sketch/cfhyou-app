@@ -112,27 +112,52 @@
     const taxCap = bd.taxCapTotal || 0;
     const applied = value;
 
-    // 簡潔表示：年末残高 × 0.7% = 計算値、税金上限との min が適用額
-    const simple = `
-      <div style="display:flex;flex-direction:column;gap:3px;font-size:12px">
-        <div style="display:flex;justify-content:space-between">
-          <span>年末ローン残高</span><span>${explainFmt(bd.remainBal,'万円')}</span>
+    // ペアローン時の簡潔表示：夫婦別の控除額を明示
+    let simple;
+    if(bd.pairMode && bd.hApplied !== undefined){
+      simple = `
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:12px">
+          <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e2e8f0">
+            <span>👔 ご主人様の控除</span><span>${explainFmt(bd.hApplied,'万円')}</span>
+          </div>
+          <div style="font-size:10px;color:#64748b;padding-left:16px;line-height:1.4">
+            = min(残高${explainFmt(bd.hBal,'万円')}×0.7%=${explainFmt(bd.hCalcAmount,'万円')}, 税額上限${explainFmt(bd.taxCapTotal,'万円')})
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e2e8f0">
+            <span>👩 奥様の控除</span><span>${explainFmt(bd.wApplied,'万円')}</span>
+          </div>
+          <div style="font-size:10px;color:#64748b;padding-left:16px;line-height:1.4">
+            = min(残高${explainFmt(bd.wBal,'万円')}×0.7%=${explainFmt(bd.wCalcAmount,'万円')}, 税額上限${explainFmt(bd.wTaxCapTotal,'万円')})
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:5px;border-top:2px solid #1e3a5f;font-weight:700">
+            <span>適用控除額（合算）</span>
+            <span style="color:#1e3a5f;font-size:14px">${explainFmt(applied,'万円')}</span>
+          </div>
         </div>
-        <div style="display:flex;justify-content:space-between">
-          <span>控除率</span><span>× ${bd.rate || 0.7}%</span>
+      `;
+    } else {
+      // 通常ローンの簡潔表示：年末残高 × 0.7% = 計算値、税金上限との min が適用額
+      simple = `
+        <div style="display:flex;flex-direction:column;gap:3px;font-size:12px">
+          <div style="display:flex;justify-content:space-between">
+            <span>年末ローン残高</span><span>${explainFmt(bd.remainBal,'万円')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span>控除率</span><span>× ${bd.rate || 0.7}%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px dashed #e2e8f0">
+            <span>計算上の控除額</span><span>${explainFmt(calcAmt,'万円')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span>税額上限（所得税+住民税）</span><span>${explainFmt(taxCap,'万円')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:5px;border-top:2px solid #1e3a5f;font-weight:700">
+            <span>適用控除額</span>
+            <span style="color:#1e3a5f;font-size:14px">${explainFmt(applied,'万円')}</span>
+          </div>
         </div>
-        <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px dashed #e2e8f0">
-          <span>計算上の控除額</span><span>${explainFmt(calcAmt,'万円')}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span>税額上限（所得税+住民税）</span><span>${explainFmt(taxCap,'万円')}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding-top:5px;border-top:2px solid #1e3a5f;font-weight:700">
-          <span>適用控除額</span>
-          <span style="color:#1e3a5f;font-size:14px">${explainFmt(applied,'万円')}</span>
-        </div>
-      </div>
-    `;
+      `;
+    }
 
     // 詳細：各種上限・条件
     const typeLabel = {
@@ -147,7 +172,7 @@
     let pairSection = '';
     if(bd.pairMode && (bd.hBal !== undefined || bd.wBal !== undefined)){
       pairSection = `
-        <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ ローン内訳（ペアローン）</div>
+        <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ ローン内訳（ペアローン・各自独立計算）</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
           <div style="background:#f0f6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px">
             <div style="font-weight:700;color:#1e5a9a;margin-bottom:3px">👔 ご主人様</div>
@@ -157,7 +182,8 @@
             <div>課税所得: ${explainFmt(bd.taxableBase,'万円')}</div>
             <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
             <div>住民税上限: ${explainFmt(bd.juminCtrlMax,'万円')}</div>
-            <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:1px solid #bfdbfe">税額上限: ${explainFmt((bd.itax||0)+(bd.juminCtrlMax||0),'万円')}</div>
+            <div style="margin-top:3px;padding-top:3px;border-top:1px solid #bfdbfe">税額上限: ${explainFmt((bd.itax||0)+(bd.juminCtrlMax||0),'万円')}</div>
+            <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:2px solid #1e5a9a;color:#1e5a9a">適用: ${explainFmt(bd.hApplied,'万円')}</div>
           </div>
           <div style="background:#fff0f6;border:1px solid #fbcfe8;border-radius:6px;padding:6px 8px">
             <div style="font-weight:700;color:#9a1e5a;margin-bottom:3px">👩 奥様</div>
@@ -167,12 +193,12 @@
             <div>課税所得: ${explainFmt(bd.wTaxableBase,'万円')}</div>
             <div>所得税: ${explainFmt(bd.wItax,'万円')}</div>
             <div>住民税上限: ${explainFmt(bd.wJuminCtrlMax,'万円')}</div>
-            <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:1px solid #fbcfe8">税額上限: ${explainFmt(bd.wTaxCapTotal,'万円')}</div>
+            <div style="margin-top:3px;padding-top:3px;border-top:1px solid #fbcfe8">税額上限: ${explainFmt(bd.wTaxCapTotal,'万円')}</div>
+            <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:2px solid #9a1e5a;color:#9a1e5a">適用: ${explainFmt(bd.wApplied,'万円')}</div>
           </div>
         </div>
         <div style="font-size:10px;color:#94a3b8;margin-top:4px;line-height:1.5">
-          ※ 各自の「計算上の控除」は自分のローン残高×0.7%（単独ローン上限で頭打ち）。<br>
-          本年の適用値はCF表の簡略計算で合算した ${explainFmt(applied,'万円')} です。
+          ※ 各自の控除は自分のローン残高×0.7%（単独上限で頭打ち）を自分の税額上限で頭打ち。各自独立に計算し合算します。
         </div>
       `;
     }
@@ -199,8 +225,13 @@
         ${singleTaxSection}
 
         <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 最終適用</div>
-        <div>= min(計算上の控除額 <strong>${explainFmt(calcAmt,'万円')}</strong>, 税額上限 <strong>${explainFmt(taxCap,'万円')}</strong>)</div>
-        <div>= <strong style="color:#1e3a5f">${explainFmt(applied,'万円')}</strong></div>
+        ${bd.pairMode ? `
+          <div>ご主人様適用: <strong>${explainFmt(bd.hApplied,'万円')}</strong> ＋ 奥様適用: <strong>${explainFmt(bd.wApplied,'万円')}</strong></div>
+          <div>= <strong style="color:#1e3a5f">${explainFmt(applied,'万円')}</strong></div>
+        ` : `
+          <div>= min(計算上の控除額 <strong>${explainFmt(calcAmt,'万円')}</strong>, 税額上限 <strong>${explainFmt(taxCap,'万円')}</strong>)</div>
+          <div>= <strong style="color:#1e3a5f">${explainFmt(applied,'万円')}</strong></div>
+        `}
 
         <div style="font-size:10px;color:#94a3b8;margin-top:8px;line-height:1.5">
           ※ 令和6年度税制改正に基づく計算。所得税から控除しきれない分は住民税から控除されます（上限9.75万円）。

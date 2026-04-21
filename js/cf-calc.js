@@ -431,8 +431,18 @@ function render(){
         _lctrlBd.wJuminCtrlMax=wJuminCtrlMax;
         _lctrlBd.wTaxCapTotal=wTaxCapTotal;
         // 各自の計算上の控除額（自分のローン残高 × 0.7%、単独ローン上限で頭打ち）
-        _lctrlBd.hCalcAmount=Math.round(Math.min(_hBal,lctrlLimit)*0.007*10)/10;
-        _lctrlBd.wCalcAmount=Math.round(Math.min(_wBal,lctrlLimit)*0.007*10)/10;
+        const hCalcAmt=Math.round(Math.min(_hBal,lctrlLimit)*0.007*10)/10;
+        const wCalcAmt=Math.round(Math.min(_wBal,lctrlLimit)*0.007*10)/10;
+        _lctrlBd.hCalcAmount=hCalcAmt;
+        _lctrlBd.wCalcAmount=wCalcAmt;
+        // 【厳密計算】各自の適用控除額 = min(計算上の控除額, 自分の税額上限)
+        const hApplied=Math.max(0,Math.round(Math.min(hCalcAmt, taxCapTotal)*10)/10);
+        const wApplied=Math.max(0,Math.round(Math.min(wCalcAmt, wTaxCapTotal)*10)/10);
+        _lctrlBd.hApplied=hApplied;
+        _lctrlBd.wApplied=wApplied;
+        // ペアローン時は夫婦別計算の合算をlc2として採用（厳密計算）
+        lc2=Math.round((hApplied+wApplied)*10)/10;
+        lc2=Math.max(0,lc2);
       }
     }
     if(_lctrlDedMode!=='manual'){
