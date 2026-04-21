@@ -84,9 +84,17 @@ function openExplainPopup(iconEl){
   const cYear = cfType === 'mg' ? (window.lastMRCYear || window.lastCYear) : window.lastCYear;
   const hAge = parseInt(document.getElementById('husband-age')?.value) || 0;
   const wAge = parseInt(document.getElementById('wife-age')?.value) || 0;
-  const value = R[rowKey] ? R[rowKey][colIndex] : null;
+  // セル手動上書きの検出
+  const overrideMap = cfType === 'mg'
+    ? (typeof mgOverrides !== 'undefined' ? mgOverrides : {})
+    : (typeof cfOverrides !== 'undefined' ? cfOverrides : {});
+  const overrideValue = overrideMap[rowKey]?.[colIndex];
+  const isOverridden = overrideValue !== undefined;
+  const autoValue = R[rowKey] ? R[rowKey][colIndex] : null;
+  const value = isOverridden ? overrideValue : autoValue;
   const ctx = {
     rowKey, colIndex, value,
+    autoValue, overrideValue, isOverridden,
     R, cYear, cfType,
     hAge: hAge + colIndex,
     wAge: wAge + colIndex,
@@ -121,7 +129,7 @@ function _buildPopup(anchorEl, rowKey, colIndex, content){
   const simple = content.simple || '';
   const detail = content.detail || '';
   pop.innerHTML = `
-    <div class="explain-popup-header">
+    <div class="explain-popup-header" data-drag-handle="1" title="ドラッグで移動">
       <span class="explain-popup-title">${content.title || '計算根拠'}</span>
       <button class="explain-popup-close" onclick="closeExplainPopup()">×</button>
     </div>
@@ -148,6 +156,57 @@ function _buildPopup(anchorEl, rowKey, colIndex, content){
   }
   pop.style.top = top + 'px';
   pop.style.left = left + 'px';
+
+  // ヘッダーをドラッグハンドルにしてポップアップを移動可能に
+  _enableDrag(pop);
+}
+
+// ===== ドラッグ移動 =====
+function _enableDrag(pop){
+  const handle = pop.querySelector('[data-drag-handle="1"]');
+  if(!handle) return;
+  let startX=0, startY=0, startLeft=0, startTop=0, dragging=false;
+  const onMove = (e)=>{
+    if(!dragging) return;
+    const p = e.touches ? e.touches[0] : e;
+    const dx = p.clientX - startX;
+    const dy = p.clientY - startY;
+    let nl = startLeft + dx;
+    let nt = startTop + dy;
+    // 画面内に収める
+    const rect = pop.getBoundingClientRect();
+    nl = Math.max(8, Math.min(window.innerWidth - rect.width - 8, nl));
+    nt = Math.max(8, Math.min(window.innerHeight - rect.height - 8, nt));
+    pop.style.left = nl + 'px';
+    pop.style.top = nt + 'px';
+  };
+  const onUp = ()=>{
+    dragging = false;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onUp);
+    handle.classList.remove('dragging');
+  };
+  const onDown = (e)=>{
+    // ×ボタンクリック時はドラッグしない
+    if(e.target.closest && e.target.closest('.explain-popup-close')) return;
+    const p = e.touches ? e.touches[0] : e;
+    const rect = pop.getBoundingClientRect();
+    startX = p.clientX;
+    startY = p.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    dragging = true;
+    handle.classList.add('dragging');
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, {passive:true});
+    document.addEventListener('touchend', onUp);
+    e.preventDefault();
+  };
+  handle.addEventListener('mousedown', onDown);
+  handle.addEventListener('touchstart', onDown, {passive:false});
 }
 
 function toggleExplainDetail(btn){

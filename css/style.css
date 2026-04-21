@@ -914,6 +914,13 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   align-items:center;
   padding:10px 12px 6px;
   border-bottom:1px solid #e2e8f0;
+  cursor:move;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.explain-popup-header.dragging{
+  cursor:grabbing;
+  background:#f1f5f9;
 }
 .explain-popup-title{
   font-size:13px;

@@ -15,6 +15,53 @@
     const elapsed = ctx.elapsed;
     const titleText = `🏠 住宅ローン控除（${year}年・経過${elapsed}年目）`;
 
+    // セル手動上書きの場合は自動計算値と並べて表示
+    if(ctx.isOverridden){
+      const autoStr = explainFmt(ctx.autoValue, '万円');
+      const ovStr = explainFmt(ctx.overrideValue, '万円');
+      const simple = `
+        <div style="background:#fff9e0;border:1px solid #f0c040;border-radius:6px;padding:8px 10px;margin-bottom:8px">
+          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:2px">📝 セルが手動上書きされています</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span>手動入力値</span>
+            <strong style="font-size:15px;color:#7a5000">${ovStr}</strong>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px">▼ 自動計算（参考）</div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0">
+          <span>自動計算の控除額</span><span>${autoStr}</span>
+        </div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:6px;line-height:1.5">
+          ※ 自動計算に戻すには、「手動上書きをリセット」ボタンを使ってください
+        </div>
+      `;
+      // 詳細には元の自動計算の内訳を表示
+      const bdOrig = (R.lCtrlBreakdown && R.lCtrlBreakdown[i]) || null;
+      let detail = null;
+      if(bdOrig && bdOrig.remainBal){
+        const typeLabel = {
+          'new_eco':'新築ZEH水準以上',
+          'new_standard':'新築（その他）',
+          'used':'中古',
+          'used_eco':'中古省エネ'
+        }[bdOrig.lctrlType] || '-';
+        const hhLabel = bdOrig.isKosodate ? '子育て・若者夫婦世帯' : '一般世帯';
+        detail = `
+          <div style="font-size:11px;color:#1e3a5f;font-weight:700;margin-bottom:4px">▼ 自動計算の内訳</div>
+          <div style="font-size:11px;line-height:1.6">
+            年末ローン残高: ${explainFmt(bdOrig.remainBal,'万円')}<br>
+            控除率: × ${bdOrig.rate}%<br>
+            計算上の控除額: ${explainFmt(bdOrig.calcAmount,'万円')}<br>
+            税額上限: ${explainFmt(bdOrig.taxCapTotal,'万円')}<br>
+            <strong>自動適用額: ${autoStr}</strong>
+            <br><br>
+            <span style="color:#94a3b8">入居${bdOrig.lctrlYear}年 / ${typeLabel} / ${hhLabel} / ${bdOrig.yearIndex}年目</span>
+          </div>
+        `;
+      }
+      return { title: titleText, simple, detail };
+    }
+
     // 値なし（控除期間外など）
     if(value === 0 || value === null || value === undefined){
       let reason = '控除対象外';
