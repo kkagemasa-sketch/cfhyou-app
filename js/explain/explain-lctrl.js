@@ -143,6 +143,49 @@
     }[bd.lctrlType] || bd.lctrlType || '-';
     const hhLabel = bd.isKosodate ? '子育て・若者夫婦世帯' : '一般世帯';
 
+    // ペアローン時は夫婦それぞれのセクションを表示
+    let pairSection = '';
+    if(bd.pairMode && (bd.hBal !== undefined || bd.wBal !== undefined)){
+      pairSection = `
+        <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ ローン内訳（ペアローン）</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
+          <div style="background:#f0f6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px">
+            <div style="font-weight:700;color:#1e5a9a;margin-bottom:3px">👔 ご主人様</div>
+            <div>年末残高: ${explainFmt(bd.hBal,'万円')}</div>
+            <div>計算上の控除: ${explainFmt(bd.hCalcAmount,'万円')}</div>
+            <div style="margin-top:4px;padding-top:4px;border-top:1px dashed #bfdbfe">推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
+            <div>課税所得: ${explainFmt(bd.taxableBase,'万円')}</div>
+            <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
+            <div>住民税上限: ${explainFmt(bd.juminCtrlMax,'万円')}</div>
+            <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:1px solid #bfdbfe">税額上限: ${explainFmt((bd.itax||0)+(bd.juminCtrlMax||0),'万円')}</div>
+          </div>
+          <div style="background:#fff0f6;border:1px solid #fbcfe8;border-radius:6px;padding:6px 8px">
+            <div style="font-weight:700;color:#9a1e5a;margin-bottom:3px">👩 奥様</div>
+            <div>年末残高: ${explainFmt(bd.wBal,'万円')}</div>
+            <div>計算上の控除: ${explainFmt(bd.wCalcAmount,'万円')}</div>
+            <div style="margin-top:4px;padding-top:4px;border-top:1px dashed #fbcfe8">推定額面年収: ${explainFmt(bd.wGrossEst,'万円')}</div>
+            <div>課税所得: ${explainFmt(bd.wTaxableBase,'万円')}</div>
+            <div>所得税: ${explainFmt(bd.wItax,'万円')}</div>
+            <div>住民税上限: ${explainFmt(bd.wJuminCtrlMax,'万円')}</div>
+            <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:1px solid #fbcfe8">税額上限: ${explainFmt(bd.wTaxCapTotal,'万円')}</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px;line-height:1.5">
+          ※ 各自の「計算上の控除」は自分のローン残高×0.7%（単独ローン上限で頭打ち）。<br>
+          本年の適用値はCF表の簡略計算で合算した ${explainFmt(applied,'万円')} です。
+        </div>
+      `;
+    }
+
+    // 通常ローン時の税額計算セクション（ペアローン時は上のブロックで代替）
+    const singleTaxSection = bd.pairMode ? '' : `
+        <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 税額計算（ご主人様）</div>
+        <div>推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
+        <div>課税所得ベース: ${explainFmt(bd.taxableBase,'万円')}</div>
+        <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
+        <div>住民税控除上限: ${explainFmt(bd.juminCtrlMax,'万円')} <span style="color:#94a3b8">（課税所得×5%、上限9.75万円）</span></div>
+    `;
+
     const detail = `
       <div style="display:flex;flex-direction:column;gap:4px;font-size:11px">
         <div style="font-weight:700;color:#1e3a5f;margin-top:2px">▼ 適用条件</div>
@@ -152,11 +195,8 @@
         <div>控除期間: ${bd.totalYrs || '-'}年 / 本年は<strong>${bd.yearIndex || '?'}年目</strong></div>
         <div>残高上限: ${explainFmt(bd.balCap,'万円')}${bd.pairMode?'（ペアローン×2適用）':''}</div>
 
-        <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 税額計算（ご主人様）</div>
-        <div>推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
-        <div>課税所得ベース: ${explainFmt(bd.taxableBase,'万円')}</div>
-        <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
-        <div>住民税控除上限: ${explainFmt(bd.juminCtrlMax,'万円')} <span style="color:#94a3b8">（課税所得×5%、上限9.75万円）</span></div>
+        ${pairSection}
+        ${singleTaxSection}
 
         <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 最終適用</div>
         <div>= min(計算上の控除額 <strong>${explainFmt(calcAmt,'万円')}</strong>, 税額上限 <strong>${explainFmt(taxCap,'万円')}</strong>)</div>

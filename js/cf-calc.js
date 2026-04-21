@@ -337,14 +337,19 @@ function render(){
     if(active&&lctrlYrs>0&&lcYr<lctrlYrs&&effLoanAmt>0&&lctrlLimit>0){
       const loanType2tmp=_isFlat?eLoanType:(document.getElementById('loan-type')?.value||'equal_payment');
       let remainBal=0;
+      let _hBal=0,_wBal=0; // ペアローン時の各自残高
       if(_flatPair){
-        if(_fhAmt>0&&lcYr<_fhYrs)remainBal+=(_fhType==='equal_payment'?lbal(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr):lbal_gankin(_fhAmt,_fhYrs,lcYr));
-        if(_fwAmt>0&&lcYr<_fwYrs)remainBal+=(_fwType==='equal_payment'?lbal(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr):lbal_gankin(_fwAmt,_fwYrs,lcYr));
+        if(_fhAmt>0&&lcYr<_fhYrs)_hBal=(_fhType==='equal_payment'?lbal(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr):lbal_gankin(_fhAmt,_fhYrs,lcYr));
+        if(_fwAmt>0&&lcYr<_fwYrs)_wBal=(_fwType==='equal_payment'?lbal(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr):lbal_gankin(_fwAmt,_fwYrs,lcYr));
+        remainBal=_hBal+_wBal;
       }else if(pairLoanMode){
-        remainBal=(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0)+(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0);
+        _hBal=(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0);
+        _wBal=(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0);
+        remainBal=_hBal+_wBal;
       }else{
         remainBal=loanType2tmp==='equal_payment'?lbal(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr):lbal_gankin(loanAmt,eLoanYrs,lcYr);
       }
+      _lctrlBd.hBal=_hBal; _lctrlBd.wBal=_wBal;
       const cappedBal=Math.min(remainBal,(pairLoanMode||_flatPair)?lctrlLimit*2:lctrlLimit);
       const calcCtrl=Math.round(cappedBal*0.007*10)/10;
       // 所得税・住民税から上限を推計（ご主人の手取りから額面を逆算）
@@ -389,6 +394,46 @@ function render(){
       _lctrlBd.itax=itax;
       _lctrlBd.juminCtrlMax=juminCtrlMax;
       _lctrlBd.taxCapTotal=taxCapTotal;
+      // ペアローン時は奥様側の税額情報も追加
+      if((pairLoanMode||_flatPair)&&!_isSingle){
+        const wGrossInc=wInc>0?wInc:0;
+        let wGrossEst=0;
+        for(let gi=0;gi<TAX.length-1;gi++){
+          if(wGrossInc<=TAX[gi][1]){wGrossEst=TAX[gi][0];break;}
+          if(wGrossInc<TAX[gi+1][1]){
+            const r=(wGrossInc-TAX[gi][1])/(TAX[gi+1][1]-TAX[gi][1]);
+            wGrossEst=Math.round(TAX[gi][0]+r*(TAX[gi+1][0]-TAX[gi][0]));
+            break;
+          }
+          wGrossEst=TAX[TAX.length-1][0];
+        }
+        if(wGrossEst<=0&&wGrossInc>0)wGrossEst=TAX[TAX.length-1][0];
+        let wItax=0, wTaxableBase=0;
+        if(wGrossEst>0){
+          const wShakai=Math.round(wGrossEst*0.1437*10)/10;
+          let wKyuyo=wGrossEst<=180?Math.max(55,wGrossEst*0.4):wGrossEst<=360?wGrossEst*0.3+18:wGrossEst<=660?wGrossEst*0.2+54:wGrossEst<=850?wGrossEst*0.1+120:wGrossEst<=1000?wGrossEst*0.05+172.5:195;
+          wTaxableBase=Math.max(0,wGrossEst-wKyuyo-wShakai-48);
+          const wTaxable=Math.max(0,wTaxableBase-38);
+          if(wTaxable<=195)wItax=wTaxable*0.05;
+          else if(wTaxable<=330)wItax=wTaxable*0.1-9.75;
+          else if(wTaxable<=695)wItax=wTaxable*0.2-42.75;
+          else if(wTaxable<=900)wItax=wTaxable*0.23-63.6;
+          else if(wTaxable<=1800)wItax=wTaxable*0.33-153.6;
+          else if(wTaxable<=4000)wItax=wTaxable*0.4-279.6;
+          else wItax=wTaxable*0.45-479.6;
+          wItax=Math.round(wItax*1.021*10)/10;
+        }
+        const wJuminCtrlMax=Math.min(Math.round(wTaxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
+        const wTaxCapTotal=Math.round((wItax+wJuminCtrlMax)*10)/10;
+        _lctrlBd.wGrossEst=wGrossEst;
+        _lctrlBd.wTaxableBase=wTaxableBase;
+        _lctrlBd.wItax=wItax;
+        _lctrlBd.wJuminCtrlMax=wJuminCtrlMax;
+        _lctrlBd.wTaxCapTotal=wTaxCapTotal;
+        // 各自の計算上の控除額（自分のローン残高 × 0.7%、単独ローン上限で頭打ち）
+        _lctrlBd.hCalcAmount=Math.round(Math.min(_hBal,lctrlLimit)*0.007*10)/10;
+        _lctrlBd.wCalcAmount=Math.round(Math.min(_wBal,lctrlLimit)*0.007*10)/10;
+      }
     }
     if(_lctrlDedMode!=='manual'){
       R.lCtrl.push(ri(lc2));
