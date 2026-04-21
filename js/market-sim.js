@@ -114,7 +114,7 @@ function mspRenderShockList(){
   const cYear = (typeof getCfStartYear==='function')?getCfStartYear():new Date().getFullYear();
 
   wrap.innerHTML=marketShocks.map((sh,idx)=>{
-    const mode = sh.mode||'historical'; // 'historical' | 'manual'
+    const mode = sh.mode||'historical'; // 'historical' | 'manual' | 'replay50'
     const presetOpts=optsHtml.replace(`value="${sh.preset}"`,`value="${sh.preset}" selected`);
     const timingVal=sh.timing?.type==='age'?sh.timing.age:'';
     const eventVal=sh.timing?.type==='event'?sh.timing.key:'';
@@ -162,7 +162,8 @@ function mspRenderShockList(){
         <div class="msp-shock-field">
           <label>モード</label>
           <select onchange="mspSetMode('${sh.id}',this.value)">
-            <option value="historical"${mode==='historical'?' selected':''}>📜 過去相場再生</option>
+            <option value="historical"${mode==='historical'?' selected':''}>📜 過去相場再生（単発ショック）</option>
+            <option value="replay50"${mode==='replay50'?' selected':''}>📅 過去50年ヒストリカル全期間再生</option>
             <option value="manual"${mode==='manual'?' selected':''}>✏️ 手動指定</option>
           </select>
         </div>
@@ -171,7 +172,23 @@ function mspRenderShockList(){
             <label>プリセット</label>
             <select onchange="mspSetShockPreset('${sh.id}',this.value)">${presetOpts}</select>
           </div>
-        `:`
+        `:mode==='replay50'?(function(){
+          const histStart = sh.historicalStartYear||1976;
+          const yrOpts = HISTORICAL_50YR.years.map(y=>`<option value="${y}"${y===histStart?' selected':''}>${y}年〜</option>`).join('');
+          return `
+            <div class="msp-shock-field">
+              <label>対象指数</label>${idxSelect}
+            </div>
+            <div class="msp-shock-field">
+              <label>開始年</label>
+              <select onchange="mspSetHistoricalStart('${sh.id}',this.value)">${yrOpts}</select>
+            </div>
+            <div style="font-size:10px;color:#64748b;padding:3px 6px;line-height:1.4">
+              CF表1年目から、上記の開始年以降の実際のリターンを順番に適用します。
+              例: 1976年スタート → CF1年目=1976年、2年目=1977年...
+            </div>
+          `;
+        })():`
           <div class="msp-shock-field"><label>対象指数</label>${idxSelect}</div>
           <div class="msp-shock-field">
             <label>下落率(%)</label>
@@ -182,6 +199,7 @@ function mspRenderShockList(){
             <input type="number" min="1" max="30" value="${manualRecovery}" onchange="mspSetManualRecovery('${sh.id}',this.value)">
           </div>
         `}
+        ${mode==='replay50'?'':`
         <div class="msp-shock-field">
           <label>タイミング種別</label>
           <select onchange="mspSetTimingType('${sh.id}',this.value)">
@@ -194,6 +212,7 @@ function mspRenderShockList(){
             :`<label>ご主人年齢</label><input type="number" min="0" max="120" value="${timingVal}" onchange="mspSetTimingAge('${sh.id}',this.value)">`}
         </div>
         <div style="font-size:10px;padding:3px 0 0 6px;">${timingResolved}</div>
+        `}
       </div>
     `;
   }).join('');
@@ -231,6 +250,7 @@ function mspSetMode(id,mode){
   if(!sh)return;
   sh.mode=mode;
   if(mode==='manual' && !sh.manual){sh.manual={dropPct:30, recoveryYrs:3, index:'sp500'};}
+  if(mode==='replay50' && !sh.historicalStartYear){sh.historicalStartYear=1976; sh.manual=sh.manual||{}; sh.manual.index=sh.manual.index||'sp500';}
   mspRenderShockList();
   if(typeof scheduleAutoSave==='function')scheduleAutoSave();
   if(typeof render==='function')render();
@@ -248,6 +268,11 @@ function mspSetManualRecovery(id,val){
 function mspSetManualIndex(id,val){
   const sh=marketShocks.find(s=>String(s.id)===String(id));
   if(sh){sh.manual=sh.manual||{};sh.manual.index=val;
+    if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
+}
+function mspSetHistoricalStart(id,val){
+  const sh=marketShocks.find(s=>String(s.id)===String(id));
+  if(sh){sh.historicalStartYear=parseInt(val)||1976;
     if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
 }
 function mspSetTimingType(id,val){
@@ -317,6 +342,13 @@ function isShockActiveAtYear(yearIdx, hAge, wAge){
   if(!marketShocks||marketShocks.length===0)return false;
   for(const sh of marketShocks){
     if(sh.active===false)continue;
+    if(sh.mode==='replay50'){
+      // 過去50年ヒストリカル再生: CF 1年目からデータ終了まで
+      const startY = sh.historicalStartYear||HISTORICAL_50YR.startYear;
+      const remaining = HISTORICAL_50YR.endYear - startY + 1;
+      if(yearIdx < remaining) return true;
+      continue;
+    }
     const startI = mspResolveStartIdx(sh, hAge, wAge);
     if(startI<0)continue;
     const offset = yearIdx - startI;
@@ -327,7 +359,6 @@ function isShockActiveAtYear(yearIdx, hAge, wAge){
     }else{
       const sc = MARKET_SCENARIOS[sh.preset];
       if(!sc)continue;
-      // 最も長い配列長を取る
       len = Math.max(...['sp500','acwi','nikkei','usdjpy'].map(k=>sc.returns[k]?.length||0));
     }
     if(offset<len) return true;
@@ -340,6 +371,17 @@ function getMarketReturnAtYear(indexKey, yearIdx, hAge, wAge){
   let totalR=null;
   for(const sh of marketShocks){
     if(sh.active===false)continue;
+    // 過去50年ヒストリカル再生モード
+    if(sh.mode==='replay50'){
+      if(sh.manual?.index && sh.manual.index!==indexKey) continue;
+      const startY = sh.historicalStartYear||HISTORICAL_50YR.startYear;
+      const offsetY = startY - HISTORICAL_50YR.startYear + yearIdx;
+      const arr = HISTORICAL_50YR.returns[indexKey];
+      if(!arr || offsetY<0 || offsetY>=arr.length) continue;
+      const r = arr[offsetY]/100;
+      totalR = totalR===null ? r : ((1+totalR)*(1+r)-1);
+      continue;
+    }
     const startI = mspResolveStartIdx(sh, hAge, wAge);
     if(startI<0)continue;
     const offset = yearIdx - startI;
