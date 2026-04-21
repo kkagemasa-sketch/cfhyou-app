@@ -223,9 +223,23 @@ function toggleExplainDetail(btn){
 }
 
 // ===== ユーティリティ =====
-// 数値をフォーマット（小数点1桁、万円単位想定）
+// 数値をフォーマット
+// - suffix が '万円' の場合: 万円単位で受け取り、円単位（1円精度）で表示
+//   例: 17.5（万円） → "175,000円"
+// - suffix が '円' の場合: そのまま円単位で表示
+// - suffix が '%' の場合: 小数点1桁で表示
+// - その他（null 等）: 小数点1桁で表示
 function explainFmt(n, suffix){
   if(n === null || n === undefined || isNaN(n)) return '-';
+  if(suffix === '万円'){
+    // 万円単位の値を 1円精度で表示
+    const yen = Math.round(n * 10000);
+    return yen.toLocaleString() + '円';
+  }
+  if(suffix === '円'){
+    return Math.round(n).toLocaleString() + '円';
+  }
+  // それ以外（%, 単位なし等）
   const v = Math.round(n * 10) / 10;
   return v.toLocaleString() + (suffix || '');
 }
