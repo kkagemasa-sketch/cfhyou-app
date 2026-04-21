@@ -245,8 +245,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=iRow('副業・その他収入',R.otherInc,'otherInc');
   h+=iRow(_isSingle_t?'退職金':'退職金（ご主人）',R.rPay,'rPay');
   if(!_isSingle_t)h+=iRow('退職金（奥様）',R.wRPay,'wRPay');
-  h+=iRow(_isSingle_t?'老齢年金':'本人年金',R.pS,'pS');
-  if(!_isSingle_t){h+=iRow('配偶者年金',R.pW,'pW');h+=iRow('遺族年金',R.survPension,'survPension');}
+  h+=iRow(_isSingle_t?'年金受給額':'ご主人年金受給額',R.pTotalH,'pTotalH');
+  if(!_isSingle_t)h+=iRow('奥様年金受給額',R.pTotalW,'pTotalW');
   h+=iRow(_isSingle_t?'DC受取':'DC受取(主)',R.dcReceiptH,'dcReceiptH');
   if(!_isSingle_t)h+=iRow('DC受取(奥様)',R.dcReceiptW,'dcReceiptW');
   h+=iRow(_isSingle_t?'iDeCo受取':'iDeCo受取(主)',R.idecoReceiptH,'idecoReceiptH');

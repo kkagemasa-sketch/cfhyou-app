@@ -119,7 +119,7 @@ function render(){
 
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
-    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
+    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
@@ -136,6 +136,9 @@ function render(){
       if(leaveType&&fromAge>0)arr.push({fromAge,toAge,leaveType});
     });
   });
+
+  // 住宅ローン控除の年シフト用（引き渡しの翌年セルから還付計上）
+  let _prevLc2=0, _prevLctrlBd=null;
 
   for(let i=0;i<totalYrs;i++){
     const yr=cYear+i, ha=hAge+i, wa=wAge+i;
@@ -239,9 +242,11 @@ function render(){
       });
     });
     R.insMat.push(insMatTotal);
-    // 老齢年金（死亡後も生存配偶者の年金は継続表示、遺族年金は別行）
-    R.pS.push((ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(pSelf):0);
-    R.pW.push((!_isSingle&&wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife):0);
+    // 老齢年金（死亡後も生存配偶者の年金は継続表示）
+    const _pSVal=(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(pSelf):0;
+    const _pWVal=(!_isSingle&&wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife):0;
+    R.pS.push(_pSVal);
+    R.pW.push(_pWVal);
     // ─── 児童手当（TEATE_TABLEを参照・2024年10月改正対応） ───
     let t=0;
     if(hDeathAge===0||ha<=hDeathAge){
@@ -259,12 +264,14 @@ function render(){
     R.teate.push(t);
 
     // ─── 遺族年金（純粋な遺族年金部分のみ、老齢年金は別行表示）※単身時スキップ ───
-    let survP=0;
+    let survP=0, survPH=0, survPW=0; // survPH: ご主人が受給, survPW: 奥様が受給
+    let _survBd=null; // 内訳（explain用）
     if(!_isSingle&&hDeathAge>0&&ha>hDeathAge){
       // ── ご主人ご逝去後：奥様への遺族年金 ──
       const overrideH=fv('surv-h-amt');
       if(overrideH>0){
         survP=overrideH;
+        _survBd={receiver:'w', manual:true, total:survP};
       }else{
         let childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
@@ -276,23 +283,32 @@ function render(){
         const yearsSinceDeath=ha-hDeathAge;
         if(noChildAtDeath&&wAgeAtDeath<30&&yearsSinceDeath>5){
           survP=0; // 5年経過で遺族厚生年金失権
+          _survBd={receiver:'w', manual:false, expired:true, total:0};
         }else{
           const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
           const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
           // 遺族厚生年金用：死亡時点の被保険者期間ベース＋300月みなし
           const koseiHSurv=calcKoseiForSurvP('h', pHStart, hDeathAge, pSelf, kisoH);
+          let kosei3_4=0, koseiAdj=0;
           if(wa>=pWReceive){
-            survP=Math.max(ri(koseiHSurv*0.75)-koseiW,0)+kiso+chukorei;
+            kosei3_4=ri(koseiHSurv*0.75);
+            koseiAdj=Math.max(kosei3_4-koseiW,0);
+            survP=koseiAdj+kiso+chukorei;
           }else{
-            survP=ri(koseiHSurv*0.75)+kiso+chukorei;
+            kosei3_4=ri(koseiHSurv*0.75);
+            koseiAdj=kosei3_4;
+            survP=kosei3_4+kiso+chukorei;
           }
+          _survBd={receiver:'w', manual:false, kiso, kosei3_4, koseiAdj, koseiOwn:wa>=pWReceive?koseiW:0, chukorei, total:survP, childUnder18};
         }
       }
+      survPW=survP;
     }else if(wDeathAge>0&&wa>wDeathAge){
       // ── 奥様ご逝去後：ご主人への遺族年金 ──
       const overrideW=fv('surv-w-amt');
       if(overrideW>0){
         survP=overrideW;
+        _survBd={receiver:'h', manual:true, total:survP};
       }else{
         const hIncome=getIncomeAtAge(hSteps,ha);
         let childUnder18=0;
@@ -302,21 +318,39 @@ function render(){
         const hadChildAtDeath=children.some(c=>c.age+(wDeathAge-wAge)<=18);
         // 遺族厚生年金用：妻の死亡時点の被保険者期間ベース＋300月みなし
         const koseiWSurv=calcKoseiForSurvP('w', pWStart, wDeathAge, pWife, kisoW);
+        let kosei3_4=0, koseiAdj=0, suspended=false;
         // 夫の遺族厚生年金要件: 死亡時に(子ありOR55歳以上)が必須
         if(childUnder18>0){
-          if(ha>=pHReceive){survP=Math.max(ri(koseiWSurv*0.75)-koseiH,0)+kiso;}
-          else{survP=ri(koseiWSurv*0.75)+kiso;}
+          kosei3_4=ri(koseiWSurv*0.75);
+          if(ha>=pHReceive){koseiAdj=Math.max(kosei3_4-koseiH,0);survP=koseiAdj+kiso;}
+          else{koseiAdj=kosei3_4;survP=kosei3_4+kiso;}
         }else if(hadChildAtDeath||hAgeAtDeath>=55){
           // 死亡時に子ありだった or 55歳以上→受給権あり、60歳から支給
           if(ha>=60&&hIncome<850){
-            if(ha>=pHReceive){survP=Math.max(ri(koseiWSurv*0.75)-koseiH,0);}
-            else{survP=ri(koseiWSurv*0.75);}
-          }// 60歳未満 or 高収入は支給停止
+            kosei3_4=ri(koseiWSurv*0.75);
+            if(ha>=pHReceive){koseiAdj=Math.max(kosei3_4-koseiH,0);survP=koseiAdj;}
+            else{koseiAdj=kosei3_4;survP=kosei3_4;}
+          }else{suspended=true;}// 60歳未満 or 高収入は支給停止
         }
         // 死亡時55歳未満・子なし → survP=0（受給権なし）
+        _survBd={receiver:'h', manual:false, kiso, kosei3_4, koseiAdj, koseiOwn:ha>=pHReceive?koseiH:0, chukorei:0, total:survP, childUnder18, suspended};
       }
+      survPH=survP;
     }
     R.survPension.push(survP);
+    // 年金合算行（pTotalH: ご主人受給分 = 老齢年金 + 遺族年金, pTotalW: 奥様受給分）
+    const _pTotH=_pSVal+survPH;
+    const _pTotW=_pWVal+survPW;
+    R.pTotalH.push(_pTotH);
+    R.pTotalW.push(_pTotW);
+    R.pensionBd.push({
+      pS:_pSVal, pW:_pWVal, survPH, survPW,
+      kisoH, kisoW, koseiH, koseiW,
+      pHReceive, pWReceive, retAge, wRetAge, pHStart, pWStart,
+      hDeathAge, wDeathAge, hAge, wAge, ha, wa,
+      surv:_survBd,
+      pTotH:_pTotH, pTotW:_pTotW
+    });
 
     // ─── 住宅ローン控除（LCTRL_TABLEを参照・所得税・住民税上限考慮） ───
     const lctrlYear=parseInt(document.getElementById('lctrl-year')?.value)||2025;
@@ -347,8 +381,6 @@ function render(){
       const mv=getLctrlManualValues();
       lc2=lcYr<mv.length?mv[lcYr]:0;
       _lctrlBd.autoValue=ri(lc2);
-      R.lCtrl.push(ri(lc2));
-      R.lCtrlBreakdown.push(_lctrlBd);
     }else
     if(active&&lctrlYrs>0&&lcYr<lctrlYrs&&effLoanAmt>0&&lctrlLimit>0){
       const loanType2tmp=_isFlat?eLoanType:(document.getElementById('loan-type')?.value||'equal_payment');
@@ -473,9 +505,23 @@ function render(){
     if(_lctrlDedMode!=='manual'){
       // 元の自動計算値を breakdown に保存（Pass2 の override 上書きに影響されない）
       _lctrlBd.autoValue=ri(lc2);
-      R.lCtrl.push(ri(lc2));
-      R.lCtrlBreakdown.push(_lctrlBd);
     }
+    // 住宅ローン控除は引き渡しの翌年セルから反映（税還付の入金タイミング）
+    // そのため、この年に計上するのは「前年に計算された控除額」
+    const _pushLc2=_prevLc2;
+    const _pushBd=_prevLctrlBd||{
+      mode:_lctrlDedMode, lctrlYear, lctrlType, isKosodate,
+      totalYrs:lctrlYrs, yearIndex:0, inPeriod:false,
+      hasLoan:false, hasLimit:false,
+      remainBal:0, balCap:lctrlLimit*((pairLoanMode||_flatPair)?2:1),
+      pairMode:pairLoanMode||_flatPair, rate:0.7,
+      calcAmount:0, grossEst:0, taxableBase:0, itax:0, juminCtrlMax:0, taxCapTotal:0,
+      autoValue:0
+    };
+    R.lCtrl.push(ri(_pushLc2));
+    R.lCtrlBreakdown.push(_pushBd);
+    _prevLc2=lc2;
+    _prevLctrlBd=_lctrlBd;
     // ─── 有価証券・積立保険の解約収入 ───
     if(!R.secRedeemRows)R.secRedeemRows=[];
     let secRedeemTotal=0;
@@ -578,7 +624,7 @@ function render(){
     });
     R.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap[row.key]?.val||0));});
     R.secRedeem.push(ri(secRedeemTotal));
-    R.incT.push(ri(hInc)+ri(wInc)+ri(hDCSaving)+ri(wDCSaving)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge)?ri(pSelf):0)+(wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge)?ri(pWife):0)+t+lc2+survP);
+    R.incT.push(ri(hInc)+ri(wInc)+ri(hDCSaving)+ri(wDCSaving)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+_pTotH+_pTotW+t+_pushLc2);
     // DC・iDeCo受取は後でfinRowMap計算後にincTに加算される（Pass2でincKeysに含む）
 
     // ─── 生活費（段階別複利計算） ───
@@ -1143,7 +1189,7 @@ function render(){
 
   // ─── cfOverrides後処理: サブ行上書きを合計・収支・残高に反映 ───
   if(Object.keys(cfOverrides).length>0||cfCustomRows.length>0){
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pS','pW','survPension','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;

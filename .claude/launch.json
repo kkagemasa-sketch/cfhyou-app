@@ -10,7 +10,7 @@
     {
       "name": "cf-app",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["http-server", ".", "-p", "8766", "-c-1"],
+      "runtimeArgs": ["http-server", "C:/Users/kkage/OneDrive/cfhyou-app", "-p", "8766", "-c-1"],
       "port": 8766
     }
   ]

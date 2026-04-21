@@ -343,7 +343,7 @@ function _renderContingencyInner(){
   let sav=initSav;
   const MR={yr:[],hA:[],wA:[],
     hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],insAnnuityRows:[],finLiquid:[],otherInc:[],scholarship:[],
-    lCtrl:[],lCtrlBreakdown:[],pS:[],pW:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
+    lCtrl:[],lCtrlBreakdown:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
     dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:[],rent:[],
     secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],
@@ -596,6 +596,9 @@ function _renderContingencyInner(){
       }
     }
     MR.survPension.push(survP);
+    // 遺族年金の受給者（ご主人死亡→奥様が受給 / 奥様死亡→ご主人が受給）
+    const _survPH_mg=(isDead&&!targetIsH)?survP:0;
+    const _survPW_mg=(isDead&&targetIsH)?survP:0;
 
     // その他収入
     const oiVal=i<normalR.otherInc.length?normalR.otherInc[i]:0;
@@ -642,6 +645,21 @@ function _renderContingencyInner(){
     else{pSelfVal=ha>=pHReceive?ri(pSelf):0;pWifeVal=isDead?0:(wa>=pWReceive?ri(pWife):0);}
     MR.pS.push(pSelfVal);
     MR.pW.push(pWifeVal);
+    // 年金合算行（老齢年金 + 遺族年金）
+    const _pTotH_mg=pSelfVal+_survPH_mg;
+    const _pTotW_mg=pWifeVal+_survPW_mg;
+    MR.pTotalH.push(_pTotH_mg);
+    MR.pTotalW.push(_pTotW_mg);
+    MR.pensionBd.push({
+      pS:pSelfVal, pW:pWifeVal, survPH:_survPH_mg, survPW:_survPW_mg,
+      kisoH:kisoH_mg, kisoW:kisoW_mg, koseiH:koseiH_mg, koseiW:koseiW_mg,
+      pHReceive, pWReceive, retAge:retAge_mg, wRetAge:wRetAge_mg, pHStart:pHStart_mg, pWStart:pWStart_mg,
+      hDeathAge:targetIsH?deathAge:0, wDeathAge:targetIsH?0:deathAge,
+      hAge, wAge, ha, wa,
+      surv:isDead?{receiver:targetIsH?'w':'h', manual:mgSurvMode==='manual', total:survP}:null,
+      pTotH:_pTotH_mg, pTotW:_pTotW_mg,
+      isMg:true
+    });
 
     // 奨学金
     let scholarVal=i<normalR.scholarship.length?(normalR.scholarship[i]||0):0;
@@ -982,7 +1000,7 @@ function _renderContingencyInner(){
 
   // ── mgOverrides後処理 ──
   if(Object.keys(mgOverrides).length>0){
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pS','pW','survPension','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
@@ -1235,8 +1253,8 @@ function _renderContingencyInner(){
   h+=mgRow('副業・その他収入',MR.otherInc,N.otherInc,'otherInc');
   h+=mgRow(_isSingle_mg?'退職金':'退職金（ご主人）',MR.rPay,N.rPay,'rPay');
   if(!_isSingle_mg)h+=mgRow('退職金（奥様）',MR.wRPay,N.wRPay,'wRPay');
-  h+=mgRow(_isSingle_mg?'老齢年金':'本人年金',MR.pS,N.pS,'pS');
-  if(!_isSingle_mg){h+=mgRow('配偶者年金',MR.pW,N.pW,'pW');h+=mgRow('遺族年金',MR.survPension,N.survPension,'survPension');}
+  h+=mgRow(_isSingle_mg?'年金受給額':'ご主人年金受給額',MR.pTotalH,N.pTotalH,'pTotalH');
+  if(!_isSingle_mg)h+=mgRow('奥様年金受給額',MR.pTotalW,N.pTotalW,'pTotalW');
   const _hasAnnuity=MR.insAnnuityRows&&MR.insAnnuityRows.length>0;
   h+=mgRow(_hasAnnuity?'死亡保険金(一時金)':'死亡保険金',MR.insPayArr,null,'insPayArr');
   if(_hasAnnuity)MR.insAnnuityRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgRow(row.name,row.vals,null,row.key);});
