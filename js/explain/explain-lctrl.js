@@ -17,19 +17,24 @@
 
     // セル手動上書きの場合は自動計算値と並べて表示
     if(ctx.isOverridden){
-      const autoStr = explainFmt(ctx.autoValue, '万円');
+      // breakdown に保存した元の自動計算値を優先（Pass2 で R.lCtrl が override に上書きされているため）
+      const bdAuto = (R.lCtrlBreakdown && R.lCtrlBreakdown[i]) || null;
+      const autoVal = (bdAuto && bdAuto.autoValue !== undefined) ? bdAuto.autoValue : ctx.autoValue;
+      const autoStr = explainFmt(autoVal, '万円');
       const ovStr = explainFmt(ctx.overrideValue, '万円');
+      const diffVal = (ctx.overrideValue||0) - (autoVal||0);
+      const diffStr = diffVal === 0 ? '' : (diffVal > 0 ? ` (+${explainFmt(Math.abs(diffVal),'万円')})` : ` (-${explainFmt(Math.abs(diffVal),'万円')})`);
       const simple = `
         <div style="background:#fff9e0;border:1px solid #f0c040;border-radius:6px;padding:8px 10px;margin-bottom:8px">
-          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:2px">📝 セルが手動上書きされています</div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <span>手動入力値</span>
-            <strong style="font-size:15px;color:#7a5000">${ovStr}</strong>
+          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">📝 セルが手動上書きされています</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:1px dashed #f0c040">
+            <span>元の自動計算値</span>
+            <strong style="color:#1e3a5f">${autoStr}</strong>
           </div>
-        </div>
-        <div style="font-size:11px;color:#64748b;margin-bottom:4px">▼ 自動計算（参考）</div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0">
-          <span>自動計算の控除額</span><span>${autoStr}</span>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0 2px">
+            <span>手動入力値</span>
+            <strong style="font-size:15px;color:#7a5000">${ovStr}${diffStr}</strong>
+          </div>
         </div>
         <div style="font-size:10px;color:#94a3b8;margin-top:6px;line-height:1.5">
           ※ 自動計算に戻すには、「手動上書きをリセット」ボタンを使ってください

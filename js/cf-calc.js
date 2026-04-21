@@ -346,6 +346,7 @@ function render(){
     if(_lctrlDedMode==='manual'){
       const mv=getLctrlManualValues();
       lc2=lcYr<mv.length?mv[lcYr]:0;
+      _lctrlBd.autoValue=ri(lc2);
       R.lCtrl.push(ri(lc2));
       R.lCtrlBreakdown.push(_lctrlBd);
     }else
@@ -470,6 +471,8 @@ function render(){
       }
     }
     if(_lctrlDedMode!=='manual'){
+      // 元の自動計算値を breakdown に保存（Pass2 の override 上書きに影響されない）
+      _lctrlBd.autoValue=ri(lc2);
       R.lCtrl.push(ri(lc2));
       R.lCtrlBreakdown.push(_lctrlBd);
     }
