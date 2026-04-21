@@ -72,7 +72,12 @@ function live(force){
     pushUndoSnap();
     validate();updateHints();calcLC();updateEdu();
     // 万が一タブ表示中はrenderContingency()（内部でrender()も呼ばれる）
-    if((rTab==='mg-h'||rTab==='mg-w')&&typeof renderContingency==='function'){
+    // Q&A万が一タブがアクティブなら該当タブを再計算
+    if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined' && typeof mgQA_calcAndRender==='function'){
+      const _qaTab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
+      if(_qaTab){mgQA_calcAndRender(_qaTab,true);}
+      else render();
+    } else if((rTab==='mg-h'||rTab==='mg-w')&&typeof renderContingency==='function'){
       renderContingency();
     }else{render();}
     document.querySelectorAll('.amt-inp').forEach(el=>{const v=el.value.trim();el.classList.toggle('is-zero',v===''||v==='0');});

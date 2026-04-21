@@ -837,16 +837,18 @@ async function exportExcelMG(){
 
 // ===== Excel出力 =====
 function exportCurrentTab(){
-  if(rTab==='cf')showExportModal('excel');
+  // 万が一Q&Aタブがアクティブな場合も万が一用として扱う
+  const _isMgActive=(rTab==='mg-h'||rTab==='mg-w')||!!window._mgQA_activeTabId;
+  if(_isMgActive)showExportModal('mg');
   else if(rTab==='lctab')exportLCTabExcel();
   else if(rTab==='loan')exportLoanExcel();
-  else if(rTab==='mg-h'||rTab==='mg-w')showExportModal('mg');
   else if(rTab==='graph')showExportModal('excel');
   else showExportModal('excel');
 }
 async function exportExcel(){
-  // 万が一タブが開いている場合は万が一用Excel出力
-  if((rTab==='mg-h'||rTab==='mg-w')&&window.lastMR){
+  // 万が一タブ（旧 or Q&A）が開いている場合は万が一用Excel出力
+  const _isMgActive=(rTab==='mg-h'||rTab==='mg-w')||!!window._mgQA_activeTabId;
+  if(_isMgActive&&window.lastMR){
     exportExcelMG();return;
   }
   if(!window.lastR){alert('先にCF表を生成してください');return;}

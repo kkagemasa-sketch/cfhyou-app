@@ -1124,7 +1124,13 @@ function _renderContingencyInner(){
 
   h+=`</div><div class="tbl-wrap"><table class="cf"><thead>`;
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
-  for(let i=0;i<mgDisp;i++)h+=`<th>${MR.yr[i]}</th>`;
+  for(let i=0;i<mgDisp;i++){
+    if(i===0){
+      h+=`<th style="padding:0;background:var(--navy)" title="クリックして開始年を変更（通常CF表と連動）"><div style="font-size:8px;font-weight:500;background:#fbbf24;color:#1a1a1a;padding:1px 2px;line-height:1.15;letter-spacing:-.02em;white-space:nowrap">📅開始年を設定</div><div contenteditable="true" data-cf-start-year="1" style="cursor:text;padding:3px 4px;outline:none;color:#fff;background:var(--navy)" onfocus="selectAll(this)" onblur="setCfStartYearFromCell(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${MR.yr[i]}</div></th>`;
+    }else{
+      h+=`<th>${MR.yr[i]}</th>`;
+    }
+  }
   h+=`<th>合計</th></tr>`;
 
   // 経過年数
@@ -1406,14 +1412,11 @@ function _renderContingencyInner(){
   window._mgMRStore[mgKey]=MR;
   window._mgHTML=null;
 
-  // タブボタンを表示（シナリオ名入り）
+  // 旧万が一タブ（rt-mg-h/rt-mg-w）はQ&A UI一本化に伴い使用しない
+  // 常に非表示を維持
   const tabId=targetIsH?'rt-mg-h':'rt-mg-w';
   const _tabEl=$(tabId);
-  if(_tabEl)_tabEl.style.display='';
-  const _mgScenName=scenarios?.find(s=>s.id===activeScenarioId)?.name||'';
-  const _mgPersonLbl=targetIsH?'ご主人様':'奥様';
-  const _lblEl=$(tabId+'-label');
-  if(_lblEl)_lblEl.textContent=`🛡️ ${_mgScenName?_mgScenName+' ':''}万が一（${_mgPersonLbl}）`;
+  if(_tabEl)_tabEl.style.display='none';
 
   // スクロール位置を保存してから表示、復元
   const _mgRb=$('right-body');

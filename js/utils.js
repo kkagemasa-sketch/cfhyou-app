@@ -65,10 +65,26 @@ function cellEdit(td){
     return;
   }
   pushUndoSnap();
-  if(isMG)renderContingency();
+  if(isMG){
+    // Q&A万が一タブがアクティブなら該当タブを再計算
+    if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined'){
+      const tab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
+      if(tab && typeof mgQA_calcAndRender==='function'){mgQA_calcAndRender(tab,true);return;}
+    }
+    renderContingency();
+  } else render();
+}
+function resetOverrides(){
+  if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;
+  cfOverrides={};mgOverrides={};
+  // Q&A万が一タブがアクティブなら該当タブを再計算、それ以外は文脈に合わせて再描画
+  if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined'){
+    const tab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
+    if(tab && typeof mgQA_calcAndRender==='function'){mgQA_calcAndRender(tab,true);return;}
+  }
+  if(rTab==='mg-h'||rTab==='mg-w')renderContingency();
   else render();
 }
-function resetOverrides(){if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;cfOverrides={};mgOverrides={};if(rTab==='mg-h'||rTab==='mg-w')renderContingency();else render();}
 function rowLabelEdit(td){
   const key=td.dataset.rowlbl;if(!key)return;
   const txt=td.textContent.trim();
@@ -112,21 +128,43 @@ function setCfStartYearFromCell(th){
   _cfStartYear=y;
   pushUndoSnap();
   scheduleAutoSave();
-  // CF表を即座に再描画（live() は遅延なのでここでは直接呼ぶ）
-  if(typeof render==='function') render();
+  // 現在表示中のCF表を即座に再描画（通常・万が一の両方に対応）
+  // live() は遅延なのでここでは直接呼ぶ
+  const isQATab=!!window._mgQA_activeTabId;
+  const isMg=isQATab || ((typeof rTab!=='undefined')&&(rTab==='mg-h'||rTab==='mg-w'));
+  if(isQATab && typeof mgQA_tabs!=='undefined'){
+    // 万が一Q&Aタブ: 該当タブの再計算・再描画
+    const tab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
+    if(tab && typeof mgQA_calcAndRender==='function'){
+      mgQA_calcAndRender(tab, true);
+    } else if(typeof renderContingency==='function'){
+      renderContingency();
+    }
+  } else if(isMg && typeof renderContingency==='function'){
+    renderContingency();
+  } else if(typeof render==='function'){
+    render();
+  }
   if(typeof live==='function') live();
 }
 
 // カスタム行操作
 function addCustomRow(type){
   _cfCustomId++;
-  const isMG=rTab==='mg-h'||rTab==='mg-w';
+  // Q&A万が一タブがアクティブな場合も MG 文脈として扱う
+  const isMG=(rTab==='mg-h'||rTab==='mg-w')||!!window._mgQA_activeTabId;
   const prefix=isMG?'m':'c';
   const id=type==='inc'?prefix+'inc_'+_cfCustomId:prefix+'exp_'+_cfCustomId;
   const target=isMG?mgCustomRows:cfCustomRows;
   target.push({id:id,type:type,label:type==='inc'?'カスタム収入':'カスタム支出'});
   pushUndoSnap();
-  if(isMG)renderContingency();else render();
+  if(isMG){
+    if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined'){
+      const tab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
+      if(tab && typeof mgQA_calcAndRender==='function'){mgQA_calcAndRender(tab,true);return;}
+    }
+    renderContingency();
+  } else render();
 }
 function customLabelEdit(td){
   const id=td.dataset.customId;
@@ -143,6 +181,11 @@ function deleteCustomRow(id){
   if(inMg){mgCustomRows=mgCustomRows.filter(r=>r.id!==id);delete mgOverrides[id];}
   else{cfCustomRows=cfCustomRows.filter(r=>r.id!==id);delete cfOverrides[id];}
   pushUndoSnap();
+  // Q&A万が一タブがアクティブなら該当タブを再計算
+  if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined'){
+    const tab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
+    if(tab && typeof mgQA_calcAndRender==='function'){mgQA_calcAndRender(tab,true);return;}
+  }
   if(rTab==='mg-h'||rTab==='mg-w')renderContingency();else render();
 }
 
