@@ -1057,16 +1057,26 @@ function _renderContingencyInner(){
   // サマリーカード（通常CF表と同じ4枚 + 必要保障額）
   let h=`<div class="r-summary" style="margin-top:30px;border-top:3px solid #c2185b;padding-top:16px">`;
 
+  // 折りたたみ状態（通常CF表とは別キー）
+  const _mgSumHidden = (()=>{try{return localStorage.getItem('mg_summary_collapsed')==='1'}catch(e){return false}})();
+  const _mgTogLabel = _mgSumHidden ? '▸ 詳細を表示' : '▾ 詳細を隠す';
+
   // 対象者ラベル + 自己資金内訳 + 住宅ローン条件（通常CF表と同じ）
   const mgTargetLabel2=_isSingle_mg?'ご本人':(targetIsH?'ご主人様':'奥様');
   const mgSurvivorLabel=_isSingle_mg?'遺族':(targetIsH?'奥様':'ご主人様');
-  h+=`<div style="background:${targetIsH?'#1e40af':'#9f1239'};color:#fff;padding:8px 16px;border-radius:var(--rs);margin-bottom:10px;display:flex;align-items:center;gap:10px">
-    <span style="font-size:18px">${targetIsH?'👔':'👗'}</span>
-    <div>
-      <div style="font-size:14px;font-weight:800">${nm} 様【万が一】${mgTargetLabel2}が${deathAge}歳で死亡した場合</div>
-      <div style="font-size:10px;opacity:.8">${mgSurvivorLabel}が生活を継続するキャッシュフロー</div>
+  h+=`<div style="background:${targetIsH?'#1e40af':'#9f1239'};color:#fff;padding:8px 16px;border-radius:var(--rs);margin-bottom:10px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+      <span style="font-size:18px">${targetIsH?'👔':'👗'}</span>
+      <div>
+        <div style="font-size:14px;font-weight:800">${nm} 様【万が一】${mgTargetLabel2}が${deathAge}歳で死亡した場合</div>
+        <div style="font-size:10px;opacity:.8">${mgSurvivorLabel}が生活を継続するキャッシュフロー</div>
+      </div>
     </div>
+    <button id="mg-summary-toggle" onclick="toggleMgSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.55);padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_mgTogLabel}</button>
   </div>`;
+
+  // 詳細ボックスをまとめて折りたたみ可能なコンテナで囲む
+  h+=`<div id="mg-summary-detail" style="${_mgSumHidden?'display:none':''}">`;
   // 自己資金の内訳（通常CF表と同じ形式）
   const N=normalR;
   const mgChip=(icon,label,val,valColor)=>`<div style="display:flex;align-items:center;gap:5px;padding:6px 13px;border-right:1px solid #dce6f0;white-space:nowrap;flex-shrink:0"><span>${icon}</span><span style="color:var(--muted);font-size:10px">${label}</span><strong style="color:${valColor||'var(--navy)'};font-family:'Cascadia Code','Consolas','Menlo',monospace;font-size:11px">${val}</strong></div>`;
@@ -1151,6 +1161,9 @@ function _renderContingencyInner(){
         ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}${mgChip('🏦','借入総額',loanAmt.toLocaleString()+'万円')}${mgChip('📊','当初金利',_mgRateBase+'%')}${_mgRateChips(_mgRates)}${mgChip('📅','借入期間',_mgLoanYrs+'年')}${_mgDelivery>0?mgChip('🔑','引き渡し',_mgDelivery+'年'):''}
       </div></div>`;
   }
+
+  // 詳細コンテナを閉じる
+  h+=`</div>`;
 
   // CF表テーブル（通常CF表と同じ構造）
   const cLbls=['第一子','第二子','第三子','第四子'];
