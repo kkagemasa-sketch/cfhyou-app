@@ -7,7 +7,7 @@ function renderBasisTab(){
   const hAge=iv('husband-age')||30, wAge=iv('wife-age')||29;
   const retAge=iv('retire-age')||60, wRetAge=iv('w-retire-age')||60;
   const pHStart=iv('pension-h-start')||22, pWStart=iv('pension-w-start')||22;
-  const KISO_FULL=81.6;
+  const KISO_FULL=KISO_FULL_AMT;
   const nm=_v('client-name')||'お客様';
 
   let h='<div class="r-summary" style="margin-top:16px;border-top:3px solid #6366f1;padding-top:14px">';
@@ -99,8 +99,8 @@ function _basisPension(hAge,wAge,retAge,wRetAge,pHStart,pWStart,KISO_FULL){
   b+=_bRow('老齢基礎年金（概算）',kisoH.toLocaleString(),'万円/年');
   const hJoinYrs=Math.min(retAge-pHStart,40);
   b+=_bFormula(
-    '老齢基礎年金 = 81.6万 × 加入年数 / 40年',
-    `81.6 × ${hJoinYrs} / 40`,
+    `老齢基礎年金 = ${KISO_FULL_AMT}万 × 加入年数 / 40年`,
+    `${KISO_FULL_AMT} × ${hJoinYrs} / 40`,
     kisoH.toLocaleString()+' 万円/年'
   );
   b+=_bRow('老齢厚生年金（概算）',Math.round(koseiH).toLocaleString(),'万円/年');
@@ -134,8 +134,8 @@ function _basisPension(hAge,wAge,retAge,wRetAge,pHStart,pWStart,KISO_FULL){
   b+=_bRow('老齢基礎年金（概算）',kisoW.toLocaleString(),'万円/年');
   const wJoinYrs=Math.min(wRetAge-pWStart,40);
   b+=_bFormula(
-    '老齢基礎年金 = 81.6万 × 加入年数 / 40年',
-    `81.6 × ${wJoinYrs} / 40`,
+    `老齢基礎年金 = ${KISO_FULL_AMT}万 × 加入年数 / 40年`,
+    `${KISO_FULL_AMT} × ${wJoinYrs} / 40`,
     kisoW.toLocaleString()+' 万円/年'
   );
   b+=_bRow('老齢厚生年金（概算）',Math.round(koseiW).toLocaleString(),'万円/年');
@@ -168,8 +168,8 @@ function _basisSurvivorPension(hAge,wAge,retAge,wRetAge,pHStart,pWStart,KISO_FUL
     const kiso1=calcKiso(childCount);
     const childCalc=childCount<=2?'23.48×'+childCount:(childCount>2?'23.48×2 + 7.83×'+(childCount-2):'');
     b+=_bFormula(
-      '遺族基礎年金 = 81.6万 + 子の加算',
-      `81.6 + ${childCalc}`,
+      `遺族基礎年金 = ${SURV_KISO_BASE}万 + 子の加算`,
+      `${SURV_KISO_BASE} + ${childCalc}`,
       kiso1.toLocaleString()+' 万円/年'
     );
     b+=_bNote('子が18歳年度末を超えると加算対象外（金額は年々変動）');

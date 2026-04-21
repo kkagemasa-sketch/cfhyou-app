@@ -145,6 +145,17 @@ const DB_VERSION=1;
 const STORE_NAME='slots';
 const AUTOSAVE_KEY='__autosave__';
 
+// ===== 年金額（令和7年度・2025年度の満額） =====
+// 老齢基礎年金満額（40年納付）
+const KISO_FULL_AMT=82.51;
+// 遺族基礎年金：基本額（被保険者の老齢基礎年金額と同額）
+const SURV_KISO_BASE=82.51;
+// 遺族基礎年金の子の加算額
+const SURV_KISO_CHILD1_2=23.73; // 第1子・第2子（令和7年度：237,300円）
+const SURV_KISO_CHILD3PLUS=7.91; // 第3子以降（令和7年度：79,100円）
+// 中高齢寡婦加算（2025年度概算）
+const CHUKOREI_KAFU=61.98;
+
 // フラット35/20/50 金利テーブル（融資率9割以下・機構団信加入・最低金利）
 // [年月, フラット35(21-35年)%, フラット20(15-20年)%, フラット50(36-50年)%]
 const FLAT_RATE_TABLE=[

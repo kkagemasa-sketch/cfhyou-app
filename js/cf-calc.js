@@ -39,8 +39,8 @@ function render(){
   const pWife=$('pension-w')?.value===''?0:(fv('pension-w')||66);
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=iv('pension-w-receive')||65;
-  // 老齢基礎年金概算（2024年度満額81.6万円 × 加入年数/40年）
-  const KISO_FULL=81.6;
+  // 老齢基礎年金概算（令和7年度満額82.51万円 × 加入年数/40年、constants.js で一元管理）
+  const KISO_FULL=KISO_FULL_AMT;
   const pHStart=iv('pension-h-start')||22;
   const pWStart=iv('pension-w-start')||22;
   const kisoH=ri(KISO_FULL*Math.min(retAge-pHStart,40)/40);   // ご主人の老齢基礎年金
@@ -278,7 +278,7 @@ function render(){
           survP=0; // 5年経過で遺族厚生年金失権
         }else{
           const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
-          const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(61.43):0;
+          const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
           // 遺族厚生年金用：死亡時点の被保険者期間ベース＋300月みなし
           const koseiHSurv=calcKoseiForSurvP('h', pHStart, hDeathAge, pSelf, kisoH);
           if(wa>=pWReceive){

@@ -107,9 +107,9 @@ function pensionNetRate(amt,hasWork){
 // 遺族基礎年金計算（2024年度）: 基本816,000円＋加算234,800円(1・2子)／78,300円(3子以降)
 function calcKiso(n){
   if(n===0)return 0;
-  if(n===1)return ri(81.6+23.48);
-  if(n===2)return ri(81.6+23.48*2);
-  return ri(81.6+23.48*2+7.83*(n-2));
+  if(n===1)return ri(SURV_KISO_BASE+SURV_KISO_CHILD1_2);
+  if(n===2)return ri(SURV_KISO_BASE+SURV_KISO_CHILD1_2*2);
+  return ri(SURV_KISO_BASE+SURV_KISO_CHILD1_2*2+SURV_KISO_CHILD3PLUS*(n-2));
 }
 function addMGInsurance(){
   mgInsCnt++;const id=mgInsCnt;
@@ -316,8 +316,8 @@ function _renderContingencyInner(){
   const retPay=fv('retire-pay'), retPayAge=iv('retire-pay-age')||iv('retire-age')||60;
   const wRetPay=_isSingle_mg?0:(fv('w-retire-pay')||0), wRetPayAge=_isSingle_mg?99:(iv('w-retire-pay-age')||iv('w-retire-age')||60);
   const survManualAmt=fv('mg-surv-amt')||0;
-  // 老齢基礎年金概算（2024年度満額81.6万円 × 加入年数/40年）
-  const KISO_FULL=81.6;
+  // 老齢基礎年金概算（令和7年度満額82.51万円 × 加入年数/40年、constants.js で一元管理）
+  const KISO_FULL=KISO_FULL_AMT;
   const retAge_mg=iv('retire-age')||60, wRetAge_mg=iv('w-retire-age')||60;
   const pHStart_mg=iv('pension-h-start')||22, pWStart_mg=iv('pension-w-start')||22;
   const kisoH_mg=ri(KISO_FULL*Math.min(retAge_mg-pHStart_mg,40)/40);
@@ -566,7 +566,7 @@ function _renderContingencyInner(){
             survP=0; // 5年経過で遺族厚生年金失権
           }else{
             const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
-            const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(61.43):0;
+            const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
             if(wa>=pWReceive){survP=Math.max(ri(kH*0.75)-koseiW_mg,0)+kiso+chukorei;}
             else{survP=ri(kH*0.75)+kiso+chukorei;}
           }

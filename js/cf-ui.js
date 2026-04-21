@@ -495,7 +495,7 @@ async function deleteMansion(id){
 // 遺族基礎年金（2024年度）: 基本816,000円＋加算234,800円(1・2子)／78,300円(3子以降)
 function calcKiso(n){
   if(n===0)return 0;
-  if(n===1)return ri(81.6+23.48);
-  if(n===2)return ri(81.6+23.48*2);
-  return ri(81.6+23.48*2+7.83*(n-2));
+  if(n===1)return ri(SURV_KISO_BASE+SURV_KISO_CHILD1_2);
+  if(n===2)return ri(SURV_KISO_BASE+SURV_KISO_CHILD1_2*2);
+  return ri(SURV_KISO_BASE+SURV_KISO_CHILD1_2*2+SURV_KISO_CHILD3PLUS*(n-2));
 }
