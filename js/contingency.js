@@ -1260,9 +1260,11 @@ function _renderContingencyInner(){
 
   // 収入行
   h+=mgRow(_isSingle_mg?'手取年収':'ご主人手取年収',MR.hInc,N.hInc,'hInc');
-  if(!_isSingle_mg)h+=mgRow('奥様手取年収',MR.wInc,N.wInc,'wInc');
   h+=mgRow(_isSingle_mg?'iDeCo/DC節税':'iDeCo/DC節税(主)',MR.dcTaxSavingH,N.dcTaxSavingH,'dcTaxSavingH');
-  if(!_isSingle_mg)h+=mgRow('iDeCo/DC節税(奥様)',MR.dcTaxSavingW,N.dcTaxSavingW,'dcTaxSavingW');
+  if(!_isSingle_mg){
+    h+=mgRow('奥様手取年収',MR.wInc,N.wInc,'wInc');
+    h+=mgRow('iDeCo/DC節税(奥様)',MR.dcTaxSavingW,N.dcTaxSavingW,'dcTaxSavingW');
+  }
   h+=mgRow('副業・その他収入',MR.otherInc,N.otherInc,'otherInc');
   h+=mgRow(_isSingle_mg?'退職金':'退職金（ご主人）',MR.rPay,N.rPay,'rPay');
   if(!_isSingle_mg)h+=mgRow('退職金（奥様）',MR.wRPay,N.wRPay,'wRPay');

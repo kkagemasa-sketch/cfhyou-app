@@ -239,9 +239,11 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 収入行：年収 → 退職金 → 年金系 → 金融商品解約系 → 奨学金 → 児童手当 → 控除
   const _hLbl=_isSingle_t?'手取年収':'ご主人手取年収';
   h+=iRow(_hLbl,R.hInc,'hInc');
-  if(!_isSingle_t)h+=iRow('奥様手取年収',R.wInc,'wInc');
   h+=iRow(_isSingle_t?'iDeCo/DC節税':'iDeCo/DC節税(主)',R.dcTaxSavingH,'dcTaxSavingH');
-  if(!_isSingle_t)h+=iRow('iDeCo/DC節税(奥様)',R.dcTaxSavingW,'dcTaxSavingW');
+  if(!_isSingle_t){
+    h+=iRow('奥様手取年収',R.wInc,'wInc');
+    h+=iRow('iDeCo/DC節税(奥様)',R.dcTaxSavingW,'dcTaxSavingW');
+  }
   h+=iRow('副業・その他収入',R.otherInc,'otherInc');
   h+=iRow(_isSingle_t?'退職金':'退職金（ご主人）',R.rPay,'rPay');
   if(!_isSingle_t)h+=iRow('退職金（奥様）',R.wRPay,'wRPay');
