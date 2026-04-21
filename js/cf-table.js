@@ -368,9 +368,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const _prevLeft=_oldTw?_oldTw.scrollLeft:0;
   _rb.innerHTML=h;
 
-  // 万が一タブが存在すればタブボタンを表示維持
-  if(window._mgStore?.h){const b=$('rt-mg-h');if(b)b.style.display='';}
-  if(window._mgStore?.w){const b=$('rt-mg-w');if(b)b.style.display='';}
+  // 旧万が一タブ（rt-mg-h/rt-mg-w）はQ&A UI一本化に伴い常に非表示
+  const _oldH=$('rt-mg-h'); if(_oldH) _oldH.style.display='none';
+  const _oldW=$('rt-mg-w'); if(_oldW) _oldW.style.display='none';
 
   // thead各行のsticky top値を動的計算
   applyStickyTop(_rb);

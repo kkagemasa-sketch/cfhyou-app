@@ -38,8 +38,12 @@ function renderScenarioTabs(){
 }
 
 function switchScenarioAndShow(id){
-  if(id!==activeScenarioId)switchScenario(id);
-  else if(rTab!=='cf')setRTab('cf');
+  if(id!==activeScenarioId){
+    switchScenario(id);
+  } else if(rTab!=='cf' || window._mgQA_activeTabId){
+    // Q&A万が一タブがアクティブな場合も CF に戻す
+    setRTab('cf');
+  }
   // renderScenarioTabs()はsetRTab内で呼ばれる
 }
 
