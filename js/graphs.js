@@ -136,6 +136,17 @@ function renderGraphs(R,disp,isM,total,hAge){
     c2ds.push({label:'総金融資産',data:R.totalAsset.slice(0,n),borderColor:'#2d7dd2',
       backgroundColor:'transparent',fill:false,tension:.4,borderWidth:2.5,pointRadius:pr});
   }
+  // 下落シミュレーション: 通常（細線）vs 下落シナリオ適用（太線）の比較
+  const _shocksOn=(typeof marketShocks!=='undefined'&&marketShocks.length>0);
+  const _compareOn=(typeof marketShockCompareOn!=='undefined'?marketShockCompareOn:true);
+  if(_shocksOn&&_compareOn&&R.totalAssetBase&&R.totalAssetBase.some(v=>v>0)){
+    c2ds.push({
+      label:'総金融資産（通常・下落なし）',
+      data:R.totalAssetBase.slice(0,n),
+      borderColor:'#94a3b8',backgroundColor:'transparent',fill:false,tension:.4,
+      borderWidth:1.5,pointRadius:0,borderDash:[6,4]
+    });
+  }
   if(hasLoan)
     c2ds.push({label:'ローン残高',data:R.lBal.slice(0,n),borderColor:'#7c3aed',
       backgroundColor:'transparent',fill:false,tension:.4,borderWidth:1.5,pointRadius:pr,borderDash:[5,3]});

@@ -121,7 +121,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -139,6 +139,82 @@ function render(){
 
   // 住宅ローン控除の年シフト用（引き渡しの翌年セルから還付計上）
   let _prevLc2=0, _prevLctrlBd=null;
+
+  // ─── 下落シミュレーション: セキュリティごとの年次複利（シナリオ対応） ───
+  // secKey: セキュリティID (例: 'sec-accum-h-1')
+  // 戻り値: [fv at end of each year] の配列（長さ totalYrs）。シナリオなしなら null → 呼び出し側で従来計算
+  const _shocksActive = (typeof marketShocks!=='undefined' && marketShocks.length>0);
+  function _computeAccumSeries(secKey, initBal, monthly, defaultRate, endAgePAge, pAgeAt0, pBaseAge){
+    if(!_shocksActive) return null;
+    const idx = (typeof secIndexMap!=='undefined') ? secIndexMap[secKey] : null;
+    if(!idx || idx==='none') return null; // 指数未指定なら従来計算
+    const series = [];
+    let balance = initBal;
+    for(let k=0;k<totalYrs;k++){
+      const pAgeCur = pAgeAt0 + k;
+      const scR = (typeof getMarketReturnAtYear==='function')
+        ? getMarketReturnAtYear(idx, k, hAge, wAge) : null;
+      const r = (scR!==null && scR!==undefined) ? scR : defaultRate;
+      // 積立継続期間か? endAgePAge=0 なら常に継続
+      const contribActive = endAgePAge===0 || pAgeCur < endAgePAge;
+      const annualContrib = contribActive ? monthly*12 : 0;
+      // 半年分の運用を乗せて近似（月額積立の平均的な運用期間）
+      balance = balance*(1+r) + annualContrib*(r>=0?Math.pow(1+r,0.5):1+r*0.5);
+      series.push(Math.round(balance));
+    }
+    return series;
+  }
+  // 一括投資（バイアンドホールド）の年次シリーズ
+  function _computeStkSeries(secKey, bal, defaultRate, pAgeAt0, investAge){
+    if(!_shocksActive) return null;
+    const idx = (typeof secIndexMap!=='undefined') ? secIndexMap[secKey] : null;
+    if(!idx || idx==='none') return null;
+    const series = [];
+    let balance = bal;
+    let started = false;
+    for(let k=0;k<totalYrs;k++){
+      const pAgeCur = pAgeAt0 + k;
+      if(!started && pAgeCur>=investAge){ started = true; }
+      if(!started){ series.push(bal); continue; }
+      const scR = (typeof getMarketReturnAtYear==='function')
+        ? getMarketReturnAtYear(idx, k, hAge, wAge) : null;
+      const r = (scR!==null && scR!==undefined) ? scR : defaultRate;
+      balance = balance*(1+r);
+      series.push(Math.round(balance));
+    }
+    return series;
+  }
+  // 事前計算キャッシュ（シナリオ適用時のみ値が入る）
+  const _accumSeriesCache = {};
+  const _stkSeriesCache = {};
+  if(_shocksActive){
+    ['h','w'].forEach(p=>{
+      const pBaseAge = p==='h'?hAge:wAge;
+      document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+        const sid = el.id.split('-').pop();
+        const isAccum = document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
+        if(!isAccum) return;
+        const bal = fv(`sec-bal-${p}-${sid}`)||0;
+        const monthly = fv(`sec-monthly-${p}-${sid}`)||0;
+        const endAge = iv(`sec-end-${p}-${sid}`)||0;
+        const rate = fvd(`sec-rate-${p}-${sid}`,5)/100;
+        const secKey = `sec-accum-${p}-${sid}`;
+        const series = _computeAccumSeries(secKey, bal, monthly, rate, endAge, pBaseAge, pBaseAge);
+        if(series) _accumSeriesCache[secKey] = series;
+      });
+      document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+        const sid = el.id.split('-').pop();
+        const isStock = document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+        if(!isStock) return;
+        const bal = fv(`sec-stk-bal-${p}-${sid}`)||0;
+        const rate = (fv(`sec-div-${p}-${sid}`)||0)/100;
+        const investAge = iv(`sec-stk-age-${p}-${sid}`)||pBaseAge;
+        const secKey = `sec-stk-${p}-${sid}`;
+        const series = _computeStkSeries(secKey, bal, rate, pBaseAge, investAge);
+        if(series) _stkSeriesCache[secKey] = series;
+      });
+    });
+  }
 
   // ─── 手取年収→額面・税金の逆算ヘルパー ───
   // netInc: 手取年収(万円), age: 年齢, isSelfSingle: 単身か, spouseNetInc: 配偶者の手取(配偶者控除判定用), isHSide: ご主人側か
@@ -1011,6 +1087,7 @@ function render(){
     // ─── その他金融資産（有価証券＋積立保険 - 個別追跡） ───
     if(!R.finAssetRows)R.finAssetRows=[];
     const finRowMap={};
+    const finRowMapBase={}; // 下落シナリオなしの通常利回り版（グラフ通常線用）
     const finRowPerson={}; // finRowMap のキーごとの所有者 ('h' or 'w' or 'both')
     // 【積立型有価証券】（主人・奥様両方）正確な複利計算
     ['h','w'].forEach(p=>{
@@ -1031,13 +1108,16 @@ function render(){
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
         const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
         const yrs=i+1;
-        let fv2=0;
+        const _secKey=`sec-accum-${p}-${sid}`;
+        const _series=_accumSeriesCache[_secKey];
+        // 通常利回り版（常に計算し finRowMapBase に足す）
+        let fv2Base=0;
         if(endAge===0||pAge<endAge){
           const cpd=Math.pow(1+rate,yrs);
           const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
           const balGrow=bal*cpd;
           const accumFV=mr>0?monthly*(cpd-1)/mr:monthly*12*yrs;
-          fv2=Math.round(balGrow+accumFV);
+          fv2Base=Math.round(balGrow+accumFV);
         } else {
           const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
           const yrsAccum=endAge-pBaseAge;
@@ -1045,8 +1125,11 @@ function render(){
           const cpdA=Math.pow(1+rate,yrsAccum);
           const balAtEnd=bal*cpdA;
           const accumAtEnd=mr>0?monthly*(cpdA-1)/mr:monthly*12*yrsAccum;
-          fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+rate,Math.max(0,yrsAfter)));
+          fv2Base=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+rate,Math.max(0,yrsAfter)));
         }
+        // シナリオ適用版（シリーズがあれば使用、なければ通常版と同じ）
+        const fv2 = _series ? (_series[i]||0) : fv2Base;
+        finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+fv2Base;
         // 積立額累計（開始から現時点まで、積立終了後は endAge 時点で停止）
         const _effYrsAccum=endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs;
         const _principal=Math.round((bal+monthly*12*Math.max(0,_effYrsAccum))*10)/10;
@@ -1085,7 +1168,11 @@ function render(){
         if(bal<=0)return; // 残高なければスキップ
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
-        const _eval=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        const _stkKey=`sec-stk-${p}-${sid}`;
+        const _stkSeries=_stkSeriesCache[_stkKey];
+        const _evalBase=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        const _eval=_stkSeries?(_stkSeries[i]||0):_evalBase;
+        finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_evalBase;
         const _gainS=Math.round((_eval-bal)*10)/10;
         finRowMap[lbl]=(finRowMap[lbl]||0)+_eval;
         // 内訳保存
@@ -1161,7 +1248,9 @@ function render(){
         }
         if(dcBal>0){
           const _dcFv=Math.round(dcBal);
-          finRowMap[lbl]=(finRowMap[lbl]||0)+_dcFv;finRowPerson[lbl]=p;
+          finRowMap[lbl]=(finRowMap[lbl]||0)+_dcFv;
+          finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_dcFv;
+          finRowPerson[lbl]=p;
           // 内訳: 累計拠出額(月額×12×経過年、初期残高含む)
           const _yrs=i+1;
           const _contribYrs=Math.min(d.retAge-pBaseAge,_yrs);
@@ -1198,7 +1287,9 @@ function render(){
         }
         if(idecoBal>0){
           const _idecoFv=Math.round(idecoBal);
-          finRowMap[lbl]=(finRowMap[lbl]||0)+_idecoFv;finRowPerson[lbl]=p;
+          finRowMap[lbl]=(finRowMap[lbl]||0)+_idecoFv;
+          finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_idecoFv;
+          finRowPerson[lbl]=p;
           const _yrs=i+1;
           const _contribYrs=Math.min(d.retAge-pBaseAge,_yrs);
           const _principal=Math.round((d.idecoInitBal+d.idecoMonthly*12*Math.max(0,_contribYrs))*10)/10;
@@ -1277,6 +1368,10 @@ function render(){
     const finAssetVal=Object.values(finRowMap).reduce((a,b)=>a+b,0);
     R.finAsset.push(ri(finAssetVal));
     R.totalAsset.push(R.sav[i]+ri(finAssetVal));// 預貯金残高＋その他金融資産
+    // 下落シナリオなしの通常計算版（グラフ比較線用）
+    const finAssetValBase=Object.values(finRowMapBase).reduce((a,b)=>a+b,0);
+    R.finAssetBase.push(ri(finAssetValBase));
+    R.totalAssetBase.push(R.sav[i]+ri(finAssetValBase));
     let lb=0,_lbH=0,_lbW=0;
     if(_flatPair){
       if(active){

@@ -240,6 +240,10 @@ function _collectDynamic(){
   d.lcBikou=typeof _lcBikou==='object'?{..._lcBikou}:{};
   // CF表行名カスタムラベル
   d.cfRowLabels=typeof _cfRowLabels==='object'?{..._cfRowLabels}:{};
+  // 下落シミュレーション
+  d.marketShocks=typeof marketShocks!=='undefined'?JSON.parse(JSON.stringify(marketShocks)):[];
+  d.secIndexMap=typeof secIndexMap==='object'?{...secIndexMap}:{};
+  d.marketShockCompareOn=typeof marketShockCompareOn!=='undefined'?!!marketShockCompareOn:true;
   // 通常CF表 遺族年金上書き金額
   d.survHAmt=$('surv-h-amt')?.value||'';
   d.survWAmt=$('surv-w-amt')?.value||'';
@@ -753,6 +757,12 @@ function _applyData(d){
     _cfCustomId=d._cfCustomId||0;
     _lcBikou=d.lcBikou||{};
     _cfRowLabels=d.cfRowLabels||{};
+    // 下落シミュレーション
+    marketShocks=Array.isArray(d.marketShocks)?d.marketShocks:[];
+    secIndexMap=(d.secIndexMap&&typeof d.secIndexMap==='object')?d.secIndexMap:{};
+    marketShockCompareOn=(d.marketShockCompareOn===undefined)?true:!!d.marketShockCompareOn;
+    // IDカウンタを再同期
+    if(marketShocks.length>0){_marketShockId=Math.max(...marketShocks.map(s=>parseInt(s.id)||0));}
     // フラット35復元
     loanCategory=d.loanCategory||'standard';
     flat35Sub=d.flat35Sub||'flat35';
@@ -833,6 +843,10 @@ function _resetSheetState(){
   _cfCustomId=0;
   _cfStartYear=null;
   _lcBikou={};
+  marketShocks=[];
+  secIndexMap={};
+  _marketShockId=0;
+  marketShockCompareOn=true;
   _cfRowLabels={};
   // 万が一タブのキャッシュもクリア
   window._mgStore=null;
