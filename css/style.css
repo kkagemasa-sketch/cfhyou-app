@@ -857,3 +857,100 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   width: 100%;
 }
 .mgqa-footer .btn-gen:hover { background: #a01550; }
+
+/* ============================================================
+   計算根拠表示（ⓘアイコン＋ポップアップ）
+   ============================================================ */
+.cf td.has-explain{position:relative}
+.cf td.has-explain .explain-ic{
+  position:absolute;
+  top:1px;right:1px;
+  width:11px;height:11px;
+  font-size:9px;
+  color:#64748b;
+  cursor:pointer;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(255,255,255,.85);
+  border:1px solid #cbd5e1;
+  opacity:.45;
+  transition:opacity .12s,background .12s;
+  user-select:none;
+  z-index:2;
+}
+.cf td.has-explain:hover .explain-ic{opacity:.9}
+.cf td.has-explain .explain-ic:hover{
+  background:#3b82f6;
+  color:#fff;
+  border-color:#1d4ed8;
+  opacity:1;
+}
+
+/* ポップアップ本体 */
+.explain-popup{
+  position:fixed;
+  z-index:10000;
+  background:#fff;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  box-shadow:0 10px 40px rgba(15,39,68,.22);
+  min-width:280px;
+  max-width:360px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;
+  font-size:12px;
+  color:#1e293b;
+  animation:explain-fadein .12s ease-out;
+}
+@keyframes explain-fadein{
+  from{opacity:0;transform:translateY(-4px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+.explain-popup-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 12px 6px;
+  border-bottom:1px solid #e2e8f0;
+}
+.explain-popup-title{
+  font-size:13px;
+  font-weight:700;
+  color:#1e3a5f;
+}
+.explain-popup-close{
+  background:none;
+  border:none;
+  color:#94a3b8;
+  font-size:18px;
+  cursor:pointer;
+  padding:0;
+  width:22px;
+  height:22px;
+  border-radius:4px;
+  line-height:1;
+}
+.explain-popup-close:hover{background:#f1f5f9;color:#1e293b}
+.explain-popup-simple{padding:10px 12px}
+.explain-popup-detail-wrap{
+  padding:8px 12px 10px;
+  border-top:1px dashed #e2e8f0;
+  background:#f8fafc;
+}
+.explain-popup-toggle{
+  display:block;
+  width:100%;
+  padding:6px 8px;
+  background:#f1f5f9;
+  border:none;
+  border-top:1px solid #e2e8f0;
+  color:#1e3a5f;
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  font-family:inherit;
+  border-radius:0 0 10px 10px;
+}
+.explain-popup-toggle:hover{background:#e2e8f0}

@@ -343,7 +343,7 @@ function _renderContingencyInner(){
   let sav=initSav;
   const MR={yr:[],hA:[],wA:[],
     hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],insAnnuityRows:[],finLiquid:[],otherInc:[],scholarship:[],
-    lCtrl:[],pS:[],pW:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
+    lCtrl:[],lCtrlBreakdown:[],pS:[],pW:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
     dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:[],rent:[],
     secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],
@@ -619,6 +619,18 @@ function _renderContingencyInner(){
       }else{lctrlVal=baseCtrl;}
     }
     MR.lCtrl.push(lctrlVal);
+    // breakdown: 通常CFの同年breakdownをコピーし、MG固有情報（団信影響）を追加
+    const _baseBd = (normalR.lCtrlBreakdown && normalR.lCtrlBreakdown[i]) ? JSON.parse(JSON.stringify(normalR.lCtrlBreakdown[i])) : null;
+    if(_baseBd){
+      _baseBd.mgIsDead = isDead;
+      _baseBd.mgDansin = mgDansin;
+      _baseBd.mgDansinH = mgDansinH;
+      _baseBd.mgDansinW = mgDansinW;
+      _baseBd.mgTargetIsH = targetIsH;
+      _baseBd.mgAdjustedValue = lctrlVal;
+      _baseBd.mgBaseValue = baseCtrl;
+    }
+    MR.lCtrlBreakdown.push(_baseBd);
 
     // 本人年金（入力値が手取りのためそのまま使用、遺族年金は非課税で別行）
     let pSelfVal=0, pWifeVal=0;
@@ -1190,17 +1202,21 @@ function _renderContingencyInner(){
   const _ce='contenteditable="true"';
   const _kd='onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur()}"';
   // mgRow: normalArr比較でハイライト + contenteditable + mgOverrides対応
+  const _mgHasExplain=(typeof isExplainEnabled==='function')?isExplainEnabled:(()=>false);
+  const _mgExplainIcon=(typeof explainIconHtml==='function')?explainIconHtml:(()=>'');
   const mgRow=(lbl,arr,normalArr,rowKey)=>{
     let tot=0;for(let i2=0;i2<mgDisp;i2++){const ov=mgOverrides[rowKey]?.[i2];tot+=(ov!==undefined?ov:(arr[i2]||0));}
     const nTot=normalArr?normalArr.slice(0,mgDisp).reduce((a,b)=>a+b,0):0;
     if(tot===0&&nTot===0)return'';
     const dl=_rl('mg-'+rowKey,lbl);
+    const _exp=_mgHasExplain(rowKey);
     let r=`<tr class="rinc"><td></td><td ${_ce} data-rowlbl="mg-${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" ${_kd}>${dl}</td>`;
     for(let i2=0;i2<mgDisp;i2++){
       const ov=mgOverrides[rowKey]?.[i2];const v=ov!==undefined?ov:(arr[i2]||0);const nv=normalArr?(normalArr[i2]||0):0;
       const changed=normalArr&&v!==nv;const isOvr=ov!==undefined;
-      const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'')+getMgColCls(i2);
-      r+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():(changed?'0':'-')}</td>`;
+      const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'')+(_exp?' has-explain':'')+getMgColCls(i2);
+      const _icon=_exp?_mgExplainIcon(rowKey,i2,'mg'):'';
+      r+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():(changed?'0':'-')}${_icon}</td>`;
     }
     return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
   };

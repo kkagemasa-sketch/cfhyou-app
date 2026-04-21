@@ -119,7 +119,7 @@ function render(){
 
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
-    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
+    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
@@ -311,11 +311,28 @@ function render(){
     const lctrlRowR=getLCtrlRow(lctrlYear,lctrlType,isKosodate);
     const lctrlLimit=lctrlRowR[0], lctrlYrs=lctrlRowR[1];
     let lc2=0;
+    // 計算根拠データ（explain-lctrl.jsが読む）
+    let _lctrlBd={
+      mode: _lctrlDedMode,
+      lctrlYear, lctrlType, isKosodate,
+      totalYrs: lctrlYrs,
+      yearIndex: lcYr+1,
+      inPeriod: lctrlYrs>0 && lcYr<lctrlYrs,
+      hasLoan: effLoanAmt>0,
+      hasLimit: lctrlLimit>0,
+      remainBal: 0, balCap: lctrlLimit*((pairLoanMode||_flatPair)?2:1),
+      pairMode: pairLoanMode||_flatPair,
+      rate: 0.7,
+      calcAmount: 0,
+      grossEst: 0, taxableBase: 0, itax: 0, juminCtrlMax: 0,
+      taxCapTotal: 0
+    };
     // 自由入力モード
     if(_lctrlDedMode==='manual'){
       const mv=getLctrlManualValues();
       lc2=lcYr<mv.length?mv[lcYr]:0;
       R.lCtrl.push(ri(lc2));
+      R.lCtrlBreakdown.push(_lctrlBd);
     }else
     if(active&&lctrlYrs>0&&lcYr<lctrlYrs&&effLoanAmt>0&&lctrlLimit>0){
       const loanType2tmp=_isFlat?eLoanType:(document.getElementById('loan-type')?.value||'equal_payment');
@@ -364,8 +381,19 @@ function render(){
       const taxCapTotal=Math.round((itax+juminCtrlMax)*10)/10;
       lc2=Math.round(Math.min(calcCtrl, taxCapTotal)*10)/10;
       lc2=Math.max(0,lc2);
+      // breakdown 更新
+      _lctrlBd.remainBal=remainBal;
+      _lctrlBd.calcAmount=calcCtrl;
+      _lctrlBd.grossEst=grossEst;
+      _lctrlBd.taxableBase=taxableBase;
+      _lctrlBd.itax=itax;
+      _lctrlBd.juminCtrlMax=juminCtrlMax;
+      _lctrlBd.taxCapTotal=taxCapTotal;
     }
-    if(_lctrlDedMode!=='manual')R.lCtrl.push(ri(lc2));
+    if(_lctrlDedMode!=='manual'){
+      R.lCtrl.push(ri(lc2));
+      R.lCtrlBreakdown.push(_lctrlBd);
+    }
     // ─── 有価証券・積立保険の解約収入 ───
     if(!R.secRedeemRows)R.secRedeemRows=[];
     let secRedeemTotal=0;
