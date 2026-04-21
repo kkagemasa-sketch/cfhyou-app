@@ -876,17 +876,26 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   border-radius:50%;
   background:rgba(255,255,255,.85);
   border:1px solid #cbd5e1;
-  opacity:.45;
+  opacity:0;
+  pointer-events:none;
   transition:opacity .12s,background .12s;
   user-select:none;
   z-index:2;
 }
-.cf td.has-explain:hover .explain-ic{opacity:.9}
+/* セルにマウスを乗せた時だけⓘを表示 */
+.cf td.has-explain:hover .explain-ic{
+  opacity:.9;
+  pointer-events:auto;
+}
 .cf td.has-explain .explain-ic:hover{
   background:#3b82f6;
   color:#fff;
   border-color:#1d4ed8;
   opacity:1;
+}
+/* タッチ端末ではhoverが効かないため常時表示（控えめ） */
+@media (hover:none){
+  .cf td.has-explain .explain-ic{opacity:.35;pointer-events:auto}
 }
 
 /* ポップアップ本体 */
