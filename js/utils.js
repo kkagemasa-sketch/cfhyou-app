@@ -113,22 +113,46 @@ function calcTaishokuNet(lumpSum, kinzokuYears){
   return Math.round((lumpSum-tax)*10)/10;
 }
 
-// 老齢年金の手取り → 額面 逆算（65歳以上想定、他所得なし前提の簡略計算）
-// 公的年金等控除110万＋所得税・住民税・介護保険料相当で逆算
+// 老齢年金（65歳以上・他所得なし前提）の額面→各控除の詳細計算
+// 公的年金等控除・社会保険料（介護保険等概算）・所得税・住民税を算出
+function breakdownPension65plus(grossWan){
+  if(!grossWan||grossWan<=0)return null;
+  // 公的年金等控除（65歳以上、他所得1,000万以下）
+  let kokinDed;
+  if(grossWan<=330)kokinDed=110;
+  else if(grossWan<=410)kokinDed=grossWan*0.25+27.5;
+  else if(grossWan<=770)kokinDed=grossWan*0.15+68.5;
+  else if(grossWan<=1000)kokinDed=grossWan*0.05+145.5;
+  else kokinDed=195.5;
+  kokinDed=Math.round(kokinDed*10)/10;
+  // 社会保険料相当（介護保険料＋国保等の概算、実態は自治体で±大）
+  // 65歳以上公的年金からの天引き概算：年金額×9%前後
+  const shakai=Math.round(grossWan*0.09*10)/10;
+  // 雑所得（年金所得）
+  const grossSyotoku=Math.max(0,grossWan-kokinDed);
+  // 所得税（基礎控除48万）
+  const taxableIT=Math.max(0,grossSyotoku-shakai-48);
+  const itax=calcIncomeTax(taxableIT);
+  // 住民税（基礎控除43万、均等割＋調整控除は calcJuminTax で処理）
+  const taxableJU=Math.max(0,grossSyotoku-shakai-43);
+  const jumin=calcJuminTax(taxableJU);
+  const net=Math.round((grossWan-shakai-itax-jumin)*10)/10;
+  return {gross:grossWan, kokinDed, shakai, itax, jumin, net};
+}
+
+// 老齢年金の手取り → 額面 逆算（65歳以上想定）
+// breakdownPension65plus を使い二分探索で厳密逆算
 function estimatePensionGrossFromNet(netWan){
   if(!netWan||netWan<=0)return 0;
-  // 非課税範囲（手取り＝額面）: 年金額≤110万かつ単独で住民税非課税になる額
-  // 65歳以上の単身・夫婦で住民税非課税基準は自治体差あり、おおむね155万以下でほぼ非課税
-  if(netWan<=155)return Math.round(netWan*10)/10;
-  // 段階的な手取り率（pensionNetRate ベース、逆算）
-  // 155〜250万 → 概ね 0.90
-  // 250〜      → 概ね 0.87
-  let rate;
-  if(netWan<=155*0.90)rate=0.92;
-  else if(netWan<=250*0.87)rate=0.90;
-  else if(netWan<=450*0.85)rate=0.87;
-  else rate=0.85;
-  return Math.round((netWan/rate)*10)/10;
+  if(netWan<=110)return Math.round(netWan*10)/10; // 非課税相当
+  let lo=netWan, hi=netWan*1.5;
+  for(let iter=0;iter<30;iter++){
+    const mid=(lo+hi)/2;
+    const bd=breakdownPension65plus(mid);
+    if(!bd)break;
+    if(bd.net>=netWan)hi=mid;else lo=mid;
+  }
+  return Math.round((lo+hi)/2*10)/10;
 }
 
 function getLCtrlRow(yr, tp, isKosodate){

@@ -1218,8 +1218,10 @@ function _renderContingencyInner(){
     for(let i2=0;i2<mgDisp;i2++){
       const ov=mgOverrides[rowKey]?.[i2];const v=ov!==undefined?ov:(arr[i2]||0);const nv=normalArr?(normalArr[i2]||0):0;
       const changed=normalArr&&v!==nv;const isOvr=ov!==undefined;
-      const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'')+(_exp?' has-explain':'')+getMgColCls(i2);
-      const _icon=_exp?_mgExplainIcon(rowKey,i2,'mg'):'';
+      const _hasValue=v>0;
+      const _showIcon=_exp&&_hasValue;
+      const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'')+(_showIcon?' has-explain':'')+getMgColCls(i2);
+      const _icon=_showIcon?_mgExplainIcon(rowKey,i2,'mg'):'';
       r+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():(changed?'0':'-')}${_icon}</td>`;
     }
     return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;

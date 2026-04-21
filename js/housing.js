@@ -159,8 +159,16 @@ function updateHints(){
   if(hp){
     if(hPensNet>0){
       const grossApprox=estimatePensionGrossFromNet(hPensNet);
-      const grossStr=grossApprox>hPensNet?`／額面相当 約${grossApprox.toLocaleString()}万円`:'';
-      hp.textContent=`✓ 手取り ${hPensNet.toLocaleString()}万円/年（${hPRcv}歳〜）${grossStr}`;
+      if(grossApprox>hPensNet){
+        const bd=breakdownPension65plus(grossApprox);
+        const _f=v=>Math.round(v*10)/10;
+        hp.innerHTML=`✓ 手取り ${hPensNet.toLocaleString()}万円/年（${hPRcv}歳〜）<br>`+
+          `<span style="font-size:9px;color:#94a3b8;line-height:1.5">`+
+          `額面 約${_f(grossApprox)}万 − 社会保険料 約${_f(bd.shakai)}万 − 所得税 約${_f(bd.itax)}万 − 住民税 約${_f(bd.jumin)}万`+
+          `</span>`;
+      } else {
+        hp.textContent=`✓ 手取り ${hPensNet.toLocaleString()}万円/年（${hPRcv}歳〜） ※非課税相当`;
+      }
     } else {
       hp.textContent=`${hPRcv}歳〜 受給`;
     }
@@ -249,8 +257,16 @@ function updateHints(){
   if(wph){
     if(wPensNet>0){
       const grossApprox=estimatePensionGrossFromNet(wPensNet);
-      const grossStr=grossApprox>wPensNet?`／額面相当 約${grossApprox.toLocaleString()}万円`:'';
-      wph.textContent=`✓ 手取り ${wPensNet.toLocaleString()}万円/年（${wPRcv}歳〜）${grossStr}`;
+      if(grossApprox>wPensNet){
+        const bd=breakdownPension65plus(grossApprox);
+        const _f=v=>Math.round(v*10)/10;
+        wph.innerHTML=`✓ 手取り ${wPensNet.toLocaleString()}万円/年（${wPRcv}歳〜）<br>`+
+          `<span style="font-size:9px;color:#94a3b8;line-height:1.5">`+
+          `額面 約${_f(grossApprox)}万 − 社会保険料 約${_f(bd.shakai)}万 − 所得税 約${_f(bd.itax)}万 − 住民税 約${_f(bd.jumin)}万`+
+          `</span>`;
+      } else {
+        wph.textContent=`✓ 手取り ${wPensNet.toLocaleString()}万円/年（${wPRcv}歳〜） ※非課税相当`;
+      }
     } else {
       wph.textContent=`${wPRcv}歳〜 受給`;
     }
