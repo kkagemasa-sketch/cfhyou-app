@@ -60,7 +60,7 @@ function checkPW(){
   const pw=document.getElementById('pw-input').value;
   if(pw==='0401'){
     document.getElementById('pw-lock').style.display='none';
-    const exp=Date.now()+30*24*60*60*1000;
+    const exp=Date.now()+7*24*60*60*1000;
     localStorage.setItem('cf-auth-exp',exp);
   }else{
     document.getElementById('pw-err').textContent='パスワードが違います';
