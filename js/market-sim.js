@@ -67,8 +67,8 @@ function mspRenderIndexList(){
     return;
   }
   // 保険のみ選択肢にUSD/JPYを出す
-  const optsEq=`<option value="none">指数なし</option><option value="sp500">S&P500</option><option value="nikkei">日経平均</option>`;
-  const optsIns=`<option value="none">指数なし</option><option value="usdjpy">USD/JPY（外貨建て）</option><option value="sp500">S&P500</option><option value="nikkei">日経平均</option>`;
+  const optsEq=`<option value="none">指数なし</option><option value="sp500">S&P500</option><option value="acwi">オルカン（全世界株）</option><option value="nikkei">日経平均</option>`;
+  const optsIns=`<option value="none">指数なし</option><option value="usdjpy">USD/JPY（外貨建て）</option><option value="sp500">S&P500</option><option value="acwi">オルカン</option><option value="nikkei">日経平均</option>`;
   wrap.innerHTML=items.map(it=>{
     const cur=secIndexMap[it.key]||'none';
     const opts=it.kind==='insurance'?optsIns:optsEq;

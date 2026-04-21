@@ -12,6 +12,7 @@ const MARKET_SCENARIOS = {
     description: '米ドル信認危機による急激な円高。290円→180円。',
     returns: {
       sp500:  [ -7,  6, 18],
+      acwi:   [ -6,  5, 16],
       nikkei: [ -2, -7,  6],
       usdjpy: [-22, -20,  2]
     }
@@ -23,6 +24,7 @@ const MARKET_SCENARIOS = {
     description: '史上最高値水準の円高。100円→79円。',
     returns: {
       sp500:  [ 1, 37, 22],
+      acwi:   [ 6, 21, 14],
       nikkei: [13, 1, -3],
       usdjpy: [-9, -13, 14]
     }
@@ -34,6 +36,7 @@ const MARKET_SCENARIOS = {
     description: 'LTCM破綻に伴う急激な円高。147円→113円。',
     returns: {
       sp500:  [28, 21, -9],
+      acwi:   [25, 28, -15],
       nikkei: [-9, 37, -27],
       usdjpy: [-12, 10,  13]
     }
@@ -45,6 +48,7 @@ const MARKET_SCENARIOS = {
     description: '米双子の赤字による緩やかな円高。134円→103円。',
     returns: {
       sp500:  [-22, 29, 11],
+      acwi:   [-19, 34, 15],
       nikkei: [-19, 25,  8],
       usdjpy: [ -10, -11,  -4]
     }
@@ -56,6 +60,7 @@ const MARKET_SCENARIOS = {
     description: '世界金融危機による円高。124円→87円。',
     returns: {
       sp500:  [  6, -37, 26],
+      acwi:   [ 12, -42, 35],
       nikkei: [-11, -42, 19],
       usdjpy: [-6, -19, -3]
     }
@@ -67,6 +72,7 @@ const MARKET_SCENARIOS = {
     description: '史上最高値76円。95→76円。',
     returns: {
       sp500:  [15,  2, 16],
+      acwi:   [13, -7, 16],
       nikkei: [ -3, -17, 23],
       usdjpy: [-13, -4, 11]
     }
@@ -78,6 +84,7 @@ const MARKET_SCENARIOS = {
     description: 'チャイナショック＋ブレグジット投票。125円→99円。',
     returns: {
       sp500:  [ 1, 12, 22],
+      acwi:   [-2,  8, 24],
       nikkei: [ 9,  0, 19],
       usdjpy: [  0, -3,  3]
     }
@@ -91,6 +98,7 @@ const MARKET_SCENARIOS = {
     description: 'ボルカーショック後の景気後退。S&P500 −27%。',
     returns: {
       sp500:  [ 32, -5, 21],
+      acwi:   [ 25, -5, 18],
       nikkei: [  8,  8,  5],
       usdjpy: [  5, 14,  6]
     }
@@ -102,7 +110,8 @@ const MARKET_SCENARIOS = {
     description: '1日で株式が世界同時暴落。S&P500 −33%（短期）。',
     returns: {
       sp500:  [ -22, 16,  31],
-      nikkei: [  -18, 39, 29],
+      acwi:   [ -19, 16,  27],
+      nikkei: [ -18, 39, 29],
       usdjpy: [-15, -4,  4]
     }
   },
@@ -113,6 +122,7 @@ const MARKET_SCENARIOS = {
     description: '日経3.8万円→8千円の長期下落。日経 −48%。',
     returns: {
       sp500:  [ -3,  30,  8],
+      acwi:   [-16,  19,  -5],
       nikkei: [-39, -4, -27],
       usdjpy: [ -9,  9,  2]
     }
@@ -124,6 +134,7 @@ const MARKET_SCENARIOS = {
     description: 'サダム侵攻による株急落。S&P500 −20%。',
     returns: {
       sp500:  [ -3, 30,  8],
+      acwi:   [-16, 19, -5],
       nikkei: [-39, -4, -27],
       usdjpy: [ -9,  9,  2]
     }
@@ -135,6 +146,7 @@ const MARKET_SCENARIOS = {
     description: 'タイ・韓国発の通貨危機。日経 −28%。',
     returns: {
       sp500:  [ 33, 28, 21],
+      acwi:   [ 15, 24, 25],
       nikkei: [-21, -9, 37],
       usdjpy: [ 12, -12, 10]
     }
@@ -146,6 +158,7 @@ const MARKET_SCENARIOS = {
     description: 'ナスダック −78%、S&P500 3年連続下落 −49%。',
     returns: {
       sp500:  [-9, -12, -22],
+      acwi:   [-15, -17, -19],
       nikkei: [-27, -24, -19],
       usdjpy: [11, -12, -10]
     }
@@ -157,6 +170,7 @@ const MARKET_SCENARIOS = {
     description: '世界同時金融危機。S&P500 −37%。',
     returns: {
       sp500:  [-37, 26, 15,  2, 16],
+      acwi:   [-42, 35, 13, -7, 16],
       nikkei: [-42, 19, -3, -17, 23],
       usdjpy: [-19, -3, -13, -4, 11]
     }
@@ -168,6 +182,7 @@ const MARKET_SCENARIOS = {
     description: 'ギリシャ危機。日経 −22%。',
     returns: {
       sp500:  [  2, 16, 32],
+      acwi:   [ -7, 16, 23],
       nikkei: [-17, 23, 57],
       usdjpy: [ -4, 11, 21]
     }
@@ -179,6 +194,7 @@ const MARKET_SCENARIOS = {
     description: '上海株急落。日経 −28%。',
     returns: {
       sp500:  [ 1, 12, 22],
+      acwi:   [-2,  8, 24],
       nikkei: [ 9,  0, 19],
       usdjpy: [  0, -3,  3]
     }
@@ -189,8 +205,8 @@ const MARKET_SCENARIOS = {
     startYear: 2020,
     description: 'パンデミック発生。S&P500 一時 −34%（短期）。',
     returns: {
-      // 簡略化: 1年目は crash を強調（Q1-34% → 年末+18%回復）
       sp500:  [-30, 29, -18],
+      acwi:   [-28, 19, -18],
       nikkei: [-20, 5, -9],
       usdjpy: [ -5, 11, 13]
     }
@@ -202,6 +218,7 @@ const MARKET_SCENARIOS = {
     description: 'インフレ・利上げによる株安＋円安。',
     returns: {
       sp500:  [-18, 26, 25],
+      acwi:   [-18, 22, 17],
       nikkei: [ -9, 29, 19],
       usdjpy: [ 13,  6, 11]
     }
@@ -213,6 +230,7 @@ const MARKET_SCENARIOS = {
     description: '日銀利上げ＋米雇用統計で8月急落。日経 −27%（短期）。',
     returns: {
       sp500:  [ -5, 15],
+      acwi:   [ -6, 14],
       nikkei: [-15, 10],
       usdjpy: [ -8,  3]
     }
@@ -222,6 +240,7 @@ const MARKET_SCENARIOS = {
 // 指数の選択肢（証券ごとに割り当て）
 const INDEX_OPTIONS = [
   { key: 'sp500',  label: 'S&P500（米国株）' },
+  { key: 'acwi',   label: 'オルカン（MSCI ACWI・全世界株）' },
   { key: 'nikkei', label: '日経平均（日本株）' },
   { key: 'usdjpy', label: 'USD/JPY（外貨建て保険）' },
   { key: 'none',   label: '指数に紐付けない（通常計算）' }
