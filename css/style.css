@@ -943,6 +943,95 @@ body.presenter-on #btn-presenter-mode{
   color:#fff!important;
   box-shadow:0 0 8px rgba(255,140,0,.5);
 }
+
+/* ============================================================
+   下落シミュレーション サイドパネル
+   ============================================================ */
+.market-sim-panel{
+  position:fixed;
+  top:0;right:0;
+  width:380px;height:100vh;
+  background:#fff;
+  border-left:3px solid #c2185b;
+  box-shadow:-4px 0 20px rgba(0,0,0,.15);
+  z-index:9990;
+  display:flex;
+  flex-direction:column;
+  animation:msp-slidein .18s ease-out;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;
+}
+@keyframes msp-slidein{
+  from{transform:translateX(100%);opacity:0}
+  to{transform:translateX(0);opacity:1}
+}
+.msp-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;background:linear-gradient(135deg,#c2185b 0%,#ad1457 100%);
+  color:#fff;flex-shrink:0;
+}
+.msp-title{font-size:14px;font-weight:700}
+.msp-close{
+  background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);
+  color:#fff;width:26px;height:26px;border-radius:50%;
+  cursor:pointer;font-size:14px;line-height:1;
+}
+.msp-close:hover{background:rgba(255,255,255,.35)}
+.msp-body{
+  padding:14px;overflow-y:auto;flex:1;
+}
+.msp-section{margin-bottom:16px}
+.msp-sec-title{
+  font-size:12px;font-weight:700;color:#1e3a5f;
+  border-bottom:1.5px solid #c8d6e8;padding-bottom:3px;margin-bottom:6px;
+}
+.msp-sec-desc{font-size:10px;color:#64748b;margin-bottom:6px;line-height:1.4}
+.msp-index-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;
+  border-radius:5px;margin-bottom:4px;font-size:11px;
+}
+.msp-index-row select{
+  font-size:11px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;
+  background:#fff;min-width:130px;
+}
+.msp-shock-card{
+  border:1.5px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;
+  background:linear-gradient(180deg,#fff 0%,#fef7f9 100%);
+}
+.msp-shock-card-hdr{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;
+}
+.msp-shock-card-title{font-size:11px;font-weight:700;color:#c2185b}
+.msp-btn-del{
+  background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;
+  padding:2px 7px;border-radius:4px;cursor:pointer;font-size:10px;
+}
+.msp-shock-field{
+  display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px;
+}
+.msp-shock-field label{color:#475569;min-width:80px}
+.msp-shock-field select,.msp-shock-field input[type=number]{
+  font-size:11px;padding:3px 5px;border:1px solid #cbd5e1;border-radius:4px;
+  flex:1;background:#fff;
+}
+.msp-btn-add{
+  width:100%;padding:8px;background:#e0f2fe;color:#0369a1;
+  border:1.5px dashed #7dd3fc;border-radius:6px;cursor:pointer;
+  font-size:12px;font-weight:600;
+}
+.msp-btn-add:hover{background:#bae6fd}
+.msp-btn-clear{
+  width:100%;padding:7px;background:#f1f5f9;color:#475569;
+  border:1px solid #cbd5e1;border-radius:5px;cursor:pointer;font-size:11px;
+}
+.msp-btn-clear:hover{background:#e2e8f0}
+/* ボタンがONの状態 */
+body.market-sim-on #btn-market-sim{
+  background:rgba(200,30,60,.7)!important;
+  border-color:rgba(255,80,110,.9)!important;
+  color:#fff!important;
+  box-shadow:0 0 8px rgba(200,30,60,.5);
+}
 .explain-popup-header{
   display:flex;
   justify-content:space-between;

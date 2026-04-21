@@ -102,3 +102,12 @@ let _autoSaveRestored=false; // 自動保存の復元完了フラグ（app.jsの
 // mgmtUnit = 管理費単価(円/㎡/月), repUnit = 修繕積立金単価(円/㎡/月)
 let _mansionMaster=[];
 let _selectedMansionId='';
+
+// ===== 下落シミュレーション =====
+// marketShocks: [{id, preset:'lehman', timing:{type:'age',age:60}|{type:'event',key:'h-retire'}, targets:['sec-h-1',...], active:true}]
+let marketShocks = [];
+let _marketShockId = 0;
+// secIndexMap: 各証券(sec-h-1など)の指数タグ { 'sec-h-1': 'sp500', 'ins-lump-w-2': 'usdjpy', ... }
+let secIndexMap = {};
+// グラフに通常シナリオ比較を表示するか
+let marketShockCompareOn = true;

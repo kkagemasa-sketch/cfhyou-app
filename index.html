@@ -12,7 +12,7 @@
 <script src="js/vendors/jszip.min.js"></script>
 <script src="js/vendors/xlsx-style.min.js"></script>
 <script src="js/vendors/FileSaver.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=27">
+<link rel="stylesheet" href="css/style.css?v=28">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -82,6 +82,7 @@ function checkPW(){
     <button class="btn-h" id="btn-redo" onclick="redoState()" title="やり直す (Ctrl+Y)">進む ▶</button>
     <button class="btn-h" onclick="resetOverrides()" title="CF表の手動上書きをすべてリセット">↺ 上書きリセット</button>
     <button class="btn-h" id="btn-presenter-mode" onclick="togglePresenterMode()" title="プレゼンモード: オレンジのポインタがマウスに追従" style="background:rgba(255,140,0,.25);border-color:rgba(255,140,0,.55)">🎯 プレゼンモード</button>
+    <button class="btn-h" id="btn-market-sim" onclick="toggleMarketSimPanel()" title="過去の相場暴落シナリオを適用してCF表・グラフを再計算" style="background:rgba(200,30,60,.3);border-color:rgba(255,80,110,.55)">📉 下落シミュ</button>
     <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="onJSONImport(this)">
     <input type="file" id="json-bulk-import-input" accept=".json" style="display:none" onchange="onBulkJSONImport(this)">
     <button class="btn-h" onclick="newCFSheet()" title="全項目を白紙にして新しいCF表を作成" style="background:rgba(180,60,0,.3);border-color:rgba(255,120,50,.5)">📄 新規作成</button>
@@ -1547,8 +1548,10 @@ function checkPW(){
 
 
 <!-- v2 モジュール読み込み -->
-<script src="js/state.js?v=12"></script>
+<script src="js/state.js?v=13"></script>
 <script src="js/constants.js?v=14"></script>
+<script src="js/market-scenarios.js?v=1"></script>
+<script src="js/market-sim.js?v=1"></script>
 <script src="js/utils.js?v=19"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=11"></script>
@@ -1593,5 +1596,36 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+
+<!-- 下落シミュレーションパネル（案C サイドパネル） -->
+<div id="market-sim-panel" class="market-sim-panel" style="display:none">
+  <div class="msp-header">
+    <div class="msp-title">📉 下落シミュレーション</div>
+    <button class="msp-close" onclick="toggleMarketSimPanel()" title="閉じる">✕</button>
+  </div>
+  <div class="msp-body">
+    <div class="msp-section">
+      <div class="msp-sec-title">指数の割当</div>
+      <div class="msp-sec-desc">各有価証券・外貨建て保険に適用する指数を選びます</div>
+      <div id="msp-index-list">（証券を登録すると表示されます）</div>
+    </div>
+    <div class="msp-section">
+      <div class="msp-sec-title">シナリオ（同時登録可）</div>
+      <div id="msp-shock-list"></div>
+      <button class="msp-btn-add" onclick="mspAddShock()">＋ シナリオを追加</button>
+    </div>
+    <div class="msp-section">
+      <div class="msp-sec-title">表示</div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="msp-compare" onchange="mspToggleCompare(this.checked)" checked>
+        グラフに通常シナリオ（細線）を重ねて表示
+      </label>
+    </div>
+    <div class="msp-section">
+      <button class="msp-btn-clear" onclick="mspClearAll()">🔄 全シナリオを解除</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
