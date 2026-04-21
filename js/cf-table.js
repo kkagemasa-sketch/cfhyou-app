@@ -164,12 +164,16 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
 
   h+=`</div><!-- /cf-summary-detail --></div><div class="tbl-wrap"><table class="cf"><thead>`;
   // 年ヘッダー（先頭年はクリックで編集可能）
+  const _shkIsActive = (typeof isShockActiveAtYear==='function')
+    ? (i)=>isShockActiveAtYear(i, hAge, parseInt(document.getElementById('wife-age')?.value)||0)
+    : ()=>false;
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
   for(let i=0;i<disp;i++){
+    const _shkCls = _shkIsActive(i)?' shock-year':'';
     if(i===0){
-      h+=`<th style="padding:0;background:var(--navy)" title="クリックして開始年を変更"><div style="font-size:8px;font-weight:500;background:#fbbf24;color:#1a1a1a;padding:1px 2px;line-height:1.15;letter-spacing:-.02em;white-space:nowrap">📅開始年を設定</div><div contenteditable="true" data-cf-start-year="1" style="cursor:text;padding:3px 4px;outline:none;color:#fff;background:var(--navy)" onfocus="selectAll(this)" onblur="setCfStartYearFromCell(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${R.yr[i]}</div></th>`;
+      h+=`<th class="${_shkCls.trim()}" style="padding:0;background:var(--navy)" title="クリックして開始年を変更"><div style="font-size:8px;font-weight:500;background:#fbbf24;color:#1a1a1a;padding:1px 2px;line-height:1.15;letter-spacing:-.02em;white-space:nowrap">📅開始年を設定</div><div contenteditable="true" data-cf-start-year="1" style="cursor:text;padding:3px 4px;outline:none;color:#fff;background:var(--navy)" onfocus="selectAll(this)" onblur="setCfStartYearFromCell(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${R.yr[i]}</div></th>`;
     }else{
-      h+=`<th>${R.yr[i]}</th>`;
+      h+=`<th class="${_shkCls.trim()}">${R.yr[i]}</th>`;
     }
   }
   h+=`<th>合計</th></tr>`;

@@ -109,7 +109,12 @@ function mspRenderShockList(){
       return `<optgroup label="${meta.label}">${list}</optgroup>`;
     }).join('');
 
+  const hAge = parseInt(document.getElementById('husband-age')?.value)||30;
+  const wAge = parseInt(document.getElementById('wife-age')?.value)||29;
+  const cYear = (typeof getCfStartYear==='function')?getCfStartYear():new Date().getFullYear();
+
   wrap.innerHTML=marketShocks.map((sh,idx)=>{
+    const mode = sh.mode||'historical'; // 'historical' | 'manual'
     const presetOpts=optsHtml.replace(`value="${sh.preset}"`,`value="${sh.preset}" selected`);
     const timingVal=sh.timing?.type==='age'?sh.timing.age:'';
     const eventVal=sh.timing?.type==='event'?sh.timing.key:'';
@@ -122,16 +127,61 @@ function mspRenderShockList(){
       {k:'child2-univ',label:'🎯 第二子の大学入学時'},
       {k:'now',label:'🎯 現在（1年目）'}
     ].map(e=>`<option value="${e.k}"${eventVal===e.k?' selected':''}>${e.label}</option>`).join('');
+    // タイミング解決結果の表示
+    const startI = mspResolveStartIdx(sh, hAge, wAge);
+    let timingResolved = '';
+    if(startI>=0){
+      const hAgeAt = hAge+startI;
+      const yearAt = cYear+startI;
+      timingResolved = `<span style="color:#059669;font-weight:700">◆ ${startI+1}年目 (${yearAt}年) / ご主人${hAgeAt}歳</span>`;
+    }else{
+      timingResolved = `<span style="color:#94a3b8">（タイミング未解決）</span>`;
+    }
+    // 手動モード入力欄
+    const manualDrop = sh.manual?.dropPct ?? 30;
+    const manualRecovery = sh.manual?.recoveryYrs ?? 3;
+    // 対象指数選択（manual用）
+    const manualIdx = sh.manual?.index || 'sp500';
+    const idxSelect = `<select onchange="mspSetManualIndex('${sh.id}',this.value)">
+      <option value="sp500"${manualIdx==='sp500'?' selected':''}>S&P500</option>
+      <option value="acwi"${manualIdx==='acwi'?' selected':''}>オルカン</option>
+      <option value="nikkei"${manualIdx==='nikkei'?' selected':''}>日経平均</option>
+      <option value="usdjpy"${manualIdx==='usdjpy'?' selected':''}>USD/JPY</option>
+    </select>`;
+    // カード本体
+    const isActive = sh.active!==false;
     return `
-      <div class="msp-shock-card">
+      <div class="msp-shock-card${isActive?'':' msp-shock-inactive'}">
         <div class="msp-shock-card-hdr">
-          <span class="msp-shock-card-title">シナリオ ${idx+1}</span>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="checkbox" ${isActive?'checked':''} onchange="mspToggleActive('${sh.id}',this.checked)">
+            <span class="msp-shock-card-title">シナリオ ${idx+1}</span>
+          </label>
           <button class="msp-btn-del" onclick="mspDelShock('${sh.id}')">削除</button>
         </div>
         <div class="msp-shock-field">
-          <label>プリセット</label>
-          <select onchange="mspSetShockPreset('${sh.id}',this.value)">${presetOpts}</select>
+          <label>モード</label>
+          <select onchange="mspSetMode('${sh.id}',this.value)">
+            <option value="historical"${mode==='historical'?' selected':''}>📜 過去相場再生</option>
+            <option value="manual"${mode==='manual'?' selected':''}>✏️ 手動指定</option>
+          </select>
         </div>
+        ${mode==='historical'?`
+          <div class="msp-shock-field">
+            <label>プリセット</label>
+            <select onchange="mspSetShockPreset('${sh.id}',this.value)">${presetOpts}</select>
+          </div>
+        `:`
+          <div class="msp-shock-field"><label>対象指数</label>${idxSelect}</div>
+          <div class="msp-shock-field">
+            <label>下落率(%)</label>
+            <input type="number" min="0" max="100" step="1" value="${manualDrop}" onchange="mspSetManualDrop('${sh.id}',this.value)">
+          </div>
+          <div class="msp-shock-field">
+            <label>回復年数</label>
+            <input type="number" min="1" max="30" value="${manualRecovery}" onchange="mspSetManualRecovery('${sh.id}',this.value)">
+          </div>
+        `}
         <div class="msp-shock-field">
           <label>タイミング種別</label>
           <select onchange="mspSetTimingType('${sh.id}',this.value)">
@@ -143,6 +193,7 @@ function mspRenderShockList(){
           ${isEvent?`<label>イベント</label><select onchange="mspSetTimingEvent('${sh.id}',this.value)">${eventOpts}</select>`
             :`<label>ご主人年齢</label><input type="number" min="0" max="120" value="${timingVal}" onchange="mspSetTimingAge('${sh.id}',this.value)">`}
         </div>
+        <div style="font-size:10px;padding:3px 0 0 6px;">${timingResolved}</div>
       </div>
     `;
   }).join('');
@@ -171,6 +222,34 @@ function mspSetShockPreset(id,val){
   const sh=marketShocks.find(s=>String(s.id)===String(id));
   if(sh){sh.preset=val;if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
 }
+function mspToggleActive(id,on){
+  const sh=marketShocks.find(s=>String(s.id)===String(id));
+  if(sh){sh.active=!!on;mspRenderShockList();if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
+}
+function mspSetMode(id,mode){
+  const sh=marketShocks.find(s=>String(s.id)===String(id));
+  if(!sh)return;
+  sh.mode=mode;
+  if(mode==='manual' && !sh.manual){sh.manual={dropPct:30, recoveryYrs:3, index:'sp500'};}
+  mspRenderShockList();
+  if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  if(typeof render==='function')render();
+}
+function mspSetManualDrop(id,val){
+  const sh=marketShocks.find(s=>String(s.id)===String(id));
+  if(sh){sh.manual=sh.manual||{};sh.manual.dropPct=Math.max(0,parseFloat(val)||0);
+    if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
+}
+function mspSetManualRecovery(id,val){
+  const sh=marketShocks.find(s=>String(s.id)===String(id));
+  if(sh){sh.manual=sh.manual||{};sh.manual.recoveryYrs=Math.max(1,parseInt(val)||1);
+    if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
+}
+function mspSetManualIndex(id,val){
+  const sh=marketShocks.find(s=>String(s.id)===String(id));
+  if(sh){sh.manual=sh.manual||{};sh.manual.index=val;
+    if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
+}
 function mspSetTimingType(id,val){
   const sh=marketShocks.find(s=>String(s.id)===String(id));
   if(!sh)return;
@@ -198,6 +277,30 @@ function mspClearAll(){
   if(typeof scheduleAutoSave==='function')scheduleAutoSave();
   if(typeof render==='function')render();
 }
+// 一括操作: 有価証券（積立・一括）全てに指数を割当
+function mspBulkAssignIndex(idx){
+  const items=mspCollectSecurities();
+  items.filter(it=>it.kind==='equity').forEach(it=>{secIndexMap[it.key]=idx;});
+  mspRenderIndexList();
+  if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  if(typeof render==='function')render();
+}
+// 一括操作: 保険全てに指数を割当
+function mspBulkAssignInsurance(idx){
+  const items=mspCollectSecurities();
+  items.filter(it=>it.kind==='insurance').forEach(it=>{secIndexMap[it.key]=idx;});
+  mspRenderIndexList();
+  if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  if(typeof render==='function')render();
+}
+// 一括操作: 指数割当を全解除
+function mspClearIndexAssign(){
+  if(!confirm('全ての証券・保険の指数割当を解除してよいですか?'))return;
+  secIndexMap={};
+  mspRenderIndexList();
+  if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  if(typeof render==='function')render();
+}
 
 function mspRenderAll(){
   mspRenderIndexList();
@@ -209,20 +312,59 @@ function mspRenderAll(){
 // ===== 計算用: 指定年iでの指数別リターン =====
 // cf-calc.js から呼び出し: getMarketReturnAtYear('sp500', i, hAge, wAge) → 0.05 (5%) など
 // 複数シナリオ同時発生時: 掛け合わせ（実効リターン = (1+r1)(1+r2)-1）
-function getMarketReturnAtYear(indexKey, yearIdx, hAge, wAge){
-  if(!marketShocks||marketShocks.length===0)return null;
-  let totalR=null;
+// その年(yearIdx)にいずれかのシナリオが影響しているか判定（CF表ヘッダー装飾用）
+function isShockActiveAtYear(yearIdx, hAge, wAge){
+  if(!marketShocks||marketShocks.length===0)return false;
   for(const sh of marketShocks){
-    if(!sh.active)continue;
-    const sc=MARKET_SCENARIOS[sh.preset];
-    if(!sc)continue;
+    if(sh.active===false)continue;
     const startI = mspResolveStartIdx(sh, hAge, wAge);
     if(startI<0)continue;
     const offset = yearIdx - startI;
     if(offset<0)continue;
-    const arr = sc.returns[indexKey];
-    if(!arr || offset>=arr.length)continue;
-    const r = arr[offset]/100;
+    let len;
+    if(sh.mode==='manual'){
+      len = 1 + Math.max(1, sh.manual?.recoveryYrs||1);
+    }else{
+      const sc = MARKET_SCENARIOS[sh.preset];
+      if(!sc)continue;
+      // 最も長い配列長を取る
+      len = Math.max(...['sp500','acwi','nikkei','usdjpy'].map(k=>sc.returns[k]?.length||0));
+    }
+    if(offset<len) return true;
+  }
+  return false;
+}
+
+function getMarketReturnAtYear(indexKey, yearIdx, hAge, wAge){
+  if(!marketShocks||marketShocks.length===0)return null;
+  let totalR=null;
+  for(const sh of marketShocks){
+    if(sh.active===false)continue;
+    const startI = mspResolveStartIdx(sh, hAge, wAge);
+    if(startI<0)continue;
+    const offset = yearIdx - startI;
+    if(offset<0)continue;
+    let r=null;
+    if(sh.mode==='manual'){
+      // 手動モード: 0年目に下落、以降 N年で均等に回復
+      if(sh.manual?.index !== indexKey) continue; // 対象指数が違えばスキップ
+      const drop = (sh.manual?.dropPct||0)/100;
+      const rec = Math.max(1, sh.manual?.recoveryYrs||1);
+      if(offset===0){ r = -drop; }
+      else if(offset<=rec){
+        // 回復時の年率: 複利で元本復帰: (1-drop) * (1+gain)^rec = 1 → gain = (1/(1-drop))^(1/rec) - 1
+        const gain = Math.pow(1/Math.max(0.0001,1-drop), 1/rec) - 1;
+        r = gain;
+      }else{ continue; } // 回復期間終了、シナリオ影響なし
+    }else{
+      // 過去相場再生モード（デフォルト）
+      const sc=MARKET_SCENARIOS[sh.preset];
+      if(!sc)continue;
+      const arr = sc.returns[indexKey];
+      if(!arr || offset>=arr.length)continue;
+      r = arr[offset]/100;
+    }
+    if(r===null)continue;
     totalR = totalR===null ? r : ((1+totalR)*(1+r)-1);
   }
   return totalR;

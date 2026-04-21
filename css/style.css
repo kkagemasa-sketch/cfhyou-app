@@ -1032,6 +1032,18 @@ body.market-sim-on #btn-market-sim{
   color:#fff!important;
   box-shadow:0 0 8px rgba(200,30,60,.5);
 }
+/* 非アクティブシナリオカード */
+.msp-shock-inactive{opacity:.5;filter:grayscale(.6)}
+/* 下落シナリオが影響している年のヘッダー */
+.cf thead th.shock-year{
+  background:linear-gradient(180deg,rgba(200,30,60,.85) 0%,rgba(160,20,50,.9) 100%)!important;
+  color:#fff!important;
+  position:relative;
+}
+.cf thead th.shock-year::after{
+  content:'📉';
+  position:absolute;top:1px;right:1px;font-size:8px;opacity:.8;
+}
 .explain-popup-header{
   display:flex;
   justify-content:space-between;

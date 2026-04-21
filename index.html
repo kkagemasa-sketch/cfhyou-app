@@ -12,7 +12,7 @@
 <script src="js/vendors/jszip.min.js"></script>
 <script src="js/vendors/xlsx-style.min.js"></script>
 <script src="js/vendors/FileSaver.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=28">
+<link rel="stylesheet" href="css/style.css?v=29">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -1551,7 +1551,7 @@ function checkPW(){
 <script src="js/state.js?v=13"></script>
 <script src="js/constants.js?v=14"></script>
 <script src="js/market-scenarios.js?v=2"></script>
-<script src="js/market-sim.js?v=2"></script>
+<script src="js/market-sim.js?v=3"></script>
 <script src="js/utils.js?v=19"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=11"></script>
@@ -1564,7 +1564,7 @@ function checkPW(){
 <script src="js/contingency.js?v=58"></script>
 <script src="js/cf-ui.js?v=21"></script>
 <script src="js/cf-calc.js?v=35"></script>
-<script src="js/cf-table.js?v=29"></script>
+<script src="js/cf-table.js?v=30"></script>
 <script src="js/cf-highlight.js?v=2"></script>
 <script src="js/graphs.js?v=4"></script>
 <script src="js/export.js?v=28"></script>
@@ -1622,7 +1622,15 @@ if('serviceWorker' in navigator){
       </label>
     </div>
     <div class="msp-section">
-      <button class="msp-btn-clear" onclick="mspClearAll()">🔄 全シナリオを解除</button>
+      <div class="msp-sec-title">一括操作</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('sp500')">🇺🇸 全ての有価証券に S&P500 を割当</button>
+        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('acwi')">🌎 全ての有価証券にオルカンを割当</button>
+        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('nikkei')">🎌 全ての有価証券に日経平均を割当</button>
+        <button class="msp-btn-clear" onclick="mspBulkAssignInsurance('usdjpy')">💱 全ての保険に USD/JPY を割当</button>
+        <button class="msp-btn-clear" onclick="mspClearIndexAssign()">❌ 指数割当を全解除</button>
+        <button class="msp-btn-clear" onclick="mspClearAll()" style="background:#fef2f2;color:#b91c1c">🔄 全シナリオを解除</button>
+      </div>
     </div>
   </div>
 </div>
