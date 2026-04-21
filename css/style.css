@@ -917,6 +917,30 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   from{opacity:0;transform:translateY(-4px)}
   to  {opacity:1;transform:translateY(0)}
 }
+
+/* ============================================================
+   プレゼンモード（オレンジのポインタ追従）
+   ============================================================ */
+#presenter-pointer{
+  position:fixed;
+  width:40px;height:40px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(255,140,0,.55) 0%, rgba(255,140,0,.3) 55%, rgba(255,140,0,0) 100%);
+  border:2px solid rgba(255,100,0,.85);
+  box-shadow:0 0 18px rgba(255,140,0,.5);
+  pointer-events:none;
+  z-index:99998;
+  transform:translate(-50%,-50%);
+  transition:width .08s,height .08s,opacity .15s;
+  display:none;
+}
+body.presenter-on #presenter-pointer{display:block}
+body.presenter-on #btn-presenter-mode{
+  background:rgba(255,140,0,.7)!important;
+  border-color:rgba(255,100,0,.9)!important;
+  color:#fff!important;
+  box-shadow:0 0 8px rgba(255,140,0,.5);
+}
 .explain-popup-header{
   display:flex;
   justify-content:space-between;

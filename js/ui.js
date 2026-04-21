@@ -49,6 +49,33 @@ function togglePanel(){
   btn.title=hidden?'入力パネルを表示する':'入力パネルを隠す';
 }
 
+// プレゼンモード: オレンジのポインタ追従
+let _presenterMoveHandler=null;
+function togglePresenterMode(){
+  const body=document.body;
+  const on=!body.classList.contains('presenter-on');
+  if(on){
+    body.classList.add('presenter-on');
+    let pt=document.getElementById('presenter-pointer');
+    if(!pt){
+      pt=document.createElement('div');
+      pt.id='presenter-pointer';
+      document.body.appendChild(pt);
+    }
+    _presenterMoveHandler=(e)=>{
+      pt.style.left=e.clientX+'px';
+      pt.style.top=e.clientY+'px';
+    };
+    document.addEventListener('mousemove',_presenterMoveHandler);
+  }else{
+    body.classList.remove('presenter-on');
+    if(_presenterMoveHandler){
+      document.removeEventListener('mousemove',_presenterMoveHandler);
+      _presenterMoveHandler=null;
+    }
+  }
+}
+
 function toggleCFPanel(){
   const pr=document.querySelector('.panel-r');
   const resizer=document.querySelector('.panel-resizer-grip');
