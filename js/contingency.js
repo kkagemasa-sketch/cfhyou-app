@@ -547,7 +547,11 @@ function _renderContingencyInner(){
       if(mgSurvMode==='manual'){
         survP=survManualAmt;
       }else{
-        const kH=koseiH_mg, kW=koseiW_mg;
+        // 遺族厚生年金用：死亡時の被保険者期間ベース＋300月みなし
+        const hDeathAgeCalc=targetIsH?deathAge:(hAge+deathYearOffset-1);
+        const wDeathAgeCalc=targetIsH?(wAge+deathYearOffset-1):deathAge;
+        const kH=calcKoseiForSurvP('h', pHStart_mg, hDeathAgeCalc, pSelf, kisoH_mg);
+        const kW=calcKoseiForSurvP('w', pWStart_mg, wDeathAgeCalc, pWife, kisoW_mg);
         if(targetIsH){
           // ── ご主人死亡 → 奥様が受給 ──
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});

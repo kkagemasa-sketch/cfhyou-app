@@ -16,6 +16,19 @@ function calcKosei(person, startAge, retAge, fallbackPension, kisoAmt){
   if(gM>0){const hyojun=(Math.min(gM,65)*12+Math.min(gB,300))/12*CAREER_FACTOR;return hyojun*5.481/1000*joinM;}
   return Math.max(0,fallbackPension-kisoAmt);
 }
+
+// 遺族厚生年金計算用の厚生年金相当額
+// 被保険者期間は「就労開始→死亡年齢」で計算し、300月未満なら300月みなし（短期要件）
+function calcKoseiForSurvP(person, startAge, deathAge, fallbackPension, kisoAmt){
+  const CAREER_FACTOR=0.75;
+  const avg=calcAvgHyojun(person, startAge, deathAge);
+  // 遺族厚生年金：死亡時の被保険者期間ベース、300月未満なら300月みなし、上限480月
+  const joinM=Math.min(480, Math.max((deathAge-startAge)*12, 300));
+  if(avg!==null) return avg*5.481/1000*joinM;
+  const gM=fv(`${person}-gross-monthly`)||0, gB=fv(`${person}-gross-bonus`)||0;
+  if(gM>0){const hyojun=(Math.min(gM,65)*12+Math.min(gB,300))/12*CAREER_FACTOR;return hyojun*5.481/1000*joinM;}
+  return Math.max(0,fallbackPension-kisoAmt);
+}
 // 空欄→デフォルト値、0を明示入力→0を返す（隠れた初期値問題の対策）
 function ivd(id,def){const el=$(id);if(!el||el.value==='')return def;return parseInt(String(el.value).replace(/,/g,''))||0;}
 function fvd(id,def){const el=$(id);if(!el||el.value==='')return def;return parseFloat(String(el.value).replace(/,/g,''))||0;}
@@ -76,6 +89,28 @@ function calcJuminTax(juminTaxable){
   if(juminTaxable<=0)return 0.5; // 均等割のみ
   const shotokuwari=Math.max(0,juminTaxable*0.1-0.25); // 調整控除（簡略：一律2,500円）
   return Math.round((shotokuwari+0.5)*10)/10; // +均等割5,000円
+}
+
+// 退職所得控除額（勤続年数ベース）
+// - 20年以下: 40万 × 勤続年数（最低80万）
+// - 20年超:   800万 + 70万 × (勤続年数 - 20)
+function calcTaishokuDed(kinzokuYears){
+  const y=Math.max(1,Math.floor(kinzokuYears||0));
+  if(y<=20)return Math.max(80, 40*y);
+  return 800 + 70*(y-20);
+}
+// 退職一時金の税引後手取り額を計算
+// - 退職所得控除を差し引き、1/2 課税で所得税・住民税を算出
+// - grossBumpWan は同一年の他の給与所得の課税所得（退職所得は分離課税のため原則 0 でOK）
+function calcTaishokuNet(lumpSum, kinzokuYears){
+  if(!lumpSum||lumpSum<=0)return 0;
+  const ded=calcTaishokuDed(kinzokuYears);
+  const taxable=Math.max(0,(lumpSum-ded)/2);
+  const itax=calcIncomeTax(taxable);
+  // 退職所得の住民税は所得割10%のみ（均等割なし・調整控除なし）
+  const jumin=Math.round(taxable*0.1*10)/10;
+  const tax=itax+jumin;
+  return Math.round((lumpSum-tax)*10)/10;
 }
 
 function getLCtrlRow(yr, tp, isKosodate){
