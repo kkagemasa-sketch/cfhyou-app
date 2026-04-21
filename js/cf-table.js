@@ -331,7 +331,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
           const v=ri(row.vals[i]||0);
           const _showIcon=_exp&&v>0;
           const _icon=_showIcon?_explainIcon(_finKey,i,'cf'):'';
-          h+=`<td class="${getColCls(i).trim()}${_showIcon?' has-explain':''}">${v>0?v.toLocaleString():'-'}${_icon}</td>`;
+          h+=`<td class="${_showIcon?'has-explain':''}">${v>0?v.toLocaleString():'-'}${_icon}</td>`;
         }
         h+=`<td>${ri(row.vals[disp-1]||0).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${row.lbl}</span></td></tr>`;
       });

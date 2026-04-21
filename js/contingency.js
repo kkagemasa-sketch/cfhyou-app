@@ -1420,7 +1420,7 @@ function _renderContingencyInner(){
     normalR.finAssetRows.forEach(row=>{
       if(row.person===deadP2)return;if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
       h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}</td>`;
-      for(let i2=0;i2<mgDisp;i2++){let v=row.vals[i2]||0;if(i2>=deathYearOffset-1&&row.person==='both')v=Math.round(v/2);h+=`<td class="${getMgColCls(i2).trim()}">${v>0?ri(v).toLocaleString():'-'}</td>`;}
+      for(let i2=0;i2<mgDisp;i2++){let v=row.vals[i2]||0;if(i2>=deathYearOffset-1&&row.person==='both')v=Math.round(v/2);h+=`<td>${v>0?ri(v).toLocaleString():'-'}</td>`;}
       h+=`<td>${ri(row.vals[mgDisp-1]||0).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${row.lbl}</span></td></tr>`;
     });
     h+=`<tr class="rfin fin-asset-row" style="font-weight:700"><td>その他金融資産</td><td></td>`;
