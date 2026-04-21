@@ -119,7 +119,7 @@ function render(){
 
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
-    hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
+    hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
@@ -140,6 +140,55 @@ function render(){
   // 住宅ローン控除の年シフト用（引き渡しの翌年セルから還付計上）
   let _prevLc2=0, _prevLctrlBd=null;
 
+  // ─── 手取年収→額面・税金の逆算ヘルパー ───
+  // netInc: 手取年収(万円), age: 年齢, isSelfSingle: 単身か, spouseNetInc: 配偶者の手取(配偶者控除判定用), isHSide: ご主人側か
+  function _calcNetBreakdown(netInc, age, isSelfSingle, spouseNetInc, isHSide){
+    if(netInc<=0)return null;
+    // 手取り→額面（TAX表を線形補間）
+    const _netToGross=(net)=>{
+      let g=0;
+      for(let gi=0;gi<TAX.length-1;gi++){
+        if(net<=TAX[gi][1]){g=TAX[gi][0];break;}
+        if(net<TAX[gi+1][1]){const r=(net-TAX[gi][1])/(TAX[gi+1][1]-TAX[gi][1]);g=Math.round(TAX[gi][0]+r*(TAX[gi+1][0]-TAX[gi][0]));break;}
+        g=TAX[TAX.length-1][0];
+      }
+      if(g<=0&&net>0)g=TAX[TAX.length-1][0];
+      return g;
+    };
+    const gross=_netToGross(netInc);
+    const shakaiRate=calcShakaiRate(age);
+    const shakai=Math.round(gross*shakaiRate*10)/10;
+    const kyuyo=calcKyuyoDed(gross);
+    const grossSyotoku=Math.max(0,gross-kyuyo);
+    const [kisoIt,kisoJu]=calcKisoDed(grossSyotoku);
+    // 配偶者控除（ご主人側のみ適用、奥様視点では基本無し）
+    let spouseGross=0;
+    let hasSpouseDed=false, spouseDedIt=0, spouseDedJu=0;
+    if(!isSelfSingle&&isHSide&&spouseNetInc>0){
+      spouseGross=_netToGross(spouseNetInc);
+      hasSpouseDed=canApplySpouseDed(gross,spouseGross);
+      spouseDedIt=hasSpouseDed?38:0;
+      spouseDedJu=hasSpouseDed?33:0;
+    }else if(!isSelfSingle&&isHSide&&spouseNetInc===0){
+      // 配偶者が無収入(0万円) → 配偶者控除適用
+      hasSpouseDed=canApplySpouseDed(gross,0);
+      spouseDedIt=hasSpouseDed?38:0;
+      spouseDedJu=hasSpouseDed?33:0;
+    }
+    const taxableBase=Math.max(0,grossSyotoku-shakai-kisoIt);
+    const taxable=Math.max(0,taxableBase-spouseDedIt);
+    const itax=calcIncomeTax(taxable);
+    const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-spouseDedJu);
+    const jumin=calcJuminTax(juminTaxable);
+    return {
+      net:netInc, gross, shakaiRate, shakai, kyuyo, grossSyotoku,
+      kisoIt, kisoJu, hasSpouseDed, spouseDedIt, spouseDedJu,
+      taxableBase, taxable, itax, juminTaxable, jumin,
+      netComputed:Math.round((gross-shakai-itax-jumin)*10)/10,
+      age, isSingle:isSelfSingle, isHSide
+    };
+  }
+
   for(let i=0;i<totalYrs;i++){
     const yr=cYear+i, ha=hAge+i, wa=wAge+i;
     const active=i>=delivery, lcYr=i-delivery;
@@ -148,35 +197,47 @@ function render(){
     children.forEach((c,ci)=>R.cA[ci].push(c.age+i));
 
     // ─── ご主人収入 ───
-    let hInc=0, hDCSaving=0;
+    let hInc=0, hDCSaving=0, _hDCSv=null, _hDedMatching=0, _hDedIdeco=0;
     if(!(hDeathAge>0&&ha>hDeathAge)){
       hInc=getIncomeAtAge(hSteps,ha);
       // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
       if(hInc>0&&ha<dcIdeco.h.retAge){
-        const ded=(dcIdeco.h.matching+dcIdeco.h.idecoMonthly)*12;
-        if(ded>0){const sv=estimateTaxSaving(hInc,ded);hDCSaving=sv.total;}
+        _hDedMatching=dcIdeco.h.matching*12;
+        _hDedIdeco=dcIdeco.h.idecoMonthly*12;
+        const ded=_hDedMatching+_hDedIdeco;
+        if(ded>0){_hDCSv=estimateTaxSaving(hInc,ded);hDCSaving=_hDCSv.total;}
       }
     }
     R.hInc.push(ri(hInc));
     R.dcTaxSavingH.push(ri(hDCSaving));
 
     // ─── 奥様収入（産休・育休・時短対応）※単身時スキップ ───
-    let wInc=0, wDCSaving=0;
+    let wInc=0, wDCSaving=0, _wDCSv=null, _wDedMatching=0, _wDedIdeco=0, _wLeaveType=null;
     if(!_isSingle&&!(wDeathAge>0&&wa>wDeathAge)){
       const leave=leaves.find(l=>wa>=l.startAge&&wa<l.endAge);
       if(leave){
         wInc=ri(leave.income);
+        _wLeaveType=leave.type;
       } else {
         wInc=getIncomeAtAge(wSteps,wa);
       }
       // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
       if(wInc>0&&wa<dcIdeco.w.retAge){
-        const ded=(dcIdeco.w.matching+dcIdeco.w.idecoMonthly)*12;
-        if(ded>0){const sv=estimateTaxSaving(wInc,ded);wDCSaving=sv.total;}
+        _wDedMatching=dcIdeco.w.matching*12;
+        _wDedIdeco=dcIdeco.w.idecoMonthly*12;
+        const ded=_wDedMatching+_wDedIdeco;
+        if(ded>0){_wDCSv=estimateTaxSaving(wInc,ded);wDCSaving=_wDCSv.total;}
       }
     }
     R.wInc.push(ri(wInc));
     R.dcTaxSavingW.push(ri(wDCSaving));
+
+    // ─── 手取年収の内訳（額面・社会保険料・所得税・住民税の逆算） ───
+    R.hIncBd.push(hInc>0?_calcNetBreakdown(hInc,ha,_isSingle,wInc,true):null);
+    R.wIncBd.push(wInc>0?_calcNetBreakdown(wInc,wa,true,0,false):null);
+    // DC/iDeCo節税の内訳
+    R.dcTaxBdH.push(_hDCSv?{..._hDCSv, matching:_hDedMatching, ideco:_hDedIdeco, takeHome:hInc, age:ha}:null);
+    R.dcTaxBdW.push(_wDCSv?{..._wDCSv, matching:_wDedMatching, ideco:_wDedIdeco, takeHome:wInc, age:wa, leaveType:_wLeaveType}:null);
 
     // ─── その他収入 ───
     // 退職金：退職所得控除＋1/2課税で税引後手取りを計上

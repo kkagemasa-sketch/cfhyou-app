@@ -444,7 +444,10 @@ function estimateTaxSaving(takeHome, deduction){
   else marginalRate=0.45;
   const incomeTax=Math.round(deduction*marginalRate*1.021*10)/10;
   const residentTax=Math.round(deduction*0.1*10)/10;
-  return{total:Math.round((incomeTax+residentTax)*10)/10, incomeTax, residentTax};
+  return{
+    total:Math.round((incomeTax+residentTax)*10)/10, incomeTax, residentTax,
+    gross, shakai, kyuyo, taxable, marginalRate, deduction
+  };
 }
 
 function updateDCTaxHint(p){
