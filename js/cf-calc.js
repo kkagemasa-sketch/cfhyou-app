@@ -973,9 +973,12 @@ function render(){
           }
         }else if(_totalBalAtReceive>0){
           const elapsed=pAge-d.receiveAge;
-          if(d.method==='lump') dcBal=0;
-          else if(d.method==='annuity') dcBal=Math.round(_dcBalAtReceive)*Math.max(0,20-elapsed)/20;
-          else dcBal=Math.round(_dcBalAtReceive/2)*Math.max(0,20-elapsed)/20;
+          const _ay=(function(){const mt=String(d.method||'').match(/(annuity|combo)(\d+)?/);return mt&&mt[2]?parseInt(mt[2]):20;})();
+          const _isLump=d.method==='lump';
+          const _isAnn=/^annuity/.test(d.method||'');
+          if(_isLump) dcBal=0;
+          else if(_isAnn) dcBal=Math.round(_dcBalAtReceive)*Math.max(0,_ay-elapsed)/_ay;
+          else dcBal=Math.round(_dcBalAtReceive/2)*Math.max(0,_ay-elapsed)/_ay;
         }
         if(dcBal>0){finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(dcBal);finRowPerson[lbl]=p;}
       }
@@ -995,54 +998,63 @@ function render(){
           }
         }else if(_totalBalAtReceive>0){
           const elapsed=pAge-d.receiveAge;
-          if(d.method==='lump') idecoBal=0;
-          else if(d.method==='annuity') idecoBal=Math.round(_idecoBalAtReceive)*Math.max(0,20-elapsed)/20;
-          else idecoBal=Math.round(_idecoBalAtReceive/2)*Math.max(0,20-elapsed)/20;
+          const _ay=(function(){const mt=String(d.method||'').match(/(annuity|combo)(\d+)?/);return mt&&mt[2]?parseInt(mt[2]):20;})();
+          const _isLump=d.method==='lump';
+          const _isAnn=/^annuity/.test(d.method||'');
+          if(_isLump) idecoBal=0;
+          else if(_isAnn) idecoBal=Math.round(_idecoBalAtReceive)*Math.max(0,_ay-elapsed)/_ay;
+          else idecoBal=Math.round(_idecoBalAtReceive/2)*Math.max(0,_ay-elapsed)/_ay;
         }
         if(idecoBal>0){finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(idecoBal);finRowPerson[lbl]=p;}
       }
       // 一時金課税の簡略拠出期間（就労開始→退職）を勤続年数の代替として使用
       const dcKinzoku=Math.max(1, d.retAge - (p==='h'?pHStart:pWStart));
+      // method から年金受給期間を抽出（annuity5/10/15, combo5/10/15 等、未指定は20年）
+      const _parseAnnuityYears=(m)=>{const mt=String(m||'').match(/(annuity|combo)(\d+)?/);return mt&&mt[2]?parseInt(mt[2]):20;};
+      const annuityYears=_parseAnnuityYears(d.method);
+      const isLump=d.method==='lump';
+      const isAnnuity=/^annuity/.test(d.method||'');
+      const isCombo=/^combo/.test(d.method||'');
       // DC受取計算（一時金は退職所得控除＋1/2課税で手取り化）
       if(pAge>=d.receiveAge&&Math.round(_dcBalAtReceive)>0){
         const dcBR=Math.round(_dcBalAtReceive);
-        if(d.method==='lump'){
+        if(isLump){
           if(pAge===d.receiveAge){
             const net=calcTaishokuNet(dcBR,dcKinzoku);
             if(p==='h')dcReceiptH+=net;else dcReceiptW+=net;
           }
-        }else if(d.method==='annuity'){
-          const a=Math.round(dcBR/20);
-          if(pAge<d.receiveAge+20){if(p==='h')dcReceiptH+=a;else dcReceiptW+=a;}
-        }else{
+        }else if(isAnnuity){
+          const a=Math.round(dcBR/annuityYears);
+          if(pAge<d.receiveAge+annuityYears){if(p==='h')dcReceiptH+=a;else dcReceiptW+=a;}
+        }else if(isCombo){
           const half=Math.round(dcBR/2);
           if(pAge===d.receiveAge){
             const net=calcTaishokuNet(half,dcKinzoku);
             if(p==='h')dcReceiptH+=net;else dcReceiptW+=net;
           }
-          const aH=Math.round(half/20);
-          if(pAge<d.receiveAge+20){if(p==='h')dcReceiptH+=aH;else dcReceiptW+=aH;}
+          const aH=Math.round(half/annuityYears);
+          if(pAge<d.receiveAge+annuityYears){if(p==='h')dcReceiptH+=aH;else dcReceiptW+=aH;}
         }
       }
       // iDeCo受取計算（一時金は退職所得控除＋1/2課税で手取り化）
       if(pAge>=d.receiveAge&&Math.round(_idecoBalAtReceive)>0){
         const iBR=Math.round(_idecoBalAtReceive);
-        if(d.method==='lump'){
+        if(isLump){
           if(pAge===d.receiveAge){
             const net=calcTaishokuNet(iBR,dcKinzoku);
             if(p==='h')idecoReceiptH+=net;else idecoReceiptW+=net;
           }
-        }else if(d.method==='annuity'){
-          const a=Math.round(iBR/20);
-          if(pAge<d.receiveAge+20){if(p==='h')idecoReceiptH+=a;else idecoReceiptW+=a;}
-        }else{
+        }else if(isAnnuity){
+          const a=Math.round(iBR/annuityYears);
+          if(pAge<d.receiveAge+annuityYears){if(p==='h')idecoReceiptH+=a;else idecoReceiptW+=a;}
+        }else if(isCombo){
           const half=Math.round(iBR/2);
           if(pAge===d.receiveAge){
             const net=calcTaishokuNet(half,dcKinzoku);
             if(p==='h')idecoReceiptH+=net;else idecoReceiptW+=net;
           }
-          const aH=Math.round(half/20);
-          if(pAge<d.receiveAge+20){if(p==='h')idecoReceiptH+=aH;else idecoReceiptW+=aH;}
+          const aH=Math.round(half/annuityYears);
+          if(pAge<d.receiveAge+annuityYears){if(p==='h')idecoReceiptH+=aH;else idecoReceiptW+=aH;}
         }
       }
     });

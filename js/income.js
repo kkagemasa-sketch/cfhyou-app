@@ -473,14 +473,17 @@ function updateDCReceiptHint(p){
   const joinYrs=Math.max(1,retAge-(p==='h'?(iv('pension-h-start')||22):(iv('pension-w-start')||22)));
   const hint=document.getElementById(`dc-${p}-receipt-hint`);
   if(!hint)return;
+  // method から年金受給期間を抽出
+  const _parseYrs=(m)=>{const mt=String(m||'').match(/(annuity|combo)(\d+)?/);return mt&&mt[2]?parseInt(mt[2]):20;};
+  const annYrs=_parseYrs(method);
   if(method==='lump'){
     // 退職所得控除の概算
     const ctrl=joinYrs<=20?40*joinYrs:800+70*(joinYrs-20);
     hint.innerHTML=`一時金受取：退職所得控除 約${ctrl}万円（勤続${joinYrs}年）`;
-  }else if(method==='annuity'){
-    hint.innerHTML=`年金受取：${receiveAge}歳〜${receiveAge+19}歳の20年間に分割（公的年金等控除あり）`;
+  }else if(/^annuity/.test(method)){
+    hint.innerHTML=`年金受取：${receiveAge}歳〜${receiveAge+annYrs-1}歳の${annYrs}年間に分割（公的年金等控除あり）`;
   }else{
-    hint.innerHTML=`併用：半額を一時金＋残り半額を${receiveAge}歳〜${receiveAge+19}歳の20年年金`;
+    hint.innerHTML=`併用：半額を一時金＋残り半額を${receiveAge}歳〜${receiveAge+annYrs-1}歳の${annYrs}年年金`;
   }
 }
 

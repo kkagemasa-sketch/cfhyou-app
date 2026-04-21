@@ -113,6 +113,24 @@ function calcTaishokuNet(lumpSum, kinzokuYears){
   return Math.round((lumpSum-tax)*10)/10;
 }
 
+// 老齢年金の手取り → 額面 逆算（65歳以上想定、他所得なし前提の簡略計算）
+// 公的年金等控除110万＋所得税・住民税・介護保険料相当で逆算
+function estimatePensionGrossFromNet(netWan){
+  if(!netWan||netWan<=0)return 0;
+  // 非課税範囲（手取り＝額面）: 年金額≤110万かつ単独で住民税非課税になる額
+  // 65歳以上の単身・夫婦で住民税非課税基準は自治体差あり、おおむね155万以下でほぼ非課税
+  if(netWan<=155)return Math.round(netWan*10)/10;
+  // 段階的な手取り率（pensionNetRate ベース、逆算）
+  // 155〜250万 → 概ね 0.90
+  // 250〜      → 概ね 0.87
+  let rate;
+  if(netWan<=155*0.90)rate=0.92;
+  else if(netWan<=250*0.87)rate=0.90;
+  else if(netWan<=450*0.85)rate=0.87;
+  else rate=0.85;
+  return Math.round((netWan/rate)*10)/10;
+}
+
 function getLCtrlRow(yr, tp, isKosodate){
   const key = `${Math.min(Math.max(yr,2024),2030)}_${isKosodate?'kosodate':'general'}`;
   const row = (LCTRL_TABLE[key]||LCTRL_TABLE['2025_general'])[tp]||[0,0];

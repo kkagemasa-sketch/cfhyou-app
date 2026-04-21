@@ -155,7 +155,16 @@ function updateHints(){
   if(hrp)hrp.textContent=hRetP>0?`✓ ${hRetP.toLocaleString()}万円（退職時計上）`:'退職金なし';
   const hp=document.getElementById('h-pension-hint');
   const hPRcv=iv('pension-h-receive')||65;
-  if(hp)hp.textContent=fv('pension-h')>0?`✓ ${fv('pension-h').toLocaleString()}万円/年（${hPRcv}歳〜）`:`${hPRcv}歳〜 受給`;
+  const hPensNet=fv('pension-h');
+  if(hp){
+    if(hPensNet>0){
+      const grossApprox=estimatePensionGrossFromNet(hPensNet);
+      const grossStr=grossApprox>hPensNet?`／額面相当 約${grossApprox.toLocaleString()}万円`:'';
+      hp.textContent=`✓ 手取り ${hPensNet.toLocaleString()}万円/年（${hPRcv}歳〜）${grossStr}`;
+    } else {
+      hp.textContent=`${hPRcv}歳〜 受給`;
+    }
+  }
   const hDa=iv('h-death-age')||83;
   const hdh=document.getElementById('h-death-hint');
   if(hdh)hdh.textContent=hDa>0?`✓ ${hDa}歳まで計算`:'83歳（デフォルト）';
@@ -236,7 +245,16 @@ function updateHints(){
   if(wrth)wrth.textContent=`✓ ${wRtA}歳で退職`;
   const wph=document.getElementById('w-pension-hint');
   const wPRcv=iv('pension-w-receive')||65;
-  if(wph)wph.textContent=fv('pension-w')>0?`✓ ${fv('pension-w').toLocaleString()}万円/年（${wPRcv}歳〜）`:`${wPRcv}歳〜 受給`;
+  const wPensNet=fv('pension-w');
+  if(wph){
+    if(wPensNet>0){
+      const grossApprox=estimatePensionGrossFromNet(wPensNet);
+      const grossStr=grossApprox>wPensNet?`／額面相当 約${grossApprox.toLocaleString()}万円`:'';
+      wph.textContent=`✓ 手取り ${wPensNet.toLocaleString()}万円/年（${wPRcv}歳〜）${grossStr}`;
+    } else {
+      wph.textContent=`${wPRcv}歳〜 受給`;
+    }
+  }
   const wDa=iv('w-death-age')||88;
   const wdh=document.getElementById('w-death-hint');
   if(wdh)wdh.textContent=wDa>0?`✓ ${wDa}歳まで計算`:'88歳（デフォルト）';
