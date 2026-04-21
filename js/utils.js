@@ -171,6 +171,20 @@ function selectAll(el){
     sel.addRange(range);
   }catch(e){}
 }
+function _getAutoCellValue(row,col,isMG){
+  const R=isMG?window.lastMR:window.lastR;
+  if(!R)return undefined;
+  if(Array.isArray(R[row]))return R[row][col];
+  const m=row.match(/^edu(\d+)$/);
+  if(m&&Array.isArray(R.edu)){const ci=parseInt(m[1]);return R.edu[ci]?.[col];}
+  const dynCollections=['carRows','secInvestRows','secRedeemRows','insMonthlyRows','insLumpExpRows','extRows','insAnnuityRows','finAssetRows'];
+  for(const dc of dynCollections){
+    const coll=R[dc];if(!coll)continue;
+    const found=coll.find(r=>r.key===row);
+    if(found)return found.vals?.[col];
+  }
+  return undefined;
+}
 function cellEdit(td){
   const row=td.dataset.row, col=parseInt(td.dataset.col);
   if(!row&&row!=='0')return;
@@ -181,6 +195,9 @@ function cellEdit(td){
   const hadOvr=ovr[row]?.[col]!==undefined;
   if(raw===''){
     // 明示的に空にした → 0として上書き（自動計算値に戻さない）
+    // ただし、自動値が既に0で上書きも無い場合は何もしない（ただのクリックで0化しない）
+    const autoE=_getAutoCellValue(row,col,isMG);
+    if(!hadOvr&&(autoE===undefined||ri(autoE)===0))return;
     if(!ovr[row])ovr[row]={};
     ovr[row][col]=0;
     td.classList.add('cell-ovr');
@@ -189,6 +206,11 @@ function cellEdit(td){
     // '-' のまま blur（変更なし） → 既存上書きは維持、無ければ何もしない
     if(!hadOvr)return;
   } else if(!isNaN(num)){
+    // 数値が自動計算値と一致し、かつ既存上書きも無い場合はクリック扱いとしてスキップ
+    if(!hadOvr){
+      const auto=_getAutoCellValue(row,col,isMG);
+      if(auto!==undefined&&ri(num)===ri(auto))return;
+    }
     if(!ovr[row])ovr[row]={};
     ovr[row][col]=num;
     td.classList.add('cell-ovr');
