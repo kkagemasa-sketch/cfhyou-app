@@ -367,19 +367,32 @@ function render(){
       if(grossEst<=0&&grossInc>0)grossEst=TAX[TAX.length-1][0];
       let itax=0, jumin=0, taxableBase=0;
       if(grossEst>0){
-        const shakai=Math.round(grossEst*0.1437*10)/10;
-        let kyuyo=grossEst<=180?Math.max(55,grossEst*0.4):grossEst<=360?grossEst*0.3+18:grossEst<=660?grossEst*0.2+54:grossEst<=850?grossEst*0.1+120:grossEst<=1000?grossEst*0.05+172.5:195;
-        taxableBase=Math.max(0,grossEst-kyuyo-shakai-48);
-        const taxable=Math.max(0,taxableBase-38);
-        if(taxable<=195)itax=taxable*0.05;
-        else if(taxable<=330)itax=taxable*0.1-9.75;
-        else if(taxable<=695)itax=taxable*0.2-42.75;
-        else if(taxable<=900)itax=taxable*0.23-63.6;
-        else if(taxable<=1800)itax=taxable*0.33-153.6;
-        else if(taxable<=4000)itax=taxable*0.4-279.6;
-        else itax=taxable*0.45-479.6;
-        itax=Math.round(itax*1.021*10)/10;
-        jumin=Math.max(0,Math.round((taxableBase*0.1-2.5)*10)/10);
+        // 社会保険料（年齢に応じて介護保険料加算）
+        const shakai=Math.round(grossEst*calcShakaiRate(ha)*10)/10;
+        const kyuyo=calcKyuyoDed(grossEst);
+        const grossSyotoku=Math.max(0,grossEst-kyuyo); // 給与所得金額
+        const [kisoIt,kisoJu]=calcKisoDed(grossSyotoku); // 基礎控除（所得税／住民税）
+        // 配偶者控除の適用判定（奥様の年収をグロス推定）
+        let wGrossForDed=0;
+        if(!_isSingle){
+          const wIncLocal=wInc>0?wInc:0;
+          for(let gi=0;gi<TAX.length-1;gi++){
+            if(wIncLocal<=TAX[gi][1]){wGrossForDed=TAX[gi][0];break;}
+            if(wIncLocal<TAX[gi+1][1]){const r=(wIncLocal-TAX[gi][1])/(TAX[gi+1][1]-TAX[gi][1]);wGrossForDed=Math.round(TAX[gi][0]+r*(TAX[gi+1][0]-TAX[gi][0]));break;}
+            wGrossForDed=TAX[TAX.length-1][0];
+          }
+          if(wGrossForDed<=0&&wIncLocal>0)wGrossForDed=TAX[TAX.length-1][0];
+        }
+        const hasSpouseDed=!_isSingle&&canApplySpouseDed(grossEst,wGrossForDed);
+        const spouseDedIt=hasSpouseDed?38:0;
+        const spouseDedJu=hasSpouseDed?33:0;
+        // 所得税の課税所得
+        taxableBase=Math.max(0,grossSyotoku-shakai-kisoIt);
+        const taxable=Math.max(0,taxableBase-spouseDedIt);
+        itax=calcIncomeTax(taxable);
+        // 住民税（基礎控除43万、配偶者控除33万、調整控除・均等割含む）
+        const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-spouseDedJu);
+        jumin=calcJuminTax(juminTaxable);
       }
       // 住民税控除上限＝課税総所得金額等×5%（上限JUMIN_CTRL_MAX）
       const juminCtrlMax=Math.min(Math.round(taxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
@@ -410,18 +423,14 @@ function render(){
         if(wGrossEst<=0&&wGrossInc>0)wGrossEst=TAX[TAX.length-1][0];
         let wItax=0, wTaxableBase=0;
         if(wGrossEst>0){
-          const wShakai=Math.round(wGrossEst*0.1437*10)/10;
-          let wKyuyo=wGrossEst<=180?Math.max(55,wGrossEst*0.4):wGrossEst<=360?wGrossEst*0.3+18:wGrossEst<=660?wGrossEst*0.2+54:wGrossEst<=850?wGrossEst*0.1+120:wGrossEst<=1000?wGrossEst*0.05+172.5:195;
-          wTaxableBase=Math.max(0,wGrossEst-wKyuyo-wShakai-48);
-          const wTaxable=Math.max(0,wTaxableBase-38);
-          if(wTaxable<=195)wItax=wTaxable*0.05;
-          else if(wTaxable<=330)wItax=wTaxable*0.1-9.75;
-          else if(wTaxable<=695)wItax=wTaxable*0.2-42.75;
-          else if(wTaxable<=900)wItax=wTaxable*0.23-63.6;
-          else if(wTaxable<=1800)wItax=wTaxable*0.33-153.6;
-          else if(wTaxable<=4000)wItax=wTaxable*0.4-279.6;
-          else wItax=wTaxable*0.45-479.6;
-          wItax=Math.round(wItax*1.021*10)/10;
+          const wShakai=Math.round(wGrossEst*calcShakaiRate(wa)*10)/10;
+          const wKyuyo=calcKyuyoDed(wGrossEst);
+          const wGrossSyotoku=Math.max(0,wGrossEst-wKyuyo);
+          const [wKisoIt]=calcKisoDed(wGrossSyotoku);
+          // 配偶者控除：奥様が本人視点の場合（ご主人様の所得で判定）
+          // ここではペアローン共働き想定のため奥様は基本的に配偶者控除なし
+          wTaxableBase=Math.max(0,wGrossSyotoku-wShakai-wKisoIt);
+          wItax=calcIncomeTax(wTaxableBase);
         }
         const wJuminCtrlMax=Math.min(Math.round(wTaxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
         const wTaxCapTotal=Math.round((wItax+wJuminCtrlMax)*10)/10;

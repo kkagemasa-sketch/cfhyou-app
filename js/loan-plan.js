@@ -319,23 +319,19 @@ function togglePairLoan(on){
   }
   renderLoanCalc();
 }
-function estimateTaxFromGross(grossEst){
+function estimateTaxFromGross(grossEst, age){
   // 額面年収(万円)→所得税・住民税・課税所得を計算（CF表と同じロジック）
   if(!grossEst||grossEst<=0)return{itax:0,jumin:0,taxableBase:0};
-  const shakai=Math.round(grossEst*0.1437*10)/10;
-  let kyuyo=grossEst<=180?Math.max(55,grossEst*0.4):grossEst<=360?grossEst*0.3+18:grossEst<=660?grossEst*0.2+54:grossEst<=850?grossEst*0.1+120:grossEst<=1000?grossEst*0.05+172.5:195;
-  const taxableBase=Math.max(0,grossEst-kyuyo-shakai-48);
+  // 年齢未指定時は40歳以上として介護保険料加算（保守的）
+  const shakai=Math.round(grossEst*calcShakaiRate(age||40)*10)/10;
+  const kyuyo=calcKyuyoDed(grossEst);
+  const grossSyotoku=Math.max(0,grossEst-kyuyo);
+  const [kisoIt,kisoJu]=calcKisoDed(grossSyotoku);
+  const taxableBase=Math.max(0,grossSyotoku-shakai-kisoIt);
   const taxable=Math.max(0,taxableBase-38);
-  let itax=0;
-  if(taxable<=195)itax=taxable*0.05;
-  else if(taxable<=330)itax=taxable*0.1-9.75;
-  else if(taxable<=695)itax=taxable*0.2-42.75;
-  else if(taxable<=900)itax=taxable*0.23-63.6;
-  else if(taxable<=1800)itax=taxable*0.33-153.6;
-  else if(taxable<=4000)itax=taxable*0.4-279.6;
-  else itax=taxable*0.45-479.6;
-  itax=Math.round(itax*1.021*10)/10;
-  const jumin=Math.max(0,Math.round((taxableBase*0.1-2.5)*10)/10);
+  const itax=calcIncomeTax(taxable);
+  const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-33);
+  const jumin=calcJuminTax(juminTaxable);
   return{itax:Math.max(0,itax),jumin:Math.max(0,jumin),taxableBase};
 }
 function calcLPTaxFromGross(who){

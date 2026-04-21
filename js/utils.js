@@ -23,6 +23,61 @@ function fvd(id,def){const el=$(id);if(!el||el.value==='')return def;return pars
 // 手取り補間
 function gn(g){if(!g||g<=0)return 0;for(let i=0;i<TAX.length-1;i++){if(g<=TAX[i][0])return TAX[i][1];if(g<TAX[i+1][0]){const r=(g-TAX[i][0])/(TAX[i+1][0]-TAX[i][0]);return Math.round(TAX[i][1]+r*(TAX[i+1][1]-TAX[i][1]))}}return TAX[TAX.length-1][1]}
 
+// ===== 税制・社会保険ヘルパー =====
+// 社会保険料率（協会けんぽ標準／従業員負担分）
+// 14.37% = 健康保険5.0% + 厚生年金9.15% + 雇用保険0.22% 相当
+// 40-64歳は介護保険料（折半後0.8%）加算
+function calcShakaiRate(age){
+  if(age>=40&&age<=64)return 0.1437+0.008;
+  return 0.1437;
+}
+// 配偶者控除の適用可否判定（税制準拠・簡略）
+// - 配偶者の年収103万以下（合計所得48万以下）
+// - 本人の年収おおむね1,095万以下（合計所得900万以下）
+function canApplySpouseDed(selfGross, spouseGross){
+  if(spouseGross>103)return false;
+  if(selfGross>1095)return false;
+  return true;
+}
+// 給与所得控除（令和2年改正後、上限195万）
+function calcKyuyoDed(gross){
+  if(gross<=180)return Math.max(55,gross*0.4);
+  if(gross<=360)return gross*0.3+18;
+  if(gross<=660)return gross*0.2+54;
+  if(gross<=850)return gross*0.1+120;
+  if(gross<=1000)return gross*0.05+172.5;
+  return 195;
+}
+// 基礎控除（2020年改正：所得2,400万超で逓減）
+// 戻り値：[所得税の基礎控除額, 住民税の基礎控除額]
+function calcKisoDed(taxableBeforeKiso){
+  // 合計所得金額 ≒ taxableBeforeKiso (ほぼ課税所得前＝給与所得)
+  if(taxableBeforeKiso<=2400)return [48,43];
+  if(taxableBeforeKiso<=2450)return [32,29];
+  if(taxableBeforeKiso<=2500)return [16,15];
+  return [0,0];
+}
+// 所得税額の計算（累進税率＋復興特別所得税 ×1.021）
+function calcIncomeTax(taxable){
+  if(taxable<=0)return 0;
+  let it;
+  if(taxable<=195)it=taxable*0.05;
+  else if(taxable<=330)it=taxable*0.1-9.75;
+  else if(taxable<=695)it=taxable*0.2-42.75;
+  else if(taxable<=900)it=taxable*0.23-63.6;
+  else if(taxable<=1800)it=taxable*0.33-153.6;
+  else if(taxable<=4000)it=taxable*0.4-279.6;
+  else it=taxable*0.45-479.6;
+  return Math.round(it*1.021*10)/10;
+}
+// 住民税計算（所得割10% + 均等割5,000円 - 調整控除簡略2,500円）
+// juminTaxable は住民税課税所得（基礎控除43万・配偶者控除33万等を差し引き済み）
+function calcJuminTax(juminTaxable){
+  if(juminTaxable<=0)return 0.5; // 均等割のみ
+  const shotokuwari=Math.max(0,juminTaxable*0.1-0.25); // 調整控除（簡略：一律2,500円）
+  return Math.round((shotokuwari+0.5)*10)/10; // +均等割5,000円
+}
+
 function getLCtrlRow(yr, tp, isKosodate){
   const key = `${Math.min(Math.max(yr,2024),2030)}_${isKosodate?'kosodate':'general'}`;
   const row = (LCTRL_TABLE[key]||LCTRL_TABLE['2025_general'])[tp]||[0,0];

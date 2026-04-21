@@ -89,34 +89,26 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo){
     return;
   }
   // 扶養内パート：社会保険料なし（配偶者の社保に加入）
-  const shakai = isFuyo ? 0 : Math.round(gross * 0.1437 * 10) / 10;
-  let kyuyo;
-  if(gross<=180)kyuyo=Math.max(55,gross*0.4);
-  else if(gross<=360)kyuyo=gross*0.3+18;
-  else if(gross<=660)kyuyo=gross*0.2+54;
-  else if(gross<=850)kyuyo=gross*0.1+120;
-  else if(gross<=1000)kyuyo=gross*0.05+172.5;
-  else kyuyo=195;
-  const taxableBase = Math.max(0, gross - kyuyo - shakai - 48);
+  // 年齢は参考計算機なので40歳想定（介護保険料加算）
+  const shakai = isFuyo ? 0 : Math.round(gross * calcShakaiRate(40) * 10) / 10;
+  const kyuyo = calcKyuyoDed(gross);
+  const grossSyotoku = Math.max(0, gross - kyuyo);
+  const [kisoIt, kisoJu] = calcKisoDed(grossSyotoku);
+  const taxableBase = Math.max(0, grossSyotoku - shakai - kisoIt);
+  // 配偶者控除：参考計算機では一律適用（簡略）
   const taxable = Math.max(0, taxableBase - 38);
   let income_tax = 0;
   // 扶養内パート：給与収入103万以下は所得税0（給与所得控除55万+基礎控除48万=103万）
   if(!isFuyo || gross > 103){
-    if(taxable<=195)income_tax=taxable*0.05;
-    else if(taxable<=330)income_tax=taxable*0.1-9.75;
-    else if(taxable<=695)income_tax=taxable*0.2-42.75;
-    else if(taxable<=900)income_tax=taxable*0.23-63.6;
-    else if(taxable<=1800)income_tax=taxable*0.33-153.6;
-    else if(taxable<=4000)income_tax=taxable*0.4-279.6;
-    else income_tax=taxable*0.45-479.6;
+    income_tax = calcIncomeTax(taxable);
   }
-  income_tax = Math.max(0, Math.round(income_tax * 1.021 * 10) / 10);
   // 住民税：非課税基準は自治体によるが概ね100万以下で非課税
   let jumin;
   if(isFuyo && gross <= 100){
     jumin = 0; // 住民税非課税
   } else {
-    jumin = Math.max(0, Math.round((taxableBase * 0.1 - 2.5) * 10) / 10);
+    const juminTaxable = Math.max(0, grossSyotoku - shakai - kisoJu - 33);
+    jumin = calcJuminTax(juminTaxable);
   }
   const takeHome = Math.round((gross - shakai - income_tax - jumin) * 10) / 10;
   if(result)result.textContent = takeHome.toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}) + '万円';
