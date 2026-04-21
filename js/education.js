@@ -39,7 +39,7 @@ function updateEdu(){
       const grp=document.getElementById(`hg-${a}-${cid}`);
       const inp=document.getElementById(`hn-${a}-${cid}`);
       if(!grp||!inp)continue;
-      const passed=age>a+1;       // 年齢を過ぎた欄
+      const passed=age>a;         // 年齢を過ぎた欄（現在年齢a以下ならまだこれから）
       const beforeEntry=a<startAge; // 入園前の欄
       if(passed||beforeEntry){
         grp.style.opacity='0.35';
