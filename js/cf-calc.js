@@ -119,7 +119,7 @@ function render(){
 
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
-    hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],secRedeem:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
+    hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],
     // イベント文字列
@@ -272,9 +272,11 @@ function render(){
     R.scholarship.push(scTotal);
     // 保険満期金（積み立て保険 + 一時払い保険）
     let insMatTotal=0;
+    const _insMatItems=[];
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
       const pBaseAge=p==='h'?hAge:wAge;
+      const pLabel=p==='h'?'ご主人':'奥様';
       // 積み立て保険：満期受取（早期解約がない場合のみ）
       document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
@@ -282,7 +284,19 @@ function render(){
         const matAge=iv(`ins-age-${p}-${iid}`)||0;
         const redeemAge=iv(`ins-redeem-${p}-${iid}`)||0;
         // 早期解約がある場合は満期時に受け取らない
-        if(matAmt>0&&matAge>0&&pAge===matAge&&(redeemAge<=0||redeemAge>=matAge))insMatTotal+=matAmt;
+        if(matAmt>0&&matAge>0&&pAge===matAge&&(redeemAge<=0||redeemAge>=matAge)){
+          insMatTotal+=matAmt;
+          const monthly=fv(`ins-m-${p}-${iid}`)||0;
+          const enrollAge=iv(`ins-enroll-${p}-${iid}`)||pBaseAge;
+          const payYrs=matAge-enrollAge;
+          const cumPremium=Math.round(monthly*12*Math.max(0,payYrs)*10)/10;
+          const customLbl=document.getElementById(`ins-label-${p}-${iid}`)?.value?.trim()||'';
+          _insMatItems.push({
+            lbl:customLbl||`積立保険(${pLabel})`, type:'savings', person:p,
+            enrollAge, matAge, payYrs, monthly, cumPremium, matAmt,
+            gain:Math.round((matAmt-cumPremium)*10)/10
+          });
+        }
       });
       // 一時払い保険：満期受取
       document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
@@ -295,14 +309,22 @@ function render(){
         const pct=fv(`ins-lump-pct-${p}-${iid}`)||0;
         if(amt<=0||matAge<=0||pAge!==matAge)return;
         const yrs=matAge-enrollAge;
-        let matVal=0;
-        if(rate>0)matVal=Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;
-        else if(matAmtFixed>0)matVal=matAmtFixed;
-        else if(pct>0)matVal=Math.round(amt*pct/100*10)/10;
+        let matVal=0, mode='';
+        if(rate>0){matVal=Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;mode='rate';}
+        else if(matAmtFixed>0){matVal=matAmtFixed;mode='fixed';}
+        else if(pct>0){matVal=Math.round(amt*pct/100*10)/10;mode='pct';}
         insMatTotal+=matVal;
+        const customLbl=document.getElementById(`ins-lump-label-${p}-${iid}`)?.value?.trim()||'';
+        _insMatItems.push({
+          lbl:customLbl||`一時払い保険(${pLabel})`, type:'lump', person:p,
+          enrollAge, matAge, yrs, premium:amt, matAmt:matVal,
+          rate, matAmtFixed, pct, mode,
+          gain:Math.round((matVal-amt)*10)/10
+        });
       });
     });
     R.insMat.push(insMatTotal);
+    R.insMatBd.push(_insMatItems.length>0?{items:_insMatItems,total:insMatTotal,year:yr,age_h:ha,age_w:wa}:null);
     // 老齢年金（死亡後も生存配偶者の年金は継続表示）
     const _pSVal=(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(pSelf):0;
     const _pWVal=(!_isSingle&&wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife):0;
@@ -621,15 +643,26 @@ function render(){
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         // 課税口座：譲渡益課税 20.315%（所得税15%+住民税5%+復興特別所得税0.315%）
-        let netAccum=fv2;
+        const costAccum=bal+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs);
+        const gainAccum=Math.max(0,fv2-costAccum);
+        let netAccum=fv2, taxAccum=0;
         if(!isNisa){
-          const costAccum=bal+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs);
-          const gainAccum=Math.max(0,fv2-costAccum);
-          netAccum=Math.round(fv2-gainAccum*0.20315);
+          taxAccum=Math.round(gainAccum*0.20315*10)/10;
+          netAccum=Math.round(fv2-taxAccum);
         }
         const lbl=customLabel||(isNisa?'NISA':'課税')+'積立(解約)';
-        secRedeemMap[`accum-${p}-${sid}`]={lbl,val:netAccum};
+        const _accumKey=`accum-${p}-${sid}`;
+        secRedeemMap[_accumKey]={lbl,val:netAccum};
         secRedeemTotal+=netAccum;
+        // 内訳保存
+        if(!R.secRedeemBd[_accumKey])R.secRedeemBd[_accumKey]={};
+        R.secRedeemBd[_accumKey][i]={
+          type:'accum', lbl, person:p, isNisa,
+          principal:Math.round(costAccum*10)/10,
+          evaluation:fv2, gain:Math.round(gainAccum*10)/10,
+          tax:taxAccum, net:netAccum,
+          redeemAge, yrs, monthly, bal, rate:rate*100
+        };
       });
       // 一括投資の解約
       document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
@@ -646,14 +679,24 @@ function render(){
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         // 課税口座：譲渡益課税 20.315%
-        let netStk=redeemVal;
+        const gainStk=Math.max(0,redeemVal-bal);
+        let netStk=redeemVal, taxStk=0;
         if(!isNisa){
-          const gainStk=Math.max(0,redeemVal-bal);
-          netStk=Math.round(redeemVal-gainStk*0.20315);
+          taxStk=Math.round(gainStk*0.20315*10)/10;
+          netStk=Math.round(redeemVal-taxStk);
         }
         const lbl=customLabel||(isNisa?'NISA':'課税')+'一括(解約)';
-        secRedeemMap[`stk-${p}-${sid}`]={lbl,val:netStk};
+        const _stkKey=`stk-${p}-${sid}`;
+        secRedeemMap[_stkKey]={lbl,val:netStk};
         secRedeemTotal+=netStk;
+        // 内訳保存
+        if(!R.secRedeemBd[_stkKey])R.secRedeemBd[_stkKey]={};
+        R.secRedeemBd[_stkKey][i]={
+          type:'stk', lbl, person:p, isNisa,
+          principal:bal, evaluation:redeemVal,
+          gain:Math.round(gainStk*10)/10, tax:taxStk, net:netStk,
+          redeemAge, yrsHeld, investAge, rate:rate*100
+        };
       });
       // 積立保険の解約（保険は別行のため secRedeemRows に含めない）
       document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
@@ -1004,8 +1047,24 @@ function render(){
           const accumAtEnd=mr>0?monthly*(cpdA-1)/mr:monthly*12*yrsAccum;
           fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+rate,Math.max(0,yrsAfter)));
         }
+        // 積立額累計（開始から現時点まで、積立終了後は endAge 時点で停止）
+        const _effYrsAccum=endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs;
+        const _principal=Math.round((bal+monthly*12*Math.max(0,_effYrsAccum))*10)/10;
         finRowMap[lbl]=(finRowMap[lbl]||0)+fv2;
         finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;
+        // 内訳保存: ラベル単位で年ごとに追加
+        if(!R.finAssetBd[lbl])R.finAssetBd[lbl]={};
+        if(!R.finAssetBd[lbl][i])R.finAssetBd[lbl][i]={items:[],total:0,principalTotal:0,gainTotal:0};
+        const _gainA=Math.round((fv2-_principal)*10)/10;
+        R.finAssetBd[lbl][i].items.push({
+          type:'accum', person:p, isNisa,
+          initBal:bal, monthly, rate:rate*100,
+          principal:_principal, evaluation:fv2, gain:_gainA,
+          yrs, endAge
+        });
+        R.finAssetBd[lbl][i].total+=fv2;
+        R.finAssetBd[lbl][i].principalTotal+=_principal;
+        R.finAssetBd[lbl][i].gainTotal+=_gainA;
       });
     });
     // 【一括投資】（主人・奥様両方）
@@ -1026,7 +1085,20 @@ function render(){
         if(bal<=0)return; // 残高なければスキップ
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
-        finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        const _eval=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        const _gainS=Math.round((_eval-bal)*10)/10;
+        finRowMap[lbl]=(finRowMap[lbl]||0)+_eval;
+        // 内訳保存
+        if(!R.finAssetBd[lbl])R.finAssetBd[lbl]={};
+        if(!R.finAssetBd[lbl][i])R.finAssetBd[lbl][i]={items:[],total:0,principalTotal:0,gainTotal:0};
+        R.finAssetBd[lbl][i].items.push({
+          type:'stk', person:p, isNisa,
+          principal:bal, evaluation:_eval, gain:_gainS,
+          rate:rate*100, yrsHeld, investAge
+        });
+        R.finAssetBd[lbl][i].total+=_eval;
+        R.finAssetBd[lbl][i].principalTotal+=bal;
+        R.finAssetBd[lbl][i].gainTotal+=_gainS;
         finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;
       });
     });
@@ -1087,7 +1159,19 @@ function render(){
           else if(_isAnn) dcBal=Math.round(_dcBalAtReceive)*Math.max(0,_ay-elapsed)/_ay;
           else dcBal=Math.round(_dcBalAtReceive/2)*Math.max(0,_ay-elapsed)/_ay;
         }
-        if(dcBal>0){finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(dcBal);finRowPerson[lbl]=p;}
+        if(dcBal>0){
+          const _dcFv=Math.round(dcBal);
+          finRowMap[lbl]=(finRowMap[lbl]||0)+_dcFv;finRowPerson[lbl]=p;
+          // 内訳: 累計拠出額(月額×12×経過年、初期残高含む)
+          const _yrs=i+1;
+          const _contribYrs=Math.min(d.retAge-pBaseAge,_yrs);
+          const _principal=Math.round((d.dcInitBal+totalMonthly*12*Math.max(0,_contribYrs))*10)/10;
+          if(!R.finAssetBd[lbl])R.finAssetBd[lbl]={};
+          R.finAssetBd[lbl][i]={
+            items:[{type:'dc', person:p, isNisa:false, initBal:d.dcInitBal, monthly:totalMonthly, rate:d.dcRate*100, principal:_principal, evaluation:_dcFv, gain:Math.round((_dcFv-_principal)*10)/10, yrs:_yrs}],
+            total:_dcFv, principalTotal:_principal, gainTotal:Math.round((_dcFv-_principal)*10)/10
+          };
+        }
       }
       // iDeCo残高（finRowMap表示用）
       if(hasIdeco){
@@ -1112,7 +1196,18 @@ function render(){
           else if(_isAnn) idecoBal=Math.round(_idecoBalAtReceive)*Math.max(0,_ay-elapsed)/_ay;
           else idecoBal=Math.round(_idecoBalAtReceive/2)*Math.max(0,_ay-elapsed)/_ay;
         }
-        if(idecoBal>0){finRowMap[lbl]=(finRowMap[lbl]||0)+Math.round(idecoBal);finRowPerson[lbl]=p;}
+        if(idecoBal>0){
+          const _idecoFv=Math.round(idecoBal);
+          finRowMap[lbl]=(finRowMap[lbl]||0)+_idecoFv;finRowPerson[lbl]=p;
+          const _yrs=i+1;
+          const _contribYrs=Math.min(d.retAge-pBaseAge,_yrs);
+          const _principal=Math.round((d.idecoInitBal+d.idecoMonthly*12*Math.max(0,_contribYrs))*10)/10;
+          if(!R.finAssetBd[lbl])R.finAssetBd[lbl]={};
+          R.finAssetBd[lbl][i]={
+            items:[{type:'ideco', person:p, isNisa:false, initBal:d.idecoInitBal, monthly:d.idecoMonthly, rate:d.idecoRate*100, principal:_principal, evaluation:_idecoFv, gain:Math.round((_idecoFv-_principal)*10)/10, yrs:_yrs}],
+            total:_idecoFv, principalTotal:_principal, gainTotal:Math.round((_idecoFv-_principal)*10)/10
+          };
+        }
       }
       // 一時金課税の簡略拠出期間（就労開始→退職）を勤続年数の代替として使用
       const dcKinzoku=Math.max(1, d.retAge - (p==='h'?pHStart:pWStart));

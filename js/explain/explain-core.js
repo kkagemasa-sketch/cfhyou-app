@@ -10,13 +10,21 @@ function registerExplainRenderer(rowKey, fn){
   window._explainRenderers[rowKey] = fn;
 }
 
+// ===== パターンベースのレンダラ登録（動的キー用） =====
+// 使い方: registerExplainPattern(/^accum-/, function(ctx){...})
+window._explainPatterns = window._explainPatterns || [];
+function registerExplainPattern(pattern, fn){
+  window._explainPatterns.push({pattern, fn});
+}
+
 // ===== ⓘアイコンを持つべき行種別の集合 =====
 window._explainEnabledRows = window._explainEnabledRows || new Set();
 function enableExplainForRow(rowKey){
   window._explainEnabledRows.add(rowKey);
 }
 function isExplainEnabled(rowKey){
-  return window._explainEnabledRows.has(rowKey);
+  if(window._explainEnabledRows.has(rowKey)) return true;
+  return window._explainPatterns.some(p => p.pattern.test(rowKey));
 }
 
 // ===== セルに ⓘ アイコンHTMLを生成 =====
@@ -73,8 +81,12 @@ function openExplainPopup(iconEl){
     return;
   }
 
-  // レンダラ取得
-  const renderer = window._explainRenderers[rowKey];
+  // レンダラ取得（直接登録 → パターン登録の順で検索）
+  let renderer = window._explainRenderers[rowKey];
+  if(!renderer){
+    const patMatch = (window._explainPatterns||[]).find(p=>p.pattern.test(rowKey));
+    if(patMatch) renderer = patMatch.fn;
+  }
   if(!renderer){
     console.warn('[explain] no renderer for', rowKey);
     return;
