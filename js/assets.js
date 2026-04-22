@@ -142,14 +142,17 @@ function addSecurity(person){
         <div class="tc on" id="sec-frame-tsumi-${person}-${id}" onclick="setSecNisaFrame('${person}',${id},'tsumi')" style="flex:1;padding:3px 6px;font-size:10px">つみたて枠<span style="color:#64748b;margin-left:4px">月10万/年120万</span></div>
         <div class="tc" id="sec-frame-grow-${person}-${id}" onclick="setSecNisaFrame('${person}',${id},'grow')" style="flex:1;padding:3px 6px;font-size:10px">成長枠<span style="color:#64748b;margin-left:4px">年240万</span></div>
       </div>
-      <div id="sec-nisa-basis-wrap-${person}-${id}" style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">既購入の取得価格累計(万)</label>
-          <input class="inp amt-inp" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg" style="display:flex;align-items:flex-end"><span style="font-size:9px;color:#475569;line-height:1.3">生涯枠1800万の消費判定に使用。<br>残高（評価額）は下段「現時点の評価額」</span></div>
+      <div id="sec-nisa-grow-extra-${person}-${id}" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed #bfdbfe">
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">年間投資予定額(万)</label>
+          <input class="inp amt-inp" id="sec-nisa-annual-${person}-${id}" type="number" value="" placeholder="例:120" min="0"
+            oninput="syncNisaAnnualToMonthly('${person}',${id});live();validateNisaLimits&&validateNisaLimits()"
+            style="font-size:11px;padding:4px 6px;width:100%;max-width:180px">
+          <span style="font-size:9px;color:#475569;margin-left:6px">※内部で月額に換算して計算</span>
+        </div>
       </div>
     </div>
     <div id="sec-nisa-warn-${person}-${id}" style="display:none;color:#b91c1c;font-size:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:5px 8px;margin-bottom:6px;line-height:1.5"></div>
-    <div style="display:flex;gap:6px;margin-bottom:6px">
+    <div id="sec-type-toggle-${person}-${id}" style="display:flex;gap:6px;margin-bottom:6px">
       <div class="tc on" id="sec-acc-${person}-${id}" onclick="setSecType('${person}',${id},'accum')" style="flex:1;padding:4px 8px;gap:4px">
         <div class="tc-lbl" style="font-size:10px">積み立て投資</div>
       </div>
@@ -158,16 +161,22 @@ function addSecurity(person){
       </div>
     </div>
     <div id="sec-accum-fields-${person}-${id}">
+      <div id="sec-nisa-basis-row-${person}-${id}" style="display:none;margin-bottom:6px">
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">現在の投資金額（取得価格累計 / 万）</label>
+          <input class="inp amt-inp" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%;max-width:220px">
+          <span style="font-size:9px;color:#475569;margin-left:6px">※生涯枠1800万の消費判定に使用</span>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">現時点の評価額(万)</label>
+        <div class="fg" data-f="bal"><label class="lbl" style="font-size:9px;white-space:nowrap">現時点の評価額(万)</label>
           <input class="inp amt-inp" id="sec-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:200" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">毎月の積立額(万)</label>
+        <div class="fg" data-f="monthly"><label class="lbl" style="font-size:9px;white-space:nowrap">毎月の積立額(万)</label>
           <input class="inp amt-inp" id="sec-monthly-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="例:5" min="0" oninput="live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">積立終了年齢(歳)</label>
+        <div class="fg" data-f="end"><label class="lbl" style="font-size:9px;white-space:nowrap">積立終了年齢(歳)</label>
           <input class="inp age-inp" id="sec-end-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="90" oninput="live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">想定利回り(%)</label>
+        <div class="fg" data-f="rate"><label class="lbl" style="font-size:9px;white-space:nowrap">想定利回り(%)</label>
           <input class="inp amt-inp" id="sec-rate-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">解約年齢(歳)</label>
+        <div class="fg" data-f="redeem"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">解約年齢(歳)</label>
           <input class="inp age-inp" id="sec-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
       </div>
     </div>
@@ -190,13 +199,34 @@ function setSecTax(person,id,t){
   document.getElementById(`sec-nisa-${person}-${id}`).classList.toggle('on',t==='nisa');
   const opts=document.getElementById(`sec-nisa-opts-${person}-${id}`);
   if(opts) opts.style.display = (t==='nisa')?'':'none';
-  // 新規でNISAを選んだとき、枠未選択なら「つみたて」を既定
+  const typeToggle = document.getElementById(`sec-type-toggle-${person}-${id}`);
+  if(typeToggle) typeToggle.style.display = (t==='nisa')?'none':'';
+  const basisRow = document.getElementById(`sec-nisa-basis-row-${person}-${id}`);
+  if(basisRow) basisRow.style.display = (t==='nisa')?'':'none';
   if(t==='nisa'){
+    // NISAは制度上積立型に固定（一括は不可）
+    document.getElementById(`sec-acc-${person}-${id}`)?.classList.add('on');
+    document.getElementById(`sec-stock-${person}-${id}`)?.classList.remove('on');
+    const accF=document.getElementById(`sec-accum-fields-${person}-${id}`);
+    const stkF=document.getElementById(`sec-stock-fields-${person}-${id}`);
+    if(accF) accF.style.display='';
+    if(stkF) stkF.style.display='none';
+    // 新規でNISAを選んだとき、枠未選択なら「つみたて」を既定
     const tsumi=document.getElementById(`sec-frame-tsumi-${person}-${id}`);
     const grow=document.getElementById(`sec-frame-grow-${person}-${id}`);
     if(tsumi && !tsumi.classList.contains('on') && grow && !grow.classList.contains('on')){
       tsumi.classList.add('on');
     }
+    const frame = document.getElementById(`sec-frame-grow-${person}-${id}`)?.classList.contains('on') ? 'grow' : 'tsumi';
+    applyNisaFrameVisibility(person, id, frame);
+  } else {
+    // 課税に戻す: 全フィールド再表示、成長枠専用UIは隠す
+    const accumFields = document.getElementById(`sec-accum-fields-${person}-${id}`);
+    if(accumFields){
+      accumFields.querySelectorAll('[data-f]').forEach(el=>{ el.style.display=''; });
+    }
+    const growExtra = document.getElementById(`sec-nisa-grow-extra-${person}-${id}`);
+    if(growExtra) growExtra.style.display='none';
   }
   live();
   if(typeof validateNisaLimits==='function') validateNisaLimits();
@@ -204,9 +234,31 @@ function setSecTax(person,id,t){
 function setSecNisaFrame(person,id,f){
   document.getElementById(`sec-frame-tsumi-${person}-${id}`)?.classList.toggle('on',f==='tsumi');
   document.getElementById(`sec-frame-grow-${person}-${id}`)?.classList.toggle('on',f==='grow');
-  // つみたて枠は一括投資不可（制度上定額積立のみ）
+  applyNisaFrameVisibility(person, id, f);
   live();
   if(typeof validateNisaLimits==='function') validateNisaLimits();
+}
+function applyNisaFrameVisibility(person, id, frame){
+  const accumFields = document.getElementById(`sec-accum-fields-${person}-${id}`);
+  if(accumFields){
+    // 成長枠: 現在評価額(bal)のみ表示。つみたて枠: 全項目表示
+    accumFields.querySelectorAll('[data-f]').forEach(el=>{
+      const f = el.dataset.f;
+      if(frame==='grow') el.style.display = (f==='bal') ? '' : 'none';
+      else el.style.display = '';
+    });
+  }
+  const growExtra = document.getElementById(`sec-nisa-grow-extra-${person}-${id}`);
+  if(growExtra) growExtra.style.display = (frame==='grow') ? '' : 'none';
+}
+function syncNisaAnnualToMonthly(person, id){
+  const annual = parseFloat(document.getElementById(`sec-nisa-annual-${person}-${id}`)?.value)||0;
+  const monthlyEl = document.getElementById(`sec-monthly-${person}-${id}`);
+  if(monthlyEl) monthlyEl.value = annual > 0 ? (annual/12).toFixed(2) : '';
+  const endEl = document.getElementById(`sec-end-${person}-${id}`);
+  if(endEl && !endEl.value) endEl.value = 65;
+  const rateEl = document.getElementById(`sec-rate-${person}-${id}`);
+  if(rateEl && !rateEl.value) rateEl.value = 5;
 }
 function setSecType(person,id,t){
   document.getElementById(`sec-acc-${person}-${id}`).classList.toggle('on',t==='accum');
