@@ -996,10 +996,13 @@ function _appendDisclaimerSheet(wb, clientName){
   const contact = [pi.address, pi.tel, pi.email].filter(Boolean).join(' / ') || '';
 
   // 行データ: [type, text]  type: title/meta/alert/section/body/body-bullet/sign/footer/spacer
+  // 会社名・担当者・連絡先は下部フッターに集約（上部にはお客様名と作成日のみ）
+  const footerCompanyLine = company;
+  const footerNameLine    = (fpName && fpName!=='—') ? `担当：${fpName}` : '';
+  const footerContactLine = contact || '';
   const L = [
     ['title', 'ライフプラン シミュレーション結果 — ご確認事項'],
     ['meta', `お客様：${cn}　／　作成日：${dateStr}`],
-    ['meta', `作成者：${company}${fpName!=='—'?'　（'+fpName+'）':''}${contact?'　'+contact:''}`],
     ['spacer', ''],
     ['alert', '⚠️ 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
     ['spacer', ''],
@@ -1022,8 +1025,10 @@ function _appendDisclaimerSheet(wb, clientName){
     ['section', '4. データの取り扱い・免責'],
     ['body', '本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません。ご質問・ご相談は作成者までお問い合わせください。'],
     ['spacer', ''],
-    ['footer', `${company}${contact?'　'+contact:''}`]
-  ];
+    ['footer', footerCompanyLine],
+    footerNameLine    ? ['footer', footerNameLine]    : null,
+    footerContactLine ? ['footer', footerContactLine] : null
+  ].filter(Boolean);
 
   // 行データのみの配列（AOA）
   const rows = L.map(r=>[r[1]]);
@@ -1072,20 +1077,30 @@ function _appendDisclaimerSheet(wb, clientName){
     spacer: {}
   };
 
-  // 行高さ: 固定したいもの（title/section/spacer/footer）のみ指定。
-  // meta/alert/body/body-bullet は hpt を指定せず Excel の自動行高調整に任せる
-  // （hpt を指定すると customHeight=1 となりテキスト折り返し時に下部が切れる）
-  const rhMap = { title:42, section:26, spacer:8, footer:22 };
+  // 行高さ: テキスト長から明示的に計算し、折り返し時の下部切れを防止
+  // 列幅 wch:90 ≒ 日本語約40文字/行、font 10pt で1行約15pt、上下余白8pt
+  const fixedH = { title:44, meta:22, section:26, spacer:10 };
+  const calcWrapHeight = (txt, charsPerLine, lineHeight, padding)=>{
+    const len = (txt||'').length || 1;
+    const lines = Math.max(1, Math.ceil(len / charsPerLine));
+    return lines * lineHeight + padding;
+  };
   const rowsArr = [];
   L.forEach((r,i)=>{
-    const h = rhMap[r[0]];
-    if(h) rowsArr[i] = {hpt:h};
-    // 未指定行はundefinedのまま（Excel側で自動調整）
+    const t = r[0], txt = r[1]||'';
+    let h;
+    if(fixedH[t]) h = fixedH[t];
+    else if(t==='alert')       h = calcWrapHeight(txt, 38, 16, 14);
+    else if(t==='body')        h = calcWrapHeight(txt, 42, 15, 10);
+    else if(t==='body-bullet') h = calcWrapHeight(txt, 42, 15, 8);
+    else if(t==='footer')      h = 18;
+    else h = 18;
+    rowsArr[i] = { hpt: h };
   });
   ws['!rows'] = rowsArr;
 
-  // 列幅: A4縦で1列に全文を表示（印刷可能幅 約180mm = wch 約90 余裕を持って85）
-  ws['!cols'] = [{wch:85}];
+  // 列幅: A4縦 印刷可能幅 約190mm = wch 約92（マージン0.3inで拡大）
+  ws['!cols'] = [{wch:92}];
 
   // スタイル適用
   L.forEach((row,i)=>{
@@ -1096,7 +1111,7 @@ function _appendDisclaimerSheet(wb, clientName){
 
   // 印刷設定: A4縦・幅1ページに収める（高さは内容に応じて自動）
   ws['!pageSetup'] = { paperSize:9, orientation:'portrait', fitToWidth:1, fitToHeight:0 };
-  ws['!margins']   = { left:0.5, right:0.5, top:0.5, bottom:0.5, header:0.3, footer:0.3 };
+  ws['!margins']   = { left:0.3, right:0.3, top:0.3, bottom:0.3, header:0.2, footer:0.2 };
 
   XLSX.utils.book_append_sheet(wb, ws, 'ご確認事項');
 }
