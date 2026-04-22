@@ -184,9 +184,53 @@ function render(){
     }
     return series;
   }
+  // DC/iDeCo の拠出期間内の残高をシナリオ対応で年次計算
+  // retAge までは拠出+運用、以降は運用のみ（受取フェーズは呼び出し側で別扱い）
+  function _computeDCSeries(secKey, initBal, monthly, defaultRate, retAge, receiveAge, pBaseAge){
+    if(!_shocksActive) return null;
+    const idx = (typeof secIndexMap!=='undefined') ? secIndexMap[secKey] : null;
+    if(!idx || idx==='none') return null;
+    const series = [];
+    let balance = initBal;
+    for(let k=0;k<totalYrs;k++){
+      const pAgeCur = pBaseAge + k + 1; // k年目末時点の年齢
+      const scR = (typeof getMarketReturnAtYear==='function')
+        ? getMarketReturnAtYear(idx, k, hAge, wAge) : null;
+      const r = (scR!==null && scR!==undefined) ? scR : defaultRate;
+      // 受取開始前の年のみ、拠出期間内か判定
+      const inAccumPhase = (pBaseAge+k) < receiveAge;
+      const contribActive = inAccumPhase && (pBaseAge+k) < retAge;
+      const annualContrib = contribActive ? monthly*12 : 0;
+      balance = balance*(1+r) + annualContrib*(r>=0?Math.pow(1+r,0.5):1+r*0.5);
+      series.push(Math.round(balance));
+    }
+    return series;
+  }
+  // 一時払い保険: 加入から満期まで複利運用
+  function _computeLumpInsSeries(secKey, premium, defaultRate, enrollAge, matAge, pBaseAge){
+    if(!_shocksActive) return null;
+    const idx = (typeof secIndexMap!=='undefined') ? secIndexMap[secKey] : null;
+    if(!idx || idx==='none') return null;
+    const series = [];
+    let balance = premium;
+    for(let k=0;k<totalYrs;k++){
+      const pAgeCur = pBaseAge+k;
+      if(pAgeCur < enrollAge){ series.push(0); continue; }
+      if(pAgeCur >= matAge){ series.push(Math.round(balance)); continue; }
+      const scR = (typeof getMarketReturnAtYear==='function')
+        ? getMarketReturnAtYear(idx, k, hAge, wAge) : null;
+      const r = (scR!==null && scR!==undefined) ? scR : defaultRate;
+      balance = balance*(1+r);
+      series.push(Math.round(balance));
+    }
+    return series;
+  }
   // 事前計算キャッシュ（シナリオ適用時のみ値が入る）
   const _accumSeriesCache = {};
   const _stkSeriesCache = {};
+  const _dcSeriesCache = {};
+  const _idecoSeriesCache = {};
+  const _lumpInsSeriesCache = {};
   if(_shocksActive){
     ['h','w'].forEach(p=>{
       const pBaseAge = p==='h'?hAge:wAge;
@@ -213,6 +257,33 @@ function render(){
         const series = _computeStkSeries(secKey, bal, rate, pBaseAge, investAge);
         if(series) _stkSeriesCache[secKey] = series;
       });
+      // 一時払い保険シリーズ
+      document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
+        const iid = el.id.split('-').pop();
+        const enrollAge = iv(`ins-lump-enroll-${p}-${iid}`)||pBaseAge;
+        const amt = fv(`ins-lump-amt-${p}-${iid}`)||0;
+        const matAge = iv(`ins-lump-matage-${p}-${iid}`)||0;
+        const rate = (fv(`ins-lump-rate-${p}-${iid}`)||0)/100;
+        if(amt<=0||matAge<=0) return;
+        const secKey = `ins-lump-${p}-${iid}`;
+        const series = _computeLumpInsSeries(secKey, amt, rate, enrollAge, matAge, pBaseAge);
+        if(series) _lumpInsSeriesCache[secKey] = series;
+      });
+      // DC/iDeCo シリーズ
+      const d = dcIdeco[p];
+      if(d){
+        const dcTotalMonthly = (d.employer||0)+(d.matching||0);
+        const dcHasAny = dcTotalMonthly>0 || (d.dcInitBal||0)>0;
+        if(dcHasAny){
+          const dcSeries = _computeDCSeries(`dc-${p}`, d.dcInitBal||0, dcTotalMonthly, d.dcRate||0, d.retAge, d.receiveAge, pBaseAge);
+          if(dcSeries) _dcSeriesCache[`dc-${p}`] = dcSeries;
+        }
+        const idecoHasAny = (d.idecoMonthly||0)>0 || (d.idecoInitBal||0)>0;
+        if(idecoHasAny){
+          const idecoSeries = _computeDCSeries(`ideco-${p}`, d.idecoInitBal||0, d.idecoMonthly||0, d.idecoRate||0, d.retAge, d.receiveAge, pBaseAge);
+          if(idecoSeries) _idecoSeriesCache[`ideco-${p}`] = idecoSeries;
+        }
+      }
     });
   }
 
@@ -386,7 +457,13 @@ function render(){
         if(amt<=0||matAge<=0||pAge!==matAge)return;
         const yrs=matAge-enrollAge;
         let matVal=0, mode='';
-        if(rate>0){matVal=Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;mode='rate';}
+        const _lumpSecKey=`ins-lump-${p}-${iid}`;
+        const _lumpSeries=_lumpInsSeriesCache[_lumpSecKey];
+        if(_lumpSeries && rate>0){
+          // シナリオ適用時（rate方式のみ）: 満期年iの値を使用
+          matVal = _lumpSeries[i]||Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;
+          mode='rate';
+        } else if(rate>0){matVal=Math.round(amt*Math.pow(1+rate/100,yrs)*10)/10;mode='rate';}
         else if(matAmtFixed>0){matVal=matAmtFixed;mode='fixed';}
         else if(pct>0){matVal=Math.round(amt*pct/100*10)/10;mode='pct';}
         insMatTotal+=matVal;
@@ -1235,16 +1312,20 @@ function render(){
       if(hasDC){
         const lbl=`DC(${p==='h'?'ご主人様':'奥様'})`;
         const yrs=i+1;
-        let dcBal=0;
+        const _dcSeries = _dcSeriesCache[`dc-${p}`];
+        let dcBal=0, dcBalBase=0;
         if(pAge<d.receiveAge){
+          // 通常（base）計算
           if(pAge<d.retAge){
-            dcBal=_fvWithInit(d.dcInitBal,totalMonthly,d.dcRate,yrs);
+            dcBalBase=_fvWithInit(d.dcInitBal,totalMonthly,d.dcRate,yrs);
           }else{
             const yrsContrib=d.retAge-pBaseAge;
             const balAtRetire=_fvWithInit(d.dcInitBal,totalMonthly,d.dcRate,yrsContrib);
             const yrsAfter=yrs-yrsContrib;
-            dcBal=balAtRetire*(d.dcRate>0?Math.pow(1+d.dcRate,Math.max(0,yrsAfter)):1);
+            dcBalBase=balAtRetire*(d.dcRate>0?Math.pow(1+d.dcRate,Math.max(0,yrsAfter)):1);
           }
+          // シナリオ適用版
+          dcBal = _dcSeries ? (_dcSeries[i]||0) : dcBalBase;
         }else if(_totalBalAtReceive>0){
           const elapsed=pAge-d.receiveAge;
           const _ay=(function(){const mt=String(d.method||'').match(/(annuity|combo)(\d+)?/);return mt&&mt[2]?parseInt(mt[2]):20;})();
@@ -1256,8 +1337,9 @@ function render(){
         }
         if(dcBal>0){
           const _dcFv=Math.round(dcBal);
+          const _dcFvBase=Math.round(dcBalBase>0?dcBalBase:dcBal);
           finRowMap[lbl]=(finRowMap[lbl]||0)+_dcFv;
-          finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_dcFv;
+          finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_dcFvBase;
           finRowPerson[lbl]=p;
           // 内訳: 累計拠出額(月額×12×経過年、初期残高含む)
           const _yrs=i+1;
@@ -1274,16 +1356,20 @@ function render(){
       if(hasIdeco){
         const lbl=`iDeCo(${p==='h'?'ご主人様':'奥様'})`;
         const yrs=i+1;
-        let idecoBal=0;
+        const _idecoSeries = _idecoSeriesCache[`ideco-${p}`];
+        let idecoBal=0, idecoBalBase=0;
         if(pAge<d.receiveAge){
+          // 通常（base）計算
           if(pAge<d.retAge){
-            idecoBal=_fvWithInit(d.idecoInitBal,d.idecoMonthly,d.idecoRate,yrs);
+            idecoBalBase=_fvWithInit(d.idecoInitBal,d.idecoMonthly,d.idecoRate,yrs);
           }else{
             const yrsContrib=d.retAge-pBaseAge;
             const balAtRetire=_fvWithInit(d.idecoInitBal,d.idecoMonthly,d.idecoRate,yrsContrib);
             const yrsAfter=yrs-yrsContrib;
-            idecoBal=balAtRetire*(d.idecoRate>0?Math.pow(1+d.idecoRate,Math.max(0,yrsAfter)):1);
+            idecoBalBase=balAtRetire*(d.idecoRate>0?Math.pow(1+d.idecoRate,Math.max(0,yrsAfter)):1);
           }
+          // シナリオ適用版
+          idecoBal = _idecoSeries ? (_idecoSeries[i]||0) : idecoBalBase;
         }else if(_totalBalAtReceive>0){
           const elapsed=pAge-d.receiveAge;
           const _ay=(function(){const mt=String(d.method||'').match(/(annuity|combo)(\d+)?/);return mt&&mt[2]?parseInt(mt[2]):20;})();
@@ -1295,8 +1381,9 @@ function render(){
         }
         if(idecoBal>0){
           const _idecoFv=Math.round(idecoBal);
+          const _idecoFvBase=Math.round(idecoBalBase>0?idecoBalBase:idecoBal);
           finRowMap[lbl]=(finRowMap[lbl]||0)+_idecoFv;
-          finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_idecoFv;
+          finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_idecoFvBase;
           finRowPerson[lbl]=p;
           const _yrs=i+1;
           const _contribYrs=Math.min(d.retAge-pBaseAge,_yrs);

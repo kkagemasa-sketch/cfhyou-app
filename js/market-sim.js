@@ -41,6 +41,19 @@ function mspCollectSecurities(){
       if(!isStock)return;
       items.push({key:`sec-stk-${p}-${sid}`, label:customLabel||`一括投資(${pLbl})`, kind:'equity'});
     });
+    // DC（企業型確定拠出年金）
+    const dcMatch=parseFloat(document.getElementById(`dc-${p}-matching`)?.value)||0;
+    const dcEmp=parseFloat(document.getElementById(`dc-${p}-employer`)?.value)||0;
+    const dcInit=parseFloat(document.getElementById(`dc-${p}-init-bal`)?.value)||0;
+    if(dcMatch>0||dcEmp>0||dcInit>0){
+      items.push({key:`dc-${p}`, label:`DC（${pLbl}）`, kind:'equity'});
+    }
+    // iDeCo
+    const ideMonthly=parseFloat(document.getElementById(`ideco-${p}-monthly`)?.value)||0;
+    const ideInit=parseFloat(document.getElementById(`ideco-${p}-init-bal`)?.value)||0;
+    if(ideMonthly>0||ideInit>0){
+      items.push({key:`ideco-${p}`, label:`iDeCo（${pLbl}）`, kind:'equity'});
+    }
     // 一時払い保険
     document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
       const iid=el.id.split('-').pop();

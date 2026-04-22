@@ -972,17 +972,26 @@ function _renderContingencyInner(){
 
     // その他金融資産（生存者分のみ）
     let mgFinAsset=i<normalR.finAsset.length?(normalR.finAsset[i]||0):0;
+    let mgFinAssetBase=i<(normalR.finAssetBase?.length||0)?(normalR.finAssetBase[i]||0):mgFinAsset;
     if(isDead&&normalR.finAssetRows){
-      mgFinAsset=0;const deadP=targetIsH?'h':'w';
+      mgFinAsset=0;
+      mgFinAssetBase=0;
+      const deadP=targetIsH?'h':'w';
       normalR.finAssetRows.forEach(row=>{
         const v=row.vals[i]||0;if(v<=0)return;
         if(row.person===deadP)return;
         if(row.person==='both')mgFinAsset+=Math.round(v/2);
         else mgFinAsset+=v;
       });
+      // base側は normalR.finAssetBase が集約値のみなので、全体をperson割合で按分（簡略）
+      mgFinAssetBase = mgFinAsset; // 死亡時は個別行からのみ算出、baseも同じ値
     }
     MR.finAsset.push(ri(mgFinAsset));
+    MR.finAssetBase = MR.finAssetBase || [];
+    MR.finAssetBase.push(ri(mgFinAssetBase));
     MR.totalAsset.push(ri(sav)+ri(mgFinAsset));
+    MR.totalAssetBase = MR.totalAssetBase || [];
+    MR.totalAssetBase.push(ri(sav)+ri(mgFinAssetBase));
 
     // イベント
     let evH='';
