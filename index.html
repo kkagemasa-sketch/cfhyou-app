@@ -82,7 +82,7 @@ function checkPW(){
     <button class="btn-h" id="btn-redo" onclick="redoState()" title="やり直す (Ctrl+Y)">進む ▶</button>
     <button class="btn-h" onclick="resetOverrides()" title="CF表の手動上書きをすべてリセット">↺ 上書きリセット</button>
     <button class="btn-h" id="btn-presenter-mode" onclick="togglePresenterMode()" title="プレゼンモード: オレンジのポインタがマウスに追従" style="background:rgba(255,140,0,.25);border-color:rgba(255,140,0,.55)">🎯 プレゼンモード</button>
-    <button class="btn-h" id="btn-market-sim" onclick="toggleMarketSimPanel()" title="過去の相場暴落シナリオを適用してCF表・グラフを再計算" style="background:rgba(200,30,60,.3);border-color:rgba(255,80,110,.55)">📉 下落シミュ</button>
+    <button class="btn-h" id="btn-market-sim" onclick="toggleMarketSimPanel()" title="過去の相場シナリオを適用してCF表・グラフを再計算" style="background:rgba(200,30,60,.3);border-color:rgba(255,80,110,.55)">📈 運用シミュ</button>
     <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="onJSONImport(this)">
     <input type="file" id="json-bulk-import-input" accept=".json" style="display:none" onchange="onBulkJSONImport(this)">
     <button class="btn-h" onclick="newCFSheet()" title="全項目を白紙にして新しいCF表を作成" style="background:rgba(180,60,0,.3);border-color:rgba(255,120,50,.5)">📄 新規作成</button>
@@ -1597,10 +1597,10 @@ if('serviceWorker' in navigator){
 }
 </script>
 
-<!-- 下落シミュレーションパネル（案C サイドパネル） -->
+<!-- 運用シミュレーションパネル（案C サイドパネル） -->
 <div id="market-sim-panel" class="market-sim-panel" style="display:none">
   <div class="msp-header">
-    <div class="msp-title">📉 下落シミュレーション</div>
+    <div class="msp-title">📈 運用シミュレーション</div>
     <button class="msp-close" onclick="toggleMarketSimPanel()" title="閉じる">✕</button>
   </div>
   <div class="msp-body">

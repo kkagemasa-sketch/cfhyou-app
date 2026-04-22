@@ -192,6 +192,81 @@
   // ─── 3. その他金融資産（fin-プレフィックス付きキー） ───
   registerExplainPattern(/^fin-/, function(ctx){return _renderFinAsset(ctx);});
 
+  // 運用シミュレーション：その年のヒストリカル情報（year相当＋指数別リターン）を返す
+  function _buildSimYearInfo(i){
+    if(typeof marketShocks==='undefined' || !marketShocks.length) return '';
+    if(typeof marketShockEnabled!=='undefined' && !marketShockEnabled) return '';
+    const hAge0 = parseInt(document.getElementById('husband-age')?.value)||0;
+    const wAge0 = parseInt(document.getElementById('wife-age')?.value)||0;
+    const idxLabel = {sp500:'S&P500', acwi:'オルカン', nikkei:'日経平均', usdjpy:'USD/JPY'};
+    const rows=[];
+    for(const sh of marketShocks){
+      if(sh.active===false) continue;
+      if(sh.mode==='replay50'){
+        if(typeof HISTORICAL_50YR==='undefined') continue;
+        const startY = sh.historicalStartYear||HISTORICAL_50YR.startYear;
+        const offsetY = startY - HISTORICAL_50YR.startYear + i;
+        if(offsetY<0 || offsetY>=HISTORICAL_50YR.years.length) continue;
+        const histYear = HISTORICAL_50YR.startYear + offsetY;
+        const rets = ['sp500','acwi','nikkei','usdjpy'].map(k=>{
+          const arr=HISTORICAL_50YR.returns[k];
+          const v=(arr && arr[offsetY]!=null)?arr[offsetY]:null;
+          if(v===null) return '';
+          const col = v<0 ? '#b91c1c' : (v>0 ? '#059669' : '#475569');
+          return `<span style="display:inline-block;margin:1px 6px 1px 0"><span style="color:#64748b">${idxLabel[k]}</span> <strong style="color:${col}">${v>=0?'+':''}${v.toFixed(1)}%</strong></span>`;
+        }).join('');
+        rows.push(`
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:6px;font-size:11px">
+            <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">📅 過去50年再生：${histYear}年相当（CF${i+1}年目）</div>
+            <div style="line-height:1.6">${rets}</div>
+          </div>`);
+      }else{
+        // preset / manual
+        if(typeof mspResolveStartIdx!=='function') continue;
+        const startI = mspResolveStartIdx(sh, hAge0, wAge0);
+        if(startI<0) continue;
+        const offset = i - startI;
+        if(offset<0) continue;
+        if(sh.mode==='manual'){
+          const drop=(sh.manual?.dropPct||0);
+          const rec=Math.max(1, sh.manual?.recoveryYrs||1);
+          const idxK=sh.manual?.index||'';
+          let line='';
+          if(offset===0){
+            line=`<strong style="color:#b91c1c">-${drop.toFixed(1)}%</strong>（下落初年度）`;
+          }else if(offset<=rec){
+            const gain=(Math.pow(1/Math.max(0.0001,1-drop/100),1/rec)-1)*100;
+            line=`<strong style="color:#059669">+${gain.toFixed(1)}%</strong>（回復 ${offset}/${rec}年目）`;
+          }else continue;
+          rows.push(`
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:6px;font-size:11px">
+              <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">📅 手動シナリオ：${offset+1}年目</div>
+              <div><span style="color:#64748b">${idxLabel[idxK]||idxK}</span> ${line}</div>
+            </div>`);
+        }else{
+          const sc=(typeof MARKET_SCENARIOS!=='undefined')?MARKET_SCENARIOS[sh.preset]:null;
+          if(!sc) continue;
+          const len=Math.max(...['sp500','acwi','nikkei','usdjpy'].map(k=>sc.returns[k]?.length||0));
+          if(offset>=len) continue;
+          const histYear=(sc.startYear||0)+offset;
+          const rets=['sp500','acwi','nikkei','usdjpy'].map(k=>{
+            const arr=sc.returns[k];
+            const v=(arr && arr[offset]!=null)?arr[offset]:null;
+            if(v===null) return '';
+            const col=v<0?'#b91c1c':(v>0?'#059669':'#475569');
+            return `<span style="display:inline-block;margin:1px 6px 1px 0"><span style="color:#64748b">${idxLabel[k]}</span> <strong style="color:${col}">${v>=0?'+':''}${v.toFixed(1)}%</strong></span>`;
+          }).join('');
+          rows.push(`
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:6px;font-size:11px">
+              <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">📅 ${sc.label}：${offset+1}年目${histYear?`（${histYear}年相当）`:''}</div>
+              <div style="line-height:1.6">${rets}</div>
+            </div>`);
+        }
+      }
+    }
+    return rows.join('');
+  }
+
   function _renderFinAsset(ctx){
     const R=ctx.R;
     const i=ctx.colIndex;
@@ -199,16 +274,17 @@
     const lbl=rowKey.replace(/^fin-/,''); // ラベル名復元
     const bd=(R.finAssetBd&&R.finAssetBd[lbl]&&R.finAssetBd[lbl][i])||null;
     const titleText=`💎 ${lbl}（${ctx.year}年末）`;
-    // 下落シナリオの影響チェック
+    // 運用シナリオの影響チェック
     const row=(R.finAssetRows||[]).find(r=>r.lbl===lbl);
     const shockVal = row?.vals?.[i] ?? null;
     const baseVal = row?.baseVals?.[i] ?? null;
     const diff = (shockVal!==null && baseVal!==null) ? (shockVal-baseVal) : 0;
     const hasShock = (typeof marketShocks!=='undefined') && (marketShocks.length>0)
       && (typeof marketShockEnabled==='undefined' || marketShockEnabled);
+    const simYearInfo = _buildSimYearInfo(i);
     const shockBadge = (hasShock && Math.abs(diff)>=1) ? `
       <div style="background:${diff<0?'#fee2e2':'#dcfce7'};border:1px solid ${diff<0?'#fca5a5':'#86efac'};border-radius:6px;padding:6px 8px;margin-bottom:8px;font-size:11px">
-        <div style="font-weight:700;color:${diff<0?'#b91c1c':'#059669'};margin-bottom:3px">📉 下落シナリオ適用中</div>
+        <div style="font-weight:700;color:${diff<0?'#b91c1c':'#059669'};margin-bottom:3px">${diff<0?'📉':'📈'} 運用シナリオ適用中</div>
         <div style="display:flex;justify-content:space-between"><span>通常想定</span><strong>${explainFmt(baseVal,'万円')}</strong></div>
         <div style="display:flex;justify-content:space-between"><span>シナリオ込み</span><strong>${explainFmt(shockVal,'万円')}</strong></div>
         <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px dashed ${diff<0?'#fca5a5':'#86efac'};margin-top:3px">
@@ -220,7 +296,7 @@
     if(!bd||bd.total<=0){
       return {
         title:titleText,
-        simple:shockBadge+`<div style="color:#64748b">この年の残高はありません。</div>`,
+        simple:simYearInfo+shockBadge+`<div style="color:#64748b">この年の残高はありません。</div>`,
         detail:null
       };
     }
@@ -245,6 +321,7 @@
       `;
     }).join(''):'';
     const simple=`
+      ${simYearInfo}
       ${shockBadge}
       <div style="display:flex;flex-direction:column;gap:3px;font-size:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
