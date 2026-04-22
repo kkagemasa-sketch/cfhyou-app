@@ -313,14 +313,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* 各行ごとのボーダー色を box-shadow で再現 */
 .cf thead .ryr th{box-shadow:inset -1px 0 0 #2d5282,inset 0 -2px 0 var(--navy)}
 .cf thead .relapsed td{box-shadow:inset -1px 0 0 #2d5282,inset 0 -1px 0 #2d5282}
-/* sticky+border-collapse:separateでセル間に1px透過が出る対策として、
-   左右±1px背景色を延長するbox-shadowを追加（inset境界線も同時に描画） */
-.cf thead .rage td{box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #b8d8ee,-1px 0 0 #e8f4fc,1px 0 0 #e8f4fc}
-.cf thead .rage td:first-child,.cf thead .rage td:nth-child(2){box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #b8d8ee,-1px 0 0 #cce8f8,1px 0 0 #cce8f8}
-.cf thead .rev-h td,.cf thead .rev-w td,.cf thead .rev-c td{box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #ffe8cc,-1px 0 0 #fffcf7,1px 0 0 #fffcf7}
-.cf thead .rev-h td:first-child,.cf thead .rev-h td:nth-child(2),
-.cf thead .rev-w td:first-child,.cf thead .rev-w td:nth-child(2),
-.cf thead .rev-c td:first-child,.cf thead .rev-c td:nth-child(2){box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #ffe8cc,-1px 0 0 #ffe8cc,1px 0 0 #ffe8cc}
+/* 年齢行・イベント行は「データセル間」の縦境界線を行背景色と同色にし、
+   完全に透過なしの連続帯に見せる。
+   1列目/2列目の境界（ラベル→データ 2px青）は残す。 */
+/* 年齢行データセル（3列目以降） */
+.cf thead .rage td:not(:first-child):not(:nth-child(2)){box-shadow:inset -1px 0 0 #e8f4fc,inset 0 -1px 0 #b8d8ee}
+.cf thead .rage td:first-child{box-shadow:inset -1px 0 0 #cce8f8,inset 0 -1px 0 #b8d8ee}
+/* 2列目→3列目の境界のみ2px青セパレータを維持 */
+.cf thead .rage td:nth-child(2){box-shadow:inset -2px 0 0 #9acce8,inset 0 -1px 0 #b8d8ee}
+
+/* イベント行データセル（3列目以降） */
+.cf thead .rev-h td:not(:first-child):not(:nth-child(2)),
+.cf thead .rev-w td:not(:first-child):not(:nth-child(2)),
+.cf thead .rev-c td:not(:first-child):not(:nth-child(2)){box-shadow:inset -1px 0 0 #fffcf7,inset 0 -1px 0 #ffe8cc}
+.cf thead .rev-h td:first-child,
+.cf thead .rev-w td:first-child,
+.cf thead .rev-c td:first-child{box-shadow:inset -1px 0 0 #ffe8cc,inset 0 -1px 0 #ffe8cc}
+.cf thead .rev-h td:nth-child(2),
+.cf thead .rev-w td:nth-child(2),
+.cf thead .rev-c td:nth-child(2){box-shadow:inset -2px 0 0 #9acce8,inset 0 -1px 0 #ffe8cc}
 .rev-h td:first-child,.rev-h td:nth-child(2),
 .rev-w td:first-child,.rev-w td:nth-child(2),
 .rev-c td:first-child,.rev-c td:nth-child(2){background:#ffe8cc!important;color:#7a3a00;font-weight:700;text-align:left;border-right:2px solid var(--border)}
