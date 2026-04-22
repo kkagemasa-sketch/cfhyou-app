@@ -194,15 +194,13 @@ function mspRenderShockList(){
           const yrOpts = HISTORICAL_50YR.years.map(y=>`<option value="${y}"${y===histStart?' selected':''}>${y}年〜</option>`).join('');
           return `
             <div class="msp-shock-field">
-              <label>対象指数</label>${idxSelect}
-            </div>
-            <div class="msp-shock-field">
               <label>開始年</label>
               <select onchange="mspSetHistoricalStart('${sh.id}',this.value)">${yrOpts}</select>
             </div>
             <div style="font-size:10px;color:#64748b;padding:3px 6px;line-height:1.4">
-              CF表1年目から、上記の開始年以降の実際のリターンを順番に適用します。
-              例: 1976年スタート → CF1年目=1976年、2年目=1977年...
+              CF表1年目から、上記の開始年以降の実際のリターンを順番に適用します。<br>
+              例: 1976年スタート → CF1年目=1976年、2年目=1977年...<br>
+              <span style="color:#059669">各証券の指数割当（S&P500/オルカン等）に対応したデータが自動で適用されます。</span>
             </div>
           `;
         })():`
@@ -414,8 +412,9 @@ function getMarketReturnAtYear(indexKey, yearIdx, hAge, wAge){
   for(const sh of marketShocks){
     if(sh.active===false)continue;
     // 過去50年ヒストリカル再生モード
+    // 各証券はsecIndexMapで割り当てられた指数(indexKey)のヒストリカルデータを自動適用
+    // manual.indexフィルタは不要（全指数分のデータが存在するため）
     if(sh.mode==='replay50'){
-      if(sh.manual?.index && sh.manual.index!==indexKey) continue;
       const startY = sh.historicalStartYear||HISTORICAL_50YR.startYear;
       const offsetY = startY - HISTORICAL_50YR.startYear + yearIdx;
       const arr = HISTORICAL_50YR.returns[indexKey];
