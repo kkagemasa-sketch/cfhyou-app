@@ -1072,11 +1072,11 @@ function _appendDisclaimerSheet(wb, clientName){
       alignment:{vertical:'center', indent:1}
     },
     body: {
-      font:{sz:10, color:{rgb:'333333'}, name:'Meiryo'},
+      font:{sz:9, color:{rgb:'333333'}, name:'Meiryo'},
       alignment:{vertical:'top', wrapText:true, indent:1}
     },
     'body-bullet': {
-      font:{sz:10, color:{rgb:'333333'}, name:'Meiryo'},
+      font:{sz:9, color:{rgb:'333333'}, name:'Meiryo'},
       alignment:{vertical:'top', wrapText:true, indent:1}
     },
     sign: {
@@ -1105,8 +1105,8 @@ function _appendDisclaimerSheet(wb, clientName){
     let h;
     if(fixedH[t]) h = fixedH[t];
     else if(t==='alert')       h = calcWrapHeight(txt, 38, 16, 14);
-    else if(t==='body')        h = calcWrapHeight(txt, 42, 15, 10);
-    else if(t==='body-bullet') h = calcWrapHeight(txt, 42, 15, 8);
+    else if(t==='body')        h = calcWrapHeight(txt, 46, 13, 8);
+    else if(t==='body-bullet') h = calcWrapHeight(txt, 46, 13, 6);
     else if(t==='footer')      h = 18;
     else h = 18;
     rowsArr[i] = { hpt: h };
