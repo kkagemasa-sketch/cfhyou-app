@@ -313,25 +313,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* 各行ごとのボーダー色を box-shadow で再現 */
 .cf thead .ryr th{box-shadow:inset -1px 0 0 #2d5282,inset 0 -2px 0 var(--navy)}
 .cf thead .relapsed td{box-shadow:inset -1px 0 0 #2d5282,inset 0 -1px 0 #2d5282}
-/* 年齢行・イベント行は「データセル間」の縦境界線を行背景色と同色にし、
-   完全に透過なしの連続帯に見せる。
-   1列目/2列目の境界（ラベル→データ 2px青）は残す。 */
-/* 年齢行データセル（3列目以降） */
-.cf thead .rage td:not(:first-child):not(:nth-child(2)){box-shadow:inset -1px 0 0 #e8f4fc,inset 0 -1px 0 #b8d8ee}
-.cf thead .rage td:first-child{box-shadow:inset -1px 0 0 #cce8f8,inset 0 -1px 0 #b8d8ee}
-/* 2列目→3列目の境界のみ2px青セパレータを維持 */
-.cf thead .rage td:nth-child(2){box-shadow:inset -2px 0 0 #9acce8,inset 0 -1px 0 #b8d8ee}
+/* 年齢行・イベント行を完全な一枚帯に見せる。
+   - 縦方向のセル間線 → 行背景色と同色
+   - 横方向の行間線  → 行背景色と同色
+   （inset box-shadow は sticky cell の border 代替として描画されるが、
+    色を行背景色と合わせることで完全に透過なしの連続帯になる） */
+/* 年齢行データセル（3列目以降）：縦も横も #e8f4fc */
+.cf thead .rage td:not(:first-child):not(:nth-child(2)){box-shadow:inset -1px 0 0 #e8f4fc,inset 0 -1px 0 #e8f4fc}
+.cf thead .rage td:first-child{box-shadow:inset -1px 0 0 #cce8f8,inset 0 -1px 0 #cce8f8}
+/* 2列目→3列目の境界のみ2px青セパレータを維持、下は行背景色 */
+.cf thead .rage td:nth-child(2){box-shadow:inset -2px 0 0 #9acce8,inset 0 -1px 0 #cce8f8}
 
-/* イベント行データセル（3列目以降） */
+/* イベント行データセル（3列目以降）：縦も横も #fffcf7 */
 .cf thead .rev-h td:not(:first-child):not(:nth-child(2)),
 .cf thead .rev-w td:not(:first-child):not(:nth-child(2)),
-.cf thead .rev-c td:not(:first-child):not(:nth-child(2)){box-shadow:inset -1px 0 0 #fffcf7,inset 0 -1px 0 #ffe8cc}
+.cf thead .rev-c td:not(:first-child):not(:nth-child(2)){box-shadow:inset -1px 0 0 #fffcf7,inset 0 -1px 0 #fffcf7}
 .cf thead .rev-h td:first-child,
 .cf thead .rev-w td:first-child,
 .cf thead .rev-c td:first-child{box-shadow:inset -1px 0 0 #ffe8cc,inset 0 -1px 0 #ffe8cc}
 .cf thead .rev-h td:nth-child(2),
 .cf thead .rev-w td:nth-child(2),
 .cf thead .rev-c td:nth-child(2){box-shadow:inset -2px 0 0 #9acce8,inset 0 -1px 0 #ffe8cc}
+/* border-bottom も同じ理由で行背景色と同色に上書き */
+.rage td{border-bottom-color:#e8f4fc!important}
+.rage td:first-child,.rage td:nth-child(2){border-bottom-color:#cce8f8!important}
+.rev-h td,.rev-w td,.rev-c td{border-bottom-color:#fffcf7!important}
+.rev-h td:first-child,.rev-h td:nth-child(2),
+.rev-w td:first-child,.rev-w td:nth-child(2),
+.rev-c td:first-child,.rev-c td:nth-child(2){border-bottom-color:#ffe8cc!important}
 .rev-h td:first-child,.rev-h td:nth-child(2),
 .rev-w td:first-child,.rev-w td:nth-child(2),
 .rev-c td:first-child,.rev-c td:nth-child(2){background:#ffe8cc!important;color:#7a3a00;font-weight:700;text-align:left;border-right:2px solid var(--border)}
