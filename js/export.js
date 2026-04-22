@@ -499,9 +499,8 @@ async function exportExcelMG(){
     if(MR.lBal&&MR.lBal.some(v=>v>0))push(['ローン残高','',...MR.lBal.slice(0,disp).map(v=>ri(v)),ri(MR.lBal[disp-1]||0)],'balance');
   }
 
-  // ── 注意文章・使用者情報（通常CFと同じ形式） ──
+  // ── 使用者情報（作成者ブランディング。免責事項は別シート「ご確認事項」に集約） ──
   const pi=getPrintInfo();
-  const noteLines=pi.notes.filter(n=>n.trim()).map(n=>`・${n}`);
   const piLines=[];
   if(pi.name)piLines.push(pi.name);
   if(pi.company)piLines.push(pi.company);
@@ -509,22 +508,16 @@ async function exportExcelMG(){
   const piContact=[pi.tel,pi.email].filter(v=>v).join('　');
   if(piContact)piLines.push(piContact);
 
-  // 免責事項
-  push(Array(disp+3).fill(''),'blank');
-  const disclaimerRow=Array(disp+3).fill('');
-  disclaimerRow[0]='※本シミュレーションの住宅ローン控除額・税額は概算であり、実際の金額とは異なる場合があります。税務に関する詳細は税理士にご相談ください。';
-  push(disclaimerRow,'footer');
-  // 空行 + 注意文（左）と使用者情報（右隣）を横並びで配置
+  // 空行＋使用者情報のみ（注意喚起文は別シートに集約済み）
   push(Array(disp+3).fill(''),'blank');
   const footerStartRow=rows.length;
-  const footerRowCount=Math.max(noteLines.length,piLines.length,1);
+  const footerRowCount=Math.max(piLines.length,1);
   const piEndCol=4;
   const splitCol=5;
   const noteEndCol=13;
   for(let i=0;i<footerRowCount;i++){
     const row=Array(disp+3).fill('');
     if(i<piLines.length)row[0]=piLines[i];
-    if(i<noteLines.length)row[splitCol]=noteLines[i];
     push(row,'footer');
   }
 
@@ -632,14 +625,10 @@ async function exportExcelMG(){
       if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
     }
   });
-  // 免責事項行の結合（全列にわたって結合）
-  const disclaimerRowIdx=types.indexOf('footer');
-  if(disclaimerRowIdx>=0)ws['!merges'].push({s:{r:disclaimerRowIdx,c:0},e:{r:disclaimerRowIdx,c:disp+2}});
-  // 使用者情報（左）、注意文（右隣）
+  // 使用者情報の結合（左のみ、注意文右側は削除済み）
   for(let i=0;i<footerRowCount;i++){
     const r=footerStartRow+i;
     ws['!merges'].push({s:{r,c:0},e:{r,c:piEndCol}});
-    ws['!merges'].push({s:{r,c:splitCol},e:{r,c:noteEndCol}});
   }
 
   // ── 列幅 ──
@@ -913,6 +902,7 @@ function _appendDisclaimerToCFSheet(ws, startRow, lastCol, clientName){
     ['body-bullet', '・収入上昇率・インフレ率・運用利回り等は入力値または一定の前提値によります'],
     ['body-bullet', '・税制・社会保障制度は作成時点のもので、将来の制度改正で結果は変動します'],
     ['body-bullet', '・住宅ローン金利・物件価格・管理費等は参考値であり、実際の条件により異なります'],
+    ['body-bullet', '・住宅ローン控除額・所得税・住民税は概算であり、実際の金額とは異なる場合があります。詳細は税理士にご相談ください'],
     ['body-bullet', '・教育費は公的統計の平均値で、学校・コース・地域により大きく異なります'],
     ['body-bullet', '・保険料・満期金・解約返戻金は各保険会社の契約締結前交付書面等で必ずご確認ください'],
     ['body-bullet', '・年金受給額は現行給付水準による概算で、将来の改定は反映していません'],
@@ -1020,6 +1010,7 @@ function _appendDisclaimerSheet(wb, clientName){
     ['body-bullet', '・収入上昇率・インフレ率・運用利回り等は入力値または一定の前提値によります'],
     ['body-bullet', '・税制・社会保障制度は作成時点のもので、将来の制度改正で結果は変動します'],
     ['body-bullet', '・住宅ローン金利・物件価格・管理費等は参考値であり、実際の条件により異なります'],
+    ['body-bullet', '・住宅ローン控除額・所得税・住民税は概算であり、実際の金額とは異なる場合があります。詳細は税理士にご相談ください'],
     ['body-bullet', '・教育費は公的統計の平均値で、学校・コース・地域により大きく異なります'],
     ['body-bullet', '・保険料・満期金・解約返戻金は各保険会社の契約締結前交付書面等で必ずご確認ください'],
     ['body-bullet', '・年金受給額は現行給付水準による概算で、将来の改定は反映していません'],
@@ -1348,9 +1339,8 @@ async function exportExcel(){
     push(['ローン残高','',...R.lBal.slice(0,disp).map(v=>ri(v)),''],'loan');
   }
 
-  // ── 注意文章・使用者情報 ──
+  // ── 使用者情報（作成者ブランディング。免責事項は別シート「ご確認事項」に集約） ──
   const pi=getPrintInfo();
-  const noteLines=pi.notes.filter(n=>n.trim()).map(n=>`・${n}`);
   const piLines=[];
   if(pi.name)piLines.push(pi.name);
   if(pi.company)piLines.push(pi.company);
@@ -1358,23 +1348,16 @@ async function exportExcel(){
   const piContact=[pi.tel,pi.email].filter(v=>v).join('　');
   if(piContact)piLines.push(piContact);
 
-  // 免責事項
-  push(Array(disp+3).fill(''),'blank');
-  const disclaimerRow=Array(disp+3).fill('');
-  disclaimerRow[0]='※本シミュレーションの住宅ローン控除額・税額は概算であり、実際の金額とは異なる場合があります。税務に関する詳細は税理士にご相談ください。';
-  push(disclaimerRow,'footer');
-  // 空行 + 注意文（左）と使用者情報（右隣）を横並びで配置
+  // 空行＋使用者情報のみ（注意喚起文は別シートに集約済み）
   push(Array(disp+3).fill(''),'blank');
   const footerStartRow=rows.length;
-  const footerRowCount=Math.max(noteLines.length,piLines.length,1);
-  // 使用者情報（左）：A〜E列（0〜4）、注意文（右隣）：F〜N列（5〜13）
-  const piEndCol=4;     // 使用者情報はA〜E（5列分）
-  const splitCol=5;     // 注意文はF列から
-  const noteEndCol=13;  // 注意文はF〜N（9列分）
+  const footerRowCount=Math.max(piLines.length,1);
+  const piEndCol=4;
+  const splitCol=5;
+  const noteEndCol=13;
   for(let i=0;i<footerRowCount;i++){
     const row=Array(disp+3).fill('');
     if(i<piLines.length)row[0]=piLines[i];
-    if(i<noteLines.length)row[splitCol]=noteLines[i];
     push(row,'footer');
   }
 
@@ -1490,14 +1473,10 @@ async function exportExcel(){
       if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
     }
   });
-  // 免責事項行の結合（全列にわたって結合）
-  const disclaimerRowIdx=types.indexOf('footer');
-  if(disclaimerRowIdx>=0)ws['!merges'].push({s:{r:disclaimerRowIdx,c:0},e:{r:disclaimerRowIdx,c:disp+2}});
-  // 使用者情報（左）、注意文（右隣）
+  // 使用者情報の結合（左のみ、注意文右側は削除済み）
   for(let i=0;i<footerRowCount;i++){
     const r=footerStartRow+i;
     ws['!merges'].push({s:{r,c:0},e:{r,c:piEndCol}});
-    ws['!merges'].push({s:{r,c:splitCol},e:{r,c:noteEndCol}});
   }
 
   // 列幅
