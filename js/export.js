@@ -995,6 +995,10 @@ function _appendDisclaimerSheet(wb, clientName){
   const fpName = pi.name || '—';
   const contact = [pi.address, pi.tel, pi.email].filter(Boolean).join(' / ') || '';
 
+  // 税制基準日（作成日の年月を使用）
+  const _dObj = _exportExtra.date ? new Date(_exportExtra.date) : new Date();
+  const taxBaseDate = `${_dObj.getFullYear()}年${_dObj.getMonth()+1}月`;
+
   // 行データ: [type, text]  type: title/meta/alert/section/body/body-bullet/sign/footer/spacer
   // 会社名・担当者・連絡先は下部フッターに集約（上部にはお客様名と作成日のみ）
   const footerCompanyLine = company;
@@ -1022,7 +1026,17 @@ function _appendDisclaimerSheet(wb, clientName){
     ['section', '3. 運用シミュレーションについて（該当する場合）'],
     ['body', '過去の値動きが将来再現される保証はありません。収録している過去リターンデータ（1976-2025）は各種公開データ（S&P Global、日経新聞、日銀、MSCI等）を参考にした概算値です。信託報酬・売買手数料・為替スプレッド等のコストは控除していません。指数（S&P500等）のリターンをそのまま割当資産に適用しており、実際の商品のトラッキングエラー・為替ヘッジ等は考慮していません。'],
     ['spacer', ''],
-    ['section', '4. データの取り扱い・免責'],
+    ['section', '4. 税制に関するご注意'],
+    ['body-bullet', '・本資料に記載の情報は、法律上または税務上の助言ではありません'],
+    ['body-bullet', '・本資料をもって税理士・弁護士等の専門家による助言に代えることはできません'],
+    ['body-bullet', `・本資料は、${taxBaseDate}現在の税制（所得税・住民税・相続税・贈与税・社会保険料率等）に基づいて作成しています`],
+    ['body-bullet', '・今後の税制改正・社会保障制度の変更により、試算結果は変動する場合があります'],
+    ['body-bullet', '・住宅ローン控除・ふるさと納税・NISA・iDeCo等の税制優遇は、入力条件による概算であり、実際の適用可否・控除額はお客様の所得・家族構成・他の控除との兼ね合いで変動します'],
+    ['body-bullet', '・退職金・年金・保険金等の受取時の課税区分（一時所得／雑所得／退職所得等）は、実際の受取方法・契約形態により異なります'],
+    ['body-bullet', '・相続税・贈与税の試算は現行の基礎控除・税率に基づく概算であり、財産評価・特例適用の可否により実額と大きく乖離する場合があります'],
+    ['body-bullet', '・個別具体的な税務取り扱いについては、所轄の税務署または税理士にご確認ください'],
+    ['spacer', ''],
+    ['section', '5. データの取り扱い・免責'],
     ['body', '本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません。ご質問・ご相談は作成者までお問い合わせください。'],
     ['spacer', ''],
     ['footer', footerCompanyLine],
