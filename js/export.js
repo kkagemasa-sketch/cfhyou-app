@@ -1059,6 +1059,12 @@ async function exportExcel(){
     });
     if(R.finAsset.some(v=>v>0))push(['その他金融資産','',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
     push(['総金融資産','',...R.totalAsset.slice(0,disp).map(v=>ri(v)),ri(R.totalAsset[disp-1])],'totalAsset');
+    // 下落シナリオ適用中は通常値（下落なし）を比較行として追加
+    const _shocksOnExp=(typeof marketShocks!=='undefined'&&marketShocks.length>0)
+      && (typeof marketShockEnabled==='undefined'||marketShockEnabled);
+    if(_shocksOnExp && R.totalAssetBase && R.totalAssetBase.some(v=>v>0)){
+      push(['　└ 通常（下落なし比較）','',...R.totalAssetBase.slice(0,disp).map(v=>ri(v)),ri(R.totalAssetBase[disp-1])],'totalAssetCmp');
+    }
   }
   if(pairLoanMode&&!_isSingle_e){
     if(R.lBalH&&R.lBalH.some(v=>v>0))push(['ローン残高(主)','',...R.lBalH.slice(0,disp).map(v=>ri(v)),''],'loan');

@@ -111,3 +111,5 @@ let _marketShockId = 0;
 let secIndexMap = {};
 // グラフに通常シナリオ比較を表示するか
 let marketShockCompareOn = true;
+// 下落シナリオを CF表・グラフに反映するか（OFFなら登録済みシナリオを一時無効化）
+let marketShockEnabled = true;

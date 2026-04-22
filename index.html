@@ -12,7 +12,7 @@
 <script src="js/vendors/jszip.min.js"></script>
 <script src="js/vendors/xlsx-style.min.js"></script>
 <script src="js/vendors/FileSaver.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=29">
+<link rel="stylesheet" href="css/style.css?v=30">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -1548,10 +1548,10 @@ function checkPW(){
 
 
 <!-- v2 モジュール読み込み -->
-<script src="js/state.js?v=13"></script>
+<script src="js/state.js?v=14"></script>
 <script src="js/constants.js?v=14"></script>
 <script src="js/market-scenarios.js?v=3"></script>
-<script src="js/market-sim.js?v=5"></script>
+<script src="js/market-sim.js?v=6"></script>
 <script src="js/utils.js?v=19"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=11"></script>
@@ -1567,7 +1567,7 @@ function checkPW(){
 <script src="js/cf-table.js?v=30"></script>
 <script src="js/cf-highlight.js?v=2"></script>
 <script src="js/graphs.js?v=5"></script>
-<script src="js/export.js?v=28"></script>
+<script src="js/export.js?v=29"></script>
 <script src="js/loan-plan.js?v=8"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
@@ -1604,6 +1604,18 @@ if('serviceWorker' in navigator){
     <button class="msp-close" onclick="toggleMarketSimPanel()" title="閉じる">✕</button>
   </div>
   <div class="msp-body">
+    <div class="msp-section" style="padding:12px;background:linear-gradient(135deg,#fff5f8 0%,#ffe4ec 100%);border:2px solid #c2185b;border-radius:8px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#c2185b">📉 下落シナリオを反映</div>
+          <div id="msp-enabled-hint" style="font-size:10px;color:#64748b;margin-top:2px"></div>
+        </div>
+        <label class="msp-switch">
+          <input type="checkbox" id="msp-enabled-toggle" onchange="mspToggleEnabled(this.checked)">
+          <span class="msp-slider"></span>
+        </label>
+      </div>
+    </div>
     <div class="msp-section">
       <div class="msp-sec-title">指数の割当</div>
       <div class="msp-sec-desc">各有価証券・外貨建て保険に適用する指数を選びます</div>

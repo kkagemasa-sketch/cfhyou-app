@@ -1034,6 +1034,20 @@ body.market-sim-on #btn-market-sim{
 }
 /* 非アクティブシナリオカード */
 .msp-shock-inactive{opacity:.5;filter:grayscale(.6)}
+/* iOS風スイッチ */
+.msp-switch{position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0}
+.msp-switch input{opacity:0;width:0;height:0}
+.msp-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cbd5e1;border-radius:28px;transition:.2s}
+.msp-slider:before{position:absolute;content:'';height:22px;width:22px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.msp-switch input:checked + .msp-slider{background:#c2185b}
+.msp-switch input:checked + .msp-slider:before{transform:translateX(24px)}
+/* 反映ON時のヘッダーボタン強調 */
+.btn-h.msim-active{
+  background:rgba(200,30,60,.8)!important;
+  border-color:rgba(255,80,110,1)!important;
+  color:#fff!important;
+  box-shadow:0 0 10px rgba(200,30,60,.7)!important;
+}
 /* 下落シナリオが影響している年のヘッダー */
 .cf thead th.shock-year{
   background:linear-gradient(180deg,rgba(200,30,60,.85) 0%,rgba(160,20,50,.9) 100%)!important;

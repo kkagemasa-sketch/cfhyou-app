@@ -180,12 +180,16 @@ function mspRenderShockList(){
             <option value="manual"${mode==='manual'?' selected':''}>✏️ 手動指定</option>
           </select>
         </div>
-        ${mode==='historical'?`
+        ${mode==='historical'?(function(){
+          const sc=MARKET_SCENARIOS[sh.preset];
+          const desc=sc?.description||'';
+          return `
           <div class="msp-shock-field">
             <label>プリセット</label>
             <select onchange="mspSetShockPreset('${sh.id}',this.value)">${presetOpts}</select>
           </div>
-        `:mode==='replay50'?(function(){
+          ${desc?`<div style="font-size:10px;color:#475569;background:#f1f5f9;border-left:3px solid #c2185b;padding:5px 8px;margin:2px 0 6px;line-height:1.5;border-radius:0 5px 5px 0">📖 ${desc}</div>`:''}
+        `;})():mode==='replay50'?(function(){
           const histStart = sh.historicalStartYear||1976;
           const yrOpts = HISTORICAL_50YR.years.map(y=>`<option value="${y}"${y===histStart?' selected':''}>${y}年〜</option>`).join('');
           return `
@@ -308,6 +312,19 @@ function mspToggleCompare(on){
   marketShockCompareOn=!!on;
   if(typeof render==='function')render();
 }
+function mspToggleEnabled(on){
+  marketShockEnabled=!!on;
+  // ヘッダーボタンの見た目を更新
+  const btn=document.getElementById('btn-market-sim');
+  if(btn){btn.classList.toggle('msim-active', marketShockEnabled && marketShocks.length>0);}
+  // ヒント文更新
+  const hint=document.getElementById('msp-enabled-hint');
+  if(hint){hint.textContent = marketShockEnabled
+    ? `登録中のシナリオ${marketShocks.length}件を適用中`
+    : '適用OFF（シナリオ設定は保存されています）';}
+  if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  if(typeof render==='function')render();
+}
 function mspClearAll(){
   if(!confirm('全てのシナリオを削除してよいですか?'))return;
   marketShocks=[];
@@ -345,6 +362,16 @@ function mspRenderAll(){
   mspRenderShockList();
   const cmp=document.getElementById('msp-compare');
   if(cmp)cmp.checked=!!marketShockCompareOn;
+  const en=document.getElementById('msp-enabled-toggle');
+  if(en)en.checked=!!marketShockEnabled;
+  const hint=document.getElementById('msp-enabled-hint');
+  if(hint){
+    hint.textContent = marketShockEnabled
+      ? `登録中のシナリオ${marketShocks.length}件を適用中`
+      : '適用OFF（シナリオ設定は保存されています）';
+  }
+  const btn=document.getElementById('btn-market-sim');
+  if(btn){btn.classList.toggle('msim-active', marketShockEnabled && marketShocks.length>0);}
 }
 
 // ===== 計算用: 指定年iでの指数別リターン =====
@@ -352,6 +379,7 @@ function mspRenderAll(){
 // 複数シナリオ同時発生時: 掛け合わせ（実効リターン = (1+r1)(1+r2)-1）
 // その年(yearIdx)にいずれかのシナリオが影響しているか判定（CF表ヘッダー装飾用）
 function isShockActiveAtYear(yearIdx, hAge, wAge){
+  if(typeof marketShockEnabled!=='undefined' && !marketShockEnabled) return false;
   if(!marketShocks||marketShocks.length===0)return false;
   for(const sh of marketShocks){
     if(sh.active===false)continue;
@@ -380,6 +408,7 @@ function isShockActiveAtYear(yearIdx, hAge, wAge){
 }
 
 function getMarketReturnAtYear(indexKey, yearIdx, hAge, wAge){
+  if(typeof marketShockEnabled!=='undefined' && !marketShockEnabled) return null;
   if(!marketShocks||marketShocks.length===0)return null;
   let totalR=null;
   for(const sh of marketShocks){

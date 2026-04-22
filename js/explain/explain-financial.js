@@ -199,10 +199,28 @@
     const lbl=rowKey.replace(/^fin-/,''); // ラベル名復元
     const bd=(R.finAssetBd&&R.finAssetBd[lbl]&&R.finAssetBd[lbl][i])||null;
     const titleText=`💎 ${lbl}（${ctx.year}年末）`;
+    // 下落シナリオの影響チェック
+    const row=(R.finAssetRows||[]).find(r=>r.lbl===lbl);
+    const shockVal = row?.vals?.[i] ?? null;
+    const baseVal = row?.baseVals?.[i] ?? null;
+    const diff = (shockVal!==null && baseVal!==null) ? (shockVal-baseVal) : 0;
+    const hasShock = (typeof marketShocks!=='undefined') && (marketShocks.length>0)
+      && (typeof marketShockEnabled==='undefined' || marketShockEnabled);
+    const shockBadge = (hasShock && Math.abs(diff)>=1) ? `
+      <div style="background:${diff<0?'#fee2e2':'#dcfce7'};border:1px solid ${diff<0?'#fca5a5':'#86efac'};border-radius:6px;padding:6px 8px;margin-bottom:8px;font-size:11px">
+        <div style="font-weight:700;color:${diff<0?'#b91c1c':'#059669'};margin-bottom:3px">📉 下落シナリオ適用中</div>
+        <div style="display:flex;justify-content:space-between"><span>通常想定</span><strong>${explainFmt(baseVal,'万円')}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>シナリオ込み</span><strong>${explainFmt(shockVal,'万円')}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px dashed ${diff<0?'#fca5a5':'#86efac'};margin-top:3px">
+          <span>影響</span>
+          <strong style="color:${diff<0?'#b91c1c':'#059669'}">${diff>=0?'+':''}${explainFmt(diff,'万円')} (${baseVal>0?((diff/baseVal)*100).toFixed(1):'-'}%)</strong>
+        </div>
+      </div>
+    ` : '';
     if(!bd||bd.total<=0){
       return {
         title:titleText,
-        simple:`<div style="color:#64748b">この年の残高はありません。</div>`,
+        simple:shockBadge+`<div style="color:#64748b">この年の残高はありません。</div>`,
         detail:null
       };
     }
@@ -227,6 +245,7 @@
       `;
     }).join(''):'';
     const simple=`
+      ${shockBadge}
       <div style="display:flex;flex-direction:column;gap:3px;font-size:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <span style="font-weight:700">${lbl}</span>${nisaTag}

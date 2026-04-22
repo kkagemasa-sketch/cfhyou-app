@@ -1456,10 +1456,14 @@ function render(){
     Object.keys(finRowMap).forEach(k=>{
       if(!R.finAssetRows.find(r=>r.lbl===k)){
         // 新しいキーが出てきたら過去分を0で埋めて追加
-        R.finAssetRows.push({lbl:k,vals:new Array(i).fill(0),person:finRowPerson[k]||'both'});
+        R.finAssetRows.push({lbl:k,vals:new Array(i).fill(0),baseVals:new Array(i).fill(0),person:finRowPerson[k]||'both'});
       }
     });
-    R.finAssetRows.forEach(row=>{row.vals.push(ri(finRowMap[row.lbl]||0));});
+    R.finAssetRows.forEach(row=>{
+      row.vals.push(ri(finRowMap[row.lbl]||0));
+      if(!row.baseVals)row.baseVals=new Array(row.vals.length-1).fill(0);
+      row.baseVals.push(ri(finRowMapBase[row.lbl]||0));
+    });
     const finAssetVal=Object.values(finRowMap).reduce((a,b)=>a+b,0);
     R.finAsset.push(ri(finAssetVal));
     R.totalAsset.push(R.sav[i]+ri(finAssetVal));// 預貯金残高＋その他金融資産
