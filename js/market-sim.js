@@ -487,6 +487,67 @@ function mspResolveStartIdx(sh, hAge, wAge){
   return -1;
 }
 
+// ===== 過去50年の主要イベント辞書 =====
+const HISTORICAL_EVENTS = {
+  1976:'S&P500大幅反発',
+  1978:'第2次オイルショック',
+  1979:'イラン革命・第2次石油危機',
+  1980:'米インフレ・ドル高',
+  1981:'日本株バブル序章',
+  1985:'プラザ合意（円高へ転換）',
+  1987:'ブラックマンデー',
+  1989:'日経38,915円ピーク',
+  1990:'日本バブル崩壊',
+  1991:'湾岸戦争・不動産崩落',
+  1994:'メキシコ通貨危機',
+  1995:'阪神淡路大震災・超円高',
+  1997:'アジア通貨危機・山一破綻',
+  1998:'LTCM破綻・ロシア危機',
+  2000:'ITバブル崩壊',
+  2001:'米同時多発テロ',
+  2002:'米IT不況・企業会計スキャンダル',
+  2003:'イラク戦争',
+  2008:'リーマンショック',
+  2009:'金融危機底・S&P500反発',
+  2011:'東日本大震災・欧州債務危機',
+  2013:'アベノミクス始動',
+  2015:'チャイナショック',
+  2016:'ブレグジット・トランプ当選',
+  2018:'米中貿易戦争',
+  2020:'コロナショック',
+  2021:'コロナ後金融緩和バブル',
+  2022:'ロシアのウクライナ侵攻・世界インフレ',
+  2024:'日銀マイナス金利解除',
+  2025:'トランプ関税ショック（推定）'
+};
+
+// 開始年を「この歴史年をCF表の◯年に配置」から逆算して変更
+function mspApplyHistStartFromCF(shId, histYear, cfYearTarget){
+  const cYear = (typeof getCfStartYear==='function')?getCfStartYear():new Date().getFullYear();
+  const cfY = parseInt(cfYearTarget);
+  const hY  = parseInt(histYear);
+  if(!cfY || !hY) return;
+  let newStart = hY - (cfY - cYear);
+  // クランプ: データ範囲内
+  if(newStart < HISTORICAL_50YR.startYear) newStart = HISTORICAL_50YR.startYear;
+  if(newStart > HISTORICAL_50YR.endYear)   newStart = HISTORICAL_50YR.endYear;
+  // 本体select反映
+  const sh = marketShocks.find(s=>String(s.id)===String(shId));
+  if(sh){
+    sh.historicalStartYear = newStart;
+    if(typeof scheduleAutoSave==='function') scheduleAutoSave();
+    if(typeof render==='function') render();
+  }
+  // モーダル再描画（スクロール位置保持）
+  const scrollBody = document.querySelector('#msp-hist-modal [data-scroll]');
+  const savedScroll = scrollBody?.scrollTop || 0;
+  mspShowHistoricalTable(shId);
+  setTimeout(()=>{
+    const newBody = document.querySelector('#msp-hist-modal [data-scroll]');
+    if(newBody) newBody.scrollTop = savedScroll;
+  },0);
+}
+
 // ===== 過去50年データ モーダル表示 =====
 function mspShowHistoricalTable(shId){
   // 既存モーダル除去
@@ -520,13 +581,13 @@ function mspShowHistoricalTable(shId){
   const rows = years.map((y,i)=>{
     const inRange = y >= startY;
     const cfOffset = y - startY;
-    const cfYearActual = cYear + cfOffset;
-    const cfCol = inRange ? `CF ${cfOffset+1}年目<br><span style="color:#64748b;font-size:10px">(${cfYearActual}年)</span>` : '—';
+    const cfYearActual = cYear + cfOffset;  // 開始年前は cYear より小さい値
+    const evt = HISTORICAL_EVENTS[y] || '';
     const rowStyle = inRange
       ? (y===startY
           ? 'background:#dbeafe;border-left:4px solid #1e40af;font-weight:700'
           : 'background:#eff6ff')
-      : 'background:#f8fafc;color:#94a3b8';
+      : 'background:#f8fafc';
     const cellFor = (k)=>{
       const v = R[k][i];
       if(!inRange) return `<td style="text-align:right;padding:4px 8px;color:#94a3b8">${v>0?'+':''}${v}%</td>`;
@@ -535,9 +596,21 @@ function mspShowHistoricalTable(shId){
       const extra = isMin?'outline:2px solid #dc2626;outline-offset:-2px;':isMax?'outline:2px solid #059669;outline-offset:-2px;':'';
       return `<td style="text-align:right;padding:4px 8px;color:${colorOf(v)};background:${bgOf(v)};font-weight:600;${extra}">${v>0?'+':''}${v}%</td>`;
     };
+    // CF年 編集可能入力（入力変更で開始年が自動調整される）
+    const cfInputBg = inRange ? '#fff' : '#f1f5f9';
+    const cfInputColor = inRange ? '#1e3a5f' : '#94a3b8';
+    const cfInput = `<input type="number" value="${cfYearActual}" min="1900" max="2200"
+      onchange="mspApplyHistStartFromCF('${shId}', ${y}, this.value)"
+      style="width:68px;padding:3px 4px;border:1px solid #94a3b8;border-radius:3px;text-align:center;font-size:11px;color:${cfInputColor};background:${cfInputBg};font-weight:600"
+      title="この歴史年(${y})をCF表の何年に配置したいか入力">`;
+    const cfOffsetLbl = inRange ? `<span style="color:#64748b;font-size:10px">CF ${cfOffset+1}年目</span>` : '<span style="color:#cbd5e1;font-size:10px">範囲外</span>';
+    const evtCol = evt
+      ? `<td style="padding:4px 8px;font-size:10px;color:${inRange?'#7c2d12':'#94a3b8'};line-height:1.3">${evt}</td>`
+      : `<td style="padding:4px 8px"></td>`;
     return `<tr style="${rowStyle}">
       <td style="padding:4px 8px;text-align:center;font-weight:600;white-space:nowrap">${y}</td>
-      <td style="padding:4px 8px;text-align:center;font-size:11px;color:#1e3a5f;white-space:nowrap">${cfCol}</td>
+      <td style="padding:4px 8px;text-align:center;white-space:nowrap">${cfInput}<br>${cfOffsetLbl}</td>
+      ${evtCol}
       ${cellFor('sp500')}
       ${cellFor('acwi')}
       ${cellFor('nikkei')}
@@ -575,14 +648,16 @@ function mspShowHistoricalTable(shId){
       </div>
       <div style="padding:8px 18px 4px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;line-height:1.5">
         💡 <b>青背景=選択中の開始年</b>／薄青=適用範囲／灰色=適用外（開始年より前）<br>
-        <span style="color:#dc2626">赤枠</span>=各資産の最悪年／<span style="color:#059669">緑枠</span>=各資産の最良年
+        <span style="color:#dc2626">赤枠</span>=各資産の最悪年／<span style="color:#059669">緑枠</span>=各資産の最良年<br>
+        ✍️ <b>CF表対応列は編集可能</b>：例えば「リーマン2008年をCF表2030年に」と入力すると、開始年が自動計算されます
       </div>
-      <div style="flex:1;overflow:auto;padding:0 18px 14px">
+      <div data-scroll style="flex:1;overflow:auto;padding:0 18px 14px">
         <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px">
           <thead style="position:sticky;top:0;background:#f1f5f9;z-index:1">
             <tr>
               <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:center;white-space:nowrap">西暦</th>
-              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:center;white-space:nowrap">CF表対応</th>
+              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:center;white-space:nowrap">CF表対応<br><span style="font-size:10px;color:#64748b;font-weight:400">（編集可）</span></th>
+              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:left;white-space:nowrap">主要イベント</th>
               <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:right">S&P500</th>
               <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:right">オルカン</th>
               <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:right">日経平均</th>
