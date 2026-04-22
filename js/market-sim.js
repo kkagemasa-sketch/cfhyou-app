@@ -195,7 +195,8 @@ function mspRenderShockList(){
           return `
             <div class="msp-shock-field">
               <label>開始年</label>
-              <select onchange="mspSetHistoricalStart('${sh.id}',this.value)">${yrOpts}</select>
+              <select onchange="mspSetHistoricalStart('${sh.id}',this.value)" style="flex:1">${yrOpts}</select>
+              <button type="button" onclick="mspShowHistoricalTable('${sh.id}')" style="margin-left:6px;padding:4px 10px;background:#1e3a5f;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;white-space:nowrap">📊 過去データを見る</button>
             </div>
             <div style="font-size:10px;color:#64748b;padding:3px 6px;line-height:1.4">
               CF表1年目から、上記の開始年以降の実際のリターンを順番に適用します。<br>
@@ -484,4 +485,117 @@ function mspResolveStartIdx(sh, hAge, wAge){
     }
   }
   return -1;
+}
+
+// ===== 過去50年データ モーダル表示 =====
+function mspShowHistoricalTable(shId){
+  // 既存モーダル除去
+  document.getElementById('msp-hist-modal')?.remove();
+
+  const sh = marketShocks.find(s=>s.id===shId);
+  const startY = sh?.historicalStartYear || HISTORICAL_50YR.startYear;
+  const cYear = (typeof getCfStartYear==='function')?getCfStartYear():new Date().getFullYear();
+
+  const years = HISTORICAL_50YR.years;
+  const R = HISTORICAL_50YR.returns;
+
+  // 統計（各資産の平均・最悪・最良）
+  const stats = {};
+  ['sp500','acwi','nikkei','usdjpy'].forEach(k=>{
+    const arr = R[k];
+    let sum=0, mn=Infinity, mx=-Infinity, mnY=0, mxY=0;
+    arr.forEach((v,i)=>{
+      sum+=v;
+      if(v<mn){mn=v;mnY=years[i]}
+      if(v>mx){mx=v;mxY=years[i]}
+    });
+    stats[k] = { avg:(sum/arr.length).toFixed(1), min:mn, minY:mnY, max:mx, maxY:mxY };
+  });
+
+  const assetLbl = { sp500:'S&P500', acwi:'オルカン', nikkei:'日経平均', usdjpy:'USD/JPY' };
+  const colorOf = v => v>=20?'#b91c1c':v>=10?'#dc2626':v>=0?'#059669':v>=-10?'#f59e0b':v>=-20?'#ea580c':'#7f1d1d';
+  const bgOf    = v => v>=20?'#fee2e2':v>=10?'#fef3c7':v>=0?'#d1fae5':v>=-10?'#fef3c7':v>=-20?'#fed7aa':'#fecaca';
+
+  // 行生成
+  const rows = years.map((y,i)=>{
+    const inRange = y >= startY;
+    const cfOffset = y - startY;
+    const cfYearActual = cYear + cfOffset;
+    const cfCol = inRange ? `CF ${cfOffset+1}年目<br><span style="color:#64748b;font-size:10px">(${cfYearActual}年)</span>` : '—';
+    const rowStyle = inRange
+      ? (y===startY
+          ? 'background:#dbeafe;border-left:4px solid #1e40af;font-weight:700'
+          : 'background:#eff6ff')
+      : 'background:#f8fafc;color:#94a3b8';
+    const cellFor = (k)=>{
+      const v = R[k][i];
+      if(!inRange) return `<td style="text-align:right;padding:4px 8px;color:#94a3b8">${v>0?'+':''}${v}%</td>`;
+      const isMin = v===stats[k].min;
+      const isMax = v===stats[k].max;
+      const extra = isMin?'outline:2px solid #dc2626;outline-offset:-2px;':isMax?'outline:2px solid #059669;outline-offset:-2px;':'';
+      return `<td style="text-align:right;padding:4px 8px;color:${colorOf(v)};background:${bgOf(v)};font-weight:600;${extra}">${v>0?'+':''}${v}%</td>`;
+    };
+    return `<tr style="${rowStyle}">
+      <td style="padding:4px 8px;text-align:center;font-weight:600;white-space:nowrap">${y}</td>
+      <td style="padding:4px 8px;text-align:center;font-size:11px;color:#1e3a5f;white-space:nowrap">${cfCol}</td>
+      ${cellFor('sp500')}
+      ${cellFor('acwi')}
+      ${cellFor('nikkei')}
+      ${cellFor('usdjpy')}
+    </tr>`;
+  }).join('');
+
+  const statBadge = (k)=>{
+    const s = stats[k];
+    return `<div style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;min-width:140px">
+      <div style="font-size:11px;color:#475569;font-weight:700;margin-bottom:3px">${assetLbl[k]}</div>
+      <div style="font-size:10px;color:#64748b">平均: <b style="color:#1e3a5f">${s.avg>0?'+':''}${s.avg}%</b></div>
+      <div style="font-size:10px;color:#64748b">最悪: <b style="color:#dc2626">${s.min>0?'+':''}${s.min}% (${s.minY})</b></div>
+      <div style="font-size:10px;color:#64748b">最良: <b style="color:#059669">${s.max>0?'+':''}${s.max}% (${s.maxY})</b></div>
+    </div>`;
+  };
+
+  const modal = document.createElement('div');
+  modal.id = 'msp-hist-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.onclick = (e)=>{ if(e.target===modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:10px;max-width:920px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);font-family:'Meiryo','Yu Gothic UI',sans-serif">
+      <div style="background:#1e3a5f;color:#fff;padding:12px 18px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:15px;font-weight:700">📊 過去50年の運用データ（1976-2025）</div>
+          <div style="font-size:11px;opacity:0.85;margin-top:3px">
+            選択中の開始年: <b>${startY}年</b> → CF表 ${cYear}年〜${cYear+(2025-startY)}年 に適用（${2025-startY+1}年分）
+          </div>
+        </div>
+        <button onclick="document.getElementById('msp-hist-modal').remove()" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px">✕ 閉じる</button>
+      </div>
+      <div style="padding:12px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;gap:8px;flex-wrap:wrap">
+        ${statBadge('sp500')}${statBadge('acwi')}${statBadge('nikkei')}${statBadge('usdjpy')}
+      </div>
+      <div style="padding:8px 18px 4px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;line-height:1.5">
+        💡 <b>青背景=選択中の開始年</b>／薄青=適用範囲／灰色=適用外（開始年より前）<br>
+        <span style="color:#dc2626">赤枠</span>=各資産の最悪年／<span style="color:#059669">緑枠</span>=各資産の最良年
+      </div>
+      <div style="flex:1;overflow:auto;padding:0 18px 14px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px">
+          <thead style="position:sticky;top:0;background:#f1f5f9;z-index:1">
+            <tr>
+              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:center;white-space:nowrap">西暦</th>
+              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:center;white-space:nowrap">CF表対応</th>
+              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:right">S&P500</th>
+              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:right">オルカン</th>
+              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:right">日経平均</th>
+              <th style="padding:8px;border-bottom:2px solid #1e3a5f;text-align:right">USD/JPY</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="padding:8px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;border-radius:0 0 10px 10px;font-size:10px;color:#64748b;line-height:1.5">
+        出典: S&P Global, 日経新聞, 日銀為替レート, MSCI, MUFJヒストリカル等を参考にした概算値（小数第1位四捨五入）。<br>
+        信託報酬・売買手数料・為替スプレッド等のコストは含みません。過去の実績は将来の成果を保証するものではありません。
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 }
