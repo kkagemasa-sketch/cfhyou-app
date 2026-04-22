@@ -158,11 +158,6 @@ function showExportModal(exportType){
           </span>
         </label>
       </div>`:''}
-      <div style="background:#fffbf5;border:1px solid #fed7aa;border-radius:10px;padding:14px">
-        <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:8px;letter-spacing:.04em">📋 注意文章（1行ずつ表示されます）</div>
-        <textarea id="em-notes" rows="5" style="width:100%;font-size:11px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;outline:none;color:#475569;resize:vertical;line-height:1.6;box-sizing:border-box"
-          onfocus="this.style.borderColor='#2d7dd2'" onblur="this.style.borderColor='#e2e8f0'">${notesText}</textarea>
-      </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button onclick="document.getElementById('export-modal').remove()" style="font-size:12px;padding:8px 16px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-weight:600">キャンセル</button>
         <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='mg'?'📊 Excel出力':exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</button>
@@ -174,8 +169,6 @@ function showExportModal(exportType){
 function _applyExportModalValues(){
   const ids=['name','company','address','tel','email'];
   ids.forEach(id=>{const el=document.getElementById(`em-${id}`);if(el)$(`pi-${id}`).value=el.value;});
-  const notesEl=document.getElementById('em-notes');
-  if(notesEl)$('pi-notes').value=notesEl.value;
   const dateEl=document.getElementById('em-date');
   if(dateEl)_exportExtra.date=dateEl.value||'';
   const incEl=document.getElementById('em-include-disclaimer');
