@@ -254,7 +254,7 @@ function mspDelShock(id){
 }
 function mspSetShockPreset(id,val){
   const sh=marketShocks.find(s=>String(s.id)===String(id));
-  if(sh){sh.preset=val;if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
+  if(sh){sh.preset=val;mspRenderShockList();if(typeof scheduleAutoSave==='function')scheduleAutoSave();if(typeof render==='function')render();}
 }
 function mspToggleActive(id,on){
   const sh=marketShocks.find(s=>String(s.id)===String(id));
