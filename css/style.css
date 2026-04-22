@@ -297,6 +297,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* rev-h/w は!important（透過防止）。rev-c は教育フェーズ色クラスが上書きするため!importantなし */
 .rev-h td,.rev-w td{background:#fffcf7!important;font-size:9px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;color:#8a5a30;border-bottom:1px solid #ffe8cc}
 .rev-c td{background:#fffcf7;font-size:9px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;color:#8a5a30;border-bottom:1px solid #ffe8cc}
+
+/* sticky ヘッダーのボーダー透過対策：
+   border-collapse:separate + position:sticky では cell の border 部分に
+   背景が乗らず、スクロール時に下の内容が透けて見える。
+   box-shadow inset で cell 内側に仮想ボーダーを描画して解消する */
+.cf thead td,.cf thead th{
+  border-right:none!important;
+  border-bottom:none!important;
+  box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #ccd4e0;
+}
+/* 各行ごとのボーダー色を box-shadow で再現 */
+.cf thead .ryr th{box-shadow:inset -1px 0 0 #2d5282,inset 0 -2px 0 var(--navy)}
+.cf thead .relapsed td{box-shadow:inset -1px 0 0 #2d5282,inset 0 -1px 0 #2d5282}
+.cf thead .rage td{box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #b8d8ee}
+.cf thead .rev-h td,.cf thead .rev-w td,.cf thead .rev-c td{box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #ffe8cc}
 .rev-h td:first-child,.rev-h td:nth-child(2),
 .rev-w td:first-child,.rev-w td:nth-child(2),
 .rev-c td:first-child,.rev-c td:nth-child(2){background:#ffe8cc!important;color:#7a3a00;font-weight:700;text-align:left;border-right:2px solid var(--border)}
