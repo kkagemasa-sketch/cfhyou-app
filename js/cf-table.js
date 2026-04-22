@@ -342,20 +342,21 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}</td>`;
         for(let i=0;i<disp;i++){
           const v=ri(row.vals[i]||0);
+          const b=ri((row.baseVals&&row.baseVals[i])||0);
+          const _dCls=_dropCls(v, b);
           const _showIcon=_exp&&v>0;
           const _icon=_showIcon?_explainIcon(_finKey,i,'cf'):'';
-          h+=`<td class="${_showIcon?'has-explain':''}">${v>0?v.toLocaleString():'-'}${_icon}</td>`;
+          const _cls=[_showIcon?'has-explain':'', _dCls.trim()].filter(Boolean).join(' ');
+          h+=`<td class="${_cls}">${v>0?v.toLocaleString():'-'}${_icon}</td>`;
         }
         h+=`<td>${ri(row.vals[disp-1]||0).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${row.lbl}</span></td></tr>`;
       });
     }
-    // 合計行
+    // 合計行（色は個別行側に付けるのでここでは付与しない）
     h+=`<tr class="rfin fin-asset-row" style="font-weight:700"><td>その他金融資産</td><td></td>`;
     for(let i=0;i<disp;i++){
       const v=ri(R.finAsset[i]);
-      const b=ri(R.finAssetBase?.[i]||0);
-      const _dCls=_dropCls(v, b);
-      h+=`<td class="${_dCls.trim()}">${v>0?v.toLocaleString():'-'}</td>`;
+      h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;
     }
     h+=`<td>${ri(R.finAsset[disp-1]).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">金融資産計</span></td></tr>`;
   }
