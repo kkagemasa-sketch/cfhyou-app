@@ -1081,12 +1081,20 @@ function _appendDisclaimerSheet(wb, clientName){
     spacer: {}
   };
 
-  // 行高さ設定
-  const rhMap = { title:36, meta:22, alert:44, section:24, body:54, 'body-bullet':20, sign:26, footer:20, spacer:8 };
-  ws['!rows'] = L.map(r=>({hpt: rhMap[r[0]]||18}));
+  // 行高さ: 固定したいもの（title/section/spacer/footer）のみ指定。
+  // meta/alert/body/body-bullet は hpt を指定せず Excel の自動行高調整に任せる
+  // （hpt を指定すると customHeight=1 となりテキスト折り返し時に下部が切れる）
+  const rhMap = { title:42, section:26, spacer:8, footer:22 };
+  const rowsArr = [];
+  L.forEach((r,i)=>{
+    const h = rhMap[r[0]];
+    if(h) rowsArr[i] = {hpt:h};
+    // 未指定行はundefinedのまま（Excel側で自動調整）
+  });
+  ws['!rows'] = rowsArr;
 
-  // 列幅: A4縦で1列に全文を表示（印刷可能幅 約180mm ≒ wch 95）
-  ws['!cols'] = [{wch:95}];
+  // 列幅: A4縦で1列に全文を表示（印刷可能幅 約180mm = wch 約90 余裕を持って85）
+  ws['!cols'] = [{wch:85}];
 
   // スタイル適用
   L.forEach((row,i)=>{
