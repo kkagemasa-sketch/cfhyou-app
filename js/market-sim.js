@@ -553,7 +553,7 @@ function mspShowHistoricalTable(shId){
   // 既存モーダル除去
   document.getElementById('msp-hist-modal')?.remove();
 
-  const sh = marketShocks.find(s=>s.id===shId);
+  const sh = marketShocks.find(s=>String(s.id)===String(shId));
   const startY = sh?.historicalStartYear || HISTORICAL_50YR.startYear;
   const cYear = (typeof getCfStartYear==='function')?getCfStartYear():new Date().getFullYear();
 
