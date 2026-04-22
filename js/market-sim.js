@@ -239,7 +239,9 @@ function mspAddShock(){
   const firstKey=Object.keys(MARKET_SCENARIOS)[0];
   marketShocks.push({
     id: ++_marketShockId,
+    mode: 'replay50',
     preset: firstKey,
+    historicalStartYear: HISTORICAL_50YR.startYear,
     timing: {type:'event', key:'h-retire'},
     active: true
   });
