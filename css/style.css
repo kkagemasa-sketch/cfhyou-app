@@ -286,15 +286,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .ryr th:first-child,.ryr th:nth-child(2){text-align:left;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;background:var(--navy)!important}
 
 /* 経過年数：ネイビー地で年ヘッダーと連続 */
-.relapsed td{background:var(--navy-d);color:#a0b4c8;font-size:10px;text-align:center;border-bottom:1px solid #2d5282;padding:2px 6px}
+.relapsed td{background:var(--navy-d)!important;color:#a0b4c8;font-size:10px;text-align:center;border-bottom:1px solid #2d5282;padding:2px 6px}
 .relapsed td:first-child,.relapsed td:nth-child(2){text-align:left;color:#8aa4bc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-size:10px;max-width:86px;overflow:hidden;text-overflow:ellipsis;background:var(--navy-d)!important}
 
 /* 年齢行：薄い水色 */
-.rage td{background:#e8f4fc;font-size:10px;color:#3a6a8a;text-align:center;border-bottom:1px solid #b8d8ee}
+.rage td{background:#e8f4fc!important;font-size:10px;color:#3a6a8a;text-align:center;border-bottom:1px solid #b8d8ee}
 .rage td:first-child,.rage td:nth-child(2){text-align:left;color:#1a4a6a;background:#cce8f8!important;font-size:10px;font-weight:600;border-right:2px solid #9acce8}
 
 /* イベント行：全員オレンジ系ベース、子どもは教育フェーズで色分け */
-.rev-h td,.rev-w td,.rev-c td{background:#fffcf7;font-size:9px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;color:#8a5a30;border-bottom:1px solid #ffe8cc}
+/* rev-h/w は!important（透過防止）。rev-c は教育フェーズ色クラスが上書きするため!importantなし */
+.rev-h td,.rev-w td{background:#fffcf7!important;font-size:9px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;color:#8a5a30;border-bottom:1px solid #ffe8cc}
+.rev-c td{background:#fffcf7;font-size:9px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;color:#8a5a30;border-bottom:1px solid #ffe8cc}
 .rev-h td:first-child,.rev-h td:nth-child(2),
 .rev-w td:first-child,.rev-w td:nth-child(2),
 .rev-c td:first-child,.rev-c td:nth-child(2){background:#ffe8cc!important;color:#7a3a00;font-weight:700;text-align:left;border-right:2px solid var(--border)}
