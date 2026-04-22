@@ -290,11 +290,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .relapsed td:first-child,.relapsed td:nth-child(2){text-align:left;color:#8aa4bc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-size:10px;max-width:86px;overflow:hidden;text-overflow:ellipsis;background:var(--navy-d)!important}
 
 /* 年齢行：薄い水色 */
+/* tr自体にも背景色を敷く（sticky+border-collapse:separateでセル間に1px透過が出る対策） */
+.rage{background:#e8f4fc}
 .rage td{background:#e8f4fc!important;font-size:10px;color:#3a6a8a;text-align:center;border-bottom:1px solid #b8d8ee}
 .rage td:first-child,.rage td:nth-child(2){text-align:left;color:#1a4a6a;background:#cce8f8!important;font-size:10px;font-weight:600;border-right:2px solid #9acce8}
 
 /* イベント行：全員オレンジ系ベース、子どもは教育フェーズで色分け */
 /* rev-h/w は!important（透過防止）。rev-c は教育フェーズ色クラスが上書きするため!importantなし */
+.rev-h,.rev-w,.rev-c{background:#fffcf7}
 .rev-h td,.rev-w td{background:#fffcf7!important;font-size:9px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;color:#8a5a30;border-bottom:1px solid #ffe8cc}
 .rev-c td{background:#fffcf7;font-size:9px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;color:#8a5a30;border-bottom:1px solid #ffe8cc}
 
@@ -310,8 +313,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* 各行ごとのボーダー色を box-shadow で再現 */
 .cf thead .ryr th{box-shadow:inset -1px 0 0 #2d5282,inset 0 -2px 0 var(--navy)}
 .cf thead .relapsed td{box-shadow:inset -1px 0 0 #2d5282,inset 0 -1px 0 #2d5282}
-.cf thead .rage td{box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #b8d8ee}
-.cf thead .rev-h td,.cf thead .rev-w td,.cf thead .rev-c td{box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #ffe8cc}
+/* sticky+border-collapse:separateでセル間に1px透過が出る対策として、
+   左右±1px背景色を延長するbox-shadowを追加（inset境界線も同時に描画） */
+.cf thead .rage td{box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #b8d8ee,-1px 0 0 #e8f4fc,1px 0 0 #e8f4fc}
+.cf thead .rage td:first-child,.cf thead .rage td:nth-child(2){box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #b8d8ee,-1px 0 0 #cce8f8,1px 0 0 #cce8f8}
+.cf thead .rev-h td,.cf thead .rev-w td,.cf thead .rev-c td{box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #ffe8cc,-1px 0 0 #fffcf7,1px 0 0 #fffcf7}
+.cf thead .rev-h td:first-child,.cf thead .rev-h td:nth-child(2),
+.cf thead .rev-w td:first-child,.cf thead .rev-w td:nth-child(2),
+.cf thead .rev-c td:first-child,.cf thead .rev-c td:nth-child(2){box-shadow:inset -1px 0 0 #ccd4e0,inset 0 -1px 0 #ffe8cc,-1px 0 0 #ffe8cc,1px 0 0 #ffe8cc}
 .rev-h td:first-child,.rev-h td:nth-child(2),
 .rev-w td:first-child,.rev-w td:nth-child(2),
 .rev-c td:first-child,.rev-c td:nth-child(2){background:#ffe8cc!important;color:#7a3a00;font-weight:700;text-align:left;border-right:2px solid var(--border)}
