@@ -47,11 +47,15 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, opts) {
       xml = xml.replace(/<\/worksheet>/,setupTag+'</worksheet>');
     }
     // ③ 手動改ページ（免責事項を次ページに送る）
+    // OOXML仕様: rowBreaks は pageSetup / headerFooter より後に配置
     if(multiPage){
       const brkTag = `<rowBreaks count="1" manualBreakCount="1"><brk id="${pageBreakRow}" max="16383" man="1"/></rowBreaks>`;
-      // rowBreaks は pageMargins の後、pageSetup の前あたりが一般的
-      if(/<pageSetup/.test(xml)){
-        xml = xml.replace(/(<pageSetup[^/]*\/>)/, brkTag + '$1');
+      if(/<headerFooter[^>]*\/>/.test(xml)){
+        xml = xml.replace(/(<headerFooter[^>]*\/>)/, '$1' + brkTag);
+      } else if(/<headerFooter[\s\S]*?<\/headerFooter>/.test(xml)){
+        xml = xml.replace(/(<\/headerFooter>)/, '$1' + brkTag);
+      } else if(/<pageSetup[^/]*\/>/.test(xml)){
+        xml = xml.replace(/(<pageSetup[^/]*\/>)/, '$1' + brkTag);
       } else {
         xml = xml.replace(/<\/worksheet>/, brkTag + '</worksheet>');
       }
