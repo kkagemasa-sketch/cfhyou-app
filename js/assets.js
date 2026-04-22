@@ -232,8 +232,22 @@ function setSecTax(person,id,t){
   if(typeof validateNisaLimits==='function') validateNisaLimits();
 }
 function setSecNisaFrame(person,id,f){
+  const prev = document.getElementById(`sec-frame-grow-${person}-${id}`)?.classList.contains('on') ? 'grow'
+             : document.getElementById(`sec-frame-tsumi-${person}-${id}`)?.classList.contains('on') ? 'tsumi' : null;
   document.getElementById(`sec-frame-tsumi-${person}-${id}`)?.classList.toggle('on',f==='tsumi');
   document.getElementById(`sec-frame-grow-${person}-${id}`)?.classList.toggle('on',f==='grow');
+  // 枠切替時に前の枠の入力値をクリア（隠れたまま計算に混入するのを防ぐ）
+  if(prev && prev!==f){
+    if(f==='grow'){
+      // 成長枠へ: つみたて用の毎月積立額をクリア
+      const monthlyEl=document.getElementById(`sec-monthly-${person}-${id}`);
+      if(monthlyEl) monthlyEl.value='';
+    } else {
+      // つみたて枠へ: 成長枠の年間投資予定額をクリア
+      const annualEl=document.getElementById(`sec-nisa-annual-${person}-${id}`);
+      if(annualEl) annualEl.value='';
+    }
+  }
   applyNisaFrameVisibility(person, id, f);
   live();
   if(typeof validateNisaLimits==='function') validateNisaLimits();

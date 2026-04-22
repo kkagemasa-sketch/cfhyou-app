@@ -801,7 +801,10 @@ function render(){
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         // 課税口座：譲渡益課税 20.315%（所得税15%+住民税5%+復興特別所得税0.315%）
-        const costAccum=bal+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs);
+        // 取得原価は「取得価格累計(basis)」が入力されていればそれを使用、なければ現在評価額(bal)で近似
+        const basis=fv(`sec-basis-${p}-${sid}`)||0;
+        const initialCost=basis>0?basis:bal;
+        const costAccum=initialCost+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs);
         const gainAccum=Math.max(0,fv2-costAccum);
         let netAccum=fv2, taxAccum=0;
         if(!isNisa){
