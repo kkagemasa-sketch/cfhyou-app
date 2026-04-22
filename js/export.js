@@ -58,21 +58,27 @@ function getPrintInfo(){
   const notesRaw=($('pi-notes')?.value||'').split('\n').filter(l=>l.trim());
   return{name:_v('pi-name'),company:_v('pi-company'),address:_v('pi-address'),tel:_v('pi-tel'),email:_v('pi-email'),notes:notesRaw};
 }
+// 出力モーダル用の一時情報（作成日・免責ページ有無）
+let _exportExtra = { date:'', includeDisclaimer:true };
 function _savePrintInfo(){
   const info=getPrintInfo();
   try{localStorage.setItem(PI_STORAGE_KEY,JSON.stringify(info));}catch(e){}
+  try{localStorage.setItem('exportExtra',JSON.stringify(_exportExtra));}catch(e){}
 }
 function _loadPrintInfo(){
   try{
     const s=localStorage.getItem(PI_STORAGE_KEY);
-    if(!s)return;
-    const info=JSON.parse(s);
-    if(info.name)$('pi-name').value=info.name;
-    if(info.company)$('pi-company').value=info.company;
-    if(info.address)$('pi-address').value=info.address;
-    if(info.tel)$('pi-tel').value=info.tel;
-    if(info.email)$('pi-email').value=info.email;
-    if(info.notes&&info.notes.length)$('pi-notes').value=info.notes.join('\n');
+    if(s){
+      const info=JSON.parse(s);
+      if(info.name)$('pi-name').value=info.name;
+      if(info.company)$('pi-company').value=info.company;
+      if(info.address)$('pi-address').value=info.address;
+      if(info.tel)$('pi-tel').value=info.tel;
+      if(info.email)$('pi-email').value=info.email;
+      if(info.notes&&info.notes.length)$('pi-notes').value=info.notes.join('\n');
+    }
+    const e2=localStorage.getItem('exportExtra');
+    if(e2){const v=JSON.parse(e2);if(v){_exportExtra.date=v.date||'';_exportExtra.includeDisclaimer=v.includeDisclaimer!==false;}}
   }catch(e){}
 }
 
@@ -110,8 +116,24 @@ function showExportModal(exportType){
           ${fld('address','住所・支社',pi.address,'',true)}
           ${fld('tel','電話番号',pi.tel,'')}
           ${fld('email','メールアドレス',pi.email,'')}
+          <div class="fg">
+            <label style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px;display:block">📅 作成日</label>
+            <input id="em-date" type="date" value="${_exportExtra.date||new Date().toISOString().slice(0,10)}"
+              style="width:100%;font-size:12px;padding:6px 8px;border:1.5px solid #cbd5e1;border-radius:6px;font-family:inherit;outline:none;box-sizing:border-box"
+              onfocus="this.style.borderColor='#2d7dd2'" onblur="this.style.borderColor='#cbd5e1'">
+          </div>
         </div>
       </div>
+      ${(exportType==='excel'||exportType==='mg')?`
+      <div style="background:#fff5f8;border:1px solid #fbcfe8;border-radius:10px;padding:12px 14px">
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:#1e3a5f">
+          <input type="checkbox" id="em-include-disclaimer" ${_exportExtra.includeDisclaimer!==false?'checked':''} style="margin-top:2px;cursor:pointer">
+          <span>
+            <span style="font-weight:700">📋 末尾に「ご確認事項」ページを追加する</span>
+            <span style="display:block;font-size:10px;color:#64748b;margin-top:2px">お客様提示用の免責事項・注意喚起ページをExcel末尾に自動挿入します（署名欄付き）</span>
+          </span>
+        </label>
+      </div>`:''}
       <div style="background:#fffbf5;border:1px solid #fed7aa;border-radius:10px;padding:14px">
         <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:8px;letter-spacing:.04em">📋 注意文章（1行ずつ表示されます）</div>
         <textarea id="em-notes" rows="5" style="width:100%;font-size:11px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;outline:none;color:#475569;resize:vertical;line-height:1.6;box-sizing:border-box"
@@ -130,6 +152,10 @@ function _applyExportModalValues(){
   ids.forEach(id=>{const el=document.getElementById(`em-${id}`);if(el)$(`pi-${id}`).value=el.value;});
   const notesEl=document.getElementById('em-notes');
   if(notesEl)$('pi-notes').value=notesEl.value;
+  const dateEl=document.getElementById('em-date');
+  if(dateEl)_exportExtra.date=dateEl.value||'';
+  const incEl=document.getElementById('em-include-disclaimer');
+  _exportExtra.includeDisclaimer = incEl ? !!incEl.checked : true;
   _savePrintInfo();
 }
 function _doExport(type){
@@ -830,9 +856,124 @@ async function exportExcelMG(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
+  // 末尾に「ご確認事項」シートを追加
+  if(_exportExtra.includeDisclaimer!==false) _appendDisclaimerSheet(wb, clientName);
   const cnSama=clientName.endsWith('様')?clientName:clientName+'様';
   const fname=`万が一_${cnSama}_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
   await _writeXlsxWithPageSetup(wb,fname,'万が一CF表');
+}
+
+// ===== 免責事項シート追加（Excel出力末尾） =====
+function _appendDisclaimerSheet(wb, clientName){
+  const pi = getPrintInfo();
+  const dateStr = _exportExtra.date
+    ? new Date(_exportExtra.date).toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})
+    : new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+  const cn = clientName ? (clientName.endsWith('様')?clientName:clientName+'様') : '—';
+  const company = pi.company || '—';
+  const fpName = pi.name || '—';
+  const contact = [pi.address, pi.tel, pi.email].filter(Boolean).join(' / ') || '';
+
+  // 行データ: [type, text]  type: title/meta/alert/section/body/body-bullet/sign/footer/spacer
+  const L = [
+    ['title', 'ライフプラン シミュレーション結果 — ご確認事項'],
+    ['meta', `お客様：${cn}　／　作成日：${dateStr}`],
+    ['meta', `作成者：${company}${fpName!=='—'?'　（'+fpName+'）':''}${contact?'　'+contact:''}`],
+    ['spacer', ''],
+    ['alert', '⚠️ 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
+    ['spacer', ''],
+    ['section', '1. 本シミュレーションの位置づけ'],
+    ['body', '本資料はお客様のライフプラン全体像を把握する目的で作成した参考情報です。金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には該当しません。個別商品の選択・契約については、各金融機関の契約締結前交付書面等をご確認のうえ、必要に応じて登録業者にご相談ください。'],
+    ['spacer', ''],
+    ['section', '2. 試算の前提と限界'],
+    ['body-bullet', '・収入上昇率・インフレ率・運用利回り等は入力値または一定の前提値によります'],
+    ['body-bullet', '・税制・社会保障制度は作成時点のもので、将来の制度改正で結果は変動します'],
+    ['body-bullet', '・住宅ローン金利・物件価格・管理費等は参考値であり、実際の条件により異なります'],
+    ['body-bullet', '・教育費は公的統計の平均値で、学校・コース・地域により大きく異なります'],
+    ['body-bullet', '・保険料・満期金・解約返戻金は各保険会社の契約締結前交付書面等で必ずご確認ください'],
+    ['body-bullet', '・年金受給額は現行給付水準による概算で、将来の改定は反映していません'],
+    ['body-bullet', '・出産・転職・相続・介護等の将来イベント、病気や失業等のリスクは含まれていません'],
+    ['spacer', ''],
+    ['section', '3. 運用シミュレーションについて（該当する場合）'],
+    ['body', '過去の値動きが将来再現される保証はありません。収録している過去リターンデータ（1976-2025）は各種公開データ（S&P Global、日経新聞、日銀、MSCI等）を参考にした概算値です。信託報酬・売買手数料・為替スプレッド等のコストは控除していません。指数（S&P500等）のリターンをそのまま割当資産に適用しており、実際の商品のトラッキングエラー・為替ヘッジ等は考慮していません。'],
+    ['spacer', ''],
+    ['section', '4. データの取り扱い・免責'],
+    ['body', '本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません。ご質問・ご相談は作成者までお問い合わせください。'],
+    ['spacer', ''],
+    ['spacer', ''],
+    ['sign', '上記の注意事項について説明を受け、内容を理解しました。'],
+    ['spacer', ''],
+    ['sign', `確認日： 　年　月　日　　　　　お客様ご署名：　　　　　　　　　　　　　　　　　`],
+    ['spacer', ''],
+    ['footer', `${company}${contact?'　'+contact:''}`]
+  ];
+
+  // 行データのみの配列（AOA）
+  const rows = L.map(r=>[r[1]]);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // スタイル定義
+  const S = {
+    title: {
+      font:{bold:true, sz:18, color:{rgb:'FFFFFF'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'1E3A5F'}},
+      alignment:{horizontal:'center', vertical:'center', wrapText:true}
+    },
+    meta: {
+      font:{sz:11, color:{rgb:'1E3A5F'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'E0E7FF'}},
+      alignment:{horizontal:'center', vertical:'center', wrapText:true}
+    },
+    alert: {
+      font:{bold:true, sz:12, color:{rgb:'92400E'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'FEF3C7'}},
+      alignment:{vertical:'center', wrapText:true, indent:1},
+      border:{left:{style:'thick', color:{rgb:'F59E0B'}}}
+    },
+    section: {
+      font:{bold:true, sz:13, color:{rgb:'FFFFFF'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'1E3A5F'}},
+      alignment:{vertical:'center', indent:1}
+    },
+    body: {
+      font:{sz:10, color:{rgb:'333333'}, name:'Meiryo'},
+      alignment:{vertical:'top', wrapText:true, indent:1}
+    },
+    'body-bullet': {
+      font:{sz:10, color:{rgb:'333333'}, name:'Meiryo'},
+      alignment:{vertical:'top', wrapText:true, indent:1}
+    },
+    sign: {
+      font:{sz:11, color:{rgb:'1E3A5F'}, name:'Meiryo', bold:true},
+      alignment:{vertical:'center', indent:1}
+    },
+    footer: {
+      font:{sz:9, color:{rgb:'FFFFFF'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'1E3A5F'}},
+      alignment:{horizontal:'center', vertical:'center'}
+    },
+    spacer: {}
+  };
+
+  // 行高さ設定
+  const rhMap = { title:36, meta:22, alert:44, section:24, body:54, 'body-bullet':20, sign:26, footer:20, spacer:8 };
+  ws['!rows'] = L.map(r=>({hpt: rhMap[r[0]]||18}));
+
+  // 列幅: 印刷A4横で1列に全文を表示
+  ws['!cols'] = [{wch:140}];
+
+  // スタイル適用
+  L.forEach((row,i)=>{
+    const addr = XLSX.utils.encode_cell({r:i, c:0});
+    if(!ws[addr]) ws[addr] = { t:'s', v: row[1]||'' };
+    ws[addr].s = S[row[0]] || S.body;
+  });
+
+  // 印刷設定: A4横・1ページに収める
+  ws['!pageSetup'] = { paperSize:9, orientation:'landscape', fitToWidth:1, fitToHeight:1 };
+  ws['!margins']   = { left:0.4, right:0.4, top:0.4, bottom:0.4, header:0.2, footer:0.2 };
+
+  XLSX.utils.book_append_sheet(wb, ws, 'ご確認事項');
 }
 
 // ===== Excel出力 =====
@@ -1436,6 +1577,8 @@ async function exportExcel(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'CF表');
+  // 末尾に「ご確認事項」シートを追加
+  if(_exportExtra.includeDisclaimer!==false) _appendDisclaimerSheet(wb, clientName);
   const cnSama2=clientName.endsWith('様')?clientName:clientName+'様';
   await _writeXlsxWithPageSetup(wb,`CF表_${cnSama2}_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表');
 }

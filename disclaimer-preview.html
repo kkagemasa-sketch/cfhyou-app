@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Excel出力 注意喚起ページ イメージ</title>
+<style>
+  body{margin:0;padding:24px;background:#e5e9f0;font-family:'Meiryo','Yu Gothic UI',sans-serif;color:#222}
+  h1.preview-title{font-size:14px;color:#555;font-weight:400;margin:0 0 16px}
+  .tabs{display:flex;gap:2px;margin-bottom:0}
+  .tab{background:#d4d4d4;padding:6px 18px;font-size:12px;border:1px solid #a0a0a0;border-bottom:none;border-radius:4px 4px 0 0}
+  .tab.active{background:#fff;font-weight:700;position:relative;top:1px}
+  .sheet-wrap{background:#fff;border:1px solid #a0a0a0;box-shadow:0 4px 16px rgba(0,0,0,.15);overflow:hidden}
+  .col-headers{display:grid;grid-template-columns:36px repeat(10,1fr);background:#f3f3f3;border-bottom:1px solid #a0a0a0;font-size:11px;color:#666;text-align:center;font-weight:600}
+  .col-headers div{padding:4px 0;border-right:1px solid #d0d0d0}
+  .row{display:grid;grid-template-columns:36px 1fr;border-bottom:1px solid #e6e6e6;min-height:22px}
+  .row-num{background:#f3f3f3;border-right:1px solid #a0a0a0;text-align:center;font-size:11px;color:#666;font-weight:600;padding-top:4px}
+  .cell{padding:6px 10px;font-size:12px;line-height:1.6}
+  /* タイトル */
+  .cell.title{background:linear-gradient(135deg,#1e3a5f,#2d5282);color:#fff;font-size:20px;font-weight:700;text-align:center;padding:20px 10px;letter-spacing:2px}
+  .cell.subtitle{background:#e0e7ff;color:#1e3a5f;font-size:13px;text-align:center;padding:8px;font-weight:600}
+  /* 注意喚起バナー */
+  .cell.alert{background:#fef3c7;border-left:5px solid #f59e0b;padding:14px 16px;font-size:13px;font-weight:700;color:#92400e}
+  /* セクション見出し */
+  .cell.section{background:#1e3a5f;color:#fff;padding:8px 14px;font-size:13px;font-weight:700}
+  /* 通常段落 */
+  .cell.body{padding:10px 16px;font-size:11.5px;line-height:1.7;color:#333}
+  .cell.body ul{margin:4px 0;padding-left:20px}
+  .cell.body li{margin-bottom:3px}
+  /* 強調 */
+  .cell.body strong{color:#b91c1c}
+  /* 署名 */
+  .cell.sign-area{background:#f8fafc;padding:14px 16px;font-size:11.5px;border-top:2px solid #1e3a5f;margin-top:4px}
+  .cell.sign-area .line{display:inline-block;border-bottom:1px solid #333;min-width:220px;margin-left:10px;height:20px}
+  /* フッター */
+  .cell.footer{background:#1e3a5f;color:#fff;text-align:center;padding:8px;font-size:10px}
+  .note{color:#64748b;font-size:10px;margin-top:2px;padding-left:8px;line-height:1.5}
+  /* 印刷設定表示 */
+  .print-info{background:#fffbeb;border:2px dashed #f59e0b;padding:10px;margin:12px 24px;border-radius:6px;font-size:12px;color:#92400e}
+  .print-info b{color:#b45309}
+</style>
+</head>
+<body>
+
+<h1 class="preview-title">📊 Excel出力 注意喚起ページ イメージ（A4横 / 1ページ完結 想定）</h1>
+
+<div class="tabs">
+  <div class="tab">CF表</div>
+  <div class="tab">グラフ</div>
+  <div class="tab">返済計画</div>
+  <div class="tab active">⚠️ ご確認事項</div>
+  <div class="tab">メモ</div>
+</div>
+
+<div class="sheet-wrap">
+  <div class="col-headers">
+    <div></div><div>A</div><div>B</div><div>C</div><div>D</div><div>E</div>
+    <div>F</div><div>G</div><div>H</div><div>I</div><div>J</div>
+  </div>
+
+  <!-- 1: タイトル -->
+  <div class="row"><div class="row-num">1</div>
+    <div class="cell title">ライフプラン シミュレーション結果<br>
+      <span style="font-size:13px;font-weight:400;opacity:.9">ご確認いただきたい重要事項</span>
+    </div>
+  </div>
+
+  <!-- 2: お客様名 -->
+  <div class="row"><div class="row-num">2</div>
+    <div class="cell subtitle">お客様：遠藤 様　／　作成日：2026年4月22日　／　作成：●●ファイナンシャルプランナー事務所</div>
+  </div>
+
+  <!-- 3: 最重要警告バナー -->
+  <div class="row"><div class="row-num">3</div>
+    <div class="cell alert">
+      ⚠️ 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。<br>
+      　 投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。
+    </div>
+  </div>
+
+  <!-- 4: セクション1 -->
+  <div class="row"><div class="row-num">4</div>
+    <div class="cell section">1. 本シミュレーションの位置づけ</div>
+  </div>
+  <div class="row"><div class="row-num">5</div>
+    <div class="cell body">
+      本資料は、お客様のライフプラン全体像を把握する目的で作成した<strong>参考情報</strong>です。<br>
+      金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には<strong>該当しません</strong>。<br>
+      個別商品の選択・契約については、各金融機関の契約締結前交付書面等をご確認のうえ、
+      必要に応じて登録業者にご相談ください。
+    </div>
+  </div>
+
+  <!-- 5: セクション2 -->
+  <div class="row"><div class="row-num">6</div>
+    <div class="cell section">2. 試算の前提と限界</div>
+  </div>
+  <div class="row"><div class="row-num">7</div>
+    <div class="cell body">
+      <ul>
+        <li>収入上昇率・インフレ率・運用利回り等は入力値または一定の前提値によります</li>
+        <li>税制・社会保障制度は作成時点のもので、将来の制度改正で結果は変動します</li>
+        <li>住宅ローン金利・物件価格・管理費等は参考値であり、実際の条件により異なります</li>
+        <li>教育費は公的統計の平均値で、学校・コース・地域により大きく異なります</li>
+        <li>保険の保険料・満期金は各保険会社の設計書とは異なる場合があります</li>
+        <li>年金受給額は現行給付水準による概算で、将来の改定は反映していません</li>
+        <li>出産・転職・相続・介護等の将来イベント、病気や失業等のリスクは含まれていません</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 6: セクション3 -->
+  <div class="row"><div class="row-num">8</div>
+    <div class="cell section">3. 運用シミュレーションについて（該当する場合）</div>
+  </div>
+  <div class="row"><div class="row-num">9</div>
+    <div class="cell body">
+      <strong>過去の値動きが将来再現される保証はありません。</strong>
+      収録している過去リターンデータ（1976-2025）は各種公開データ（S&amp;P Global、日経新聞、日銀、MSCI等）
+      を参考にした概算値で、小数第1位までの四捨五入を含みます。<br>
+      信託報酬・売買手数料・為替スプレッド等のコストは控除していません。
+      指数（S&amp;P500等）のリターンをそのまま割当資産に適用しており、
+      実際の商品のトラッキングエラー・為替ヘッジ等は考慮していません。
+    </div>
+  </div>
+
+  <!-- 7: セクション4 -->
+  <div class="row"><div class="row-num">10</div>
+    <div class="cell section">4. データの取り扱い・免責</div>
+  </div>
+  <div class="row"><div class="row-num">11</div>
+    <div class="cell body">
+      本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。
+      本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません。
+      ご質問・ご相談は作成者までお問い合わせください。
+    </div>
+  </div>
+
+  <!-- 8: 同意欄 -->
+  <div class="row"><div class="row-num">12</div>
+    <div class="cell sign-area">
+      上記の注意事項について説明を受け、内容を理解しました。<br><br>
+      確認日：<span class="line"></span>　　お客様ご署名：<span class="line"></span>
+    </div>
+  </div>
+
+  <!-- フッター -->
+  <div class="row"><div class="row-num">13</div>
+    <div class="cell footer">●●ファイナンシャルプランナー事務所　｜　本資料は参考情報であり金融商品取引法上の投資助言には該当しません</div>
+  </div>
+</div>
+
+<div class="print-info">
+  <b>📝 Excel実装時の仕様案</b><br>
+  ・シート名: <b>「ご確認事項」</b>（既存シートの先頭または末尾に追加）<br>
+  ・A4横・1ページ完結（印刷スケール自動調整）<br>
+  ・列幅固定、行高はテキスト量に応じて自動調整<br>
+  ・タイトル／セクション見出しは背景色＋白文字で視認性確保<br>
+  ・警告バナーは黄色背景＋左枠オレンジ<br>
+  ・お客様名／作成日／事務所名は設定画面から自動挿入<br>
+  ・「署名欄」を下部に配置（対面説明時の記録用）<br>
+  <br>
+  <b>カスタマイズ可能項目:</b><br>
+  ・事務所名／FP氏名／登録番号／連絡先 → 設定画面の追加入力欄 or デフォルト定数<br>
+  ・文言の細部 → 御社のコンプライアンス窓口レビュー後に調整<br>
+  ・署名欄の有無 → 対面用（あり）／メール送付用（なし）の切り替え
+</div>
+
+</body>
+</html>
