@@ -26,6 +26,71 @@ function eduCosts(cid){
   return c;
 }
 
+// 3区分内訳を返す（各32要素配列）
+// 返却: {eduFee, lunch, extra, total, stages}  各c[age] に値
+// stages[age] = {stage:'hoiku|elem|mid|high|univ|none', schoolType:'public|private|nat_h|...'}
+function eduCostsBd(cid){
+  const eduFee=new Array(32).fill(0);
+  const lunch =new Array(32).fill(0);
+  const extra =new Array(32).fill(0);
+  const stages=new Array(32).fill(null);
+  const total =eduCosts(cid); // 既存の総額計算を再利用
+  const el=_v(`ce-${cid}`)||'public',mi=_v(`cm-${cid}`)||'public',hi=_v(`ch-${cid}`)||'public',un=_v(`cu-${cid}`)||'plit_h';
+  const startAge=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
+  const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
+
+  // 保育（0-6歳）: 3区分ではなく保育料単体を eduFee に計上
+  for(let a=0;a<=6;a++){
+    if(total[a]>0){
+      eduFee[a]=total[a];
+      stages[a]={stage:'hoiku', schoolType:hoikuType, gradeName:(hoikuType==='youchien'?'幼稚園':'保育園')+(a)+'歳'};
+    }
+  }
+  // 小学校 7-12歳
+  if(EDU_BD.elem.eduFee[el]){
+    for(let a=7;a<=12;a++){
+      eduFee[a]=EDU_BD.elem.eduFee[el][a]||0;
+      lunch[a] =EDU_BD.elem.lunch[el][a]||0;
+      extra[a] =EDU_BD.elem.extra[el][a]||0;
+      if(total[a]>0) stages[a]={stage:'elem', schoolType:el, gradeName:(el==='public'?'公立':'私立')+'小学校'+(a-6)+'年'};
+    }
+  }
+  // 中学校 13-15歳
+  if(EDU_BD.mid.eduFee[mi]){
+    for(let a=13;a<=15;a++){
+      eduFee[a]=EDU_BD.mid.eduFee[mi][a-13]||0;
+      lunch[a] =EDU_BD.mid.lunch[mi][a-13]||0;
+      extra[a] =EDU_BD.mid.extra[mi][a-13]||0;
+      if(total[a]>0) stages[a]={stage:'mid', schoolType:mi, gradeName:(mi==='public'?'公立':'私立')+'中学校'+(a-12)+'年'};
+    }
+  }
+  // 高校 16-18歳
+  if(EDU_BD.high.eduFee[hi]){
+    for(let a=16;a<=18;a++){
+      eduFee[a]=EDU_BD.high.eduFee[hi][a-16]||0;
+      lunch[a] =EDU_BD.high.lunch[hi][a-16]||0;
+      extra[a] =EDU_BD.high.extra[hi][a-16]||0;
+      if(total[a]>0) stages[a]={stage:'high', schoolType:hi, gradeName:(hi==='public'?'公立':'私立')+'高校'+(a-15)+'年'};
+    }
+  }
+  // 大学 19歳〜（3区分の意味が異なる: 授業料/入学金+施設費/生活費）
+  if(un!=='none' && EDU_BD.univ.tuition[un]){
+    const tuition=EDU_BD.univ.tuition[un]||[];
+    const entrance=EDU_BD.univ.entrance[un]||[];
+    const living=EDU_BD.univ.living[un]||[];
+    const univLen=tuition.length;
+    const univNameMap={nat_h:'国立(自宅)',nat_b:'国立(下宿)',plit_h:'私立文系(自宅)',plit_b:'私立文系(下宿)',psci_h:'私立理系(自宅)',psci_b:'私立理系(下宿)',med_h:'私立医科(自宅)',med_b:'私立医科(下宿)',senmon_h:'専門学校(自宅)',senmon_b:'専門学校(下宿)'};
+    for(let i=0;i<univLen;i++){
+      const a=19+i;
+      eduFee[a]=tuition[i]||0;     // 授業料
+      lunch[a] =entrance[i]||0;    // 入学金+施設費（lunch枠を流用）
+      extra[a] =living[i]||0;      // 生活費
+      if(total[a]>0) stages[a]={stage:'univ', schoolType:un, gradeName:(univNameMap[un]||'大学')+(i+1)+'年', isUniv:true};
+    }
+  }
+  return {eduFee, lunch, extra, total, stages};
+}
+
 function updateEdu(){
   const sec=$('edu-sec');
   const rows=document.querySelectorAll('[id^="ca-"]');

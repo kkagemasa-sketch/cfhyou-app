@@ -275,6 +275,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     const un=univCourse||'plit_h';
     const univLen=(EDU.univ[un]||[]).length;
     const dl=_rl(rowKey,lbl);
+    const _exp=_hasExplain(rowKey);
     let r=`<tr class="rexp"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;
     for(let i=0;i<disp;i++){
       const v=arr[i];const ca=childAge0+i;
@@ -288,8 +289,11 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         else if(ca>=19&&ca<19+univLen)cls=un.startsWith('senmon')?'edu-senmon':'edu-univ';
       } else {cls='vz';}
       if(isOvr)cls+=' cell-ovr';
+      const _showIcon=_exp&&dv>0;
+      if(_showIcon)cls+=' has-explain';
       cls+=getColCls(i);
-      r+=`<td class="${cls}" contenteditable="true" data-row="${rowKey||''}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dv>0?ri(dv).toLocaleString():'-'}</td>`;
+      const _icon=_showIcon?_explainIcon(rowKey,i,'cf'):'';
+      r+=`<td class="${cls}" contenteditable="true" data-row="${rowKey||''}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dv>0?ri(dv).toLocaleString():'-'}${_icon}</td>`;
     }
     return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
   };

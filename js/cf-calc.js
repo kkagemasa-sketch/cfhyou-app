@@ -104,7 +104,7 @@ function render(){
   // 子ども
   const children=[];
   document.querySelectorAll('[id^="ca-"]').forEach(el=>{
-    const cid=el.id.split('-')[1];children.push({age:parseInt(el.value)||0,costs:eduCosts(cid)});
+    const cid=el.id.split('-')[1];children.push({age:parseInt(el.value)||0,costs:eduCosts(cid),costsBd:(typeof eduCostsBd==='function'?eduCostsBd(cid):null)});
   });
   const cYear=getCfStartYear();
   // ご逝去年齢から表示年数を自動計算（夫婦どちらか高い方まで）
@@ -120,7 +120,7 @@ function render(){
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
-    lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),
+    lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
@@ -1007,7 +1007,22 @@ function render(){
       });
     }
     R.senyu.push(repTotal);
-    children.forEach((c,ci)=>{const ca=c.age+i;R.edu[ci].push(ca>=0&&ca<c.costs.length?c.costs[ca]:0)});
+    children.forEach((c,ci)=>{
+      const ca=c.age+i;
+      R.edu[ci].push(ca>=0&&ca<c.costs.length?c.costs[ca]:0);
+      if(c.costsBd && ca>=0 && ca<32){
+        R.eduBd[ci].push({
+          age:ca,
+          eduFee:c.costsBd.eduFee[ca]||0,
+          lunch:c.costsBd.lunch[ca]||0,
+          extra:c.costsBd.extra[ca]||0,
+          total:c.costsBd.total[ca]||0,
+          stage:c.costsBd.stages[ca]||null
+        });
+      } else {
+        R.eduBd[ci].push(null);
+      }
+    });
     const parkFromAge=iv('park-from-age')||0;
     const parkToAge=iv('park-to-age')||0;
     const parkActive=(parkFromAge<=0||ha>=parkFromAge)&&(parkToAge<=0||ha<=parkToAge);
