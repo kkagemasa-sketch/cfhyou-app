@@ -409,10 +409,13 @@ function validateNisaLimits(){
     </div>`;
   };
   const html = summarize('h') + summarize('w');
+  const hasH = agg.h.tsumi.items.length + agg.h.grow.items.length > 0;
+  const hasW = agg.w.tsumi.items.length + agg.w.grow.items.length > 0;
   const sh = document.getElementById('nisa-summary-h');
   const sw = document.getElementById('nisa-summary-w');
-  if(sh) sh.innerHTML = html;
-  if(sw) sw.innerHTML = html;
+  // 各パネルは、そのパネルの本人がNISAを1つでも選択しているときだけ表示
+  if(sh){ sh.innerHTML = hasH ? html : ''; sh.style.display = hasH ? '' : 'none'; }
+  if(sw){ sw.innerHTML = hasW ? html : ''; sw.style.display = hasW ? '' : 'none'; }
 }
 
 function calcInsPreview(person,id){
