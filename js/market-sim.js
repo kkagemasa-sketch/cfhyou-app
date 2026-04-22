@@ -312,16 +312,23 @@ function mspToggleCompare(on){
 }
 function mspToggleEnabled(on){
   marketShockEnabled=!!on;
-  // ヘッダーボタンの見た目を更新
-  const btn=document.getElementById('btn-market-sim');
-  if(btn){btn.classList.toggle('msim-active', marketShockEnabled && marketShocks.length>0);}
-  // ヒント文更新
+  _mspSyncEnabledUi();
+  if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  if(typeof render==='function')render();
+}
+// 適用ボタン＋ヒント文＋ヘッダーボタンの見た目を一元同期
+function _mspSyncEnabledUi(){
+  const btnHdr=document.getElementById('btn-market-sim');
+  if(btnHdr){btnHdr.classList.toggle('msim-active', marketShockEnabled && marketShocks.length>0);}
   const hint=document.getElementById('msp-enabled-hint');
   if(hint){hint.textContent = marketShockEnabled
     ? `登録中のシナリオ${marketShocks.length}件を適用中`
     : '適用OFF（シナリオ設定は保存されています）';}
-  if(typeof scheduleAutoSave==='function')scheduleAutoSave();
-  if(typeof render==='function')render();
+  const btn=document.getElementById('msp-enabled-btn');
+  if(btn){
+    btn.classList.toggle('on', !!marketShockEnabled);
+    btn.textContent = marketShockEnabled ? '✓ 適用中（クリックで解除）' : '▶ 適用する';
+  }
 }
 function mspClearAll(){
   if(!confirm('全てのシナリオを削除してよいですか?'))return;
@@ -360,16 +367,7 @@ function mspRenderAll(){
   mspRenderShockList();
   const cmp=document.getElementById('msp-compare');
   if(cmp)cmp.checked=!!marketShockCompareOn;
-  const en=document.getElementById('msp-enabled-toggle');
-  if(en)en.checked=!!marketShockEnabled;
-  const hint=document.getElementById('msp-enabled-hint');
-  if(hint){
-    hint.textContent = marketShockEnabled
-      ? `登録中のシナリオ${marketShocks.length}件を適用中`
-      : '適用OFF（シナリオ設定は保存されています）';
-  }
-  const btn=document.getElementById('btn-market-sim');
-  if(btn){btn.classList.toggle('msim-active', marketShockEnabled && marketShocks.length>0);}
+  _mspSyncEnabledUi();
 }
 
 // ===== 計算用: 指定年iでの指数別リターン =====

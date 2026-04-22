@@ -1607,13 +1607,10 @@ if('serviceWorker' in navigator){
     <div class="msp-section" style="padding:12px;background:linear-gradient(135deg,#fff5f8 0%,#ffe4ec 100%);border:2px solid #c2185b;border-radius:8px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div>
-          <div style="font-size:13px;font-weight:700;color:#c2185b">📉 下落シナリオを反映</div>
+          <div style="font-size:13px;font-weight:700;color:#c2185b">📈 運用シナリオ</div>
           <div id="msp-enabled-hint" style="font-size:10px;color:#64748b;margin-top:2px"></div>
         </div>
-        <label class="msp-switch">
-          <input type="checkbox" id="msp-enabled-toggle" onchange="mspToggleEnabled(this.checked)">
-          <span class="msp-slider"></span>
-        </label>
+        <button id="msp-enabled-btn" class="msp-enable-btn" onclick="mspToggleEnabled(!marketShockEnabled)">適用</button>
       </div>
     </div>
     <div class="msp-section">
