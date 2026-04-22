@@ -192,6 +192,29 @@
   // ─── 3. その他金融資産（fin-プレフィックス付きキー） ───
   registerExplainPattern(/^fin-/, function(ctx){return _renderFinAsset(ctx);});
 
+  // 歴史的イベント名マップ（replay50モードで年→イベント名を表示するため）
+  const _HIST_EVENT_MAP = {
+    1980:'第2次オイルショック/米高金利',
+    1981:'米ボルカー利上げ不況',
+    1982:'メキシコ債務危機',
+    1987:'ブラックマンデー',
+    1990:'日本バブル崩壊開始/湾岸戦争',
+    1991:'日本バブル崩壊',
+    1992:'欧州通貨危機(ポンド危機)',
+    1994:'米利上げ/メキシコ通貨危機',
+    1997:'アジア通貨危機',
+    1998:'ロシア危機・LTCM破綻',
+    2000:'ITバブル崩壊',
+    2001:'同時多発テロ/ITバブル崩壊',
+    2002:'ITバブル底',
+    2008:'リーマンショック',
+    2011:'東日本大震災・欧州債務危機',
+    2015:'チャイナショック',
+    2018:'米中貿易摩擦',
+    2020:'コロナショック',
+    2022:'ロシア・ウクライナ侵攻/米利上げ'
+  };
+
   // 運用シミュレーション：その年のヒストリカル情報（year相当＋指数別リターン）を返す
   function _buildSimYearInfo(i){
     if(typeof marketShocks==='undefined' || !marketShocks.length) return '';
@@ -215,10 +238,15 @@
           const col = v<0 ? '#b91c1c' : (v>0 ? '#059669' : '#475569');
           return `<span style="display:inline-block;margin:1px 6px 1px 0"><span style="color:#64748b">${idxLabel[k]}</span> <strong style="color:${col}">${v>=0?'+':''}${v.toFixed(1)}%</strong></span>`;
         }).join('');
+        const evName = _HIST_EVENT_MAP[histYear];
+        const evBadge = evName
+          ? `<div style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:3px">⚠️ ${evName}</div>`
+          : '';
         rows.push(`
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:6px;font-size:11px">
             <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">📅 過去50年再生：${histYear}年相当（CF${i+1}年目）</div>
-            <div style="line-height:1.6">${rets}</div>
+            ${evBadge}
+            <div style="line-height:1.6;margin-top:3px">${rets}</div>
           </div>`);
       }else{
         // preset / manual
