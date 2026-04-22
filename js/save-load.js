@@ -443,6 +443,10 @@ function _restoreDynamic(d){
     if(s.taxType==='nisa' && typeof setSecNisaFrame==='function') setSecNisaFrame(p,id, s.nisaFrame==='grow'?'grow':'tsumi');
     if($(`sec-basis-${p}-${id}`))$(`sec-basis-${p}-${id}`).value=s.basis||'';
     if($(`sec-nisa-annual-${p}-${id}`)){$(`sec-nisa-annual-${p}-${id}`).value=s.nisaAnnual||'';}
+    // 成長枠ロード時: annualが入っていてmonthlyが空なら同期（旧保存データ対策）
+    if(s.taxType==='nisa' && s.nisaFrame==='grow' && s.nisaAnnual && !s.monthly && typeof syncNisaAnnualToMonthly==='function'){
+      syncNisaAnnualToMonthly(p,id);
+    }
     if(s.secType==='stock')setSecType(p,id,'stock');
     if($(`sec-bal-${p}-${id}`))$(`sec-bal-${p}-${id}`).value=s.bal;
     if($(`sec-monthly-${p}-${id}`))$(`sec-monthly-${p}-${id}`).value=s.monthly;
@@ -778,6 +782,7 @@ function _applyData(d){
     if(_selectedMansionId){const msel=$('mansion-select');if(msel)msel.value=_selectedMansionId;}
     _restoreDynamic(d.dynamic);
     calcLoanAmt();calcDelivery();initLCComma();
+    if(typeof validateNisaLimits==='function') validateNisaLimits();
     if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
     if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
     // 万が一Q&Aタブ（複数タブ）復元
