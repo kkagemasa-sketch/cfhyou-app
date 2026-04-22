@@ -326,12 +326,20 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;for(let i=0;i<disp;i++){const v=ri(R.sav[i]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`}const savLast=ri(R.sav[disp-1]);h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
   if(R.finAsset.some(v=>v>0)){
     // 個別行を表示
-    // 下落幅からセルの色クラスを判定（通常値との比較）
-    const _dropCls = (v, base)=>{
-      if(!base||base<=0||v<=0)return '';
-      const ratio = v/base;
-      if(ratio<0.70)return ' shock-drop-heavy';  // −30%超
-      if(ratio<0.85)return ' shock-drop-light';  // −15%超
+    // 「大きなイベント年」の色クラス: その年のシナリオと通常想定の乖離増分で判定
+    // delta = (vals[i]-baseVals[i]) - (vals[i-1]-baseVals[i-1])
+    // この年の動きが通常想定に比べどれだけ悪化したか(基準:baseVals[i-1])
+    const _dropCls = (vals, baseVals, i)=>{
+      if(!vals||!baseVals)return '';
+      const v=vals[i]||0, b=baseVals[i]||0;
+      if(v<=0||b<=0)return '';
+      const vP=i>0?(vals[i-1]||0):0;
+      const bP=i>0?(baseVals[i-1]||0):0;
+      const delta=(v-b)-(vP-bP);
+      const denom=Math.max(bP, b, 1);
+      const ratio=delta/denom;
+      if(ratio<-0.30)return ' shock-drop-heavy';
+      if(ratio<-0.15)return ' shock-drop-light';
       return '';
     };
     if(R.finAssetRows&&R.finAssetRows.length>0){
@@ -342,8 +350,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}</td>`;
         for(let i=0;i<disp;i++){
           const v=ri(row.vals[i]||0);
-          const b=ri((row.baseVals&&row.baseVals[i])||0);
-          const _dCls=_dropCls(v, b);
+          const _dCls=_dropCls(row.vals, row.baseVals, i);
           const _showIcon=_exp&&v>0;
           const _icon=_showIcon?_explainIcon(_finKey,i,'cf'):'';
           const _cls=[_showIcon?'has-explain':'', _dCls.trim()].filter(Boolean).join(' ');
