@@ -187,7 +187,9 @@ function _collectDynamic(){
       const id=el.id.split('-').pop();
       const isNisa=$(`sec-nisa-${p}-${id}`)?.classList.contains('on')||false;
       const isStock=$(`sec-stock-${p}-${id}`)?.classList.contains('on')||false;
+      const nisaFrame = $(`sec-frame-grow-${p}-${id}`)?.classList.contains('on') ? 'grow' : 'tsumi';
       d.securities.push({person:p,label:$(`sec-label-${p}-${id}`)?.value||'',taxType:isNisa?'nisa':'taxable',secType:isStock?'stock':'accum',
+        nisaFrame, basis:$(`sec-basis-${p}-${id}`)?.value||'',
         bal:$(`sec-bal-${p}-${id}`)?.value||'',monthly:$(`sec-monthly-${p}-${id}`)?.value||'',end:$(`sec-end-${p}-${id}`)?.value||'',rate:$(`sec-rate-${p}-${id}`)?.value||'',redeem:$(`sec-redeem-${p}-${id}`)?.value||'',
         stkBal:$(`sec-stk-bal-${p}-${id}`)?.value||'',stkAge:$(`sec-stk-age-${p}-${id}`)?.value||'',div:$(`sec-div-${p}-${id}`)?.value||'',stkRedeem:$(`sec-stk-redeem-${p}-${id}`)?.value||''});
     });
@@ -438,6 +440,8 @@ function _restoreDynamic(d){
     const id=secCnt;const p=s.person;
     if($(`sec-label-${p}-${id}`))$(`sec-label-${p}-${id}`).value=s.label;
     if(s.taxType==='nisa')setSecTax(p,id,'nisa');
+    if(s.taxType==='nisa' && typeof setSecNisaFrame==='function') setSecNisaFrame(p,id, s.nisaFrame==='grow'?'grow':'tsumi');
+    if($(`sec-basis-${p}-${id}`))$(`sec-basis-${p}-${id}`).value=s.basis||'';
     if(s.secType==='stock')setSecType(p,id,'stock');
     if($(`sec-bal-${p}-${id}`))$(`sec-bal-${p}-${id}`).value=s.bal;
     if($(`sec-monthly-${p}-${id}`))$(`sec-monthly-${p}-${id}`).value=s.monthly;

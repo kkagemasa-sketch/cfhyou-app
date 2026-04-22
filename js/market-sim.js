@@ -576,8 +576,18 @@ function mspShowHistoricalTable(shId){
   });
 
   const assetLbl = { sp500:'S&P500', acwi:'オルカン', nikkei:'日経平均', usdjpy:'USD/JPY' };
-  const colorOf = v => v>=20?'#b91c1c':v>=10?'#dc2626':v>=0?'#059669':v>=-10?'#f59e0b':v>=-20?'#ea580c':'#7f1d1d';
-  const bgOf    = v => v>=20?'#fee2e2':v>=10?'#fef3c7':v>=0?'#d1fae5':v>=-10?'#fef3c7':v>=-20?'#fed7aa':'#fecaca';
+  // プラス=緑／マイナス=赤。絶対値が大きいほど色を濃く
+  const colorOf = v => v>=0 ? '#065f46' : '#991b1b';
+  const bgOf    = v => {
+    if(v>=30) return '#6ee7b7';   // 濃緑
+    if(v>=15) return '#a7f3d0';   // 中緑
+    if(v>=5)  return '#d1fae5';   // 淡緑
+    if(v>=0)  return '#ecfdf5';   // ごく薄緑
+    if(v>=-5) return '#fee2e2';   // ごく薄赤
+    if(v>=-15)return '#fecaca';   // 淡赤
+    if(v>=-30)return '#fca5a5';   // 中赤
+    return '#f87171';             // 濃赤
+  };
 
   // 行生成
   const rows = years.map((y,i)=>{
