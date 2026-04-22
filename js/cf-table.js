@@ -327,6 +327,14 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;for(let i=0;i<disp;i++){const v=ri(R.sav[i]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`}const savLast=ri(R.sav[disp-1]);h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
   if(R.finAsset.some(v=>v>0)){
     // 個別行を表示
+    // 下落幅からセルの色クラスを判定（通常値との比較）
+    const _dropCls = (v, base)=>{
+      if(!base||base<=0||v<=0)return '';
+      const ratio = v/base;
+      if(ratio<0.70)return ' shock-drop-heavy';  // −30%超
+      if(ratio<0.85)return ' shock-drop-light';  // −15%超
+      return '';
+    };
     if(R.finAssetRows&&R.finAssetRows.length>0){
       R.finAssetRows.forEach(row=>{
         if(!row.vals.slice(0,disp).some(v=>v>0))return;
@@ -335,16 +343,23 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}</td>`;
         for(let i=0;i<disp;i++){
           const v=ri(row.vals[i]||0);
+          const b=ri(row.baseVals?.[i]||0);
           const _showIcon=_exp&&v>0;
           const _icon=_showIcon?_explainIcon(_finKey,i,'cf'):'';
-          h+=`<td class="${_showIcon?'has-explain':''}">${v>0?v.toLocaleString():'-'}${_icon}</td>`;
+          const _dCls=_dropCls(v, b);
+          h+=`<td class="${_showIcon?'has-explain':''}${_dCls}">${v>0?v.toLocaleString():'-'}${_icon}</td>`;
         }
         h+=`<td>${ri(row.vals[disp-1]||0).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${row.lbl}</span></td></tr>`;
       });
     }
     // 合計行
     h+=`<tr class="rfin fin-asset-row" style="font-weight:700"><td>その他金融資産</td><td></td>`;
-    for(let i=0;i<disp;i++){const v=ri(R.finAsset[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
+    for(let i=0;i<disp;i++){
+      const v=ri(R.finAsset[i]);
+      const b=ri(R.finAssetBase?.[i]||0);
+      const _dCls=_dropCls(v, b);
+      h+=`<td class="${_dCls.trim()}">${v>0?v.toLocaleString():'-'}</td>`;
+    }
     h+=`<td>${ri(R.finAsset[disp-1]).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">金融資産計</span></td></tr>`;
   }
   // 総金融資産合計

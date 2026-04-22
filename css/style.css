@@ -1058,6 +1058,9 @@ body.market-sim-on #btn-market-sim{
   content:'📉';
   position:absolute;top:1px;right:1px;font-size:8px;opacity:.8;
 }
+/* その他金融資産セルの下落ハイライト */
+.cf td.shock-drop-light{background:#fee2e2!important;color:#b91c1c!important}
+.cf td.shock-drop-heavy{background:#fca5a5!important;color:#7f1d1d!important;font-weight:700}
 .explain-popup-header{
   display:flex;
   justify-content:space-between;
