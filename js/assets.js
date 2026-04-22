@@ -373,6 +373,46 @@ function validateNisaLimits(){
       warnEl.style.display = 'none';
     }
   });
+
+  // NISA使用状況サマリ（両者を常に両パネルに表示）
+  const bar = (used, limit) => {
+    const pct = Math.min(100, limit>0 ? used/limit*100 : 0);
+    const over = used > limit;
+    const color = over ? '#d63a2a' : (pct>=80?'#e6a300':'#2d7dd2');
+    return `<div style="background:#eee;border-radius:3px;height:6px;overflow:hidden;margin-top:2px">
+      <div style="width:${Math.min(100,pct).toFixed(1)}%;height:100%;background:${color}"></div></div>`;
+  };
+  const fmt = v => (Math.round(v*10)/10).toLocaleString();
+  const summarize = (p) => {
+    const pLbl = p==='h'?'ご主人様':'奥様';
+    const t = agg[p].tsumi, g = agg[p].grow;
+    const lifeUsed = t.basis + g.basis + t.future + g.future;
+    const lifeRem = Math.max(0, LIFETIME - lifeUsed);
+    const growLife = g.basis + g.future;
+    const growRem = Math.max(0, LIFETIME_GROW - growLife);
+    const tAnnRem = Math.max(0, ANNUAL_TSUMI - t.annual);
+    const gAnnRem = Math.max(0, ANNUAL_GROW - g.annual);
+    const over = lifeUsed>LIFETIME || growLife>LIFETIME_GROW || t.annual>ANNUAL_TSUMI || g.annual>ANNUAL_GROW;
+    return `<div style="border:1px solid ${over?'#d63a2a':'#d0d7e2'};border-radius:6px;padding:8px 10px;margin-bottom:6px;background:#fafbfd">
+      <div style="font-weight:600;font-size:12px;margin-bottom:6px;color:#1a3a6b">${pLbl} のNISA枠使用状況</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <tr><td style="padding:2px 4px;color:#555">つみたて 年次</td>
+          <td style="padding:2px 4px;text-align:right"><b>${fmt(t.annual)}</b>/${ANNUAL_TSUMI}万<span style="color:#888"> (残${fmt(tAnnRem)})</span>${bar(t.annual,ANNUAL_TSUMI)}</td></tr>
+        <tr><td style="padding:2px 4px;color:#555">成長 年次</td>
+          <td style="padding:2px 4px;text-align:right"><b>${fmt(g.annual)}</b>/${ANNUAL_GROW}万<span style="color:#888"> (残${fmt(gAnnRem)})</span>${bar(g.annual,ANNUAL_GROW)}</td></tr>
+        <tr><td style="padding:2px 4px;color:#555">成長 生涯<span style="color:#888;font-size:10px">(既+将来)</span></td>
+          <td style="padding:2px 4px;text-align:right"><b>${fmt(growLife)}</b>/${LIFETIME_GROW}万<span style="color:#888"> (残${fmt(growRem)})</span>${bar(growLife,LIFETIME_GROW)}</td></tr>
+        <tr style="border-top:1px solid #ccd"><td style="padding:3px 4px;color:#222"><b>生涯合算</b><span style="color:#888;font-size:10px"> (つみ+成長)</span></td>
+          <td style="padding:3px 4px;text-align:right"><b style="color:${lifeUsed>LIFETIME?'#d63a2a':'#1a3a6b'}">${fmt(lifeUsed)}</b>/${LIFETIME}万<span style="color:#888"> (残${fmt(lifeRem)})</span>${bar(lifeUsed,LIFETIME)}</td></tr>
+      </table>
+      <div style="font-size:10px;color:#888;margin-top:4px">※ 既購入取得価格+将来拠出累計の合計。売却・枠復活は未考慮。</div>
+    </div>`;
+  };
+  const html = summarize('h') + summarize('w');
+  const sh = document.getElementById('nisa-summary-h');
+  const sw = document.getElementById('nisa-summary-w');
+  if(sh) sh.innerHTML = html;
+  if(sw) sw.innerHTML = html;
 }
 
 function calcInsPreview(person,id){
