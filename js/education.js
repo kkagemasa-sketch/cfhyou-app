@@ -46,12 +46,16 @@ function eduCostsBd(cid){
       stages[a]={stage:'hoiku', schoolType:hoikuType, gradeName:(hoikuType==='youchien'?'幼稚園':'保育園')+(a)+'歳'};
     }
   }
-  // 小学校 7-12歳
+  // 小学校 7-12歳（EDU_TABLE.elem と同じく index 0,1 はパディングなので slice(2) で揃える）
   if(EDU_BD.elem.eduFee[el]){
+    const feeArr=EDU_BD.elem.eduFee[el].slice(2);
+    const lunchArr=EDU_BD.elem.lunch[el].slice(2);
+    const extraArr=EDU_BD.elem.extra[el].slice(2);
     for(let a=7;a<=12;a++){
-      eduFee[a]=EDU_BD.elem.eduFee[el][a]||0;
-      lunch[a] =EDU_BD.elem.lunch[el][a]||0;
-      extra[a] =EDU_BD.elem.extra[el][a]||0;
+      const idx=a-7;
+      eduFee[a]=feeArr[idx]||0;
+      lunch[a] =lunchArr[idx]||0;
+      extra[a] =extraArr[idx]||0;
       if(total[a]>0) stages[a]={stage:'elem', schoolType:el, gradeName:(el==='public'?'公立':'私立')+'小学校'+(a-6)+'年'};
     }
   }
