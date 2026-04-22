@@ -700,8 +700,13 @@ function render(){
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
         const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
         const yrs=i+1;
+        // シナリオ適用時はシリーズキャッシュの解約年の値を使う
+        const _redeemSecKey=`sec-accum-${p}-${sid}`;
+        const _redeemSeries=_accumSeriesCache[_redeemSecKey];
         let fv2=0;
-        if(endAge===0||pAge<=endAge){
+        if(_redeemSeries){
+          fv2 = _redeemSeries[i]||0;
+        } else if(endAge===0||pAge<=endAge){
           const cpd=Math.pow(1+rate,yrs);
           const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
           const balGrow=bal*cpd;
@@ -751,7 +756,10 @@ function render(){
         const investAge=iv(`sec-stk-age-${p}-${sid}`)||0;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
-        const redeemVal=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        // シナリオ適用時はシリーズキャッシュの解約年の値を使う
+        const _redeemStkKey=`sec-stk-${p}-${sid}`;
+        const _redeemStkSeries=_stkSeriesCache[_redeemStkKey];
+        const redeemVal = _redeemStkSeries ? (_redeemStkSeries[i]||0) : Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         // 課税口座：譲渡益課税 20.315%
