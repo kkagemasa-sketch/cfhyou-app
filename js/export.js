@@ -3,9 +3,11 @@
 // ===== Excel印刷設定XML注入（xlsx-js-styleはpageSetup非対応のため） =====
 // A4横: 印刷可能領域 = 幅:267mm 高:190mm（余白0.3inch左右, 0.4inch上下）
 // scale=行数から自動計算してfitToPage相当を実現する
-async function _writeXlsxWithPageSetup(wb, fname, sheetName) {
+async function _writeXlsxWithPageSetup(wb, fname, sheetName, opts) {
   try {
     if(typeof JSZip === 'undefined') throw new Error('JSZip未ロード');
+    const pageBreakRow = opts && opts.pageBreakRow;  // 0-based row index where new page starts
+    const multiPage = !!pageBreakRow;
     // xlsx-js-styleはtype:'binary'対応
     const bin = XLSX.write(wb, {bookType:'xlsx', type:'binary'});
     // binary string → Uint8Array
@@ -17,7 +19,7 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName) {
     const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
     let xml = await zip.file(xmlPath).async('string');
 
-    // 「すべての行を1ページに印刷」
+    // 「すべての行を1ページに印刷」（ただし手動改ページがある場合は幅のみ）
     // ① sheetPrにpageSetUpPr fitToPage="1"を挿入
     const sheetPrTag = '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>';
     if(/<sheetPr/.test(xml)){
@@ -32,14 +34,27 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName) {
       // sheetPrがない場合: worksheetの直後に挿入
       xml = xml.replace(/(<worksheet[^>]*>)/,'$1'+sheetPrTag);
     }
-    // ② pageSetupタグを挿入/置換（1ページ幅に収める）
-    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="1"/>`;
+    // ② pageSetupタグを挿入/置換
+    // 改ページがある場合：幅1ページに収めるが、高さは複数ページ許可
+    const setupTag = multiPage
+      ? `<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>`
+      : `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="1"/>`;
     if(/<pageSetup/.test(xml)){
       xml = xml.replace(/<pageSetup[^/]*\/>/,setupTag);
     } else if(/<pageMargins/.test(xml)){
       xml = xml.replace(/(<pageMargins[^/]*\/>)/,'$1'+setupTag);
     } else {
       xml = xml.replace(/<\/worksheet>/,setupTag+'</worksheet>');
+    }
+    // ③ 手動改ページ（免責事項を次ページに送る）
+    if(multiPage){
+      const brkTag = `<rowBreaks count="1" manualBreakCount="1"><brk id="${pageBreakRow}" max="16383" man="1"/></rowBreaks>`;
+      // rowBreaks は pageMargins の後、pageSetup の前あたりが一般的
+      if(/<pageSetup/.test(xml)){
+        xml = xml.replace(/(<pageSetup[^/]*\/>)/, brkTag + '$1');
+      } else {
+        xml = xml.replace(/<\/worksheet>/, brkTag + '</worksheet>');
+      }
     }
     zip.file(xmlPath, xml);
 
@@ -130,7 +145,7 @@ function showExportModal(exportType){
           <input type="checkbox" id="em-include-disclaimer" ${_exportExtra.includeDisclaimer!==false?'checked':''} style="margin-top:2px;cursor:pointer">
           <span>
             <span style="font-weight:700">📋 末尾に「ご確認事項」ページを追加する</span>
-            <span style="display:block;font-size:10px;color:#64748b;margin-top:2px">お客様提示用の免責事項・注意喚起ページをExcel末尾に自動挿入します（署名欄付き）</span>
+            <span style="display:block;font-size:10px;color:#64748b;margin-top:2px">CF表シートの延長線上に免責事項ページを自動挿入します（改ページで次ページに配置／Ctrl+Pで連続印刷）</span>
           </span>
         </label>
       </div>`:''}
@@ -855,15 +870,125 @@ async function exportExcelMG(){
     });
   });
 
+  // 末尾に「ご確認事項」をCF表の延長線上に追加（印刷時に連続）
+  let _dcBreakRow = 0;
+  if(_exportExtra.includeDisclaimer!==false){
+    _dcBreakRow = _appendDisclaimerToCFSheet(ws, rows.length, disp+2, clientName);
+  }
   XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
-  // 末尾に「ご確認事項」シートを追加
-  if(_exportExtra.includeDisclaimer!==false) _appendDisclaimerSheet(wb, clientName);
   const cnSama=clientName.endsWith('様')?clientName:clientName+'様';
   const fname=`万が一_${cnSama}_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
-  await _writeXlsxWithPageSetup(wb,fname,'万が一CF表');
+  await _writeXlsxWithPageSetup(wb,fname,'万が一CF表', _dcBreakRow>0?{pageBreakRow:_dcBreakRow}:undefined);
 }
 
-// ===== 免責事項シート追加（Excel出力末尾） =====
+// ===== 免責事項：CF表シート末尾に連結（印刷時に連続してページ出力される） =====
+// 戻り値: 免責事項タイトルの行インデックス（0-based、pageBreakRow 用）
+function _appendDisclaimerToCFSheet(ws, startRow, lastCol, clientName){
+  const pi = getPrintInfo();
+  const dateStr = _exportExtra.date
+    ? new Date(_exportExtra.date).toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})
+    : new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+  const cn = clientName ? (clientName.endsWith('様')?clientName:clientName+'様') : '—';
+  const company = pi.company || '—';
+  const fpName = pi.name || '—';
+  const contact = [pi.address, pi.tel, pi.email].filter(Boolean).join(' / ') || '';
+
+  const L = [
+    ['title', 'ライフプラン シミュレーション結果 — ご確認事項'],
+    ['meta', `お客様：${cn}　／　作成日：${dateStr}`],
+    ['meta', `作成者：${company}${fpName!=='—'?'　（'+fpName+'）':''}${contact?'　'+contact:''}`],
+    ['spacer', ''],
+    ['alert', '⚠️ 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
+    ['spacer', ''],
+    ['section', '1. 本シミュレーションの位置づけ'],
+    ['body', '本資料はお客様のライフプラン全体像を把握する目的で作成した参考情報です。金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には該当しません。個別商品の選択・契約については、各金融機関の契約締結前交付書面等をご確認のうえ、必要に応じて登録業者にご相談ください。'],
+    ['spacer', ''],
+    ['section', '2. 試算の前提と限界'],
+    ['body-bullet', '・収入上昇率・インフレ率・運用利回り等は入力値または一定の前提値によります'],
+    ['body-bullet', '・税制・社会保障制度は作成時点のもので、将来の制度改正で結果は変動します'],
+    ['body-bullet', '・住宅ローン金利・物件価格・管理費等は参考値であり、実際の条件により異なります'],
+    ['body-bullet', '・教育費は公的統計の平均値で、学校・コース・地域により大きく異なります'],
+    ['body-bullet', '・保険料・満期金・解約返戻金は各保険会社の契約締結前交付書面等で必ずご確認ください'],
+    ['body-bullet', '・年金受給額は現行給付水準による概算で、将来の改定は反映していません'],
+    ['body-bullet', '・出産・転職・相続・介護等の将来イベント、病気や失業等のリスクは含まれていません'],
+    ['spacer', ''],
+    ['section', '3. 運用シミュレーションについて（該当する場合）'],
+    ['body', '過去の値動きが将来再現される保証はありません。収録している過去リターンデータ（1976-2025）は各種公開データ（S&P Global、日経新聞、日銀、MSCI等）を参考にした概算値です。信託報酬・売買手数料・為替スプレッド等のコストは控除していません。指数（S&P500等）のリターンをそのまま割当資産に適用しており、実際の商品のトラッキングエラー・為替ヘッジ等は考慮していません。'],
+    ['spacer', ''],
+    ['section', '4. データの取り扱い・免責'],
+    ['body', '本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません。ご質問・ご相談は作成者までお問い合わせください。'],
+    ['spacer', ''],
+    ['footer-dc', `${company}${contact?'　'+contact:''}`]
+  ];
+
+  const S = {
+    title: {
+      font:{bold:true, sz:18, color:{rgb:'FFFFFFFF'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'FF1E3A5F'}},
+      alignment:{horizontal:'center', vertical:'center', wrapText:true}
+    },
+    meta: {
+      font:{sz:11, color:{rgb:'FF1E3A5F'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'FFE0E7FF'}},
+      alignment:{horizontal:'center', vertical:'center', wrapText:true}
+    },
+    alert: {
+      font:{bold:true, sz:12, color:{rgb:'FF92400E'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'FFFEF3C7'}},
+      alignment:{vertical:'center', wrapText:true, indent:1},
+      border:{left:{style:'thick', color:{rgb:'FFF59E0B'}}}
+    },
+    section: {
+      font:{bold:true, sz:13, color:{rgb:'FFFFFFFF'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'FF1E3A5F'}},
+      alignment:{vertical:'center', indent:1}
+    },
+    body: {
+      font:{sz:10, color:{rgb:'FF333333'}, name:'Meiryo'},
+      alignment:{vertical:'top', wrapText:true, indent:1}
+    },
+    'body-bullet': {
+      font:{sz:10, color:{rgb:'FF333333'}, name:'Meiryo'},
+      alignment:{vertical:'top', wrapText:true, indent:1}
+    },
+    'footer-dc': {
+      font:{sz:9, color:{rgb:'FFFFFFFF'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'FF1E3A5F'}},
+      alignment:{horizontal:'center', vertical:'center'}
+    },
+    spacer: {}
+  };
+
+  const rhMap = { title:36, meta:22, alert:44, section:24, body:54, 'body-bullet':20, spacer:8, 'footer-dc':20 };
+
+  // セル書き込み・結合・行高
+  if(!ws['!merges']) ws['!merges'] = [];
+  if(!ws['!rows']) ws['!rows'] = [];
+
+  L.forEach((row,i)=>{
+    const r = startRow + i;
+    const addr = XLSX.utils.encode_cell({r, c:0});
+    ws[addr] = { t:'s', v: row[1]||'', s: S[row[0]] || S.body };
+    // 全列結合
+    ws['!merges'].push({s:{r, c:0}, e:{r, c:lastCol}});
+    // 行高
+    while(ws['!rows'].length <= r) ws['!rows'].push({});
+    ws['!rows'][r] = {hpt: rhMap[row[0]] || 18};
+  });
+
+  // ref範囲拡張
+  const ref = ws['!ref'];
+  if(ref){
+    const range = XLSX.utils.decode_range(ref);
+    range.e.r = Math.max(range.e.r, startRow + L.length - 1);
+    range.e.c = Math.max(range.e.c, lastCol);
+    ws['!ref'] = XLSX.utils.encode_range(range);
+  }
+
+  return startRow;  // タイトル行 = 改ページ開始位置
+}
+
+// ===== (旧)免責事項シート追加 — 未使用だが互換のため残置 =====
 function _appendDisclaimerSheet(wb, clientName){
   const pi = getPrintInfo();
   const dateStr = _exportExtra.date
@@ -899,11 +1024,6 @@ function _appendDisclaimerSheet(wb, clientName){
     ['spacer', ''],
     ['section', '4. データの取り扱い・免責'],
     ['body', '本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません。ご質問・ご相談は作成者までお問い合わせください。'],
-    ['spacer', ''],
-    ['spacer', ''],
-    ['sign', '上記の注意事項について説明を受け、内容を理解しました。'],
-    ['spacer', ''],
-    ['sign', `確認日： 　年　月　日　　　　　お客様ご署名：　　　　　　　　　　　　　　　　　`],
     ['spacer', ''],
     ['footer', `${company}${contact?'　'+contact:''}`]
   ];
@@ -1576,11 +1696,14 @@ async function exportExcel(){
     });
   });
 
+  // 末尾に「ご確認事項」をCF表の延長線上に追加（印刷時に連続）
+  let _dcBreakRow2 = 0;
+  if(_exportExtra.includeDisclaimer!==false){
+    _dcBreakRow2 = _appendDisclaimerToCFSheet(ws, rows.length, disp+2, clientName);
+  }
   XLSX.utils.book_append_sheet(wb,ws,'CF表');
-  // 末尾に「ご確認事項」シートを追加
-  if(_exportExtra.includeDisclaimer!==false) _appendDisclaimerSheet(wb, clientName);
   const cnSama2=clientName.endsWith('様')?clientName:clientName+'様';
-  await _writeXlsxWithPageSetup(wb,`CF表_${cnSama2}_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表');
+  await _writeXlsxWithPageSetup(wb,`CF表_${cnSama2}_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表', _dcBreakRow2>0?{pageBreakRow:_dcBreakRow2}:undefined);
 }
 
 // ===== 生活費タブExcel出力 =====
