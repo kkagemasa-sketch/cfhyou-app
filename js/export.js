@@ -30,10 +30,8 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, opts) {
     } else {
       xml = xml.replace(/(<worksheet[^>]*>)/,'$1'+sheetPrTag);
     }
-    // 既存の pageSetup から scale を抽出（ws['!pageSetup'].scale で設定済み）
-    let _scale = 100;
-    const _m = xml.match(/<pageSetup[^>]*\bscale="(\d+)"/);
-    if(_m) _scale = parseInt(_m[1],10);
+    // scale は opts.scale で渡される（xlsx-js-style が scale 属性を書き出さないため）
+    const _scale = (opts && opts.scale) ? opts.scale : 100;
     const setupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${_scale}"/>`;
     if(/<pageSetup/.test(xml)){
       xml = xml.replace(/<pageSetup[^/]*\/>/,setupTag);
@@ -902,7 +900,7 @@ async function exportExcelMG(){
   if(_exportExtra.includeDisclaimer!==false) _appendDisclaimerSheet(wb, clientName);
   const cnSama=clientName.endsWith('様')?clientName:clientName+'様';
   const fname=`万が一_${cnSama}_${targetLabel}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
-  await _writeXlsxWithPageSetup(wb,fname,'万が一CF表');
+  await _writeXlsxWithPageSetup(wb,fname,'万が一CF表',{scale:_printScale});
 }
 
 // ===== 免責事項：CF表シート末尾に連結（印刷時に連続してページ出力される） =====
@@ -1847,7 +1845,7 @@ async function exportExcel(){
   // 末尾に「ご確認事項」シート（A4縦）を追加
   if(_exportExtra.includeDisclaimer!==false) _appendDisclaimerSheet(wb, clientName);
   const cnSama2=clientName.endsWith('様')?clientName:clientName+'様';
-  await _writeXlsxWithPageSetup(wb,`CF表_${cnSama2}_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表');
+  await _writeXlsxWithPageSetup(wb,`CF表_${cnSama2}_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.xlsx`,'CF表',{scale:_printScale});
 }
 
 // ===== 生活費タブExcel出力 =====
