@@ -523,27 +523,10 @@ async function exportExcelMG(){
     if(MR.lBal&&MR.lBal.some(v=>v>0))push(['ローン残高','',...MR.lBal.slice(0,disp).map(v=>ri(v)),ri(MR.lBal[disp-1]||0)],'balance');
   }
 
-  // ── 使用者情報（作成者ブランディング。免責事項は別シート「ご確認事項」に集約） ──
-  const pi=getPrintInfo();
-  const piLines=[];
-  if(pi.name)piLines.push(pi.name);
-  if(pi.company)piLines.push(pi.company);
-  if(pi.address)piLines.push(pi.address);
-  const piContact=[pi.tel,pi.email].filter(v=>v).join('　');
-  if(piContact)piLines.push(piContact);
-
-  // 空行＋使用者情報のみ（注意喚起文は別シートに集約済み）
-  push(Array(disp+3).fill(''),'blank');
+  // ── 使用者情報は非表示（免責事項は別シート「ご確認事項」に集約） ──
   const footerStartRow=rows.length;
-  const footerRowCount=Math.max(piLines.length,1);
+  const footerRowCount=0;
   const piEndCol=4;
-  const splitCol=5;
-  const noteEndCol=13;
-  for(let i=0;i<footerRowCount;i++){
-    const row=Array(disp+3).fill('');
-    if(i<piLines.length)row[0]=piLines[i];
-    push(row,'footer');
-  }
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
 
@@ -1409,27 +1392,10 @@ async function exportExcel(){
     push(['ローン残高','',...R.lBal.slice(0,disp).map(v=>ri(v)),''],'loan');
   }
 
-  // ── 使用者情報（作成者ブランディング。免責事項は別シート「ご確認事項」に集約） ──
-  const pi=getPrintInfo();
-  const piLines=[];
-  if(pi.name)piLines.push(pi.name);
-  if(pi.company)piLines.push(pi.company);
-  if(pi.address)piLines.push(pi.address);
-  const piContact=[pi.tel,pi.email].filter(v=>v).join('　');
-  if(piContact)piLines.push(piContact);
-
-  // 空行＋使用者情報のみ（注意喚起文は別シートに集約済み）
-  push(Array(disp+3).fill(''),'blank');
+  // ── 使用者情報は非表示（免責事項は別シート「ご確認事項」に集約） ──
   const footerStartRow=rows.length;
-  const footerRowCount=Math.max(piLines.length,1);
+  const footerRowCount=0;
   const piEndCol=4;
-  const splitCol=5;
-  const noteEndCol=13;
-  for(let i=0;i<footerRowCount;i++){
-    const row=Array(disp+3).fill('');
-    if(i<piLines.length)row[0]=piLines[i];
-    push(row,'footer');
-  }
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
 
