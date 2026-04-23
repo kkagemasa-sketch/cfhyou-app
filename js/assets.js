@@ -96,7 +96,7 @@ function addInsSaving(person){
         <span style="font-size:9px;color:#6a2a8a;font-weight:600">※支出に自動計上</span>
       </div>
       <div class="fg">
-        <label class="lbl" style="font-size:9px">満期年齢</label>
+        <label class="lbl" style="font-size:9px">払込満期年齢</label>
         <div class="suf"><input class="inp age-inp" id="ins-age-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
       </div>
     </div>
