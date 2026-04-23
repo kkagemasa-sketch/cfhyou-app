@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>トークメモ</title>
+<title>オンラインメモ</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI',Meiryo,sans-serif;background:#1e293b;color:#e2e8f0;font-size:14px}
@@ -29,17 +29,28 @@ header .client{font-size:12px;font-weight:600;background:rgba(255,255,255,.2);pa
 .item.done{opacity:.55;background:#1e293b}
 .item.done .text{text-decoration:line-through;color:#94a3b8}
 
+/* メモ（チェックなし）は左に青いバー */
+.item.memo{background:#1e3a5f;border-color:#2563eb;border-left:4px solid #60a5fa}
+.item.memo:hover{background:#1e40af}
+.item.memo .memo-icon{color:#60a5fa;font-size:14px;flex-shrink:0;padding-top:1px;user-select:none}
+
 .item .handle{color:#64748b;font-size:14px;cursor:grab;user-select:none;padding-top:2px;flex-shrink:0}
 .item .cb{width:18px;height:18px;flex-shrink:0;margin-top:1px;cursor:pointer;accent-color:#f59e0b}
-.item .text{flex:1;font-size:13px;line-height:1.5;word-break:break-word;outline:none;min-height:18px}
+.item .text{flex:1;font-size:13px;line-height:1.5;word-break:break-word;outline:none;min-height:18px;white-space:pre-wrap}
 .item .text[contenteditable="true"]:focus{background:#0f172a;border-radius:4px;padding:2px 4px;margin:-2px -4px}
 .item .del{color:#94a3b8;background:transparent;border:none;cursor:pointer;font-size:16px;padding:0 4px;opacity:0;transition:.15s;flex-shrink:0}
 .item:hover .del{opacity:1}
 .item .del:hover{color:#ef4444}
+.item .type-toggle{color:#94a3b8;background:transparent;border:none;cursor:pointer;font-size:13px;padding:0 4px;opacity:0;transition:.15s;flex-shrink:0}
+.item:hover .type-toggle{opacity:.8}
+.item .type-toggle:hover{opacity:1;color:#f59e0b}
 
-.addbar{flex-shrink:0;padding:8px 10px 12px;border-top:1px solid #334155;background:#0f172a}
-.addbar button{width:100%;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(245,158,11,.3);transition:.15s}
-.addbar button:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(245,158,11,.5)}
+.addbar{flex-shrink:0;padding:8px 10px 12px;border-top:1px solid #334155;background:#0f172a;display:flex;gap:6px}
+.addbar button{flex:1;color:#fff;border:none;border-radius:8px;padding:10px 8px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.addbar .add-check{background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);box-shadow:0 2px 6px rgba(245,158,11,.3)}
+.addbar .add-check:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(245,158,11,.5)}
+.addbar .add-memo{background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);box-shadow:0 2px 6px rgba(59,130,246,.3)}
+.addbar .add-memo:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(59,130,246,.5)}
 
 .footer{flex-shrink:0;background:#0f172a;color:#64748b;font-size:10px;padding:5px 10px;text-align:center;border-top:1px solid #334155}
 .footer .saved{color:#10b981}
@@ -52,7 +63,7 @@ header .client{font-size:12px;font-weight:600;background:rgba(255,255,255,.2);pa
 </head>
 <body>
 <header>
-  <div class="title">📝 トークメモ</div>
+  <div class="title">📝 オンラインメモ</div>
   <div class="client" id="client-name">―</div>
 </header>
 
@@ -65,12 +76,13 @@ header .client{font-size:12px;font-weight:600;background:rgba(255,255,255,.2);pa
   <div class="empty" id="empty-msg">
     <div class="big">📝</div>
     項目がありません<br>
-    <small>下の「＋ 項目を追加」から追加してください</small>
+    <small>下のボタンからチェック項目またはメモを追加してください</small>
   </div>
 </div>
 
 <div class="addbar">
-  <button onclick="addItem()">＋ 項目を追加</button>
+  <button class="add-check" onclick="addItem('check')">＋ チェック項目</button>
+  <button class="add-memo" onclick="addItem('memo')">＋ メモ</button>
 </div>
 
 <div class="footer"><span id="save-status" class="saved">🔄 自動保存</span></div>
@@ -98,6 +110,8 @@ function load(){
   try{
     const raw = localStorage.getItem(storageKey());
     items = raw ? JSON.parse(raw) : [];
+    // 後方互換: type未設定はチェック項目扱い
+    items.forEach(it => { if(!it.type) it.type = 'check'; });
   }catch(e){ items = []; }
   render();
 }
@@ -114,7 +128,6 @@ function save(){
 function render(){
   const list = document.getElementById('list');
   const empty = document.getElementById('empty-msg');
-  // 既存の.itemを削除
   list.querySelectorAll('.item').forEach(el=>el.remove());
   if(items.length === 0){
     empty.style.display = 'block';
@@ -123,43 +136,58 @@ function render(){
   empty.style.display = 'none';
   items.forEach((it, idx)=>{
     const div = document.createElement('div');
-    div.className = 'item' + (it.done ? ' done' : '');
+    const isMemo = it.type === 'memo';
+    div.className = 'item' + (isMemo ? ' memo' : '') + (!isMemo && it.done ? ' done' : '');
     div.draggable = true;
     div.dataset.id = it.id;
+    // チェック項目: handle + checkbox + text + type-toggle + del
+    // メモ:       handle + 📌icon  + text + type-toggle + del
+    const leftIcon = isMemo
+      ? '<span class="memo-icon" title="メモ">📌</span>'
+      : `<input type="checkbox" class="cb" ${it.done?'checked':''}>`;
     div.innerHTML = `
       <span class="handle">⋮⋮</span>
-      <input type="checkbox" class="cb" ${it.done?'checked':''}>
+      ${leftIcon}
       <div class="text" contenteditable="true" spellcheck="false"></div>
+      <button class="type-toggle" title="${isMemo?'チェック項目に変更':'メモに変更'}">${isMemo?'☐':'📌'}</button>
       <button class="del" title="削除">×</button>
     `;
     const textEl = div.querySelector('.text');
     textEl.textContent = it.text || '';
     // チェックボックス
-    div.querySelector('.cb').addEventListener('change', (ev)=>{
-      it.done = ev.target.checked;
-      save();
-      render();
-    });
+    const cb = div.querySelector('.cb');
+    if(cb){
+      cb.addEventListener('change', (ev)=>{
+        it.done = ev.target.checked;
+        save(); render();
+      });
+    }
     // テキスト編集
     textEl.addEventListener('blur', ()=>{
-      it.text = textEl.textContent.trim();
+      it.text = textEl.textContent;
       save();
     });
     textEl.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Enter' && !ev.shiftKey){
+      // メモは改行OK（Shift+Enter相当を通常Enterで）。チェック項目はEnterで確定。
+      if(ev.key === 'Enter' && !ev.shiftKey && !isMemo){
         ev.preventDefault();
         textEl.blur();
-        // Enterで次の項目を自動追加（末尾で空欄になっているときだけ）
-        if(idx === items.length - 1 && it.text){
-          addItem();
+        if(idx === items.length - 1 && textEl.textContent.trim()){
+          addItem('check');
         }
       }
+    });
+    // 種類切替
+    div.querySelector('.type-toggle').addEventListener('click', ()=>{
+      it.text = textEl.textContent; // 編集中のテキストを保存
+      it.type = isMemo ? 'check' : 'memo';
+      if(it.type === 'memo') delete it.done;
+      save(); render();
     });
     // 削除
     div.querySelector('.del').addEventListener('click', ()=>{
       items = items.filter(x => x.id !== it.id);
-      save();
-      render();
+      save(); render();
     });
     // ドラッグ
     div.addEventListener('dragstart', (ev)=>{
@@ -189,48 +217,44 @@ function render(){
       const [moved] = items.splice(srcIdx, 1);
       items.splice(dstIdx, 0, moved);
       dragSrcId = null;
-      save();
-      render();
+      save(); render();
     });
     list.appendChild(div);
   });
 }
 
-function addItem(){
+function addItem(type){
   const id = Date.now() + Math.floor(Math.random()*1000);
-  items.push({id, text:'', done:false});
-  save();
-  render();
+  const it = {id, text:'', type: type || 'check'};
+  if(it.type === 'check') it.done = false;
+  items.push(it);
+  save(); render();
   // 最後の項目にフォーカス
   const list = document.getElementById('list');
-  const lastItem = list.querySelectorAll('.item .text');
-  if(lastItem.length){
-    const el = lastItem[lastItem.length - 1];
+  const allTexts = list.querySelectorAll('.item .text');
+  if(allTexts.length){
+    const el = allTexts[allTexts.length - 1];
     el.focus();
   }
 }
 
 function clearCompleted(){
-  const n = items.filter(x=>x.done).length;
+  const n = items.filter(x => x.type === 'check' && x.done).length;
   if(n === 0){ alert('チェック済みの項目がありません'); return; }
-  if(!confirm(`チェック済み ${n} 件を削除しますか？`)) return;
-  items = items.filter(x => !x.done);
-  save();
-  render();
+  if(!confirm(`チェック済み ${n} 件を削除しますか？\n（メモは削除されません）`)) return;
+  items = items.filter(x => !(x.type === 'check' && x.done));
+  save(); render();
 }
 
 function clearAll(){
   if(items.length === 0) return;
   if(!confirm(`すべての項目 (${items.length} 件) を削除しますか？`)) return;
   items = [];
-  save();
-  render();
+  save(); render();
 }
 
-// 初回読み込み
 load();
 
-// 他ウィンドウで同一clientのデータが変更されたら反映
 window.addEventListener('storage', (e)=>{
   if(e.key === storageKey()) load();
 });
