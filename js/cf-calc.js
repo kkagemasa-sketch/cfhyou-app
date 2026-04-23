@@ -1205,7 +1205,8 @@ function render(){
         if(redeemAgeA>0&&pAge>=redeemAgeA)return;
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-        const lbl=customLabel||(isNisa?'NISA':'課税')+'積み立て';
+        const _pLbl=p==='h'?'ご主人様':'奥様';
+        const lbl=customLabel||((isNisa?'NISA':'課税')+'積み立て('+_pLbl+')');
         const bal=fv(`sec-bal-${p}-${sid}`)||0;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         if(bal<=0&&monthly<=0)return; // 残高も積立額もなければスキップ
@@ -1267,7 +1268,8 @@ function render(){
         if(investAge>0&&pAge<investAge)return;  // 未投資期間は除外
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-        const lbl=customLabel||(isNisa?'NISA':'課税')+'一括投資';
+        const _pLbl=p==='h'?'ご主人様':'奥様';
+        const lbl=customLabel||((isNisa?'NISA':'課税')+'一括投資('+_pLbl+')');
         const bal=fv(`sec-stk-bal-${p}-${sid}`)||0;
         if(bal<=0)return; // 残高なければスキップ
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
