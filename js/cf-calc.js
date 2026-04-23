@@ -863,7 +863,7 @@ function render(){
           redeemAge, yrsHeld, investAge, rate:rate*100
         };
       });
-      // 積立保険の解約（保険は別行のため secRedeemRows に含めない）
+      // 積立保険の解約／満期受取（個別行として secRedeemRows に追加）
       document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
         const redeemAge=iv(`ins-redeem-${p}-${iid}`)||0;
@@ -872,17 +872,25 @@ function render(){
         const matAge=iv(`ins-age-${p}-${iid}`)||0;
         const matAmt=fv(`ins-mat-${p}-${iid}`)||0;
         const redeemAmt=fv(`ins-redeem-amt-${p}-${iid}`)||0;
-        if(pAge>=matAge&&matAmt>0){secRedeemTotal+=matAmt;return;}
-        if(redeemAmt>0){secRedeemTotal+=redeemAmt;return;}
-        if(matAge>0&&monthly>0){
+        let insRedeemVal=0;
+        if(pAge>=matAge&&matAmt>0){insRedeemVal=matAmt;}
+        else if(redeemAmt>0){insRedeemVal=redeemAmt;}
+        else if(matAge>0&&monthly>0){
           const enrollAge=iv(`ins-enroll-${p}-${iid}`)||pBaseAge;
           const totalPayYrs=matAge-enrollAge;
           const paidYrs2=Math.min(redeemAge-enrollAge,totalPayYrs);
           const cumPay=monthly*12*Math.max(0,paidYrs2);
           const ratio=totalPayYrs>0?paidYrs2/totalPayYrs:0;
           const surrenderCharge=Math.max(0,0.3*(1-ratio));
-          secRedeemTotal+=Math.round(cumPay*(1-surrenderCharge)+matAmt*ratio*ratio);
+          insRedeemVal=Math.round(cumPay*(1-surrenderCharge)+matAmt*ratio*ratio);
         }
+        if(insRedeemVal<=0)return;
+        secRedeemTotal+=insRedeemVal;
+        const customLbl=document.getElementById(`ins-label-${p}-${iid}`)?.value?.trim()||'';
+        const pLabel=p==='h'?'ご主人':'奥様';
+        const lbl=customLbl||`積立保険 解約(${pLabel})`;
+        const _insKey=`ins-${p}-${iid}`;
+        secRedeemMap[_insKey]={lbl,val:insRedeemVal};
       });
     });
     // per-security 行を追跡（finAssetRows と同パターン）
