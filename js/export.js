@@ -279,12 +279,12 @@ async function exportExcelMG(){
     const rowH=['👔 ご主人様','',
       `借入額: ${fhAmt}万円`,..._pad(infoSpan),
       `期間: ${fhYrs}年`,..._pad(infoSpan),
-      `金利: ${rateDisp}${stepStr}`,..._pad(infoSpan),
+      `金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan),
     ];
     const rowW=['👩 奥様','',
       `借入額: ${fwAmt}万円`,..._pad(infoSpan),
       `期間: ${fwYrs}年`,..._pad(infoSpan),
-      `金利: ${rateDisp}${stepStr}`,..._pad(infoSpan),
+      `金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan),
     ];
     extraPairRows.push(rowH,rowW);
   } else if(pairLoanMode){
@@ -296,9 +296,9 @@ async function exportExcelMG(){
     const totalLoan=lhAmt+lwAmt;
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    let hRateLabel=`金利: ${rHBase}%`;
+    let hRateLabel=`金利: 1年目〜${rHBase}%`;
     if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
-    let wRateLabel=`金利: ${rWBase}%`;
+    let wRateLabel=`金利: 1年目〜${rWBase}%`;
     if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
     const rowH=['👔 ご主人様','',
       `借入額: ${lhAmt}万円`,..._pad(infoSpan),
@@ -790,7 +790,18 @@ async function exportExcelMG(){
         fObj.color={rgb:C.zero};
       }
       // 背景色（col0対応）
-      const bgColor=(isFixed&&def.col0)?def.col0.fill:def.fill;
+      let bgColor=(isFixed&&def.col0)?def.col0.fill:def.fill;
+      // ペアローン行: ご主人様(青)/奥様(ピンク)
+      if(tp==='info'&&row[0]){
+        const r0=String(row[0]);
+        if(/👔/.test(r0)){
+          if(isFixed)bgColor='FF2563a6'; // ご主人様 = 少し明るめ青
+          else bgColor='FFe8f2fc';
+        }else if(/👩/.test(r0)){
+          if(isFixed)bgColor='FFc53d5a'; // 奥様 = ピンク
+          else bgColor='FFfce8ef';
+        }
+      }
       const fillObj=bgColor?{patternType:'solid',fgColor:{rgb:bgColor}}:undefined;
       // 合計列の特別背景
       let lastFill=fillObj;
@@ -1247,8 +1258,8 @@ async function exportExcel(){
     const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join(''):'';
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    extraPairRows2.push(['👔 ご主人様','',`借入額: ${fhAmt}万円`,..._pad(infoSpan),`期間: ${fhYrs}年`,..._pad(infoSpan),`金利: ${rateDisp}${stepStr}`,..._pad(infoSpan)]);
-    extraPairRows2.push(['👩 奥様','',`借入額: ${fwAmt}万円`,..._pad(infoSpan),`期間: ${fwYrs}年`,..._pad(infoSpan),`金利: ${rateDisp}${stepStr}`,..._pad(infoSpan)]);
+    extraPairRows2.push(['👔 ご主人様','',`借入額: ${fhAmt}万円`,..._pad(infoSpan),`期間: ${fhYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
+    extraPairRows2.push(['👩 奥様','',`借入額: ${fwAmt}万円`,..._pad(infoSpan),`期間: ${fwYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
   } else if(pairLoanMode){
     const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
     const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
@@ -1257,9 +1268,9 @@ async function exportExcel(){
     const totalLoan=lhAmt+lwAmt;
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    let hRateLabel=`金利: ${rHBase}%`;
+    let hRateLabel=`金利: 1年目〜${rHBase}%`;
     if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
-    let wRateLabel=`金利: ${rWBase}%`;
+    let wRateLabel=`金利: 1年目〜${rWBase}%`;
     if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
     extraPairRows2.push(['👔 ご主人様','',`借入額: ${lhAmt}万円`,..._pad(infoSpan),`期間: ${lhYrs}年`,..._pad(infoSpan),hRateLabel,..._pad(infoSpan)]);
     extraPairRows2.push(['👩 奥様','',`借入額: ${lwAmt}万円`,..._pad(infoSpan),`期間: ${lwYrs}年`,..._pad(infoSpan),wRateLabel,..._pad(infoSpan)]);
@@ -1670,7 +1681,18 @@ async function exportExcel(){
         fObj.color={rgb:C.zero};
       }
       // 背景色
-      const bgColor=(isFixed&&def.col0)?def.col0.fill:def.fill;
+      let bgColor=(isFixed&&def.col0)?def.col0.fill:def.fill;
+      // ペアローン行: ご主人様(青)/奥様(ピンク)
+      if(tp==='info'&&row[0]){
+        const r0=String(row[0]);
+        if(/👔/.test(r0)){
+          if(isFixed)bgColor='FF2563a6';
+          else bgColor='FFe8f2fc';
+        }else if(/👩/.test(r0)){
+          if(isFixed)bgColor='FFc53d5a';
+          else bgColor='FFfce8ef';
+        }
+      }
       const fillObj=bgColor?{patternType:'solid',fgColor:{rgb:bgColor}}:undefined;
       // 合計列は特別な背景
       let lastFill=fillObj;
