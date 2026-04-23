@@ -145,13 +145,15 @@ function _buildPopup(anchorEl, rowKey, colIndex, content){
       <span class="explain-popup-title">${content.title || '計算根拠'}</span>
       <button class="explain-popup-close" onclick="closeExplainPopup()">×</button>
     </div>
-    <div class="explain-popup-simple">${simple}</div>
-    ${detail ? `
-      <div class="explain-popup-detail-wrap" style="display:none">
-        <div class="explain-popup-detail">${detail}</div>
-      </div>
-      <button class="explain-popup-toggle" onclick="toggleExplainDetail(this)">もっと詳しく ▾</button>
-    ` : ''}
+    <div class="explain-popup-body">
+      <div class="explain-popup-simple">${simple}</div>
+      ${detail ? `
+        <div class="explain-popup-detail-wrap" style="display:none">
+          <div class="explain-popup-detail">${detail}</div>
+        </div>
+        <button class="explain-popup-toggle" onclick="toggleExplainDetail(this)">もっと詳しく ▾</button>
+      ` : ''}
+    </div>
   `;
   document.body.appendChild(pop);
   _explainPopupEl = pop;

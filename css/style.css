@@ -963,12 +963,17 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   border-radius:10px;
   box-shadow:0 10px 40px rgba(15,39,68,.22);
   min-width:280px;
-  max-width:360px;
+  max-width:420px;
+  max-height:90vh;
+  display:flex;
+  flex-direction:column;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;
   font-size:12px;
   color:#1e293b;
   animation:explain-fadein .12s ease-out;
 }
+.explain-popup > .explain-popup-header{flex:0 0 auto}
+.explain-popup-body{flex:1 1 auto;overflow-y:auto;overflow-x:auto;min-height:0}
 @keyframes explain-fadein{
   from{opacity:0;transform:translateY(-4px)}
   to  {opacity:1;transform:translateY(0)}
