@@ -56,7 +56,7 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, opts) {
         dcXml = dcXml.replace(/(<worksheet[^>]*>)/,'$1'+dcSheetPr);
       }
       // A4縦: paperSize=9, orientation="portrait", 幅1ページに収め、高さは内容に応じて自動
-      const dcSetup = `<pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>`;
+      const dcSetup = `<pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="1"/>`;
       if(/<pageSetup/.test(dcXml)){
         dcXml = dcXml.replace(/<pageSetup[^/]*\/>/,dcSetup);
       } else if(/<pageMargins/.test(dcXml)){
@@ -1063,101 +1063,100 @@ function _appendDisclaimerSheet(wb, clientName){
   const _dObj = _exportExtra.date ? new Date(_exportExtra.date) : new Date();
   const taxBaseDate = `${_dObj.getFullYear()}年${_dObj.getMonth()+1}月`;
 
-  // 行データ: [type, text]  type: title/meta/alert/section/body/body-bullet/sign/footer/spacer
-  // 会社名・担当者・連絡先は下部フッターに集約（上部にはお客様名と作成日のみ）
+  // 行データ: [type, text]  type: title/meta/lead/alert/section/body-bullet/footer/spacer
   const footerCompanyLine = company;
   const footerNameLine    = (fpName && fpName!=='—') ? `担当：${fpName}` : '';
   const footerContactLine = contact || '';
   const L = [
-    ['title', 'ライフプラン シミュレーション結果 — ご確認事項'],
+    ['title', 'ライフプラン シミュレーション結果 ― ご確認事項'],
     ['meta', `お客様：${cn}　／　作成日：${dateStr}`],
     ['spacer', ''],
-    ['alert', '⚠️ 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
+    ['lead', '本資料は、お客様からご提供いただいた情報および作成時点で確認可能な情報をもとに作成した、将来の家計収支・資産推移等のシミュレーション資料です。今後のライフプランを考える際の参考資料としてご活用いただくことを目的としており、税制、社会保障制度、金利、物価、保険内容、運用環境、収入・支出、ご家族の状況等の変化により、将来の結果は実際と異なる場合があります。重要なご判断にあたっては、最新の制度、契約内容、商品資料等をご確認ください。'],
     ['spacer', ''],
-    ['section', '1. 本シミュレーションの位置づけ'],
-    ['body', '本資料はお客様のライフプラン全体像を把握する目的で作成した参考情報です。金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には該当しません。個別商品の選択・契約については、各金融機関の契約締結前交付書面等をご確認のうえ、必要に応じて登録業者にご相談ください。'],
+    ['alert', '⚠  本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
     ['spacer', ''],
-    ['section', '2. 試算の前提と限界'],
-    ['body-bullet', '・収入上昇率・インフレ率・運用利回り等は入力値または一定の前提値によります'],
-    ['body-bullet', '・税制・社会保障制度は作成時点のもので、将来の制度改正で結果は変動します'],
-    ['body-bullet', '・住宅ローン金利・物件価格・管理費等は参考値であり、実際の条件により異なります'],
-    ['body-bullet', '・住宅ローン控除額・所得税・住民税は概算であり、実際の金額とは異なる場合があります。詳細は税理士にご相談ください'],
-    ['body-bullet', '・教育費は公的統計の平均値で、学校・コース・地域により大きく異なります'],
-    ['body-bullet', '・保険料・満期金・解約返戻金は各保険会社の契約締結前交付書面等で必ずご確認ください'],
-    ['body-bullet', '・年金受給額は現行給付水準による概算で、将来の改定は反映していません'],
-    ['body-bullet', '・出産・転職・相続・介護等の将来イベント、病気や失業等のリスクは含まれていません'],
+    ['section', '1.  本シミュレーションの位置づけ'],
+    ['body-bullet', '・本資料は、住まい・家計・保障・資産形成等について考えるための参考資料です'],
+    ['body-bullet', '・個別商品の勧誘、契約締結の推奨、投資判断の提供そのものを目的とするものではありません'],
+    ['body-bullet', '・金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には該当しません'],
     ['spacer', ''],
-    ['section', '3. 運用シミュレーションについて（該当する場合）'],
-    ['body', '過去の値動きが将来再現される保証はありません。収録している過去リターンデータ（1976-2025）は各種公開データ（S&P Global、日経新聞、日銀、MSCI等）を参考にした概算値です。信託報酬・売買手数料・為替スプレッド等のコストは控除していません。指数（S&P500等）のリターンをそのまま割当資産に適用しており、実際の商品のトラッキングエラー・為替ヘッジ等は考慮していません。'],
+    ['section', '2.  試算の前提とご確認事項'],
+    ['body-bullet', '・本資料は、お客様からのご申告内容および作成時点で確認できる情報を前提に作成しています'],
+    ['body-bullet', '・収入、支出、物価上昇率、昇給率、運用利回り、住宅関連費用等は、入力情報または一定の前提条件に基づいて試算しています'],
+    ['body-bullet', '・ご申告内容の変更や未反映事項がある場合、また税制・社会保障制度・金利水準・物価動向等が変動した場合は、結果が変わることがあります'],
+    ['body-bullet', '・出産、転職、退職、相続、介護、病気、失業、扶養状況の変更等により、家計状況が変わる可能性があります'],
     ['spacer', ''],
-    ['section', '4. 税制に関するご注意'],
-    ['body-bullet', '・本資料に記載の情報は、法律上または税務上の助言ではありません'],
-    ['body-bullet', '・本資料をもって税理士・弁護士等の専門家による助言に代えることはできません'],
-    ['body-bullet', `・本資料は、${taxBaseDate}現在の税制（所得税・住民税・相続税・贈与税・社会保険料率等）に基づいて作成しています`],
-    ['body-bullet', '・今後の税制改正・社会保障制度の変更により、試算結果は変動する場合があります'],
-    ['body-bullet', '・住宅ローン控除・ふるさと納税・NISA・iDeCo等の税制優遇は、入力条件による概算であり、実際の適用可否・控除額はお客様の所得・家族構成・他の控除との兼ね合いで変動します'],
+    ['section', '3.  税金・社会保障に関するご案内'],
+    ['body-bullet', `・本資料は${taxBaseDate}現在の税制（所得税・住民税・相続税・贈与税・社会保険料率等）に基づく概算であり、法律上または税務上の助言ではありません`],
+    ['body-bullet', '・所得税、住民税、社会保険料、住宅ローン控除、相続税、贈与税、各種税制優遇制度（ふるさと納税・NISA・iDeCo 等）は、適用要件や制度改正、ご家族・所得状況により実際の適用可否や金額が異なる場合があります'],
     ['body-bullet', '・退職金・年金・保険金等の受取時の課税区分（一時所得／雑所得／退職所得等）は、実際の受取方法・契約形態により異なります'],
-    ['body-bullet', '・相続税・贈与税の試算は現行の基礎控除・税率に基づく概算であり、財産評価・特例適用の可否により実額と大きく乖離する場合があります'],
-    ['body-bullet', '・個別具体的な税務取り扱いについては、所轄の税務署または税理士にご確認ください'],
+    ['body-bullet', '・個別具体的な税務・社会保険上の判断が必要な場合は、税理士、社会保険労務士、所轄官公署等の専門機関へご確認ください'],
     ['spacer', ''],
-    ['section', '5. データの取り扱い・免責'],
-    ['body', '本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません。ご質問・ご相談は作成者までお問い合わせください。'],
+    ['section', '4.  住宅ローン・保険・資産運用に関するご案内'],
+    ['body-bullet', '・住宅ローン金利、借入条件、諸費用、団体信用生命保険の内容、物件価格、維持費、修繕費等は、金融機関・物件条件・契約内容により異なります'],
+    ['body-bullet', '・保険料、保障内容、給付金、解約返戻金等は、商品内容・契約条件・告知内容・支払事由への該当有無等により異なる場合があります。各保険会社の契約締結前交付書面等で必ずご確認ください'],
+    ['body-bullet', '・運用シミュレーションを含む場合、想定利回り・過去実績・指数データ等は将来の運用成果を保証するものではなく、市場環境・為替・手数料・税制等の影響により実際の結果は変動します'],
+    ['body-bullet', '・教育費は公的統計の平均値で、学校・コース・地域により大きく異なります'],
+    ['body-bullet', '・年金受給額は現行給付水準による概算で、将来の改定は反映していません'],
     ['spacer', ''],
-    ['footer', footerCompanyLine],
-    footerNameLine    ? ['footer', footerNameLine]    : null,
-    footerContactLine ? ['footer', footerContactLine] : null
-  ].filter(Boolean);
+    ['section', '5.  本資料のご活用にあたって'],
+    ['body-bullet', '・本資料は、現時点での見通しを整理するための資料です。前提条件に変更があった場合は、再試算により結果が変わる場合があります'],
+    ['body-bullet', '・ご不明点や前提条件の確認事項がありましたら、その都度ご相談ください'],
+    ['body-bullet', '・本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません'],
+    ['spacer', ''],
+    ['footer', [footerCompanyLine, footerNameLine, footerContactLine].filter(Boolean).join('　／　')]
+  ];
 
   // 行データのみの配列（AOA）
   const rows = L.map(r=>[r[1]]);
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
   // スタイル定義
+  const _bdr = (style,rgb)=>({style, color:{rgb}});
   const S = {
     title: {
-      font:{bold:true, sz:18, color:{rgb:'FFFFFF'}, name:'Meiryo'},
+      font:{bold:true, sz:15, color:{rgb:'FFFFFF'}, name:'Meiryo'},
       fill:{patternType:'solid', fgColor:{rgb:'1E3A5F'}},
-      alignment:{horizontal:'center', vertical:'center', wrapText:true}
+      alignment:{horizontal:'center', vertical:'center', wrapText:true},
+      border:{top:_bdr('medium','0D2340'),bottom:_bdr('medium','0D2340')}
     },
     meta: {
-      font:{sz:11, color:{rgb:'1E3A5F'}, name:'Meiryo'},
-      fill:{patternType:'solid', fgColor:{rgb:'E0E7FF'}},
+      font:{sz:9, color:{rgb:'1E3A5F'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'F1F5FA'}},
       alignment:{horizontal:'center', vertical:'center', wrapText:true}
     },
+    lead: {
+      font:{sz:9, color:{rgb:'1F2937'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'F5F8FD'}},
+      alignment:{vertical:'center', wrapText:true, indent:2},
+      border:{left:_bdr('medium','1E3A5F'),top:_bdr('thin','D0DAE7'),bottom:_bdr('thin','D0DAE7'),right:_bdr('thin','D0DAE7')}
+    },
     alert: {
-      font:{bold:true, sz:12, color:{rgb:'92400E'}, name:'Meiryo'},
+      font:{bold:true, sz:10, color:{rgb:'92400E'}, name:'Meiryo'},
       fill:{patternType:'solid', fgColor:{rgb:'FEF3C7'}},
-      alignment:{vertical:'center', wrapText:true, indent:1},
-      border:{left:{style:'thick', color:{rgb:'F59E0B'}}}
+      alignment:{vertical:'center', wrapText:true, indent:2},
+      border:{left:_bdr('thick','F59E0B'),top:_bdr('thin','E6C177'),bottom:_bdr('thin','E6C177'),right:_bdr('thin','E6C177')}
     },
     section: {
-      font:{bold:true, sz:13, color:{rgb:'FFFFFF'}, name:'Meiryo'},
+      font:{bold:true, sz:11, color:{rgb:'FFFFFF'}, name:'Meiryo'},
       fill:{patternType:'solid', fgColor:{rgb:'1E3A5F'}},
-      alignment:{vertical:'center', indent:1}
-    },
-    body: {
-      font:{sz:9, color:{rgb:'333333'}, name:'Meiryo'},
-      alignment:{vertical:'top', wrapText:true, indent:1}
+      alignment:{vertical:'center', indent:1},
+      border:{left:_bdr('thick','D4A84B')}
     },
     'body-bullet': {
       font:{sz:9, color:{rgb:'333333'}, name:'Meiryo'},
-      alignment:{vertical:'top', wrapText:true, indent:1}
-    },
-    sign: {
-      font:{sz:11, color:{rgb:'1E3A5F'}, name:'Meiryo', bold:true},
-      alignment:{vertical:'center', indent:1}
+      alignment:{vertical:'center', wrapText:true, indent:2}
     },
     footer: {
-      font:{sz:9, color:{rgb:'FFFFFF'}, name:'Meiryo'},
+      font:{sz:8, color:{rgb:'FFFFFF'}, name:'Meiryo'},
       fill:{patternType:'solid', fgColor:{rgb:'1E3A5F'}},
       alignment:{horizontal:'center', vertical:'center'}
     },
     spacer: {}
   };
 
-  // 行高さ: テキスト長から明示的に計算し、折り返し時の下部切れを防止
-  // 列幅 wch:90 ≒ 日本語約40文字/行、font 10pt で1行約15pt、上下余白8pt
-  const fixedH = { title:44, meta:22, section:26, spacer:10 };
+  // 行高さ: 1ページに収まるようコンパクトに計算
+  // 列幅 wch:92 ≒ 日本語約44文字/行、font 9pt で1行約12pt
   const calcWrapHeight = (txt, charsPerLine, lineHeight, padding)=>{
     const len = (txt||'').length || 1;
     const lines = Math.max(1, Math.ceil(len / charsPerLine));
@@ -1167,12 +1166,15 @@ function _appendDisclaimerSheet(wb, clientName){
   L.forEach((r,i)=>{
     const t = r[0], txt = r[1]||'';
     let h;
-    if(fixedH[t]) h = fixedH[t];
-    else if(t==='alert')       h = calcWrapHeight(txt, 38, 16, 14);
-    else if(t==='body')        h = calcWrapHeight(txt, 46, 13, 8);
-    else if(t==='body-bullet') h = calcWrapHeight(txt, 46, 13, 6);
-    else if(t==='footer')      h = 18;
-    else h = 18;
+    if(t==='title')            h = 30;
+    else if(t==='meta')        h = 16;
+    else if(t==='section')     h = 20;
+    else if(t==='spacer')      h = 4;
+    else if(t==='footer')      h = 16;
+    else if(t==='alert')       h = calcWrapHeight(txt, 42, 13, 10);
+    else if(t==='lead')        h = calcWrapHeight(txt, 46, 12, 8);
+    else if(t==='body-bullet') h = calcWrapHeight(txt, 46, 12, 4);
+    else h = 14;
     rowsArr[i] = { hpt: h };
   });
   ws['!rows'] = rowsArr;
@@ -1184,11 +1186,11 @@ function _appendDisclaimerSheet(wb, clientName){
   L.forEach((row,i)=>{
     const addr = XLSX.utils.encode_cell({r:i, c:0});
     if(!ws[addr]) ws[addr] = { t:'s', v: row[1]||'' };
-    ws[addr].s = S[row[0]] || S.body;
+    ws[addr].s = S[row[0]] || S['body-bullet'];
   });
 
-  // 印刷設定: A4縦・幅1ページに収める（高さは内容に応じて自動）
-  ws['!pageSetup'] = { paperSize:9, orientation:'portrait', fitToWidth:1, fitToHeight:0 };
+  // 印刷設定: A4縦・1ページ(幅・高さとも)に収める
+  ws['!pageSetup'] = { paperSize:9, orientation:'portrait', fitToWidth:1, fitToHeight:1 };
   ws['!margins']   = { left:0.3, right:0.3, top:0.3, bottom:0.3, header:0.2, footer:0.2 };
 
   XLSX.utils.book_append_sheet(wb, ws, 'ご確認事項');
