@@ -933,7 +933,8 @@ function render(){
         if(monthly<=0)return;
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const rowKey=`secInv-${p}-${sid}`;
-        const lbl=customLabel||`積立投資(${pLabel})`;
+        const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        const lbl=customLabel||`${isNisa?'積立NISA':'積立投資'}(${pLabel})`;
         const endAge=iv(`sec-end-${p}-${sid}`)||0;
         const redeemAge=iv(`sec-redeem-${p}-${sid}`)||0;
         const isActive=(endAge===0||pAge<endAge)&&(redeemAge===0||pAge<redeemAge);
