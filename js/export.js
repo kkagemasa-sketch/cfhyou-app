@@ -14,22 +14,27 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, opts) {
 
     const zip = await JSZip.loadAsync(u8);
 
-    // ① メインシート（CF表）: A4横・全行1ページに収める
+    // ① メインシート（CF表）: A4横・計算済みscaleで1ページに収め用紙いっぱい
     const sheetIdx = wb.SheetNames.indexOf(sheetName);
     const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
     let xml = await zip.file(xmlPath).async('string');
-    const sheetPrTag = '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>';
+    // fitToPage=0 にして scale を実効させる（fitToPage=1 だと Excel が scale を無視する）
+    const sheetPrTag = '<sheetPr><pageSetUpPr fitToPage="0"/></sheetPr>';
     if(/<sheetPr/.test(xml)){
       if(/<pageSetUpPr/.test(xml)){
-        xml = xml.replace(/<pageSetUpPr[^/]*\/>/,'<pageSetUpPr fitToPage="1"/>');
+        xml = xml.replace(/<pageSetUpPr[^/]*\/>/,'<pageSetUpPr fitToPage="0"/>');
       } else {
         xml = xml.replace(/<sheetPr\s*\/>/,sheetPrTag);
-        xml = xml.replace(/(<sheetPr(?:\s[^>]*)?>)(?!<pageSetUpPr)/,'$1<pageSetUpPr fitToPage="1"/>');
+        xml = xml.replace(/(<sheetPr(?:\s[^>]*)?>)(?!<pageSetUpPr)/,'$1<pageSetUpPr fitToPage="0"/>');
       }
     } else {
       xml = xml.replace(/(<worksheet[^>]*>)/,'$1'+sheetPrTag);
     }
-    const setupTag = `<pageSetup paperSize="9" orientation="landscape" fitToHeight="1" fitToWidth="1"/>`;
+    // 既存の pageSetup から scale を抽出（ws['!pageSetup'].scale で設定済み）
+    let _scale = 100;
+    const _m = xml.match(/<pageSetup[^>]*\bscale="(\d+)"/);
+    if(_m) _scale = parseInt(_m[1],10);
+    const setupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${_scale}"/>`;
     if(/<pageSetup/.test(xml)){
       xml = xml.replace(/<pageSetup[^/]*\/>/,setupTag);
     } else if(/<pageMargins/.test(xml)){
@@ -656,13 +661,16 @@ async function exportExcelMG(){
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
-  // ── 印刷設定：A4横・全行1ページに収める ──
-  // A4横の印刷可能高さ≒6.77inch、デフォルト行高15pt=0.208inch → 100%で約32行
-  // 行数に応じてscaleを自動計算（ライブラリはfitToPageを非対応のためscaleで代替）
-  // footer/blank行を除いたデータ行数でスケール計算（用紙いっぱいに印刷）
-  const _dataRows=types.filter(t=>t&&t!=='footer'&&t!=='blank').length;
-  const _printScale=Math.min(100,Math.max(45,Math.floor(4800/_dataRows)));
-  ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale};
+  // ── 印刷設定：A4横・1ページに収めつつ用紙いっぱいに拡大 ──
+  // 実際の行高さ・列幅から必要scaleを計算（widthとheightの制約両方を満たす最大倍率）
+  // A4横 印刷可能領域：297×210mm − 左右0.2" 上下0.15"余白 ≒ 813×573pt
+  const _printW=813, _printH=573;
+  const _totalH=(ws['!rows']||[]).reduce((s,r)=>s+((r&&r.hpt)||15),0);
+  const _totalW=(ws['!cols']||[]).reduce((s,c)=>s+((c&&c.wch)||8)*7.2,0); // wch→pt換算≒7.2
+  const _scaleRaw=Math.min(_printW/Math.max(1,_totalW),_printH/Math.max(1,_totalH))*100;
+  // 安全マージン0.98（境界でのはみ出し防止）、Excel許容範囲10-400
+  const _printScale=Math.max(10,Math.min(400,Math.floor(_scaleRaw*0.98)));
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale,fitToPage:false};
   ws['!margins']={left:0.2,right:0.2,top:0.15,bottom:0.15,header:0.1,footer:0.1};
   wb.Workbook=wb.Workbook||{};
   wb.Workbook.Names=wb.Workbook.Names||[];
@@ -1601,11 +1609,16 @@ async function exportExcel(){
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
-  // ── 印刷設定：A4横・全行1ページに収める ──
-  // footer/blank行を除いたデータ行数でスケール計算（用紙いっぱいに印刷）
-  const _dataRows=types.filter(t=>t&&t!=='footer'&&t!=='blank').length;
-  const _printScale=Math.min(100,Math.max(45,Math.floor(4800/_dataRows)));
-  ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale};
+  // ── 印刷設定：A4横・1ページに収めつつ用紙いっぱいに拡大 ──
+  // 実際の行高さ・列幅から必要scaleを計算（widthとheightの制約両方を満たす最大倍率）
+  // A4横 印刷可能領域：297×210mm − 左右0.2" 上下0.15"余白 ≒ 813×573pt
+  const _printW=813, _printH=573;
+  const _totalH=(ws['!rows']||[]).reduce((s,r)=>s+((r&&r.hpt)||15),0);
+  const _totalW=(ws['!cols']||[]).reduce((s,c)=>s+((c&&c.wch)||8)*7.2,0); // wch→pt換算≒7.2
+  const _scaleRaw=Math.min(_printW/Math.max(1,_totalW),_printH/Math.max(1,_totalH))*100;
+  // 安全マージン0.98（境界でのはみ出し防止）、Excel許容範囲10-400
+  const _printScale=Math.max(10,Math.min(400,Math.floor(_scaleRaw*0.98)));
+  ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale,fitToPage:false};
   ws['!margins']={left:0.2,right:0.2,top:0.15,bottom:0.15,header:0.1,footer:0.1};
 
   // 印刷タイトル行：前提条件＋ヘッダー行を各ページ上部に繰り返し
