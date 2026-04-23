@@ -1166,15 +1166,15 @@ function _appendDisclaimerSheet(wb, clientName){
   L.forEach((r,i)=>{
     const t = r[0], txt = r[1]||'';
     let h;
-    if(t==='title')            h = 24;
-    else if(t==='meta')        h = 13;
-    else if(t==='section')     h = 15;
-    else if(t==='spacer')      h = 2;
-    else if(t==='footer')      h = 13;
-    else if(t==='alert')       h = calcWrapHeight(txt, 44, 11, 4);
-    else if(t==='lead')        h = calcWrapHeight(txt, 48, 10, 2);
-    else if(t==='body-bullet') h = calcWrapHeight(txt, 48, 10, 2);
-    else h = 12;
+    if(t==='title')            h = 26;
+    else if(t==='meta')        h = 15;
+    else if(t==='section')     h = 19;
+    else if(t==='spacer')      h = 3;
+    else if(t==='footer')      h = 15;
+    else if(t==='alert')       h = calcWrapHeight(txt, 42, 14, 6);
+    else if(t==='lead')        h = calcWrapHeight(txt, 46, 13, 5);
+    else if(t==='body-bullet') h = calcWrapHeight(txt, 46, 13, 4);
+    else h = 13;
     rowsArr[i] = { hpt: h };
   });
   ws['!rows'] = rowsArr;
