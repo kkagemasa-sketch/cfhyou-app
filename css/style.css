@@ -387,6 +387,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rfin td{background:#f0f8ff;color:#1a4a7a;font-size:10px;font-weight:600;border-bottom:1px solid #cce4f8}
 .rfin td:first-child,.rfin td:nth-child(2){background:#dbeeff!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;color:#1a3a6a;font-weight:700;border-right:2px solid #6b8cae!important}
 .rfin td:last-child{background:#2d7dd2!important;color:#fff!important;font-weight:700}
+/* その他金融資産 合計行（個別の.rfin行より濃く、総金融資産.rttlより薄く） */
+.rfin.rfin-total td{background:#a6cbec!important;color:#0d2a4a!important;font-size:11px;font-weight:700;border-top:1px solid #6b8cae;border-bottom:1px solid #6b8cae}
+.rfin.rfin-total td:first-child,.rfin.rfin-total td:nth-child(2){background:#7fb0d8!important;color:#0d2a4a!important;font-weight:700}
+.rfin.rfin-total td:last-child{background:#4a8fcc!important;color:#fff!important;font-weight:700}
 /* 総金融資産合計 */
 .rttl td{background:#1a4a7a;color:#fff;font-size:11px;font-weight:700;border-top:2px solid #0d2a4a;border-bottom:2px solid #0d2a4a}
 .rttl td:first-child,.rttl td:nth-child(2){background:#1a4a7a!important;color:#fff!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;border-right:2px solid #6b8cae!important}
@@ -565,6 +569,7 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
 .rsav        td:first-child,.rsav        td:nth-child(2){background:var(--green-l)!important;color:#fff!important}
 .rloan       td:first-child,.rloan       td:nth-child(2){background:#eef2f7!important;color:var(--navy)!important}
 .rfin        td:first-child,.rfin        td:nth-child(2){background:#dbeeff!important;color:#1a3a6a!important}
+.rfin.rfin-total td:first-child,.rfin.rfin-total td:nth-child(2){background:#7fb0d8!important;color:#0d2a4a!important}
 .rttl        td:first-child,.rttl        td:nth-child(2){background:#1a4a7a!important;color:#fff!important}
 /* 固定列の右境界線（項目列のみ）*/
 .cf td:nth-child(2),.cf th:nth-child(2){border-right:2px solid #8aa0b8!important}

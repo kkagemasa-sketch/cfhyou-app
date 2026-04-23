@@ -480,7 +480,7 @@ async function exportExcelMG(){
         push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v||0)),ri(row.vals[disp-1]||0)],'fin');
       });
     }
-    push(['その他金融資産','',...MR.finAsset.slice(0,disp).map(v=>ri(v)),ri(MR.finAsset[disp-1])],'finTotal');
+    push(['その他金融資産合計','',...MR.finAsset.slice(0,disp).map(v=>ri(v)),ri(MR.finAsset[disp-1])],'finTotal');
   }
   // 総金融資産（通常CFと同じ型タグ: 'totalAsset'）
   if(MR.totalAsset)push(['総金融資産','',...MR.totalAsset.slice(0,disp).map(v=>ri(v)),ri(MR.totalAsset[disp-1])],'totalAsset');
@@ -1345,7 +1345,7 @@ async function exportExcel(){
     if(R.finAssetRows)R.finAssetRows.forEach(row=>{
       if(row.vals.slice(0,disp).some(v=>v>0))push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
     });
-    if(R.finAsset.some(v=>v>0))push(['その他金融資産','',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
+    if(R.finAsset.some(v=>v>0))push(['その他金融資産合計','',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
     push(['総金融資産','',...R.totalAsset.slice(0,disp).map(v=>ri(v)),ri(R.totalAsset[disp-1])],'totalAsset');
     // 下落シナリオ適用中は通常値（下落なし）を比較行として追加
     const _shocksOnExp=(typeof marketShocks!=='undefined'&&marketShocks.length>0)
