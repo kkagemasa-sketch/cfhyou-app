@@ -31,7 +31,8 @@ function mspCollectSecurities(){
       const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
       const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
       if(!isAccum)return;
-      items.push({key:`sec-accum-${p}-${sid}`, label:customLabel||`積立投資(${pLbl})`, kind:'equity'});
+      const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+      items.push({key:`sec-accum-${p}-${sid}`, label:customLabel||`${isNisa?'積立NISA':'積立投資'}(${pLbl})`, kind:'equity'});
     });
     // 一括投資
     document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
