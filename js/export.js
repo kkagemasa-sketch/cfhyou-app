@@ -871,7 +871,7 @@ async function exportExcelMG(){
       const finalAlign=cell._centerAlign?'center':hAlign;
       const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
       // ペアローン行（👔/👩）は1行表示にしたいのでwrap無効＋shrinkで縮小
-      const isPairRow=tp==='info'&&row[0]&&/[👔👩]/.test(String(row[0]));
+      const isPairRow=tp==='info'&&row[0]&&/[\u{1F454}\u{1F469}]/u.test(String(row[0]));
       const wrapText=(tp==='info'&&c>=2&&!isPairRow);
       cell.s={
         font:fObj,
@@ -1503,7 +1503,7 @@ async function exportExcel(){
   const _isPairRow=(r)=>{
     const row=rows[r]||[];
     const s=String(row[0]||'')+String(row[1]||'');
-    return /[👔👩]/.test(s);
+    return /[\u{1F454}\u{1F469}]/u.test(s);
   };
   infoRowIndices.forEach((ri,idx)=>{
     const pair=_isPairRow(ri);
@@ -1516,7 +1516,7 @@ async function exportExcel(){
       const sc=2+k*infoSpan;
       const span=(pair&&k===2)?5:infoSpan;
       const ec=Math.min(sc+span-1,disp+2);
-      if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
+      if(sc<=disp+2&&ec>=sc)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
     }
   });
   // 使用者情報の結合（左のみ、注意文右側は削除済み）
@@ -1539,7 +1539,7 @@ async function exportExcel(){
       // ペア行(ご主人様/奥様)は高さ23
       const row=rows[ri]||[];
       const s=String(row[0]||'')+String(row[1]||'');
-      if(/[👔👩]/.test(s))return{hpt:23};
+      if(/[\u{1F454}\u{1F469}]/u.test(s))return{hpt:23};
       return{hpt:30};
     }
     return{hpt:18};
@@ -1620,7 +1620,7 @@ async function exportExcel(){
       // ペアローン行のB列（ご主人様/奥様）ラベルも白文字太字
       if(tp==='info'&&c===1){
         const r01p=String(row[0]||'')+String(row[1]||'');
-        if(/[👔👩]/.test(r01p)){fObj.bold=true;fObj.sz=10;fObj.color={rgb:C.white};}
+        if(/[\u{1F454}\u{1F469}]/u.test(r01p)){fObj.bold=true;fObj.sz=10;fObj.color={rgb:C.white};}
       }
       if(tp==='info'&&c>=2){
         // infoデータ範囲外は塗りつぶしなし
@@ -1742,7 +1742,7 @@ async function exportExcel(){
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
       // ペアローン行（👔/👩）は1行表示にしたいのでwrap無効＋shrinkで縮小
-      const isPairRow=tp==='info'&&row[0]&&/[👔👩]/.test(String(row[0]));
+      const isPairRow=tp==='info'&&row[0]&&/[\u{1F454}\u{1F469}]/u.test(String(row[0]));
       const wrapText=(tp==='info'&&c>=2&&!isPairRow);
       cell.s={
         font:fObj,
