@@ -733,7 +733,9 @@ function setLoanCategory(cat){
   if(fsp)fsp.style.display=(cat==='flat35'&&!pairLoanMode)?'':'none';
   if(fpp)fpp.style.display=(cat==='flat35'&&pairLoanMode)?'':'none';
   if(cat==='flat35')updateFlat35Info();
-  live();
+  if(typeof calcLoanAmt==='function')calcLoanAmt();
+  // loanCategoryはJS変数のため入力ハッシュ非検知。強制再描画。
+  live(true);
 }
 
 function setFlat35Sub(sub){
