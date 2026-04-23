@@ -97,7 +97,7 @@ const ch = new BroadcastChannel('cf-app-talk-memo');
 ch.onmessage = (e) => {
   if(e.data.type === 'client-changed'){
     currentClient = e.data.clientName || '';
-    document.getElementById('client-name').textContent = currentClient || '（未設定）';
+    document.getElementById('client-name').textContent = currentClient ? (currentClient + ' 様') : '（未設定）';
     load();
   }
 };
