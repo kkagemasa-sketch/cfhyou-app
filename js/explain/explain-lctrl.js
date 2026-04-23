@@ -10,7 +10,8 @@
       .lctrl-ref-tbl th,.lctrl-ref-tbl td{border:1px solid #94a3b8;padding:3px 4px;text-align:center;vertical-align:middle;word-break:break-all}
       .lctrl-ref-tbl th{background:#e2e8f0;color:#1e293b;font-weight:700}
       .lctrl-ref-tbl td.cat{background:#f1f5f9;font-weight:700}
-      .lctrl-ref-tbl td.blk{background:#000}
+      .lctrl-ref-tbl td.blk{background:#e2e8f0;color:#64748b;font-size:9px;font-weight:600}
+      .lctrl-ref-tbl td.blk::before{content:"対象外"}
       .lctrl-ref-tbl td.dashed{color:#64748b;letter-spacing:2px}
       .lctrl-ref-tbl td.red{color:#dc2626;font-weight:600}
       .lctrl-ref-tbl .sub{font-size:9px;color:#475569}
@@ -109,7 +110,7 @@
     </table>
     <div style="font-size:9px;color:#64748b;margin-top:6px;line-height:1.6">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:3px">
-        <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:10px;background:#000;border:1px solid #94a3b8"></span>該当区分なし（制度対象外）</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;padding:1px 4px;background:#e2e8f0;color:#64748b;font-size:9px;font-weight:600;border:1px solid #94a3b8">対象外</span>該当区分なし（制度対象外）</span>
         <span style="display:inline-flex;align-items:center;gap:4px"><span style="color:#dc2626;font-weight:600">赤字</span>：改正後に追加・変更された区分</span>
         <span style="display:inline-flex;align-items:center;gap:4px"><span style="letter-spacing:2px">―</span>：控除対象外（制度適用なし）</span>
       </div>
