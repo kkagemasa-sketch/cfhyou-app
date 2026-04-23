@@ -910,64 +910,89 @@ function _appendDisclaimerToCFSheet(ws, startRow, lastCol, clientName){
   const fpName = pi.name || '—';
   const contact = [pi.address, pi.tel, pi.email].filter(Boolean).join(' / ') || '';
 
+  // 税制基準日（作成日の年月を使用）
+  const _dObj2 = _exportExtra.date ? new Date(_exportExtra.date) : new Date();
+  const taxBaseDate2 = `${_dObj2.getFullYear()}年${_dObj2.getMonth()+1}月`;
+
   const L = [
-    ['title', 'ライフプラン シミュレーション結果 — ご確認事項'],
+    ['title', 'ライフプラン シミュレーション結果 ― ご確認事項'],
     ['meta', `お客様：${cn}　／　作成日：${dateStr}`],
     ['meta', `作成者：${company}${fpName!=='—'?'　（'+fpName+'）':''}${contact?'　'+contact:''}`],
     ['spacer', ''],
-    ['alert', '⚠️ 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
+    ['lead', '本資料は、お客様からご提供いただいた情報および作成時点で確認可能な情報をもとに作成した、将来の家計収支・資産推移等のシミュレーション資料です。今後のライフプランを考える際の参考資料としてご活用いただくことを目的としており、税制、社会保障制度、金利、物価、保険内容、運用環境、収入・支出、ご家族の状況等の変化により、将来の結果は実際と異なる場合があります。重要なご判断にあたっては、最新の制度、契約内容、商品資料等をご確認ください。'],
     ['spacer', ''],
-    ['section', '1. 本シミュレーションの位置づけ'],
-    ['body', '本資料はお客様のライフプラン全体像を把握する目的で作成した参考情報です。金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には該当しません。個別商品の選択・契約については、各金融機関の契約締結前交付書面等をご確認のうえ、必要に応じて登録業者にご相談ください。'],
+    ['alert', '⚠  本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
     ['spacer', ''],
-    ['section', '2. 試算の前提と限界'],
-    ['body-bullet', '・収入上昇率・インフレ率・運用利回り等は入力値または一定の前提値によります'],
-    ['body-bullet', '・税制・社会保障制度は作成時点のもので、将来の制度改正で結果は変動します'],
-    ['body-bullet', '・住宅ローン金利・物件価格・管理費等は参考値であり、実際の条件により異なります'],
-    ['body-bullet', '・住宅ローン控除額・所得税・住民税は概算であり、実際の金額とは異なる場合があります。詳細は税理士にご相談ください'],
+    ['section', '1.  本シミュレーションの位置づけ'],
+    ['body-bullet', '・本資料は、住まい・家計・保障・資産形成等について考えるための参考資料です'],
+    ['body-bullet', '・個別商品の勧誘、契約締結の推奨、投資判断の提供そのものを目的とするものではありません'],
+    ['body-bullet', '・金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には該当しません'],
+    ['spacer', ''],
+    ['section', '2.  試算の前提とご確認事項'],
+    ['body-bullet', '・本資料は、お客様からのご申告内容および作成時点で確認できる情報を前提に作成しています'],
+    ['body-bullet', '・収入、支出、物価上昇率、昇給率、運用利回り、住宅関連費用等は、入力情報または一定の前提条件に基づいて試算しています'],
+    ['body-bullet', '・ご申告内容の変更や未反映事項がある場合、また税制・社会保障制度・金利水準・物価動向等が変動した場合は、結果が変わることがあります'],
+    ['body-bullet', '・出産、転職、退職、相続、介護、病気、失業、扶養状況の変更等により、家計状況が変わる可能性があります'],
+    ['spacer', ''],
+    ['section', '3.  税金・社会保障に関するご案内'],
+    ['body-bullet', `・本資料は${taxBaseDate2}現在の税制（所得税・住民税・相続税・贈与税・社会保険料率等）に基づく概算であり、法律上または税務上の助言ではありません`],
+    ['body-bullet', '・所得税、住民税、社会保険料、住宅ローン控除、相続税、贈与税、各種税制優遇制度（ふるさと納税・NISA・iDeCo 等）は、適用要件や制度改正、ご家族・所得状況により実際の適用可否や金額が異なる場合があります'],
+    ['body-bullet', '・退職金・年金・保険金等の受取時の課税区分（一時所得／雑所得／退職所得等）は、実際の受取方法・契約形態により異なります'],
+    ['body-bullet', '・個別具体的な税務・社会保険上の判断が必要な場合は、税理士、社会保険労務士、所轄官公署等の専門機関へご確認ください'],
+    ['spacer', ''],
+    ['section', '4.  住宅ローン・保険・資産運用に関するご案内'],
+    ['body-bullet', '・住宅ローン金利、借入条件、諸費用、団体信用生命保険の内容、物件価格、維持費、修繕費等は、金融機関・物件条件・契約内容により異なります'],
+    ['body-bullet', '・保険料、保障内容、給付金、解約返戻金等は、商品内容や契約条件、告知内容、支払事由への該当有無等により異なる場合があります。各保険会社の契約締結前交付書面等で必ずご確認ください'],
+    ['body-bullet', '・運用シミュレーションを含む場合、想定利回り・過去実績・指数データ等は将来の運用成果を保証するものではなく、市場環境・為替・手数料・税制等の影響により実際の結果は変動します'],
     ['body-bullet', '・教育費は公的統計の平均値で、学校・コース・地域により大きく異なります'],
-    ['body-bullet', '・保険料・満期金・解約返戻金は各保険会社の契約締結前交付書面等で必ずご確認ください'],
     ['body-bullet', '・年金受給額は現行給付水準による概算で、将来の改定は反映していません'],
-    ['body-bullet', '・出産・転職・相続・介護等の将来イベント、病気や失業等のリスクは含まれていません'],
     ['spacer', ''],
-    ['section', '3. 運用シミュレーションについて（該当する場合）'],
-    ['body', '過去の値動きが将来再現される保証はありません。収録している過去リターンデータ（1976-2025）は各種公開データ（S&P Global、日経新聞、日銀、MSCI等）を参考にした概算値です。信託報酬・売買手数料・為替スプレッド等のコストは控除していません。指数（S&P500等）のリターンをそのまま割当資産に適用しており、実際の商品のトラッキングエラー・為替ヘッジ等は考慮していません。'],
-    ['spacer', ''],
-    ['section', '4. データの取り扱い・免責'],
-    ['body', '本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません。ご質問・ご相談は作成者までお問い合わせください。'],
+    ['section', '5.  本資料のご活用にあたって'],
+    ['body-bullet', '・本資料は、現時点での見通しを整理するための資料です。前提条件に変更があった場合は、再試算により結果が変わる場合があります'],
+    ['body-bullet', '・ご不明点や前提条件の確認事項がありましたら、その都度ご相談ください'],
+    ['body-bullet', '・本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません'],
     ['spacer', ''],
     ['footer-dc', `${company}${contact?'　'+contact:''}`]
   ];
 
+  const _bdr = (style,rgb)=>({style, color:{rgb}});
   const S = {
     title: {
       font:{bold:true, sz:18, color:{rgb:'FFFFFFFF'}, name:'Meiryo'},
       fill:{patternType:'solid', fgColor:{rgb:'FF1E3A5F'}},
-      alignment:{horizontal:'center', vertical:'center', wrapText:true}
+      alignment:{horizontal:'center', vertical:'center', wrapText:true},
+      border:{top:_bdr('medium','FF0D2340'),bottom:_bdr('medium','FF0D2340')}
     },
     meta: {
-      font:{sz:11, color:{rgb:'FF1E3A5F'}, name:'Meiryo'},
-      fill:{patternType:'solid', fgColor:{rgb:'FFE0E7FF'}},
+      font:{sz:10, color:{rgb:'FF1E3A5F'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'FFF1F5FA'}},
       alignment:{horizontal:'center', vertical:'center', wrapText:true}
     },
+    lead: {
+      font:{sz:10, color:{rgb:'FF1F2937'}, name:'Meiryo'},
+      fill:{patternType:'solid', fgColor:{rgb:'FFF5F8FD'}},
+      alignment:{vertical:'center', wrapText:true, indent:2},
+      border:{left:_bdr('medium','FF1E3A5F'),top:_bdr('thin','FFD0DAE7'),bottom:_bdr('thin','FFD0DAE7'),right:_bdr('thin','FFD0DAE7')}
+    },
     alert: {
-      font:{bold:true, sz:12, color:{rgb:'FF92400E'}, name:'Meiryo'},
+      font:{bold:true, sz:11, color:{rgb:'FF92400E'}, name:'Meiryo'},
       fill:{patternType:'solid', fgColor:{rgb:'FFFEF3C7'}},
-      alignment:{vertical:'center', wrapText:true, indent:1},
-      border:{left:{style:'thick', color:{rgb:'FFF59E0B'}}}
+      alignment:{vertical:'center', wrapText:true, indent:2},
+      border:{left:_bdr('thick','FFF59E0B'),top:_bdr('thin','FFE6C177'),bottom:_bdr('thin','FFE6C177'),right:_bdr('thin','FFE6C177')}
     },
     section: {
-      font:{bold:true, sz:13, color:{rgb:'FFFFFFFF'}, name:'Meiryo'},
+      font:{bold:true, sz:12, color:{rgb:'FFFFFFFF'}, name:'Meiryo'},
       fill:{patternType:'solid', fgColor:{rgb:'FF1E3A5F'}},
-      alignment:{vertical:'center', indent:1}
+      alignment:{vertical:'center', indent:1},
+      border:{left:_bdr('thick','FFD4A84B')}
     },
     body: {
       font:{sz:10, color:{rgb:'FF333333'}, name:'Meiryo'},
-      alignment:{vertical:'top', wrapText:true, indent:1}
+      alignment:{vertical:'top', wrapText:true, indent:2}
     },
     'body-bullet': {
       font:{sz:10, color:{rgb:'FF333333'}, name:'Meiryo'},
-      alignment:{vertical:'top', wrapText:true, indent:1}
+      alignment:{vertical:'top', wrapText:true, indent:2}
     },
     'footer-dc': {
       font:{sz:9, color:{rgb:'FFFFFFFF'}, name:'Meiryo'},
@@ -977,7 +1002,24 @@ function _appendDisclaimerToCFSheet(ws, startRow, lastCol, clientName){
     spacer: {}
   };
 
-  const rhMap = { title:36, meta:22, alert:44, section:24, body:54, 'body-bullet':20, spacer:8, 'footer-dc':20 };
+  // 折り返し高さ動的計算（列幅 wch:92 想定、1行 約46文字、10pt で1行約13pt）
+  const _wrapH = (txt, cpl, lh, pad)=>{
+    const len=(txt||'').length||1;
+    const lines=Math.max(1, Math.ceil(len/cpl));
+    return lines*lh + pad;
+  };
+  const rhFor = (type, txt)=>{
+    if(type==='title')return 38;
+    if(type==='meta')return 20;
+    if(type==='section')return 26;
+    if(type==='spacer')return 6;
+    if(type==='footer-dc')return 20;
+    if(type==='alert')return _wrapH(txt,42,15,14);
+    if(type==='lead')return _wrapH(txt,44,14,14);
+    if(type==='body-bullet')return _wrapH(txt,44,14,8);
+    if(type==='body')return _wrapH(txt,44,14,10);
+    return 18;
+  };
 
   // セル書き込み・結合・行高
   if(!ws['!merges']) ws['!merges'] = [];
@@ -991,7 +1033,7 @@ function _appendDisclaimerToCFSheet(ws, startRow, lastCol, clientName){
     ws['!merges'].push({s:{r, c:0}, e:{r, c:lastCol}});
     // 行高
     while(ws['!rows'].length <= r) ws['!rows'].push({});
-    ws['!rows'][r] = {hpt: rhMap[row[0]] || 18};
+    ws['!rows'][r] = {hpt: rhFor(row[0], row[1])};
   });
 
   // ref範囲拡張
