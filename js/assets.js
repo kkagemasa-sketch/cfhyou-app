@@ -593,5 +593,7 @@ function setLoanMode(mode){
   }
   if(typeof updateMGDansinUI==='function')updateMGDansinUI();
   if(loanCategory==='flat35')updateFlat35Info();
+  // 借入金額表示をモードに合わせて再計算（ペア←→単独の切替で表示崩れを防ぐ）
+  if(typeof calcLoanAmt==='function')calcLoanAmt();
   live();
 }
