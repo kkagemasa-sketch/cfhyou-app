@@ -364,7 +364,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       });
     }
     // 合計行（色は個別行側に付けるのでここでは付与しない）
-    h+=`<tr class="rfin fin-asset-row" style="font-weight:700"><td>その他金融資産</td><td></td>`;
+    h+=`<tr class="rfin rfin-total fin-asset-row" style="font-weight:700"><td>その他金融資産合計</td><td></td>`;
     for(let i=0;i<disp;i++){
       const v=ri(R.finAsset[i]);
       h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;
