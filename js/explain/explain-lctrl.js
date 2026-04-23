@@ -2,6 +2,116 @@
 // cf-calc.js / contingency.js が R.lCtrlBreakdown[i] に詳細データを出力する前提
 
 (function(){
+  // 住宅ローン控除 制度表（令和6年度税制改正後）
+  const LCTRL_REF_TABLE = `
+    <div style="font-weight:700;color:#1e3a5f;margin-top:10px;margin-bottom:4px">▼ 住宅ローン控除 制度表</div>
+    <style>
+      .lctrl-ref-tbl{border-collapse:collapse;width:100%;font-size:10px;line-height:1.3;table-layout:fixed}
+      .lctrl-ref-tbl th,.lctrl-ref-tbl td{border:1px solid #94a3b8;padding:3px 4px;text-align:center;vertical-align:middle;word-break:break-all}
+      .lctrl-ref-tbl th{background:#e2e8f0;color:#1e293b;font-weight:700}
+      .lctrl-ref-tbl td.cat{background:#f1f5f9;font-weight:700}
+      .lctrl-ref-tbl td.blk{background:#000}
+      .lctrl-ref-tbl td.dashed{color:#64748b;letter-spacing:2px}
+      .lctrl-ref-tbl td.red{color:#dc2626;font-weight:600}
+      .lctrl-ref-tbl .sub{font-size:9px;color:#475569}
+      .lctrl-ref-tbl td.red .sub{color:#b91c1c}
+    </style>
+    <table class="lctrl-ref-tbl">
+      <thead>
+        <tr>
+          <th colspan="3" rowspan="2">入居時期</th>
+          <th>改正前</th>
+          <th colspan="2">改正後</th>
+        </tr>
+        <tr>
+          <th>2024(令和6)年<br>2025(令和7)年</th>
+          <th>2026(令和8)年<br>2027(令和9)年</th>
+          <th>2028(令和10)年〜<br>2030(令和12)年</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cat" rowspan="9">控除対象<br>借入<br>限度額</td>
+          <td class="cat" rowspan="4">新築・<br>買取<br>再販</td>
+          <td class="cat">認定住宅</td>
+          <td>4,500万円<br><span class="sub">(特例対象個人5,000万円)</span></td>
+          <td colspan="2">4,500万円<br><span class="sub">(特例対象個人5,000万円)</span></td>
+        </tr>
+        <tr>
+          <td class="cat">ZEH水準省エネ住宅</td>
+          <td>3,500万円<br><span class="sub">(特例対象個人4,500万円)</span></td>
+          <td colspan="2">3,500万円<br><span class="sub">(特例対象個人4,500万円)</span></td>
+        </tr>
+        <tr>
+          <td class="cat">省エネ基準適合住宅</td>
+          <td class="blk"></td>
+          <td class="red">2,000万円<br><span class="sub">(特例対象個人3,000万円)</span></td>
+          <td class="red">新築：適用対象外 ※2<br>買取再販：2,000万円<br><span class="sub">(特例対象個人3,000万円)</span></td>
+        </tr>
+        <tr>
+          <td class="cat">一般住宅</td>
+          <td class="blk"></td>
+          <td colspan="2" class="dashed">―――――――</td>
+        </tr>
+        <tr>
+          <td class="cat" rowspan="4">中古</td>
+          <td class="cat">認定住宅</td>
+          <td class="blk"></td>
+          <td colspan="2" class="red">3,500万円<br><span class="sub">(特例対象個人4,500万円)</span></td>
+        </tr>
+        <tr>
+          <td class="cat">ZEH水準省エネ住宅</td>
+          <td class="blk"></td>
+          <td colspan="2" class="red">3,500万円<br><span class="sub">(特例対象個人4,500万円)</span></td>
+        </tr>
+        <tr>
+          <td class="cat">省エネ基準適合住宅</td>
+          <td class="blk"></td>
+          <td colspan="2" class="red">2,000万円<br><span class="sub">(特例対象個人3,000万円)</span></td>
+        </tr>
+        <tr>
+          <td class="cat">一般住宅</td>
+          <td>2,000万円</td>
+          <td colspan="2">2,000万円</td>
+        </tr>
+        <tr>
+          <td class="cat" rowspan="5">控除<br>期間</td>
+          <td class="cat" rowspan="2">新築・<br>買取<br>再販</td>
+          <td class="cat">認定住宅・ZEH水準省エネ住宅</td>
+          <td>13年</td>
+          <td colspan="2">13年</td>
+        </tr>
+        <tr>
+          <td class="cat">省エネ基準適合住宅</td>
+          <td>13年</td>
+          <td colspan="2" class="red">新築：適用対象外 ※2<br>買取再販：13年</td>
+        </tr>
+        <tr>
+          <td class="cat blk"></td>
+          <td class="cat blk"></td>
+          <td>10年</td>
+          <td colspan="2" rowspan="3" class="red" style="font-size:14px;font-weight:700">13年</td>
+        </tr>
+        <tr>
+          <td class="cat" rowspan="2">中古</td>
+          <td class="cat blk"></td>
+          <td>10年</td>
+        </tr>
+        <tr>
+          <td class="cat blk"></td>
+          <td>10年</td>
+        </tr>
+        <tr>
+          <td class="cat" colspan="3">控除率</td>
+          <td colspan="3">0.7%</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.5">
+      ※2 省エネ基準適合住宅の新築は、2024年(令和6年)6月30日以前に建築確認を受けたもの、または2024年12月31日以前に建築されたものに限り適用。
+    </div>
+  `;
+
   // この行種別に対して ⓘ を表示するよう登録
   enableExplainForRow('lCtrl');
 
@@ -64,7 +174,7 @@
           </div>
         `;
       }
-      return { title: titleText, simple, detail };
+      return { title: titleText, simple, detail: (detail||'') + LCTRL_REF_TABLE };
     }
 
     // 値なし（控除期間外など）
@@ -82,7 +192,7 @@
         title: titleText,
         simple: `<div style="color:#64748b">この年の控除額は <strong style="color:#1e293b">0円</strong> です。</div>
                  <div style="font-size:11px;color:#94a3b8;margin-top:6px">理由: ${reason}</div>`,
-        detail: null
+        detail: LCTRL_REF_TABLE
       };
     }
 
@@ -97,7 +207,7 @@
           </div>
           <div style="font-size:11px;color:#64748b;margin-top:6px">「自由入力」モードで直接入力された値です。</div>
         `,
-        detail: null
+        detail: LCTRL_REF_TABLE
       };
     }
 
@@ -107,7 +217,7 @@
         title: titleText,
         simple: `<div>控除額: <strong>${explainFmt(value,'万円')}</strong></div>
                  <div style="font-size:11px;color:#94a3b8;margin-top:6px">計算内訳データがありません。CF表を再生成してください。</div>`,
-        detail: null
+        detail: LCTRL_REF_TABLE
       };
     }
 
@@ -242,6 +352,7 @@
           ※ 令和6年度税制改正に基づく計算。所得税から控除しきれない分は住民税から控除されます（上限9.75万円）。
         </div>
       </div>
+      ${LCTRL_REF_TABLE}
     `;
 
     return { title: titleText, simple, detail };
