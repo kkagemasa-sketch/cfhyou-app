@@ -266,47 +266,78 @@ async function exportExcelMG(){
   const infoRow2=['🏦 住宅ローン条件','',
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
   ];
+  const infoDataLens=[infoRow1Len];
+  const extraPairRows=[]; // ペアローン時のご主人様・奥様行
   if(_flatPair_e){
-    // フラット35ペアローン — 金額→年数→金利→段階金利
+    // フラット35ペアローン — 1行目:物件価格・借入総額・引渡し / 2行目:ご主人様 / 3行目:奥様
     const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
     const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
+    const totalLoan=fhAmt+fwAmt;
     const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join(''):'';
-    infoRow2.push(`主人: ${fhAmt}万円 ${fhYrs}年 ${rateDisp}${stepStr}`,..._pad(infoSpan));
-    infoRow2.push(`奥様: ${fwAmt}万円 ${fwYrs}年 ${rateDisp}${stepStr}`,..._pad(infoSpan));
+    infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
+    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+    const rowH=['👔 ご主人様','',
+      `借入額: ${fhAmt}万円`,..._pad(infoSpan),
+      `期間: ${fhYrs}年`,..._pad(infoSpan),
+      `金利: ${rateDisp}${stepStr}`,..._pad(infoSpan),
+    ];
+    const rowW=['👩 奥様','',
+      `借入額: ${fwAmt}万円`,..._pad(infoSpan),
+      `期間: ${fwYrs}年`,..._pad(infoSpan),
+      `金利: ${rateDisp}${stepStr}`,..._pad(infoSpan),
+    ];
+    extraPairRows.push(rowH,rowW);
   } else if(pairLoanMode){
-    // 変動ペアローン — 人ごとに金額→年数→金利→段階金利
+    // 変動ペアローン — 1行目:物件価格・借入総額・引渡し / 2行目:ご主人様 / 3行目:奥様
     const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
     const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
     const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
     const ratesH=getPairRates('h'), ratesW=getPairRates('w');
-    let hLabel=`主人: ${lhAmt}万円 ${lhYrs}年 ${rHBase}%`;
-    if(ratesH.length>1)hLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
-    infoRow2.push(hLabel,..._pad(infoSpan));
-    let wLabel=`奥様: ${lwAmt}万円 ${lwYrs}年 ${rWBase}%`;
-    if(ratesW.length>1)wLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
-    infoRow2.push(wLabel,..._pad(infoSpan));
+    const totalLoan=lhAmt+lwAmt;
+    infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
+    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+    let hRateLabel=`当初金利: ${rHBase}%`;
+    if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
+    let wRateLabel=`当初金利: ${rWBase}%`;
+    if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
+    const rowH=['👔 ご主人様','',
+      `借入額: ${lhAmt}万円`,..._pad(infoSpan),
+      `期間: ${lhYrs}年`,..._pad(infoSpan),
+      hRateLabel,..._pad(infoSpan),
+    ];
+    const rowW=['👩 奥様','',
+      `借入額: ${lwAmt}万円`,..._pad(infoSpan),
+      `期間: ${lwYrs}年`,..._pad(infoSpan),
+      wRateLabel,..._pad(infoSpan),
+    ];
+    extraPairRows.push(rowH,rowW);
   } else {
     // 通常ローン — 金額→年数→金利→段階金利
     infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
     infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
     infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
-  }
-  if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-  // 段階金利（通常ローン・フラット35単独）
-  if(!pairLoanMode&&rates.length>1){
-    rates.slice(1).forEach(s=>{
-      infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
-    });
+    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+    // 段階金利（通常ローン・フラット35単独）
+    if(rates.length>1){
+      rates.slice(1).forEach(s=>{
+        infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
+      });
+    }
   }
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
   push(infoRow2,'info');
+  infoDataLens.push(infoRow2Len);
+  // ペアローン時のご主人様・奥様行を追加
+  extraPairRows.forEach(row=>{
+    const rowLen=row.length;
+    while(row.length<disp+3)row.push('');
+    push(row,'info');
+    infoDataLens.push(rowLen);
+  });
 
   // 空行
   push(Array(disp+3).fill(''),'blank');
-
-  // info行のデータ長を記録
-  const infoDataLens=[infoRow1Len,infoRow2Len];
 
   // ── ヘッダー ──
   push(['カテゴリ','項目',...MR.yr.map(String),'合計'],'header');
@@ -1206,47 +1237,49 @@ async function exportExcel(){
   const infoRow2=['🏦 住宅ローン条件','',
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
   ];
+  const extraPairRows2=[];
   if(_flatPair_e){
-    // フラット35ペアローン — 金額→年数→金利→段階金利
     const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
     const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
+    const totalLoan=fhAmt+fwAmt;
     const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join(''):'';
-    infoRow2.push(`主人: ${fhAmt}万円 ${fhYrs}年 ${rateDisp}${stepStr}`,..._pad(infoSpan));
-    infoRow2.push(`奥様: ${fwAmt}万円 ${fwYrs}年 ${rateDisp}${stepStr}`,..._pad(infoSpan));
+    infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
+    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+    extraPairRows2.push(['👔 ご主人様','',`借入額: ${fhAmt}万円`,..._pad(infoSpan),`期間: ${fhYrs}年`,..._pad(infoSpan),`金利: ${rateDisp}${stepStr}`,..._pad(infoSpan)]);
+    extraPairRows2.push(['👩 奥様','',`借入額: ${fwAmt}万円`,..._pad(infoSpan),`期間: ${fwYrs}年`,..._pad(infoSpan),`金利: ${rateDisp}${stepStr}`,..._pad(infoSpan)]);
   } else if(pairLoanMode){
-    // 変動ペアローン — 人ごとに金額→年数→金利→段階金利
     const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
     const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
     const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
     const ratesH=getPairRates('h'), ratesW=getPairRates('w');
-    let hLabel=`主人: ${lhAmt}万円 ${lhYrs}年 ${rHBase}%`;
-    if(ratesH.length>1)hLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
-    infoRow2.push(hLabel,..._pad(infoSpan));
-    let wLabel=`奥様: ${lwAmt}万円 ${lwYrs}年 ${rWBase}%`;
-    if(ratesW.length>1)wLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
-    infoRow2.push(wLabel,..._pad(infoSpan));
+    const totalLoan=lhAmt+lwAmt;
+    infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
+    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+    let hRateLabel=`当初金利: ${rHBase}%`;
+    if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
+    let wRateLabel=`当初金利: ${rWBase}%`;
+    if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
+    extraPairRows2.push(['👔 ご主人様','',`借入額: ${lhAmt}万円`,..._pad(infoSpan),`期間: ${lhYrs}年`,..._pad(infoSpan),hRateLabel,..._pad(infoSpan)]);
+    extraPairRows2.push(['👩 奥様','',`借入額: ${lwAmt}万円`,..._pad(infoSpan),`期間: ${lwYrs}年`,..._pad(infoSpan),wRateLabel,..._pad(infoSpan)]);
   } else {
-    // 通常ローン — 金額→年数→金利→段階金利
     infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
     infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
     infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
-  }
-  if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-  // 段階金利（通常ローン・フラット35単独）
-  if(!pairLoanMode&&rates.length>1){
-    rates.slice(1).forEach(s=>{
-      infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
-    });
+    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+    if(rates.length>1){
+      rates.slice(1).forEach(s=>{
+        infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
+      });
+    }
   }
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
   push(infoRow2,'info');
+  const infoDataLens=[infoRow1Len,infoRow2Len];
+  extraPairRows2.forEach(row=>{const rowLen=row.length;while(row.length<disp+3)row.push('');push(row,'info');infoDataLens.push(rowLen);});
 
   // 空行（塗りつぶしなし）
   push(Array(disp+3).fill(''),'blank');
-
-  // info行のデータ長を記録（スタイル適用時に使用）
-  const infoDataLens=[infoRow1Len,infoRow2Len];
 
   // ── 行データ構築 ──
   // 年ヘッダー

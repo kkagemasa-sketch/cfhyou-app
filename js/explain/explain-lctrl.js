@@ -107,7 +107,12 @@
         </tr>
       </tbody>
     </table>
-    <div style="font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.5">
+    <div style="font-size:9px;color:#64748b;margin-top:6px;line-height:1.6">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:3px">
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:10px;background:#000;border:1px solid #94a3b8"></span>該当区分なし（制度対象外）</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="color:#dc2626;font-weight:600">赤字</span>：改正後に追加・変更された区分</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="letter-spacing:2px">―</span>：控除対象外（制度適用なし）</span>
+      </div>
       ※2 省エネ基準適合住宅の新築は、2024年(令和6年)6月30日以前に建築確認を受けたもの、または2024年12月31日以前に建築されたものに限り適用。
     </div>
   `;

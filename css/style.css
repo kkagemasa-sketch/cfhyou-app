@@ -963,7 +963,7 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   border-radius:10px;
   box-shadow:0 10px 40px rgba(15,39,68,.22);
   min-width:280px;
-  max-width:420px;
+  max-width:min(720px,96vw);
   max-height:90vh;
   display:flex;
   flex-direction:column;
