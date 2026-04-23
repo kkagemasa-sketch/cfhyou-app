@@ -81,9 +81,16 @@ function addLCStep(){
       <label class="lbl" style="font-size:10px">毎年の変化率（基準額を毎年〇%増減）</label>
       <div class="suf"><input class="inp amt-inp" id="lsr-${id}" type="number" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="${defRate}" min="-100" max="200" step="0.1" oninput="live()" style="width:70px"><span class="sl">%/年</span></div>
     </div>`;
-  $('lc-steps-cont').appendChild(el);live();
+  $('lc-steps-cont').appendChild(el);updateLCEmptyHint();live();
 }
-function rmLCStep(id){$(`ls-${id}`)?.remove();live()}
+function rmLCStep(id){$(`ls-${id}`)?.remove();updateLCEmptyHint();live()}
+function updateLCEmptyHint(){
+  const hint=document.getElementById('lc-empty-hint');
+  if(!hint)return;
+  const hasSteps=document.querySelectorAll('#lc-steps-cont>[id^="ls-"]').length>0;
+  hint.style.display=hasSteps?'none':'block';
+}
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(updateLCEmptyHint,300);});
 function setLCMode(id,mode){
   const isFree=mode==='free';
   document.getElementById(`lsmode-free-${id}`)?.classList.toggle('on',isFree);

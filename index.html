@@ -1203,10 +1203,13 @@ function checkPW(){
         <div style="font-size:12px;font-weight:700;color:var(--green)">年間合計：<strong id="lc-grand" style="font-size:15px">―</strong> 万円/年</div>
       </div>
       <div class="divider"></div>
-      <div class="sub">📊 生活費の変化設定</div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:7px">各段階で「〇年〜〇年 / 万円/年 / 上昇率」を設定。追加時は前段階の翌年が自動入力されます。終了年を空欄にすると以降ずっと継続。</div>
-      <div id="lc-steps-cont"></div>
-      <button class="btn-add" onclick="addLCStep()">＋ 段階を追加</button>
+      <div class="lc-change-card">
+        <div class="sub">📊 生活費の変化設定</div>
+        <div class="lc-desc">ライフステージごとの生活費の変化（子どもの独立・退職後の減額など）を必ずご設定ください。<br>各段階で「〇年〜〇年 / 万円/年 / 上昇率」を設定。追加時は前段階の翌年が自動入力されます。終了年を空欄にすると以降ずっと継続。</div>
+        <div id="lc-empty-hint" class="lc-empty-hint" style="display:none">⚠ まだ段階が未設定です。現在の生活費が一生涯続く前提で計算されています</div>
+        <div id="lc-steps-cont"></div>
+        <button class="btn-add" onclick="addLCStep()">＋ 段階を追加</button>
+      </div>
       <div class="divider"></div>
       <div id="edu-sec"></div>
     </div>

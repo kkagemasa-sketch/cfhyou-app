@@ -210,6 +210,63 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .divider{border:none;border-top:1px solid var(--border);margin:6px 0}
 .sub{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
 
+/* 生活費の変化設定 — 見落とし防止の目立つカード */
+.lc-change-card{
+  background:linear-gradient(135deg,#fff7e6 0%,#fff1d1 100%);
+  border:2px solid #f59e0b;
+  border-left:6px solid #f59e0b;
+  border-radius:10px;
+  padding:12px 14px;
+  margin:14px 0 10px;
+  box-shadow:0 2px 8px rgba(245,158,11,.18);
+  position:relative;
+}
+.lc-change-card::before{
+  content:"設定推奨";
+  position:absolute;
+  top:-10px;
+  right:12px;
+  background:#f59e0b;
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+  padding:3px 9px;
+  border-radius:10px;
+  letter-spacing:.5px;
+  box-shadow:0 2px 4px rgba(245,158,11,.4);
+}
+.lc-change-card .sub{
+  font-size:14px;
+  color:#92400e;
+  border-bottom:1px solid #fcd34d;
+  padding-bottom:6px;
+  margin-bottom:8px;
+}
+.lc-change-card .lc-desc{
+  font-size:11px;
+  color:#78350f;
+  margin-bottom:9px;
+  line-height:1.5;
+}
+.lc-change-card .btn-add{
+  background:#f59e0b;
+  color:#fff;
+  font-weight:700;
+  border:none;
+}
+.lc-change-card .btn-add:hover{background:#d97706}
+.lc-empty-hint{
+  background:#fffbeb;
+  border:1px dashed #f59e0b;
+  border-radius:6px;
+  padding:8px 10px;
+  font-size:11px;
+  color:#92400e;
+  margin-bottom:8px;
+  text-align:center;
+  font-weight:600;
+}
+
 /* ペルソナヘッダー（ご主人様・奥様） */
 .persona{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--rs);margin-bottom:9px;background:#eef2f7;border:1px solid #c8d6e8}
 .persona-icon{font-size:18px}
