@@ -100,18 +100,14 @@ function addInsSaving(person){
         <div class="suf"><input class="inp age-inp" id="ins-age-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:start">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start">
       <div class="fg">
-        <label class="lbl" style="font-size:9px">満期受取金額</label>
-        <div class="suf"><input class="inp amt-inp" id="ins-mat-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万円</span></div>
+        <label class="lbl" style="font-size:9px;color:#c00">解約/満期受取年齢</label>
+        <div class="suf"><input class="inp age-inp" id="ins-redeem-${person}-${id}" type="number" value="" placeholder="例:60" min="20" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">歳</span></div>
       </div>
       <div class="fg">
-        <label class="lbl" style="font-size:9px;color:#c00">解約年齢</label>
-        <div class="suf"><input class="inp age-inp" id="ins-redeem-${person}-${id}" type="number" value="" placeholder="空欄=満期" min="20" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">歳</span></div>
-      </div>
-      <div class="fg">
-        <label class="lbl" style="font-size:9px;color:#c00">解約返戻金</label>
-        <div class="suf"><input class="inp amt-inp" id="ins-redeem-amt-${person}-${id}" type="number" value="" placeholder="例:350" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">万円</span></div>
+        <label class="lbl" style="font-size:9px;color:#c00">解約/満期受取金額</label>
+        <div class="suf"><input class="inp amt-inp" id="ins-redeem-amt-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">万円</span></div>
       </div>
     </div>
     <div id="ins-preview-${person}-${id}" style="margin-top:6px;font-size:10px;color:#6a2a8a;background:#f5e8ff;border-radius:4px;padding:4px 8px;display:none"></div>`;
@@ -423,7 +419,6 @@ function calcInsPreview(person,id){
   const enrollAge=iv(`ins-enroll-${person}-${id}`)||pBaseAge||0;
   const monthly=fv(`ins-m-${person}-${id}`)||0;
   const matAge=iv(`ins-age-${person}-${id}`)||0;
-  const matAmt=fv(`ins-mat-${person}-${id}`)||0;
   const redeemAge=iv(`ins-redeem-${person}-${id}`)||0;
   const redeemAmt=fv(`ins-redeem-amt-${person}-${id}`)||0;
   const prev=document.getElementById(`ins-preview-${person}-${id}`);
@@ -432,21 +427,20 @@ function calcInsPreview(person,id){
   const payYrs=matAge-enrollAge;
   if(payYrs<=0){prev.style.display='none';return live();}
   const cumPay=Math.round(monthly*12*payYrs*10)/10;
-  const returnRate=matAmt>0?Math.round(matAmt/cumPay*1000)/10:0;
-  const rateColor=returnRate>=100?'#0d8a20':'#d63a2a';
-  let txt=`払込累計：<strong>${cumPay.toLocaleString()}万円</strong>（${payYrs}年間）　満期受取：<strong>${matAmt.toLocaleString()}万円</strong>　返戻率：<strong style="color:${rateColor}">${returnRate}%</strong>`;
-  if(redeemAge>0&&redeemAge<matAge){
+  let txt=`払込累計：<strong>${cumPay.toLocaleString()}万円</strong>（${payYrs}年間・満期${matAge}歳）`;
+  if(redeemAge>0){
     const paidYrs2=redeemAge-enrollAge;
     const cum2=Math.round(monthly*12*Math.max(0,paidYrs2)*10)/10;
     if(redeemAmt>0){
       const rateR=cum2>0?Math.round(redeemAmt/cum2*1000)/10:0;
       const rColor=rateR>=100?'#0d8a20':'#d63a2a';
-      txt+=`　｜　<span style="color:#c00">解約（${redeemAge}歳）：払込${cum2}万 → 返戻金<strong>${redeemAmt}万</strong>（<span style="color:${rColor}">${rateR}%</span>）</span>`;
+      const lblR=redeemAge>=matAge?'満期受取':'解約返戻金';
+      txt+=`　｜　<span style="color:#c00">${lblR}（${redeemAge}歳）：払込${cum2}万 → <strong>${redeemAmt}万</strong>（<span style="color:${rColor}">返戻率${rateR}%</span>）</span>`;
     } else {
       const totalPayYrs=payYrs;
       const ratio=Math.max(0,paidYrs2)/totalPayYrs;
       const surrenderCharge=Math.max(0,0.3*(1-ratio));
-      const est=Math.round(cum2*(1-surrenderCharge)+matAmt*ratio*ratio);
+      const est=Math.round(cum2*(1-surrenderCharge));
       const rateEst=cum2>0?Math.round(est/cum2*1000)/10:0;
       const rateColor2=rateEst>=100?'#0d8a20':'#d63a2a';
       txt+=`　｜　<span style="color:#888">解約（${redeemAge}歳）：払込${cum2}万 → 推計${est}万（<span style="color:${rateColor2}">${rateEst}%</span>）</span>`;
