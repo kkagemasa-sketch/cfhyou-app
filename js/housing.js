@@ -1,6 +1,24 @@
 // housing.js — 住宅設定・修繕積立金・ローン控除
 
 function calcLoanAmt(){
+  // ペアローン優先：ペアの合算（ご主人様＋奥様）を借入金額表示に反映
+  if(typeof pairLoanMode!=='undefined' && pairLoanMode){
+    const isFlat=(typeof loanCategory!=='undefined' && loanCategory==='flat35');
+    const lh=fv(isFlat?'flat-loan-h-amt':'loan-h-amt')||0;
+    const lw=fv(isFlat?'flat-loan-w-amt':'loan-w-amt')||0;
+    const total=lh+lw;
+    const loanEl=document.getElementById('loan-amt');
+    if(loanEl)loanEl.value=total;
+    const disp=document.getElementById('loan-amt-disp');
+    if(disp)disp.textContent=total>0?total.toLocaleString():'―';
+    const hint=document.getElementById('loan-breakdown-hint');
+    if(hint)hint.textContent=`ご主人様 ${lh.toLocaleString()}万円 ＋ 奥様 ${lw.toLocaleString()}万円（ペアローン${isFlat?'・フラット35':''}）`;
+    const rateDummy=document.getElementById('rate-base-dummy');
+    const rateBase=document.getElementById('rate-base');
+    if(rateDummy&&rateBase)rateDummy.value=rateBase.value;
+    live();
+    return;
+  }
   // 住宅ローン総額モード: 簡易入力値をそのまま loan-amt に
   const fundingMode=document.getElementById('funding-mode')?.value||'detail';
   if(fundingMode==='loanOnly'){
