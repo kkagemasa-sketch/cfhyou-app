@@ -1241,8 +1241,8 @@ async function exportExcel(){
     const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join(''):'';
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    extraPairRows2.push(['👔 ご主人様','',`借入額: ${fhAmt}万円`,..._pad(infoSpan),`期間: ${fhYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
-    extraPairRows2.push(['👩 奥様','',`借入額: ${fwAmt}万円`,..._pad(infoSpan),`期間: ${fwYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
+    extraPairRows2.push(['','👔 ご主人様',`借入額: ${fhAmt}万円`,..._pad(infoSpan),`期間: ${fhYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
+    extraPairRows2.push(['','👩 奥様',`借入額: ${fwAmt}万円`,..._pad(infoSpan),`期間: ${fwYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
   } else if(pairLoanMode){
     const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
     const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
@@ -1255,8 +1255,8 @@ async function exportExcel(){
     if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
     let wRateLabel=`金利: 1年目〜${rWBase}%`;
     if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
-    extraPairRows2.push(['👔 ご主人様','',`借入額: ${lhAmt}万円`,..._pad(infoSpan),`期間: ${lhYrs}年`,..._pad(infoSpan),hRateLabel,..._pad(infoSpan)]);
-    extraPairRows2.push(['👩 奥様','',`借入額: ${lwAmt}万円`,..._pad(infoSpan),`期間: ${lwYrs}年`,..._pad(infoSpan),wRateLabel,..._pad(infoSpan)]);
+    extraPairRows2.push(['','👔 ご主人様',`借入額: ${lhAmt}万円`,..._pad(infoSpan),`期間: ${lhYrs}年`,..._pad(infoSpan),hRateLabel,..._pad(infoSpan)]);
+    extraPairRows2.push(['','👩 奥様',`借入額: ${lwAmt}万円`,..._pad(infoSpan),`期間: ${lwYrs}年`,..._pad(infoSpan),wRateLabel,..._pad(infoSpan)]);
   } else {
     infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
     infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
@@ -1497,15 +1497,25 @@ async function exportExcel(){
   ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:1}});
   ws['!merges'].push({s:{r:0,c:2},e:{r:0,c:3}});
   // info行(row1,row2)のA+B結合＋各項目をinfoSpan列統合
+  // ペア行(ご主人様/奥様)はA+B結合なし、3チップ目(金利)は5列統合(I〜M)
   const infoRowIndices=[];
   types.forEach((t,i)=>{if(t==='info')infoRowIndices.push(i);});
+  const _isPairRow=(r)=>{
+    const row=rows[r]||[];
+    const s=String(row[0]||'')+String(row[1]||'');
+    return /[👔👩]/.test(s);
+  };
   infoRowIndices.forEach((ri,idx)=>{
-    ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}});
+    const pair=_isPairRow(ri);
+    if(!pair){
+      ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}});
+    }
     const dataLen=idx<infoDataLens.length?infoDataLens[idx]:20;
     const chipCount=Math.ceil(Math.max(0,dataLen-2)/infoSpan);
     for(let k=0;k<chipCount;k++){
       const sc=2+k*infoSpan;
-      const ec=Math.min(sc+infoSpan-1,disp+2);
+      const span=(pair&&k===2)?5:infoSpan;
+      const ec=Math.min(sc+span-1,disp+2);
       if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
     }
   });
@@ -1519,13 +1529,19 @@ async function exportExcel(){
   ws['!cols']=[{wch:14},{wch:22},...Array(disp).fill({wch:7}),{wch:8}];
 
   // 行高さ（イベント/年齢/経過年は低め、データ行は高め）
-  ws['!rows']=types.map(t=>{
+  ws['!rows']=types.map((t,ri)=>{
     if(t==='event'||t==='age'||t==='elapsed')return{hpt:14};
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
     if(t==='incTotal'||t==='expTotal')return{hpt:24};
-    if(t==='info')return{hpt:30};
+    if(t==='info'){
+      // ペア行(ご主人様/奥様)は高さ23
+      const row=rows[ri]||[];
+      const s=String(row[0]||'')+String(row[1]||'');
+      if(/[👔👩]/.test(s))return{hpt:23};
+      return{hpt:30};
+    }
     return{hpt:18};
   });
 
@@ -1601,6 +1617,11 @@ async function exportExcel(){
       if(fDef?.color)fObj.color={rgb:fDef.color};
       // info行：ラベルセルは太字、値セル（万円等）は強調
       if(tp==='info'&&c===0){fObj.bold=true;fObj.sz=9;fObj.color={rgb:C.white};}
+      // ペアローン行のB列（ご主人様/奥様）ラベルも白文字太字
+      if(tp==='info'&&c===1){
+        const r01p=String(row[0]||'')+String(row[1]||'');
+        if(/[👔👩]/.test(r01p)){fObj.bold=true;fObj.sz=10;fObj.color={rgb:C.white};}
+      }
       if(tp==='info'&&c>=2){
         // infoデータ範囲外は塗りつぶしなし
         const infoIdx=infoRowIndices.indexOf(r);
@@ -1649,12 +1670,12 @@ async function exportExcel(){
       // 背景色
       let bgColor=(isFixed&&def.col0)?def.col0.fill:def.fill;
       // ペアローン行: ご主人様(青)/奥様(ピンク)
-      if(tp==='info'&&row[0]){
-        const r0=String(row[0]);
-        if(/👔/.test(r0)){
+      if(tp==='info'){
+        const r01=String(row[0]||'')+String(row[1]||'');
+        if(/👔/.test(r01)){
           if(isFixed)bgColor='FF2563a6';
           else bgColor='FFe8f2fc';
-        }else if(/👩/.test(r0)){
+        }else if(/👩/.test(r01)){
           if(isFixed)bgColor='FFc53d5a';
           else bgColor='FFfce8ef';
         }
