@@ -661,14 +661,13 @@ async function exportExcelMG(){
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
-  // ── 印刷設定：A4横・1ページに収めつつ用紙いっぱいに拡大 ──
-  // 実際の行高さ・列幅から必要scaleを計算（widthとheightの制約両方を満たす最大倍率）
-  // A4横 印刷可能領域：297×210mm − 左右0.2" 上下0.15"余白 ≒ 813×573pt
-  const _printW=813, _printH=573;
+  // ── 印刷設定：A4横・全行を縦1ページに収めつつ用紙いっぱいに拡大 ──
+  // 「行が1枚に収まる」= 縦方向のみ1ページ、横は複数ページ分割OK
+  // A4横 印刷可能高さ：210mm − 上下0.15"余白 ≒ 573pt
+  const _printH=573;
   const _totalH=(ws['!rows']||[]).reduce((s,r)=>s+((r&&r.hpt)||15),0);
-  const _totalW=(ws['!cols']||[]).reduce((s,c)=>s+((c&&c.wch)||8)*7.2,0); // wch→pt換算≒7.2
-  const _scaleRaw=Math.min(_printW/Math.max(1,_totalW),_printH/Math.max(1,_totalH))*100;
-  // 安全マージン0.98（境界でのはみ出し防止）、Excel許容範囲10-400
+  const _scaleRaw=(_printH/Math.max(1,_totalH))*100;
+  // 安全マージン0.98（境界はみ出し防止）、Excel許容範囲10-400
   const _printScale=Math.max(10,Math.min(400,Math.floor(_scaleRaw*0.98)));
   ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale,fitToPage:false};
   ws['!margins']={left:0.2,right:0.2,top:0.15,bottom:0.15,header:0.1,footer:0.1};
@@ -1609,14 +1608,13 @@ async function exportExcel(){
   const headerRowIdx=types.indexOf('header');
   ws['!freeze']={xSplit:2,ySplit:headerRowIdx+1,topLeftCell:XLSX.utils.encode_cell({r:headerRowIdx+1,c:2}),state:'frozen'};
 
-  // ── 印刷設定：A4横・1ページに収めつつ用紙いっぱいに拡大 ──
-  // 実際の行高さ・列幅から必要scaleを計算（widthとheightの制約両方を満たす最大倍率）
-  // A4横 印刷可能領域：297×210mm − 左右0.2" 上下0.15"余白 ≒ 813×573pt
-  const _printW=813, _printH=573;
+  // ── 印刷設定：A4横・全行を縦1ページに収めつつ用紙いっぱいに拡大 ──
+  // 「行が1枚に収まる」= 縦方向のみ1ページ、横は複数ページ分割OK
+  // A4横 印刷可能高さ：210mm − 上下0.15"余白 ≒ 573pt
+  const _printH=573;
   const _totalH=(ws['!rows']||[]).reduce((s,r)=>s+((r&&r.hpt)||15),0);
-  const _totalW=(ws['!cols']||[]).reduce((s,c)=>s+((c&&c.wch)||8)*7.2,0); // wch→pt換算≒7.2
-  const _scaleRaw=Math.min(_printW/Math.max(1,_totalW),_printH/Math.max(1,_totalH))*100;
-  // 安全マージン0.98（境界でのはみ出し防止）、Excel許容範囲10-400
+  const _scaleRaw=(_printH/Math.max(1,_totalH))*100;
+  // 安全マージン0.98（境界はみ出し防止）、Excel許容範囲10-400
   const _printScale=Math.max(10,Math.min(400,Math.floor(_scaleRaw*0.98)));
   ws['!pageSetup']={paperSize:9,orientation:'landscape',scale:_printScale,fitToPage:false};
   ws['!margins']={left:0.2,right:0.2,top:0.15,bottom:0.15,header:0.1,footer:0.1};
