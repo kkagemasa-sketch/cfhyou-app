@@ -1694,13 +1694,17 @@ async function exportExcel(){
           }
         }
       }
-      // 退職・逝去列ハイライト（age/event行、CF表と同じ色）
-      if((tp==='age'||tp==='event')&&c>=2&&c<lastCol){
+      // 退職・逝去列ハイライト（age/event行＋収入・支出・教育費行、CF表と同じ色）
+      if((tp==='age'||tp==='event'||tp==='inc'||tp==='exp'||tp==='edu')&&c>=2&&c<lastCol){
         const _colIdx=c-2;
         if(_colIdx===hDeathColE||_colIdx===wDeathColE){
-          bgColor = tp==='age' ? 'FFd8dde2' : 'FFeae3d8';
+          if(tp==='age')bgColor='FFd8dde2';
+          else if(tp==='event')bgColor='FFeae3d8';
+          else bgColor='FFececec'; // 収入/支出/教育費行の逝去列: 薄いグレー
         } else if(_colIdx===hRetireColE||_colIdx===wRetireColE){
-          bgColor = tp==='age' ? 'FFf0ebc8' : 'FFfff2c8';
+          if(tp==='age')bgColor='FFf0ebc8';
+          else if(tp==='event')bgColor='FFfff2c8';
+          else bgColor='FFfff8d6'; // 収入/支出/教育費行の退職列: 薄い黄色
         }
       }
       const fillObj=bgColor?{patternType:'solid',fgColor:{rgb:bgColor}}:undefined;
