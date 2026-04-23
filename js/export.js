@@ -634,6 +634,7 @@ async function exportExcelMG(){
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
     if(t==='incTotal'||t==='expTotal')return{hpt:24};
+    if(t==='info')return{hpt:30};
     return{hpt:18};
   });
 
@@ -844,10 +845,11 @@ async function exportExcelMG(){
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const finalAlign=cell._centerAlign?'center':hAlign;
       const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
+      const wrapText=(tp==='info'&&c>=2);
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:finalAlign,wrapText:false,shrinkToFit},
+        alignment:{vertical:'center',horizontal:finalAlign,wrapText,shrinkToFit:wrapText?false:shrinkToFit},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
@@ -1511,6 +1513,7 @@ async function exportExcel(){
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
     if(t==='incTotal'||t==='expTotal')return{hpt:24};
+    if(t==='info')return{hpt:30};
     return{hpt:18};
   });
 
@@ -1694,10 +1697,11 @@ async function exportExcel(){
       // blank/footer行・範囲外セルは塗りつぶしなし
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
+      const wrapText=(tp==='info'&&c>=2);
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:hAlign,wrapText:false,shrinkToFit},
+        alignment:{vertical:'center',horizontal:hAlign,wrapText,shrinkToFit:wrapText?false:shrinkToFit},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
