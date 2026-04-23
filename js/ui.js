@@ -49,6 +49,55 @@ function togglePanel(){
   btn.title=hidden?'入力パネルを表示する':'入力パネルを隠す';
 }
 
+// ===== トークメモ（別ウィンドウで表示するチェックリスト）=====
+let _talkMemoWin = null;
+let _talkMemoCh = null;
+function openTalkMemo(){
+  // 既に開いていれば前面へ
+  if(_talkMemoWin && !_talkMemoWin.closed){
+    _talkMemoWin.focus();
+    return;
+  }
+  const w = 340, h = Math.min(900, screen.height - 80);
+  const left = screen.availWidth - w - 20;
+  const top = 40;
+  _talkMemoWin = window.open('talk-memo.html', 'cfTalkMemo',
+    `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes`);
+  if(!_talkMemoWin){
+    alert('ポップアップがブロックされました。ブラウザの設定でこのサイトのポップアップを許可してください。');
+    return;
+  }
+  _initTalkMemoChannel();
+}
+function _initTalkMemoChannel(){
+  if(_talkMemoCh) return;
+  if(typeof BroadcastChannel === 'undefined') return;
+  _talkMemoCh = new BroadcastChannel('cf-app-talk-memo');
+  _talkMemoCh.onmessage = (e)=>{
+    if(e.data && e.data.type === 'request-client'){
+      _broadcastClientName();
+    }
+  };
+  // クライアント名入力欄の変更を監視
+  const el = document.getElementById('client-name');
+  if(el){
+    el.addEventListener('input', _broadcastClientName);
+    el.addEventListener('change', _broadcastClientName);
+  }
+  // 初回ブロードキャスト
+  setTimeout(_broadcastClientName, 300);
+}
+function _broadcastClientName(){
+  if(!_talkMemoCh) return;
+  const el = document.getElementById('client-name');
+  const name = el ? (el.value || '').trim() : '';
+  _talkMemoCh.postMessage({type:'client-changed', clientName:name});
+}
+// データ読込時にもトリガーしたい場合のためグローバル公開
+window.notifyTalkMemoClient = _broadcastClientName;
+// ページ読込時にチャンネル初期化（別ウィンドウが先に開かれた場合に備えて）
+document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(_initTalkMemoChannel, 500); });
+
 // プレゼンモード: オレンジのポインタ追従
 let _presenterMoveHandler=null;
 function togglePresenterMode(){

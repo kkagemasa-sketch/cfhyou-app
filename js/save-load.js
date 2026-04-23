@@ -1121,6 +1121,8 @@ async function loadSlot(name){
   }
   renderScenarioTabs();
   document.getElementById('slot-modal')?.remove();
+  // トークメモウィンドウにクライアント名変更を通知
+  if(typeof notifyTalkMemoClient==='function') setTimeout(notifyTalkMemoClient, 200);
 }
 
 async function deleteSlot(name){
