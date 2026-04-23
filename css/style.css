@@ -391,7 +391,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rfin td:first-child,.rfin td:nth-child(2){white-space:normal!important;word-break:break-all;line-height:1.15;font-size:9px!important;padding-left:4px!important;padding-right:4px!important}
 /* その他金融資産 合計行（個別の.rfin行より濃く、総金融資産.rttlより薄く） */
 .rfin.rfin-total td{background:#a6cbec!important;color:#0d2a4a!important;font-size:11px;font-weight:700;border-top:1px solid #6b8cae;border-bottom:1px solid #6b8cae}
-.rfin.rfin-total td:first-child,.rfin.rfin-total td:nth-child(2){background:#7fb0d8!important;color:#0d2a4a!important;font-weight:700;font-size:9.5px!important;white-space:normal!important;word-break:break-all;line-height:1.15;padding-left:4px!important;padding-right:4px!important}
+.rfin.rfin-total td:first-child,.rfin.rfin-total td:nth-child(2){background:#7fb0d8!important;color:#0d2a4a!important;font-weight:700;font-size:11px!important;white-space:nowrap!important;line-height:1.2;padding-left:6px!important;padding-right:6px!important}
 .rfin.rfin-total td:last-child{background:#4a8fcc!important;color:#fff!important;font-weight:700}
 /* 総金融資産合計 */
 .rttl td{background:#1a4a7a;color:#fff;font-size:11px;font-weight:700;border-top:2px solid #0d2a4a;border-bottom:2px solid #0d2a4a}

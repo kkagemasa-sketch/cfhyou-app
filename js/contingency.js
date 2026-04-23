@@ -1434,7 +1434,7 @@ function _renderContingencyInner(){
       for(let i2=0;i2<mgDisp;i2++){let v=row.vals[i2]||0;if(i2>=deathYearOffset-1&&row.person==='both')v=Math.round(v/2);h+=`<td>${v>0?ri(v).toLocaleString():'-'}</td>`;}
       h+=`<td>${ri(row.vals[mgDisp-1]||0).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${row.lbl}</span></td></tr>`;
     });
-    h+=`<tr class="rfin rfin-total fin-asset-row" style="font-weight:700"><td>その他金融資産合計</td><td></td>`;
+    h+=`<tr class="rfin rfin-total fin-asset-row" style="font-weight:700"><td colspan="2">その他金融資産合計</td>`;
     for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.finAsset[i2]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
     h+=`<td>${ri(MR.finAsset[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">金融資産計</span></td></tr>`;
   }
