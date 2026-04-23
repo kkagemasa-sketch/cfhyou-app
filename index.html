@@ -1469,6 +1469,51 @@ function checkPW(){
       <!-- Q&A入力パネル（アクティブな万が一タブがある時だけ表示） -->
       <div id="mgqa-left-panel" style="display:none;margin-top:12px"></div>
 
+      <!-- ===== v2：4シナリオ統合シミュレーション（feature/contingency-v2） ===== -->
+      <div id="cv2-root" style="display:none;margin-top:14px;padding:10px;border:2px solid #c2185b;border-radius:8px;background:#fff5f8">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:800;color:#c2185b">🛡️ 万が一 v2（β）— 4シナリオ統合</div>
+          <button type="button" onclick="CV2.setEnabled(false)" style="background:#fff;border:1px solid #c2185b;color:#c2185b;border-radius:4px;font-size:10px;padding:2px 6px;cursor:pointer">閉じる</button>
+        </div>
+        <div style="font-size:10px;color:#64748b;line-height:1.5;margin-bottom:8px">
+          死亡・高度障害・就労不能・三大疾病 をチェックで選択してシミュレーション。必要な入力だけアコーディオンで表示。
+        </div>
+
+        <!-- 対象者 -->
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;color:#444">対象：</span>
+          <button type="button" class="btn-tog on" id="cv2-target-h" onclick="CV2.setTarget('h')" style="font-size:11px;padding:4px 10px">ご主人様</button>
+          <button type="button" class="btn-tog wife-only" id="cv2-target-w" onclick="CV2.setTarget('w')" style="font-size:11px;padding:4px 10px">奥様</button>
+        </div>
+
+        <!-- シナリオチェック -->
+        <div id="cv2-checks" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;padding:4px 8px;background:#fff;border:1px solid #e5d5e0;border-radius:4px;cursor:pointer">
+            <input type="checkbox" id="cv2-ck-death" onchange="CV2.toggleScenario('death',this.checked)"> 💀 死亡
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;padding:4px 8px;background:#fff;border:1px solid #e5d5e0;border-radius:4px;cursor:pointer">
+            <input type="checkbox" id="cv2-ck-disab" onchange="CV2.toggleScenario('disab',this.checked)"> ♿ 高度障害
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;padding:4px 8px;background:#fff;border:1px solid #e5d5e0;border-radius:4px;cursor:pointer">
+            <input type="checkbox" id="cv2-ck-work" onchange="CV2.toggleScenario('work',this.checked)"> 🏥 就労不能
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;padding:4px 8px;background:#fff;border:1px solid #e5d5e0;border-radius:4px;cursor:pointer">
+            <input type="checkbox" id="cv2-ck-3d" onchange="CV2.toggleScenario('3d',this.checked)"> 🎗️ 三大疾病
+          </label>
+        </div>
+
+        <!-- アコーディオン本体 -->
+        <div id="cv2-accordions"></div>
+
+        <!-- サマリー表示枠（Phase 5で実装） -->
+        <div id="cv2-summary" style="margin-top:10px"></div>
+      </div>
+
+      <!-- v2 呼び出しボタン（既定OFF） -->
+      <div style="margin-top:8px;text-align:right">
+        <button type="button" id="cv2-open-btn" onclick="CV2.setEnabled(true)" style="background:#fff;border:1px dashed #c2185b;color:#c2185b;border-radius:4px;font-size:10px;padding:3px 8px;cursor:pointer">🧪 β版：4シナリオ統合を開く</button>
+      </div>
+
     </div>
   </div>
 
@@ -1585,6 +1630,7 @@ function checkPW(){
 <script src="js/disability-pension.js?v=1"></script>
 <script src="js/sickness-benefit.js?v=1"></script>
 <script src="js/care-cost.js?v=1"></script>
+<script src="js/contingency-v2-ui.js?v=1"></script>
 <script src="js/mg-qa.js?v=1"></script>
 <script src="js/ui.js?v=5"></script>
 <script src="js/app.js?v=39"></script>
