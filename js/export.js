@@ -1284,6 +1284,14 @@ async function exportExcel(){
   push(['経過年','',... R.yr.slice(0,disp).map((_,i)=>i+1),'-'],'elapsed');
   // 年齢
   const _isSingle_e=householdType==='single';
+  // 退職・逝去列インデックス計算（CF表と同じ色分け）
+  const _hAgeX=iv('husband-age')||30, _wAgeX=iv('wife-age')||0;
+  const _retAgeX=iv('retire-age')||60, _wRetAgeX=iv('w-retire-age')||0;
+  const _hDthX=iv('h-death-age')||83, _wDthX=_isSingle_e?0:(iv('w-death-age')||88);
+  const hDeathColE=_hDthX>_hAgeX?_hDthX-_hAgeX:-1;
+  const wDeathColE=_wDthX>_wAgeX?_wDthX-_wAgeX:-1;
+  const hRetireColE=_retAgeX>_hAgeX?_retAgeX-_hAgeX:-1;
+  const wRetireColE=_wRetAgeX>_wAgeX?_wRetAgeX-_wAgeX:-1;
   push(['年齢',_isSingle_e?'ご本人':'ご主人様',...R.hA.slice(0,disp),''],'age');
   if(!_isSingle_e)push(['','奥様',...R.wA.slice(0,disp),''],'age');
   // 子ども年齢
@@ -1672,12 +1680,27 @@ async function exportExcel(){
       // ペアローン行: ご主人様(青)/奥様(ピンク)
       if(tp==='info'){
         const r01=String(row[0]||'')+String(row[1]||'');
-        if(/👔/.test(r01)){
-          if(isFixed)bgColor='FF2563a6';
-          else bgColor='FFe8f2fc';
-        }else if(/👩/.test(r01)){
-          if(isFixed)bgColor='FFc53d5a';
-          else bgColor='FFfce8ef';
+        if(/[\u{1F454}\u{1F469}]/u.test(r01)){
+          if(c===0){
+            // A列(A4/A5)は塗りつぶしなし
+            bgColor=undefined;
+            cell._noBorder=true;
+          }else if(/\u{1F454}/u.test(r01)){
+            if(isFixed)bgColor='FF2563a6';
+            else bgColor='FFe8f2fc';
+          }else if(/\u{1F469}/u.test(r01)){
+            if(isFixed)bgColor='FFc53d5a';
+            else bgColor='FFfce8ef';
+          }
+        }
+      }
+      // 退職・逝去列ハイライト（age/event行、CF表と同じ色）
+      if((tp==='age'||tp==='event')&&c>=2&&c<lastCol){
+        const _colIdx=c-2;
+        if(_colIdx===hDeathColE||_colIdx===wDeathColE){
+          bgColor = tp==='age' ? 'FFd8dde2' : 'FFeae3d8';
+        } else if(_colIdx===hRetireColE||_colIdx===wRetireColE){
+          bgColor = tp==='age' ? 'FFf0ebc8' : 'FFfff2c8';
         }
       }
       const fillObj=bgColor?{patternType:'solid',fgColor:{rgb:bgColor}}:undefined;
