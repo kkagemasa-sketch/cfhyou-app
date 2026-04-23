@@ -273,7 +273,7 @@ async function exportExcelMG(){
     const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
     const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
     const totalLoan=fhAmt+fwAmt;
-    const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join(''):'';
+    const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join(''):'';
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
     const rowH=['👔 ご主人様','',
@@ -296,10 +296,10 @@ async function exportExcelMG(){
     const totalLoan=lhAmt+lwAmt;
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    let hRateLabel=`当初金利: ${rHBase}%`;
-    if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
-    let wRateLabel=`当初金利: ${rWBase}%`;
-    if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
+    let hRateLabel=`金利: ${rHBase}%`;
+    if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
+    let wRateLabel=`金利: ${rWBase}%`;
+    if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
     const rowH=['👔 ご主人様','',
       `借入額: ${lhAmt}万円`,..._pad(infoSpan),
       `期間: ${lhYrs}年`,..._pad(infoSpan),
@@ -876,11 +876,13 @@ async function exportExcelMG(){
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const finalAlign=cell._centerAlign?'center':hAlign;
       const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
-      const wrapText=(tp==='info'&&c>=2);
+      // ペアローン行（👔/👩）は1行表示にしたいのでwrap無効＋shrinkで縮小
+      const isPairRow=tp==='info'&&row[0]&&/[👔👩]/.test(String(row[0]));
+      const wrapText=(tp==='info'&&c>=2&&!isPairRow);
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:finalAlign,wrapText,shrinkToFit:wrapText?false:shrinkToFit},
+        alignment:{vertical:'center',horizontal:finalAlign,wrapText,shrinkToFit:(tp==='info'&&c>=2&&!cell._noFill)},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
@@ -1242,7 +1244,7 @@ async function exportExcel(){
     const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
     const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
     const totalLoan=fhAmt+fwAmt;
-    const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join(''):'';
+    const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join(''):'';
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
     extraPairRows2.push(['👔 ご主人様','',`借入額: ${fhAmt}万円`,..._pad(infoSpan),`期間: ${fhYrs}年`,..._pad(infoSpan),`金利: ${rateDisp}${stepStr}`,..._pad(infoSpan)]);
@@ -1255,10 +1257,10 @@ async function exportExcel(){
     const totalLoan=lhAmt+lwAmt;
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    let hRateLabel=`当初金利: ${rHBase}%`;
-    if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
-    let wRateLabel=`当初金利: ${rWBase}%`;
-    if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年目〜${s.rate.toFixed(2)}%`).join('');
+    let hRateLabel=`金利: ${rHBase}%`;
+    if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
+    let wRateLabel=`金利: ${rWBase}%`;
+    if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
     extraPairRows2.push(['👔 ご主人様','',`借入額: ${lhAmt}万円`,..._pad(infoSpan),`期間: ${lhYrs}年`,..._pad(infoSpan),hRateLabel,..._pad(infoSpan)]);
     extraPairRows2.push(['👩 奥様','',`借入額: ${lwAmt}万円`,..._pad(infoSpan),`期間: ${lwYrs}年`,..._pad(infoSpan),wRateLabel,..._pad(infoSpan)]);
   } else {
@@ -1730,11 +1732,13 @@ async function exportExcel(){
       // blank/footer行・範囲外セルは塗りつぶしなし
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
-      const wrapText=(tp==='info'&&c>=2);
+      // ペアローン行（👔/👩）は1行表示にしたいのでwrap無効＋shrinkで縮小
+      const isPairRow=tp==='info'&&row[0]&&/[👔👩]/.test(String(row[0]));
+      const wrapText=(tp==='info'&&c>=2&&!isPairRow);
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:hAlign,wrapText,shrinkToFit:wrapText?false:shrinkToFit},
+        alignment:{vertical:'center',horizontal:hAlign,wrapText,shrinkToFit:(tp==='info'&&c>=2&&!cell._noFill)},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
