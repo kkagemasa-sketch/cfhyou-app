@@ -595,5 +595,6 @@ function setLoanMode(mode){
   if(loanCategory==='flat35')updateFlat35Info();
   // 借入金額表示をモードに合わせて再計算（ペア←→単独の切替で表示崩れを防ぐ）
   if(typeof calcLoanAmt==='function')calcLoanAmt();
-  live();
+  // ペア←→単独の切替はJS変数変化のため入力ハッシュに反映されない。強制再描画。
+  live(true);
 }

@@ -1121,7 +1121,7 @@ function _renderContingencyInner(){
     h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
       <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（${_mgFlatLabel2} ペアローン）</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}${mgChip('📊','ベース金利',_mgFRateBase+'%')}${_mgFlatPt2>0?mgChip('⭐','ポイント',_mgFlatPt2+'pt','#d63a2a'):''}${_mgRateChips(rates)}
+        ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}${mgChip('🏦','借入総額',(_fhAmtV2+_fwAmtV2).toLocaleString()+'万円')}${mgChip('📊','ベース金利',_mgFRateBase+'%')}${_mgFlatPt2>0?mgChip('⭐','ポイント',_mgFlatPt2+'pt','#d63a2a'):''}${_mgRateChips(rates)}
       </div>
       <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ご主人様</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
@@ -1139,7 +1139,7 @@ function _renderContingencyInner(){
     h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
       <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（ペアローン）</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}
+        ${mgChip('🏠','住宅価格',housePrice2.toLocaleString()+'万円')}${mgChip('🏦','借入総額',(lhAmtV2+lwAmtV2).toLocaleString()+'万円')}
       </div>
       <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ご主人様</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">

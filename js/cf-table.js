@@ -94,6 +94,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（ペアローン）</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
         ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('🏦','借入総額',`${(lhAmtV+lwAmtV).toLocaleString()}万円`)}
         ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
       </div>
       <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ${_rl('age-h','ご主人様')}</div>
@@ -118,6 +119,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（${_flatLabel} ペアローン）</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
         ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('🏦','借入総額',`${(_fhAmtV+_fwAmtV).toLocaleString()}万円`)}
         ${chip('📊','ベース金利',`${rateBaseV}%`)}
         ${_flatPt>0?chip('⭐','ポイント',`${_flatPt}pt`,'#d63a2a'):''}
         ${_rateChips(rates)}
