@@ -93,10 +93,16 @@ function onMatLeaveToggle(stepId){
   // 再計算ボタン表示
   const recalcBtn = document.getElementById(`${stepId}-ml-recalc`);
   if(recalcBtn) recalcBtn.style.display = on ? 'inline-block' : 'none';
-  // イベント欄が空なら自動入力（奥様は「産休育休」、ご主人は「育休」）
-  if(on && leaveEl && !leaveEl.value.trim()){
-    const person = stepId.startsWith('h-') ? 'h' : 'w';
-    leaveEl.value = person === 'w' ? '産休育休' : '育休';
+  // イベント欄の自動入力/クリア
+  if(leaveEl){
+    const autoTexts = ['産休育休','育休','産休・育休'];
+    if(on && !leaveEl.value.trim()){
+      const person = stepId.startsWith('h-') ? 'h' : 'w';
+      leaveEl.value = person === 'w' ? '産休育休' : '育休';
+    } else if(!on && autoTexts.includes(leaveEl.value.trim())){
+      // OFFにしたとき、自動入力された文言ならクリア
+      leaveEl.value = '';
+    }
   }
   // ON時：net欄が空のときのみ自動計算（既入力は尊重）
   if(on){

@@ -133,9 +133,12 @@ function render(){
       const fromAge=parseInt(document.getElementById(`${base}-from`)?.value)||0;
       const toAge=parseInt(document.getElementById(`${base}-to`)?.value)||0;
       const leaveType=document.getElementById(`${base}-leave`)?.value||'';
-      if(leaveType&&fromAge>0)arr.push({fromAge,toAge,leaveType});
+      const isMatLeave=!!document.getElementById(`${base}-matleave`)?.checked;
+      if((leaveType||isMatLeave)&&fromAge>0)arr.push({fromAge,toAge,leaveType,isMatLeave});
     });
   });
+  // 年度ごとの「育休フラグ」配列を R に追加（後でセルツールチップに利用）
+  R.mlH=[]; R.mlW=[];
 
   // 住宅ローン控除の年シフト用（引き渡しの翌年セルから還付計上）
   let _prevLc2=0, _prevLctrlBd=null;
@@ -1535,6 +1538,8 @@ function render(){
       if(sl)evH=sl.leaveType;
     }
     R.evH.push(evH);
+    // 育休期間フラグ（ご主人様）
+    R.mlH.push(_hStepLeaves.some(s=>s.isMatLeave&&ha>=s.fromAge&&ha<=s.toAge));
 
     let evW='';
     const wLeave=leaves.find(l=>wa===l.startAge);
@@ -1551,6 +1556,8 @@ function render(){
       if(sl)evW=sl.leaveType;
     }
     R.evW.push(evW);
+    // 育休期間フラグ（奥様）
+    R.mlW.push(_wStepLeaves.some(s=>s.isMatLeave&&wa>=s.fromAge&&wa<=s.toAge));
 
     children.forEach((c,ci)=>{
       const ca=c.age+i;

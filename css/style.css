@@ -468,6 +468,9 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
 
 /* 手動上書きセル */
 .cell-ovr{background:#fff9e0!important;outline:1.5px solid #f0c040!important;color:#7a5000!important;font-weight:700!important}
+/* 育休期間セル（非課税の給付金） */
+.cell-matleave{background:#fff3e0!important;color:#b45309!important}
+.cell-matleave:hover{background:#ffe0b2!important}
 [contenteditable="true"]:hover{cursor:text;outline:1px dashed #94a3b8}
 [contenteditable="true"]:focus{outline:2px solid var(--navy)!important;background:#fff!important}
 /* fill handle */
