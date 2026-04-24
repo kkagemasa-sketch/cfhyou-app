@@ -115,7 +115,8 @@ function _collectDynamic(){
         netTo:document.getElementById(`${base}-net-to`)?.value||'',
         pct:document.getElementById(`${base}-pct`)?.value||'',
         mode:isPct?'pct':'amt',
-        leave:document.getElementById(`${base}-leave`)?.value||''
+        leave:document.getElementById(`${base}-leave`)?.value||'',
+        matLeave:!!document.getElementById(`${base}-matleave`)?.checked
       });
     });
   });
@@ -350,6 +351,11 @@ function _restoreDynamic(d){
         if(document.getElementById(`${base}-pct`))document.getElementById(`${base}-pct`).value=s.pct||'100';
       }
       if(document.getElementById(`${base}-leave`))document.getElementById(`${base}-leave`).value=s.leave||'';
+      const mlCb=document.getElementById(`${base}-matleave`);
+      if(mlCb){
+        mlCb.checked=!!s.matLeave;
+        if(typeof onMatLeaveToggle==='function'&&s.matLeave) onMatLeaveToggle(base);
+      }
     });
   });
   // 金利ステップ
@@ -804,8 +810,8 @@ function _applyData(d){
       // activeTabId は setRTab('cf') により後でクリアされるため復元しない
       if(typeof mgQA_renderTabs==='function') mgQA_renderTabs();
     }
-    // 育休UIを保存状態から復元
-    if(typeof syncMatLeaveUIFromState==='function') syncMatLeaveUIFromState();
+    // 育休ヒント再計算
+    if(typeof updateMatLeaveJointHint==='function') setTimeout(updateMatLeaveJointHint, 50);
     // 読込後は必ずメインCF表タブに戻す
     if(typeof setRTab==='function')setRTab('cf');
     live();render();

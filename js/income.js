@@ -251,9 +251,13 @@ function addIncomeStep(person){
       <div id="${id}-pct-hint" style="font-size:11px;color:#2d7dd2;margin-top:4px"></div>
     </div>
     <div id="${id}-hint" style="font-size:11px;color:#3a8a3a;margin-top:6px;font-weight:600">手取り：― 万円 → ― 万円</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border)">
-      <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap">この期間のイベント</span>
-      <input id="${id}-leave" class="inp" oninput="live()" style="font-size:11px;padding:4px 8px;border-radius:5px;flex:1" placeholder="例:産休・育休、時短、転職 等" value="">
+    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border);flex-wrap:wrap">
+      <label title="この段階は育休期間" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#d97706;cursor:pointer;white-space:nowrap;background:#fff3e0;border:1px solid #ffb74d;border-radius:4px;padding:3px 6px;user-select:none">
+        <input type="checkbox" id="${id}-matleave" onchange="onMatLeaveToggle('${id}')" style="margin:0;cursor:pointer;accent-color:#d97706">
+        🍼 育休
+      </label>
+      <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap">イベント</span>
+      <input id="${id}-leave" class="inp" oninput="live()" style="font-size:11px;padding:4px 8px;border-radius:5px;flex:1;min-width:120px" placeholder="例:産休・育休、時短、転職 等" value="">
       <span style="font-size:10px;color:var(--muted);white-space:nowrap">← CF表のイベント行に表示</span>
     </div>`;
   document.getElementById(`${person}-income-cont`).appendChild(el);
@@ -365,6 +369,7 @@ function addPresetIncome(type){
     setStepMode(id,'pct');
     const pctEl=$(`${id}-pct`);if(pctEl)pctEl.value=60;
     const leaveEl=$(`${id}-leave`);if(leaveEl)leaveEl.value='産休・育休';
+    const mlCb=$(`${id}-matleave`);if(mlCb){mlCb.checked=true;if(typeof onMatLeaveToggle==='function')onMatLeaveToggle(id);}
     calcPctIncome(id);
   }else if(type==='short'){
     // 時短勤務: 3年間80%
