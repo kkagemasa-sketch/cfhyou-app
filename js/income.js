@@ -369,7 +369,7 @@ function addPresetIncome(type){
     if(toEl)toEl.value=parseInt(fromEl?.value||30)+1;
     setStepMode(id,'pct');
     const pctEl=$(`${id}-pct`);if(pctEl)pctEl.value=60;
-    const leaveEl=$(`${id}-leave`);if(leaveEl)leaveEl.value='産休・育休';
+    const leaveEl=$(`${id}-leave`);if(leaveEl)leaveEl.value='産休育休';
     const mlCb=$(`${id}-matleave`);if(mlCb){mlCb.checked=true;if(typeof onMatLeaveToggle==='function')onMatLeaveToggle(id);}
     calcPctIncome(id);
   }else if(type==='short'){

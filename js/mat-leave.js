@@ -1,16 +1,30 @@
 // mat-leave.js — 収入段階ごとの育休フラグ・給付金自動計算・夫婦判定
 // Phase 2: 育休チェック時に前段階の手取りから給付金額を自動計算
 
-// ===== 育休給付金レート計算 =====
-// 制度: 最初180日(≈6ヶ月) 67%、以降 50%、1年超は原則なし
-// 期間に応じた平均給付率を返す（%）
-function computeMatLeaveAvgRate(months){
-  if(months <= 0) return 0;
-  const firstPhase  = Math.min(6, months);                      // 67%期間
-  const secondPhase = Math.min(6, Math.max(0, months - 6));     // 50%期間
-  // 1年超は給付なし（簡略）
-  const totalPct = (firstPhase * 67 + secondPhase * 50) / months;
-  return Math.round(totalPct * 10) / 10;
+// ===== 産休・育休給付金レート計算 =====
+// 奥様(w): 産休3.5ヶ月(2/3) → 育休前半6ヶ月(67%) → 育休後半6ヶ月(50%)
+// ご主人様(h): 育休前半6ヶ月(67%) → 育休後半6ヶ月(50%) （産休なし）
+// 1年超は原則給付なし
+function computeMatLeaveAvgRate(months, person){
+  if(months <= 0) return { avg: 0, breakdown: '' };
+  const parts = [];
+  let remain = months;
+  if(person === 'w'){
+    // 産休 3.5ヶ月 × 2/3 (≈66.67%)
+    const sankyu = Math.min(3.5, remain);
+    if(sankyu > 0){ parts.push({months: sankyu, rate: 66.67, label: '産休2/3'}); remain -= sankyu; }
+  }
+  // 育休前半 6ヶ月 × 67%
+  const ikuFirst = Math.min(6, remain);
+  if(ikuFirst > 0){ parts.push({months: ikuFirst, rate: 67, label: '育休前半67%'}); remain -= ikuFirst; }
+  // 育休後半 6ヶ月 × 50%
+  const ikuSecond = Math.min(6, remain);
+  if(ikuSecond > 0){ parts.push({months: ikuSecond, rate: 50, label: '育休後半50%'}); remain -= ikuSecond; }
+  // 残りは 0%（給付なし）→ 平均を下げる
+  const sum = parts.reduce((s,p)=>s + p.months * p.rate, 0);
+  const avg = Math.round(sum / months * 10) / 10;
+  const breakdown = parts.map(p=>`${p.label}(${p.months}ヶ月)`).join(' + ') + (remain > 0 ? ` + 給付なし(${Math.round(remain*10)/10}ヶ月)` : '');
+  return { avg, breakdown };
 }
 
 // 前段階の手取り終了額を取得（該当段階より前の最後のステップ）
@@ -44,28 +58,22 @@ function applyMatLeaveBenefit(stepId){
   const fromAge = parseInt(document.getElementById(`${stepId}-from`)?.value) || 0;
   const toAge   = parseInt(document.getElementById(`${stepId}-to`)?.value)   || 0;
   if(fromAge <= 0 || toAge < fromAge) return;
-  const years = Math.max(0.5, toAge - fromAge + 1); // 段階の期間（年）
+  const years = Math.max(0.5, toAge - fromAge + 1);
   const months = Math.round(years * 12);
-  const avgRate = computeMatLeaveAvgRate(months);
+  const person = stepId.startsWith('h-') ? 'h' : 'w';
+  const { avg: avgRate, breakdown } = computeMatLeaveAvgRate(months, person);
   const prevTH = _getPrevStepTakeHome(stepId);
   if(prevTH <= 0) return;
-  // 給付金は非課税。手取り相当として同額を入力欄に反映。
   const benefit = Math.round(prevTH * avgRate / 100);
-  // 金額モードに切替
   if(typeof setStepMode === 'function') setStepMode(stepId, 'amt');
   const nfEl = document.getElementById(`${stepId}-net-from`);
   const ntEl = document.getElementById(`${stepId}-net-to`);
   if(nfEl){ nfEl.value = benefit; nfEl._rawValue = benefit; }
   if(ntEl){ ntEl.value = benefit; ntEl._rawValue = benefit; }
-  // ヒントを上書き表示
   const hint = document.getElementById(`${stepId}-hint`);
   if(hint){
-    const rateDetail = months <= 6
-      ? `67%`
-      : months <= 12
-        ? `最初6ヶ月67% → 以降50%（平均${avgRate}%）`
-        : `最初6ヶ月67% → 6〜12ヶ月50% → 12ヶ月以降なし（平均${avgRate}%）`;
-    hint.innerHTML = `🍼 育休給付金：前段階手取り <strong>${prevTH}</strong>万 × ${rateDetail} = <strong>${benefit}</strong>万円（非課税）`;
+    const label = person === 'w' ? '🍼 産休・育休給付金' : '🍼 育休給付金';
+    hint.innerHTML = `${label}：前段階手取り <strong>${prevTH}</strong>万 × 平均${avgRate}% = <strong>${benefit}</strong>万円（非課税）<br><span style="font-weight:400;color:var(--muted)">内訳: ${breakdown}</span>`;
   }
   if(typeof calcStepHint === 'function') calcStepHint(stepId);
 }
@@ -85,9 +93,10 @@ function onMatLeaveToggle(stepId){
   // 再計算ボタン表示
   const recalcBtn = document.getElementById(`${stepId}-ml-recalc`);
   if(recalcBtn) recalcBtn.style.display = on ? 'inline-block' : 'none';
-  // イベント欄が空なら「育休」を自動入力
+  // イベント欄が空なら自動入力（奥様は「産休育休」、ご主人は「育休」）
   if(on && leaveEl && !leaveEl.value.trim()){
-    leaveEl.value = '育休';
+    const person = stepId.startsWith('h-') ? 'h' : 'w';
+    leaveEl.value = person === 'w' ? '産休育休' : '育休';
   }
   // ON時：net欄が空のときのみ自動計算（既入力は尊重）
   if(on){

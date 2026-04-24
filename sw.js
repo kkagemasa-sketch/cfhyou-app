@@ -1,5 +1,5 @@
 // Service Worker — PWAインストール用
-const CACHE_NAME = 'cf-app-v388';
+const CACHE_NAME = 'cf-app-v389';
 const ASSETS = [
   './',
   './index.html',
