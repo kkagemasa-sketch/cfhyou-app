@@ -256,6 +256,7 @@ function addIncomeStep(person){
         <input type="checkbox" id="${id}-matleave" onchange="onMatLeaveToggle('${id}')" style="margin:0;cursor:pointer;accent-color:#d97706">
         🍼 育休
       </label>
+      <button type="button" id="${id}-ml-recalc" title="給付金を再計算（前段階の手取りから）" onclick="applyMatLeaveBenefit('${id}');live()" style="display:none;font-size:10px;background:#fff;border:1px solid #ffb74d;color:#d97706;border-radius:4px;padding:3px 6px;cursor:pointer;white-space:nowrap">♻ 給付金再計算</button>
       <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap">イベント</span>
       <input id="${id}-leave" class="inp" oninput="live()" style="font-size:11px;padding:4px 8px;border-radius:5px;flex:1;min-width:120px" placeholder="例:産休・育休、時短、転職 等" value="">
       <span style="font-size:10px;color:var(--muted);white-space:nowrap">← CF表のイベント行に表示</span>
