@@ -804,6 +804,8 @@ function _applyData(d){
       // activeTabId は setRTab('cf') により後でクリアされるため復元しない
       if(typeof mgQA_renderTabs==='function') mgQA_renderTabs();
     }
+    // 育休UIを保存状態から復元
+    if(typeof syncMatLeaveUIFromState==='function') syncMatLeaveUIFromState();
     // 読込後は必ずメインCF表タブに戻す
     if(typeof setRTab==='function')setRTab('cf');
     live();render();

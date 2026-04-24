@@ -292,6 +292,27 @@ function checkPW(){
           <div id="h-income-cont"></div>
           <button class="btn-add" onclick="addIncomeStep('h')">＋ 収入段階を追加</button>
 
+          <!-- 🍼 育休設定（ご主人様） -->
+          <div id="ml-h-card" style="margin-top:10px;background:#fafafa;border:1px solid #e0e0e0;border-radius:var(--rs);padding:10px;transition:.15s">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="font-size:12px;font-weight:700;color:#d97706">🍼 育休の設定</div>
+              <button type="button" class="btn-tog" id="ml-h-toggle" onclick="toggleMatLeave('h')" style="padding:4px 12px;font-size:11px">＋ 育休を設定する</button>
+            </div>
+            <div id="ml-h-body" style="display:none;margin-top:10px">
+              <div class="g2" style="gap:8px">
+                <div class="fg"><label class="lbl">開始年（西暦）</label>
+                  <div class="suf"><input class="inp" id="ml-h-start-year" type="number" min="2000" max="2060" placeholder="例:2027" oninput="updateMatLeaveHint();live()"><span class="sl">年</span></div>
+                </div>
+                <div class="fg"><label class="lbl">期間</label>
+                  <div class="suf"><input class="inp" id="ml-h-years" type="number" min="0" max="5" step="0.5" value="1" oninput="updateMatLeaveHint();live()"><span class="sl">年</span></div>
+                </div>
+              </div>
+              <div id="ml-h-hint" style="font-size:11px;color:#3a8a3a;margin-top:6px;font-weight:600"></div>
+              <div id="ml-h-joint" style="display:none;font-size:11px;color:#1565c0;font-weight:600;margin-top:4px;padding:4px 8px;background:#e3f2fd;border-radius:4px"></div>
+              <input type="hidden" id="ml-h-enabled" value="0">
+            </div>
+          </div>
+
           <div class="divider"></div>
 
           <div class="g2" style="margin-bottom:10px">
@@ -472,6 +493,27 @@ function checkPW(){
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">手取り年収の段階を入力してください</div>
           <div id="w-income-cont"></div>
           <button class="btn-add" onclick="addIncomeStep('w')">＋ 収入段階を追加</button>
+
+          <!-- 🍼 育休設定（奥様） -->
+          <div id="ml-w-card" style="margin-top:10px;background:#fafafa;border:1px solid #e0e0e0;border-radius:var(--rs);padding:10px;transition:.15s">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="font-size:12px;font-weight:700;color:#d97706">🍼 育休の設定</div>
+              <button type="button" class="btn-tog" id="ml-w-toggle" onclick="toggleMatLeave('w')" style="padding:4px 12px;font-size:11px">＋ 育休を設定する</button>
+            </div>
+            <div id="ml-w-body" style="display:none;margin-top:10px">
+              <div class="g2" style="gap:8px">
+                <div class="fg"><label class="lbl">開始年（西暦）</label>
+                  <div class="suf"><input class="inp" id="ml-w-start-year" type="number" min="2000" max="2060" placeholder="例:2027" oninput="updateMatLeaveHint();live()"><span class="sl">年</span></div>
+                </div>
+                <div class="fg"><label class="lbl">期間</label>
+                  <div class="suf"><input class="inp" id="ml-w-years" type="number" min="0" max="5" step="0.5" value="1" oninput="updateMatLeaveHint();live()"><span class="sl">年</span></div>
+                </div>
+              </div>
+              <div id="ml-w-hint" style="font-size:11px;color:#3a8a3a;margin-top:6px;font-weight:600"></div>
+              <div id="ml-w-joint" style="display:none;font-size:11px;color:#1565c0;font-weight:600;margin-top:4px;padding:4px 8px;background:#e3f2fd;border-radius:4px"></div>
+              <input type="hidden" id="ml-w-enabled" value="0">
+            </div>
+          </div>
 
           <div class="divider"></div>
 
@@ -1561,6 +1603,7 @@ function checkPW(){
 <script src="js/utils.js?v=19"></script>
 <script src="js/family.js?v=3"></script>
 <script src="js/income.js?v=11"></script>
+<script src="js/mat-leave.js?v=1"></script>
 <script src="js/education.js?v=2"></script>
 <script src="js/housing.js?v=25"></script>
 <script src="js/loan-calc.js?v=4"></script>
