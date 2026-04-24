@@ -168,6 +168,75 @@ function calcPension(person){
   if(hint) hint.textContent = `✓ 厚生年金:${koseiRaw}万+基礎年金:${kisoRaw}万 → 手取り概算:${total}万円/年（平均月収${avgMonthly}万・加入${Math.round(months/12)}年）`;
   live();
 }
+// ===== 繰上げ・繰下げ受給の調整率計算 =====
+// 繰上げ（60-64歳）: -0.4%/月（最大-24%）
+// 繰下げ（66-75歳）: +0.7%/月（最大+84%）
+// 2022年4月以降の現行制度に準拠
+function calcPensionAdjustRate(receiveAge){
+  const age = Math.max(60, Math.min(75, receiveAge||65));
+  if(age < 65){
+    const months = (65 - age) * 12;
+    return 1 - 0.004 * months;   // 例: 60歳 → 0.76
+  }else if(age > 65){
+    const months = (age - 65) * 12;
+    return 1 + 0.007 * months;   // 例: 70歳 → 1.42, 75歳 → 1.84
+  }
+  return 1.0;
+}
+
+// 損益分岐年齢（65歳受給 vs 選択した年齢の累計受給額が一致する年齢）
+// 繰上げ: 選択年齢からrate×Bを受け取り続け、65歳からのBと比較
+// 繰下げ: 選択年齢からrate×Bを受け取り、65歳からのBの累計に追いつく年齢
+function calcPensionBreakeven(receiveAge){
+  const age = receiveAge||65;
+  if(age === 65) return null;
+  const rate = calcPensionAdjustRate(age);
+  // 年齢Xで累計が一致: rate*(X-age) = 1*(X-65)
+  // rate*X - rate*age = X - 65
+  // X*(rate-1) = rate*age - 65
+  // X = (rate*age - 65) / (rate - 1)
+  const X = (rate*age - 65) / (rate - 1);
+  const years = Math.floor(X);
+  const monthsFrac = Math.round((X - years) * 12);
+  return { ageYears: years, ageMonths: monthsFrac, advantage: age>65?'繰下げ':'繰上げ' };
+}
+
+// 受給開始年齢・金額に応じてヒント表示を更新
+function updatePensionAdjustHint(person){
+  const receiveAge = iv(`pension-${person}-receive`)||65;
+  const baseAmt = fv(`pension-${person}`)||0;
+  const adjustCb = document.getElementById(`pension-${person}-autoadjust`);
+  const hintEl = document.getElementById(`${person}-pension-adjust-hint`);
+  const baseHintEl = document.getElementById(`${person}-pension-hint`);
+  if(!hintEl) return;
+  const rate = calcPensionAdjustRate(receiveAge);
+  const pct = Math.round((rate - 1) * 1000) / 10;   // 少数第1位
+  const adjusted = Math.round(baseAmt * rate);
+  const be = calcPensionBreakeven(receiveAge);
+  // 基本ヒント（受給開始年齢）を更新
+  if(baseHintEl) baseHintEl.textContent = `${receiveAge}歳〜 受給`;
+  if(receiveAge === 65){
+    hintEl.style.display = 'none';
+    return;
+  }
+  const sign = pct>0?'+':'';
+  const label = receiveAge<65?'🔻 繰上げ':'🔺 繰下げ';
+  const on = adjustCb?.checked;
+  const applied = on
+    ? `<strong style="color:#b8860b">→ CF表には ${adjusted}万円/年 を反映</strong>`
+    : `<span style="color:#999">（自動調整OFF：入力値 ${baseAmt}万円 をそのまま使用）</span>`;
+  let beTxt = '';
+  if(be){
+    beTxt = `<br>📊 損益分岐: <strong>${be.ageYears}歳${be.ageMonths}ヶ月</strong>頃までに亡くなる場合は65歳受給が有利、それ以降まで生きる場合は${be.advantage}が有利`;
+  }
+  hintEl.innerHTML = `${label} ${receiveAge}歳 受給 → 調整率 <strong>${sign}${pct}%</strong>（${baseAmt}万 × ${Math.round(rate*1000)/1000} = ${adjusted}万円/年）<br>${applied}${beTxt}`;
+  hintEl.style.display = 'block';
+}
+
+window.calcPensionAdjustRate = calcPensionAdjustRate;
+window.calcPensionBreakeven = calcPensionBreakeven;
+window.updatePensionAdjustHint = updatePensionAdjustHint;
+
 function getStepsForPension(person){
   const nets=[];
   const ids=new Set();

@@ -410,14 +410,16 @@ function checkPW(){
               <div class="fg"><label class="lbl" style="font-size:9px">加入開始年齢</label>
                 <div class="suf"><input class="inp age-inp" id="pension-h-start" type="number" onfocus="scrollToCFRow('pS',65)" onblur="cfRowBlur()" value="22" min="18" max="40" oninput="calcPension('h')" style="font-size:11px"><span class="sl">歳</span></div></div>
               <div class="fg"><label class="lbl" style="font-size:9px">受給開始年齢</label>
-                <div class="suf"><input class="inp age-inp" id="pension-h-receive" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="65" min="60" max="75" oninput="live()" style="font-size:11px"><span class="sl">歳</span></div></div>
+                <div class="suf"><input class="inp age-inp" id="pension-h-receive" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="65" min="60" max="75" oninput="updatePensionAdjustHint('h');live()" style="font-size:11px"><span class="sl">歳</span></div></div>
               <div class="fg"><label class="lbl" style="font-size:9px">老齢年金（手取/年）</label>
-                <div class="suf"><input class="inp amt-inp" id="pension-h" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="186" min="0" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+                <div class="suf"><input class="inp amt-inp" id="pension-h" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="186" min="0" oninput="updatePensionAdjustHint('h');live()" style="font-size:11px"><span class="sl">万円</span></div></div>
             </div>
-            <div style="margin-top:6px">
+            <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <button onclick="calcPension('h')" style="background:#e8f2fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#1a4a6a;cursor:pointer;font-family:inherit;font-weight:600">🔄 概算計算</button>
+              <label style="font-size:10px;color:#5a4000;cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:4px 8px"><input type="checkbox" id="pension-h-autoadjust" onchange="updatePensionAdjustHint('h');live()" style="margin:0">📊 繰上げ/繰下げで年金額を自動調整</label>
             </div>
             <div id="h-pension-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">65歳〜 受給</div>
+            <div id="h-pension-adjust-hint" style="font-size:10px;color:#7a5000;margin-top:4px;display:none"></div>
             <div style="font-size:9px;color:var(--light);margin-top:3px">※ねんきん定期便の金額に上書きできます</div>
           </div>
 
@@ -591,14 +593,16 @@ function checkPW(){
               <div class="fg"><label class="lbl" style="font-size:9px">加入開始年齢</label>
                 <div class="suf"><input class="inp age-inp" id="pension-w-start" onfocus="scrollToCFRow('pW',iv('pension-w-receive')||65)" onblur="cfRowBlur()" type="number" value="22" min="18" max="40" oninput="calcPension('w')" style="font-size:11px"><span class="sl">歳</span></div></div>
               <div class="fg"><label class="lbl" style="font-size:9px">受給開始年齢</label>
-                <div class="suf"><input class="inp age-inp" id="pension-w-receive" type="number" onfocus="scrollToCFRow('pW',iv('pension-w-receive')||65)" onblur="cfRowBlur()" value="65" min="60" max="75" oninput="live()" style="font-size:11px"><span class="sl">歳</span></div></div>
+                <div class="suf"><input class="inp age-inp" id="pension-w-receive" type="number" onfocus="scrollToCFRow('pW',iv('pension-w-receive')||65)" onblur="cfRowBlur()" value="65" min="60" max="75" oninput="updatePensionAdjustHint('w');live()" style="font-size:11px"><span class="sl">歳</span></div></div>
               <div class="fg"><label class="lbl" style="font-size:9px">老齢年金（手取/年）</label>
-                <div class="suf"><input class="inp amt-inp" id="pension-w" type="number" onfocus="scrollToCFRow('pW',iv('pension-w-receive')||65)" onblur="cfRowBlur()" value="66" min="0" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
+                <div class="suf"><input class="inp amt-inp" id="pension-w" type="number" onfocus="scrollToCFRow('pW',iv('pension-w-receive')||65)" onblur="cfRowBlur()" value="66" min="0" oninput="updatePensionAdjustHint('w');live()" style="font-size:11px"><span class="sl">万円</span></div></div>
             </div>
-            <div style="margin-top:6px">
+            <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <button onclick="calcPension('w')" style="background:#e8f2fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#1a4a6a;cursor:pointer;font-family:inherit;font-weight:600">🔄 概算計算</button>
+              <label style="font-size:10px;color:#5a4000;cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:4px 8px"><input type="checkbox" id="pension-w-autoadjust" onchange="updatePensionAdjustHint('w');live()" style="margin:0">📊 繰上げ/繰下げで年金額を自動調整</label>
             </div>
             <div id="w-pension-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">65歳〜 受給</div>
+            <div id="w-pension-adjust-hint" style="font-size:10px;color:#7a5000;margin-top:4px;display:none"></div>
             <div style="font-size:9px;color:var(--light);margin-top:3px">※ねんきん定期便の金額に上書きできます</div>
           </div>
         </div>
@@ -1555,12 +1559,12 @@ function checkPW(){
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=14"></script>
-<script src="js/constants.js?v=14"></script>
+<script src="js/constants.js?v=15"></script>
 <script src="js/market-scenarios.js?v=3"></script>
 <script src="js/market-sim.js?v=6"></script>
 <script src="js/utils.js?v=19"></script>
 <script src="js/family.js?v=3"></script>
-<script src="js/income.js?v=14"></script>
+<script src="js/income.js?v=15"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=2"></script>
 <script src="js/housing.js?v=25"></script>
@@ -1570,7 +1574,7 @@ function checkPW(){
 <script src="js/extras.js?v=2"></script>
 <script src="js/contingency.js?v=59"></script>
 <script src="js/cf-ui.js?v=21"></script>
-<script src="js/cf-calc.js?v=40"></script>
+<script src="js/cf-calc.js?v=41"></script>
 <script src="js/cf-table.js?v=32"></script>
 <script src="js/cf-highlight.js?v=2"></script>
 <script src="js/graphs.js?v=5"></script>
@@ -1578,7 +1582,7 @@ function checkPW(){
 <script src="js/loan-plan.js?v=8"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=43"></script>
+<script src="js/save-load.js?v=44"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=6"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

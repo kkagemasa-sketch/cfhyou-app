@@ -39,6 +39,17 @@ function render(){
   const pWife=$('pension-w')?.value===''?0:(fv('pension-w')||66);
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=iv('pension-w-receive')||65;
+  // 繰上げ・繰下げ自動調整（チェックONなら年金額に調整率を掛ける）
+  const pHAdjustOn = !!document.getElementById('pension-h-autoadjust')?.checked;
+  const pWAdjustOn = !!document.getElementById('pension-w-autoadjust')?.checked;
+  const _pAdjRate = (age)=>{
+    if(typeof calcPensionAdjustRate==='function') return calcPensionAdjustRate(age);
+    if(age<65) return 1 - 0.004*((65-age)*12);
+    if(age>65) return 1 + 0.007*((age-65)*12);
+    return 1;
+  };
+  const pHAdjRate = pHAdjustOn ? _pAdjRate(pHReceive) : 1;
+  const pWAdjRate = pWAdjustOn ? _pAdjRate(pWReceive) : 1;
   // 老齢基礎年金概算（令和7年度満額82.51万円 × 加入年数/40年、constants.js で一元管理）
   const KISO_FULL=KISO_FULL_AMT;
   const pHStart=iv('pension-h-start')||22;
@@ -482,8 +493,8 @@ function render(){
     R.insMat.push(insMatTotal);
     R.insMatBd.push(_insMatItems.length>0?{items:_insMatItems,total:insMatTotal,year:yr,age_h:ha,age_w:wa}:null);
     // 老齢年金（死亡後も生存配偶者の年金は継続表示）
-    const _pSVal=(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(pSelf):0;
-    const _pWVal=(!_isSingle&&wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife):0;
+    const _pSVal=(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(pSelf*pHAdjRate):0;
+    const _pWVal=(!_isSingle&&wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife*pWAdjRate):0;
     R.pS.push(_pSVal);
     R.pW.push(_pWVal);
     // ─── 児童手当（TEATE_TABLEを参照・2024年10月改正対応） ───

@@ -812,6 +812,8 @@ function _applyData(d){
     }
     // 育休ヒント再計算
     if(typeof updateMatLeaveJointHint==='function') setTimeout(updateMatLeaveJointHint, 50);
+    // 年金繰上げ・繰下げヒント再計算
+    if(typeof updatePensionAdjustHint==='function') setTimeout(()=>{updatePensionAdjustHint('h');updatePensionAdjustHint('w');}, 50);
     // 読込後は必ずメインCF表タブに戻す
     if(typeof setRTab==='function')setRTab('cf');
     live();render();
