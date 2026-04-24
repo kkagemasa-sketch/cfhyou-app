@@ -788,19 +788,20 @@ function render(){
         if(_redeemSeries){
           fv2 = _redeemSeries[i]||0;
         } else if(endAge===0||pAge<=endAge){
-          const cpd=Math.pow(1+rate,yrs);
-          const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
+          // 野村シミュレーター準拠: 月利 r/12, 月末払い
+          const mr=rate/12;
+          const cpd=Math.pow(1+mr,12*yrs);
           const balGrow=bal*cpd;
           const accumFV=mr>0?monthly*(cpd-1)/mr:monthly*12*yrs;
           fv2=Math.round(balGrow+accumFV);
         } else {
-          const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
+          const mr=rate/12;
           const yrsAccum=endAge-pBaseAge;
           const yrsAfter=yrs-yrsAccum;
-          const cpdA=Math.pow(1+rate,yrsAccum);
+          const cpdA=Math.pow(1+mr,12*yrsAccum);
           const balAtEnd=bal*cpdA;
           const accumAtEnd=mr>0?monthly*(cpdA-1)/mr:monthly*12*yrsAccum;
-          fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+rate,Math.max(0,yrsAfter)));
+          fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+mr,12*Math.max(0,yrsAfter)));
         }
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
@@ -1230,19 +1231,20 @@ function render(){
         // 通常利回り版（常に計算し finRowMapBase に足す）
         let fv2Base=0;
         if(endAge===0||pAge<endAge){
-          const cpd=Math.pow(1+rate,yrs);
-          const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
+          // 野村シミュレーター準拠: 月利 r/12, 月末払い
+          const mr=rate/12;
+          const cpd=Math.pow(1+mr,12*yrs);
           const balGrow=bal*cpd;
           const accumFV=mr>0?monthly*(cpd-1)/mr:monthly*12*yrs;
           fv2Base=Math.round(balGrow+accumFV);
         } else {
-          const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
+          const mr=rate/12;
           const yrsAccum=endAge-pBaseAge;
           const yrsAfter=yrs-yrsAccum;
-          const cpdA=Math.pow(1+rate,yrsAccum);
+          const cpdA=Math.pow(1+mr,12*yrsAccum);
           const balAtEnd=bal*cpdA;
           const accumAtEnd=mr>0?monthly*(cpdA-1)/mr:monthly*12*yrsAccum;
-          fv2Base=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+rate,Math.max(0,yrsAfter)));
+          fv2Base=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+mr,12*Math.max(0,yrsAfter)));
         }
         // シナリオ適用版（シリーズがあれば使用、なければ通常版と同じ）
         const fv2 = _series ? (_series[i]||0) : fv2Base;
@@ -1316,12 +1318,12 @@ function render(){
       const hasDC=totalMonthly>0||d.dcInitBal>0;
       const hasIdeco=d.idecoMonthly>0||d.idecoInitBal>0;
       if(!hasDC&&!hasIdeco)return;
-      // 初期残高付き将来価値ヘルパー（実効年利ベース月複利）
-      // grow = initBal*(1+r)^yrs,  contrib = monthly*((1+r)^yrs-1)/mr,  mr=(1+r)^(1/12)-1
+      // 初期残高付き将来価値ヘルパー（野村シミュレーター準拠: 月利 r/12）
+      // grow = initBal*(1+r/12)^(12*yrs),  contrib = monthly*((1+r/12)^(12*yrs)-1)/(r/12)
       const _fvWithInit=(initBal,monthly,rate,yrs)=>{
-        const cpd=rate>0?Math.pow(1+rate,yrs):1;
+        const mr=rate/12;
+        const cpd=mr>0?Math.pow(1+mr,12*yrs):1;
         const grow=initBal*cpd;
-        const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
         const contrib=monthly>0?(mr>0?monthly*(cpd-1)/mr:monthly*12*yrs):0;
         return grow+contrib;
       };
@@ -1332,13 +1334,13 @@ function render(){
         const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
         const rate=d.dcRate;
         const balAtEnd=_fvWithInit(d.dcInitBal,totalMonthly,rate,yrsContrib);
-        _dcBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib)):1);
+        _dcBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate/12,12*Math.max(0,yrsToReceive-yrsContrib)):1);
       }
       if(hasIdeco){
         const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
         const rate=d.idecoRate;
         const balAtEnd=_fvWithInit(d.idecoInitBal,d.idecoMonthly,rate,yrsContrib);
-        _idecoBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate,Math.max(0,yrsToReceive-yrsContrib)):1);
+        _idecoBalAtReceive=balAtEnd*(rate>0?Math.pow(1+rate/12,12*Math.max(0,yrsToReceive-yrsContrib)):1);
       }
       const _totalBalAtReceive=Math.round(_dcBalAtReceive+_idecoBalAtReceive);
       // DC残高（finRowMap表示用）
@@ -1355,7 +1357,7 @@ function render(){
             const yrsContrib=d.retAge-pBaseAge;
             const balAtRetire=_fvWithInit(d.dcInitBal,totalMonthly,d.dcRate,yrsContrib);
             const yrsAfter=yrs-yrsContrib;
-            dcBalBase=balAtRetire*(d.dcRate>0?Math.pow(1+d.dcRate,Math.max(0,yrsAfter)):1);
+            dcBalBase=balAtRetire*(d.dcRate>0?Math.pow(1+d.dcRate/12,12*Math.max(0,yrsAfter)):1);
           }
           // シナリオ適用版
           dcBal = _dcSeries ? (_dcSeries[i]||0) : dcBalBase;
@@ -1399,7 +1401,7 @@ function render(){
             const yrsContrib=d.retAge-pBaseAge;
             const balAtRetire=_fvWithInit(d.idecoInitBal,d.idecoMonthly,d.idecoRate,yrsContrib);
             const yrsAfter=yrs-yrsContrib;
-            idecoBalBase=balAtRetire*(d.idecoRate>0?Math.pow(1+d.idecoRate,Math.max(0,yrsAfter)):1);
+            idecoBalBase=balAtRetire*(d.idecoRate>0?Math.pow(1+d.idecoRate/12,12*Math.max(0,yrsAfter)):1);
           }
           // シナリオ適用版
           idecoBal = _idecoSeries ? (_idecoSeries[i]||0) : idecoBalBase;
