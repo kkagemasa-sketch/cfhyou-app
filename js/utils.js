@@ -52,14 +52,15 @@ function canApplySpouseDed(selfGross, spouseGross){
   if(selfGross>1095)return false;
   return true;
 }
-// 給与所得控除（令和2年改正後、上限195万）
+// 給与所得控除（令和2年改正後、上限195万）— 国税庁正規表に準拠
+// https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1410.htm
 function calcKyuyoDed(gross){
-  if(gross<=180)return Math.max(55,gross*0.4);
-  if(gross<=360)return gross*0.3+18;
-  if(gross<=660)return gross*0.2+54;
-  if(gross<=850)return gross*0.1+120;
-  if(gross<=1000)return gross*0.05+172.5;
-  return 195;
+  if(gross<=162.5)return 55;
+  if(gross<=180)return gross*0.4-10;
+  if(gross<=360)return gross*0.3+8;
+  if(gross<=660)return gross*0.2+44;
+  if(gross<=850)return gross*0.1+110;
+  return 195; // 850万円超は195万円固定（上限）
 }
 // 基礎控除（2020年改正：所得2,400万超で逓減）
 // 戻り値：[所得税の基礎控除額, 住民税の基礎控除額]
