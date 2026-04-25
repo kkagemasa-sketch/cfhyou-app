@@ -380,10 +380,10 @@ async function exportExcelMG(){
   const childEvRows2=[];
   children.forEach((c,ci)=>{
     const ages=MR.yr.map((_,i)=>c.age+i);
-    const hStartAge_mg=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+    const hStartAge_mg=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value));
     childEvRows2.push({rowIdx:rows.length,ages,hStartAge:hStartAge_mg});
     const un=_v(`cu-${ci+1}`)||'plit_h';
-    const hSA=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+    const hSA=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value));
     const hTp=_v(`hoiku-type-${ci+1}`)||'hoikuen';
     const hLb=hTp==='youchien'?'幼稚園入園':'保育園入園';
     push(['',cLbls[ci],...ages.map(ca=>{
@@ -1355,7 +1355,7 @@ async function exportExcel(){
   // 子どもイベント行の行番号と年齢配列を記録（教育段階色分け用）
   const childEvRows=[];
   if(R.evC)R.evC.forEach((ev,ci)=>{
-    const hStartAge=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+    const hStartAge=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value));
     childEvRows.push({rowIdx:rows.length, ages:R.cA?R.cA[ci]:null, hStartAge});
     push(['',cLbls[ci],...ev.slice(0,disp),''],'event');
   });

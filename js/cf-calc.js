@@ -1575,7 +1575,7 @@ function render(){
     children.forEach((c,ci)=>{
       const ca=c.age+i;
       const cid=ci+1;
-      const hoikuStartAge=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
+      const hoikuStartAge=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${cid}`)?.value));
       const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
       const hoikuLabel=hoikuType==='youchien'?'幼稚園入園':'保育園入園';
       let ev='';

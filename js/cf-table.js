@@ -201,7 +201,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       const ca=R.cA[ci][i];
       let cls='',label='';
       // 年度ベース（4月入学）：+1シフト
-      const hStartAge=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+      const hStartAge=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value));
       const hType=_v(`hoiku-type-${ci+1}`)||'hoikuen';
       const hLabel=hType==='youchien'?'幼稚園入園':'保育園入園';
       if(ca===0)label='誕生';

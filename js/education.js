@@ -6,7 +6,7 @@ function eduCosts(cid){
   // 保育料：hn-A（A歳ラベル）→ c[A]（CF上もA歳に反映）
   const h0=fv(`hn-0-${cid}`), h1=fv(`hn-1-${cid}`), h2=fv(`hn-2-${cid}`);
   const h3=fv(`hn-3-${cid}`), h4=fv(`hn-4-${cid}`), h5=fv(`hn-5-${cid}`), h6=fv(`hn-6-${cid}`);
-  const startAge=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
+  const startAge=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${cid}`)?.value));
   const hArr=[h0,h1,h2,h3,h4,h5,h6];
   const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
   const defaults=hoikuType==='youchien'?[0,0,0,25,25,25,0]:[0,0,41,31,31,31,31]; // 年齢別デフォルト
@@ -36,7 +36,7 @@ function eduCostsBd(cid){
   const stages=new Array(32).fill(null);
   const total =eduCosts(cid); // 既存の総額計算を再利用
   const el=_v(`ce-${cid}`)||'public',mi=_v(`cm-${cid}`)||'public',hi=_v(`ch-${cid}`)||'public',un=_v(`cu-${cid}`)||'plit_h';
-  const startAge=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
+  const startAge=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${cid}`)?.value));
   const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
 
   // 保育（0-6歳）: 3区分ではなく保育料単体を eduFee に計上
@@ -103,7 +103,7 @@ function updateEdu(){
   rows.forEach(el=>{
     const cid=el.id.split('-')[1];
     const age=parseInt(el.value)||0;
-    const startAge=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
+    const startAge=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${cid}`)?.value));
     for(let a=0;a<=6;a++){
       const grp=document.getElementById(`hg-${a}-${cid}`);
       const inp=document.getElementById(`hn-${a}-${cid}`);
@@ -136,7 +136,7 @@ function updateEdu(){
     const m=_v(`cm-${cid}`)===  'private'?'中:私立':'中:公立';
     const h=_v(`ch-${cid}`)===  'private'?'高:私立':'高:公立';
     const unv=_v(`cu-${cid}`)||'plit_h';const u='大:'+ul[unv];
-    const hoikuStart=parseInt(document.getElementById(`hoiku-start-${cid}`)?.value)||1;
+    const hoikuStart=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${cid}`)?.value));
     const hoiku=[0,1,2,3,4,5,6].map(a=>a<hoikuStart?0:fv(`hn-${a}-${cid}`));
     const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
     const hoikuDef=hoikuType==='youchien'?[0,0,0,25,25,25,0]:[0,0,41,31,31,31,31];

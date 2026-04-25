@@ -1227,7 +1227,7 @@ function _renderContingencyInner(){
     for(let i=0;i<mgDisp;i++){
       const ca=c.age+i;
       let cls='',label='';
-      const hStartAge_ev=parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value)||1;
+      const hStartAge_ev=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value));
       const hType_ev=_v(`hoiku-type-${ci+1}`)||'hoikuen';
       const hLabel_ev=hType_ev==='youchien'?'幼稚園入園':'保育園入園';
       if(ca===0)label='誕生';
