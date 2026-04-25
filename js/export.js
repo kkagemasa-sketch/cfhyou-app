@@ -315,17 +315,17 @@ async function exportExcelMG(){
     ];
     extraPairRows.push(rowH,rowW);
   } else {
-    // 通常ローン — 金額→年数→金利→段階金利
+    // 通常ローン — 金額→年数→金利→段階金利→引渡し
     infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
     infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
     infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
-    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    // 段階金利（通常ローン・フラット35単独）
+    // 段階金利（通常ローン・フラット35単独）— 当初金利の直後に並べる
     if(rates.length>1){
       rates.slice(1).forEach(s=>{
         infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
       });
     }
+    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
   }
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
@@ -1310,12 +1310,12 @@ async function exportExcel(){
     infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
     infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
     infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
-    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
     if(rates.length>1){
       rates.slice(1).forEach(s=>{
         infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
       });
     }
+    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
   }
   const infoRow2Len=infoRow2.length;
   while(infoRow2.length<disp+3)infoRow2.push('');
