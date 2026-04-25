@@ -303,49 +303,56 @@ function render(){
 
   // ─── 手取年収→額面・税金の逆算ヘルパー ───
   // netInc: 手取年収(万円), age: 年齢, isSelfSingle: 単身か, spouseNetInc: 配偶者の手取(配偶者控除判定用), isHSide: ご主人側か
+  // 手取り計算機(calcTakeHomeBase)と同じ式を二分探索で逆算する（TAX表の補間を廃止）
   function _calcNetBreakdown(netInc, age, isSelfSingle, spouseNetInc, isHSide){
     if(netInc<=0)return null;
-    // 手取り→額面（TAX表を線形補間）
-    const _netToGross=(net)=>{
-      let g=0;
-      for(let gi=0;gi<TAX.length-1;gi++){
-        if(net<=TAX[gi][1]){g=TAX[gi][0];break;}
-        if(net<TAX[gi+1][1]){const r=(net-TAX[gi][1])/(TAX[gi+1][1]-TAX[gi][1]);g=Math.round(TAX[gi][0]+r*(TAX[gi+1][0]-TAX[gi][0]));break;}
-        g=TAX[TAX.length-1][0];
-      }
-      if(g<=0&&net>0)g=TAX[TAX.length-1][0];
-      return g;
-    };
-    const gross=_netToGross(netInc);
     const shakaiRate=calcShakaiRate(age);
-    const shakai=Math.round(gross*shakaiRate*10)/10;
-    const kyuyo=calcKyuyoDed(gross);
-    const grossSyotoku=Math.max(0,gross-kyuyo);
-    const [kisoIt,kisoJu]=calcKisoDed(grossSyotoku);
-    // 配偶者控除（ご主人側のみ適用、奥様視点では基本無し）
-    let spouseGross=0;
-    let hasSpouseDed=false, spouseDedIt=0, spouseDedJu=0;
-    if(!isSelfSingle&&isHSide&&spouseNetInc>0){
-      spouseGross=_netToGross(spouseNetInc);
-      hasSpouseDed=canApplySpouseDed(gross,spouseGross);
-      spouseDedIt=hasSpouseDed?38:0;
-      spouseDedJu=hasSpouseDed?33:0;
-    }else if(!isSelfSingle&&isHSide&&spouseNetInc===0){
-      // 配偶者が無収入(0万円) → 配偶者控除適用
-      hasSpouseDed=canApplySpouseDed(gross,0);
-      spouseDedIt=hasSpouseDed?38:0;
-      spouseDedJu=hasSpouseDed?33:0;
+    // 配偶者の額面は固定で1度だけ概算（再帰回避：シンプルにspouseNetInc * 1.33で近似）
+    const spouseGrossEst = spouseNetInc>0 ? Math.round(spouseNetInc*1.33) : 0;
+    // 与えられた gross から内訳を計算する内部関数
+    const _compute=(gross)=>{
+      const shakai=Math.round(gross*shakaiRate*10)/10;
+      const kyuyo=calcKyuyoDed(gross);
+      const grossSyotoku=Math.max(0,gross-kyuyo);
+      const [kisoIt,kisoJu]=calcKisoDed(grossSyotoku);
+      let hasSpouseDed=false, spouseDedIt=0, spouseDedJu=0;
+      if(!isSelfSingle&&isHSide){
+        const sg = spouseNetInc>0 ? spouseGrossEst : 0;
+        hasSpouseDed=canApplySpouseDed(gross,sg);
+        spouseDedIt=hasSpouseDed?38:0;
+        spouseDedJu=hasSpouseDed?33:0;
+      }
+      const taxableBase=Math.max(0,grossSyotoku-shakai-kisoIt);
+      const taxable=Math.max(0,taxableBase-spouseDedIt);
+      const itax=calcIncomeTax(taxable);
+      const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-spouseDedJu);
+      const jumin=calcJuminTax(juminTaxable);
+      const netComputed=Math.round((gross-shakai-itax-jumin)*10)/10;
+      return {gross, shakai, kyuyo, grossSyotoku, kisoIt, kisoJu,
+              hasSpouseDed, spouseDedIt, spouseDedJu,
+              taxableBase, taxable, itax, juminTaxable, jumin, netComputed};
+    };
+    // 二分探索: gross ∈ [netInc, netInc*2.5] で netComputed ≈ netInc を満たすgrossを求める
+    let lo=netInc, hi=netInc*2.5;
+    let mid=lo, br=_compute(lo);
+    for(let iter=0;iter<60;iter++){
+      mid=(lo+hi)/2;
+      br=_compute(mid);
+      const diff=br.netComputed - netInc;
+      if(Math.abs(diff)<0.01) break;
+      if(diff>0) hi=mid; else lo=mid;
     }
-    const taxableBase=Math.max(0,grossSyotoku-shakai-kisoIt);
-    const taxable=Math.max(0,taxableBase-spouseDedIt);
-    const itax=calcIncomeTax(taxable);
-    const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-spouseDedJu);
-    const jumin=calcJuminTax(juminTaxable);
+    // gross は0.1万円(=千円)単位に丸めて再計算（誤差最小化）
+    const grossR=Math.round(mid*10)/10;
+    br=_compute(grossR);
     return {
-      net:netInc, gross, shakaiRate, shakai, kyuyo, grossSyotoku,
-      kisoIt, kisoJu, hasSpouseDed, spouseDedIt, spouseDedJu,
-      taxableBase, taxable, itax, juminTaxable, jumin,
-      netComputed:Math.round((gross-shakai-itax-jumin)*10)/10,
+      net:netInc, gross:grossR, shakaiRate,
+      shakai:br.shakai, kyuyo:br.kyuyo, grossSyotoku:br.grossSyotoku,
+      kisoIt:br.kisoIt, kisoJu:br.kisoJu,
+      hasSpouseDed:br.hasSpouseDed, spouseDedIt:br.spouseDedIt, spouseDedJu:br.spouseDedJu,
+      taxableBase:br.taxableBase, taxable:br.taxable, itax:br.itax,
+      juminTaxable:br.juminTaxable, jumin:br.jumin,
+      netComputed:br.netComputed,
       age, isSingle:isSelfSingle, isHSide
     };
   }
