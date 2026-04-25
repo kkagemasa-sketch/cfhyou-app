@@ -669,46 +669,15 @@ function render(){
       const cappedBal=Math.min(remainBal,(pairLoanMode||_flatPair)?lctrlLimit*2:lctrlLimit);
       const calcCtrl=Math.round(cappedBal*0.007*10)/10;
       // 所得税・住民税から上限を推計（ご主人の手取りから額面を逆算）
+      // _calcNetBreakdown の二分探索を再利用して TAX 表の線形補間を廃止
       const grossInc=hInc>0?hInc:0;
-      let grossEst=0;
-      for(let gi=0;gi<TAX.length-1;gi++){
-        if(grossInc<=TAX[gi][1]){grossEst=TAX[gi][0];break;}
-        if(grossInc<TAX[gi+1][1]){
-          const r=(grossInc-TAX[gi][1])/(TAX[gi+1][1]-TAX[gi][1]);
-          grossEst=Math.round(TAX[gi][0]+r*(TAX[gi+1][0]-TAX[gi][0]));
-          break;
-        }
-        grossEst=TAX[TAX.length-1][0];
-      }
-      if(grossEst<=0&&grossInc>0)grossEst=TAX[TAX.length-1][0];
-      let itax=0, jumin=0, taxableBase=0;
-      if(grossEst>0){
-        // 社会保険料（年齢に応じて介護保険料加算）
-        const shakai=Math.round(grossEst*calcShakaiRate(ha)*10)/10;
-        const kyuyo=calcKyuyoDed(grossEst);
-        const grossSyotoku=Math.max(0,grossEst-kyuyo); // 給与所得金額
-        const [kisoIt,kisoJu]=calcKisoDed(grossSyotoku); // 基礎控除（所得税／住民税）
-        // 配偶者控除の適用判定（奥様の年収をグロス推定）
-        let wGrossForDed=0;
-        if(!_isSingle){
-          const wIncLocal=wInc>0?wInc:0;
-          for(let gi=0;gi<TAX.length-1;gi++){
-            if(wIncLocal<=TAX[gi][1]){wGrossForDed=TAX[gi][0];break;}
-            if(wIncLocal<TAX[gi+1][1]){const r=(wIncLocal-TAX[gi][1])/(TAX[gi+1][1]-TAX[gi][1]);wGrossForDed=Math.round(TAX[gi][0]+r*(TAX[gi+1][0]-TAX[gi][0]));break;}
-            wGrossForDed=TAX[TAX.length-1][0];
-          }
-          if(wGrossForDed<=0&&wIncLocal>0)wGrossForDed=TAX[TAX.length-1][0];
-        }
-        const hasSpouseDed=!_isSingle&&canApplySpouseDed(grossEst,wGrossForDed);
-        const spouseDedIt=hasSpouseDed?38:0;
-        const spouseDedJu=hasSpouseDed?33:0;
-        // 所得税の課税所得
-        taxableBase=Math.max(0,grossSyotoku-shakai-kisoIt);
-        const taxable=Math.max(0,taxableBase-spouseDedIt);
-        itax=calcIncomeTax(taxable);
-        // 住民税（基礎控除43万、配偶者控除33万、調整控除・均等割含む）
-        const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-spouseDedJu);
-        jumin=calcJuminTax(juminTaxable);
+      const _hLctrlBd = _calcNetBreakdown(grossInc, ha, _isSingle, wInc>0?wInc:0, true);
+      let itax=0, jumin=0, taxableBase=0, grossEst=0;
+      if(_hLctrlBd){
+        grossEst=_hLctrlBd.gross;
+        itax=_hLctrlBd.itax;
+        jumin=_hLctrlBd.jumin;
+        taxableBase=_hLctrlBd.taxableBase;
       }
       // 住民税控除上限＝課税総所得金額等×5%（上限JUMIN_CTRL_MAX）
       const juminCtrlMax=Math.min(Math.round(taxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
@@ -725,28 +694,14 @@ function render(){
       _lctrlBd.taxCapTotal=taxCapTotal;
       // ペアローン時は奥様側の税額情報も追加
       if((pairLoanMode||_flatPair)&&!_isSingle){
+        // 奥様の手取りから額面を二分探索で逆算（ペアローン共働き想定で配偶者控除なし＝isHSide=false, 単身扱い）
         const wGrossInc=wInc>0?wInc:0;
-        let wGrossEst=0;
-        for(let gi=0;gi<TAX.length-1;gi++){
-          if(wGrossInc<=TAX[gi][1]){wGrossEst=TAX[gi][0];break;}
-          if(wGrossInc<TAX[gi+1][1]){
-            const r=(wGrossInc-TAX[gi][1])/(TAX[gi+1][1]-TAX[gi][1]);
-            wGrossEst=Math.round(TAX[gi][0]+r*(TAX[gi+1][0]-TAX[gi][0]));
-            break;
-          }
-          wGrossEst=TAX[TAX.length-1][0];
-        }
-        if(wGrossEst<=0&&wGrossInc>0)wGrossEst=TAX[TAX.length-1][0];
-        let wItax=0, wTaxableBase=0;
-        if(wGrossEst>0){
-          const wShakai=Math.round(wGrossEst*calcShakaiRate(wa)*10)/10;
-          const wKyuyo=calcKyuyoDed(wGrossEst);
-          const wGrossSyotoku=Math.max(0,wGrossEst-wKyuyo);
-          const [wKisoIt]=calcKisoDed(wGrossSyotoku);
-          // 配偶者控除：奥様が本人視点の場合（ご主人様の所得で判定）
-          // ここではペアローン共働き想定のため奥様は基本的に配偶者控除なし
-          wTaxableBase=Math.max(0,wGrossSyotoku-wShakai-wKisoIt);
-          wItax=calcIncomeTax(wTaxableBase);
+        const _wLctrlBd = _calcNetBreakdown(wGrossInc, wa, true, 0, false);
+        let wItax=0, wTaxableBase=0, wGrossEst=0;
+        if(_wLctrlBd){
+          wGrossEst=_wLctrlBd.gross;
+          wItax=_wLctrlBd.itax;
+          wTaxableBase=_wLctrlBd.taxableBase;
         }
         const wJuminCtrlMax=Math.min(Math.round(wTaxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
         const wTaxCapTotal=Math.round((wItax+wJuminCtrlMax)*10)/10;

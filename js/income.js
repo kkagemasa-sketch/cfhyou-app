@@ -80,7 +80,7 @@ function setCalcType(person,type){
     calcTakeHomeW();
   }
 }
-function calcTakeHomeBase(gross, resultId, detailId, isFuyo){
+function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age){
   const result = document.getElementById(resultId);
   const detail = document.getElementById(detailId);
   if(!gross||gross<=0){
@@ -89,8 +89,9 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo){
     return;
   }
   // 扶養内パート：社会保険料なし（配偶者の社保に加入）
-  // 年齢は参考計算機なので40歳想定（介護保険料加算）
-  const shakai = isFuyo ? 0 : Math.round(gross * calcShakaiRate(40) * 10) / 10;
+  // 年齢未指定なら40歳想定（介護保険料加算済みの率）
+  const _age = (typeof age==='number' && age>=0) ? age : 40;
+  const shakai = isFuyo ? 0 : Math.round(gross * calcShakaiRate(_age) * 10) / 10;
   const kyuyo = calcKyuyoDed(gross);
   const grossSyotoku = Math.max(0, gross - kyuyo);
   const [kisoIt, kisoJu] = calcKisoDed(grossSyotoku);
@@ -128,10 +129,14 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo){
   }
 }
 function calcTakeHomeW(){
-  calcTakeHomeBase(fv('w-calc-gross'),'w-calc-result','w-calc-detail',_calcTypeW==='fuyo');
+  // 奥様の年齢を自動取得（未入力時は40歳想定）
+  const age = parseInt(document.getElementById('wife-age')?.value);
+  calcTakeHomeBase(fv('w-calc-gross'),'w-calc-result','w-calc-detail',_calcTypeW==='fuyo', isNaN(age)?undefined:age);
 }
 function calcTakeHome(){
-  calcTakeHomeBase(fv('calc-gross'),'calc-result','calc-detail',_calcTypeH==='fuyo');
+  // ご主人様の年齢を自動取得（未入力時は40歳想定）
+  const age = parseInt(document.getElementById('husband-age')?.value);
+  calcTakeHomeBase(fv('calc-gross'),'calc-result','calc-detail',_calcTypeH==='fuyo', isNaN(age)?undefined:age);
 }
 
 // ===== 年金概算計算 =====
