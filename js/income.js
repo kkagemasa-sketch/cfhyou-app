@@ -205,7 +205,7 @@ function calcPensionBreakeven(receiveAge){
 function updatePensionAdjustHint(person){
   const receiveAge = iv(`pension-${person}-receive`)||65;
   const baseAmt = fv(`pension-${person}`)||0;
-  const adjustCb = document.getElementById(`pension-${person}-autoadjust`);
+  const noAdjustCb = document.getElementById(`pension-${person}-noadjust`);
   const hintEl = document.getElementById(`${person}-pension-adjust-hint`);
   const baseHintEl = document.getElementById(`${person}-pension-hint`);
   if(!hintEl) return;
@@ -221,10 +221,10 @@ function updatePensionAdjustHint(person){
   }
   const sign = pct>0?'+':'';
   const label = receiveAge<65?'🔻 繰上げ':'🔺 繰下げ';
-  const on = adjustCb?.checked;
-  const applied = on
-    ? `<strong style="color:#b8860b">→ CF表には ${adjusted}万円/年 を反映</strong>`
-    : `<span style="color:#999">（自動調整OFF：入力値 ${baseAmt}万円 をそのまま使用）</span>`;
+  const noAdj = noAdjustCb?.checked;
+  const applied = noAdj
+    ? `<span style="color:#999">（自動調整OFF：入力値 ${baseAmt}万円 をそのまま使用）</span>`
+    : `<strong style="color:#b8860b">→ CF表には ${adjusted}万円/年 を反映</strong>`;
   let beTxt = '';
   if(be){
     beTxt = `<br>📊 損益分岐: <strong>${be.ageYears}歳${be.ageMonths}ヶ月</strong>頃までに亡くなる場合は65歳受給が有利、それ以降まで生きる場合は${be.advantage}が有利`;

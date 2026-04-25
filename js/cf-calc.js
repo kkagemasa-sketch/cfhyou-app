@@ -39,17 +39,17 @@ function render(){
   const pWife=$('pension-w')?.value===''?0:(fv('pension-w')||66);
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=iv('pension-w-receive')||65;
-  // 繰上げ・繰下げ自動調整（チェックONなら年金額に調整率を掛ける）
-  const pHAdjustOn = !!document.getElementById('pension-h-autoadjust')?.checked;
-  const pWAdjustOn = !!document.getElementById('pension-w-autoadjust')?.checked;
+  // 繰上げ・繰下げ自動調整（デフォルトON。「自動調整しない」がチェックONのときだけ旧挙動）
+  const pHNoAdjust = !!document.getElementById('pension-h-noadjust')?.checked;
+  const pWNoAdjust = !!document.getElementById('pension-w-noadjust')?.checked;
   const _pAdjRate = (age)=>{
     if(typeof calcPensionAdjustRate==='function') return calcPensionAdjustRate(age);
     if(age<65) return 1 - 0.004*((65-age)*12);
     if(age>65) return 1 + 0.007*((age-65)*12);
     return 1;
   };
-  const pHAdjRate = pHAdjustOn ? _pAdjRate(pHReceive) : 1;
-  const pWAdjRate = pWAdjustOn ? _pAdjRate(pWReceive) : 1;
+  const pHAdjRate = pHNoAdjust ? 1 : _pAdjRate(pHReceive);
+  const pWAdjRate = pWNoAdjust ? 1 : _pAdjRate(pWReceive);
   // 老齢基礎年金概算（令和7年度満額82.51万円 × 加入年数/40年、constants.js で一元管理）
   const KISO_FULL=KISO_FULL_AMT;
   const pHStart=iv('pension-h-start')||22;
