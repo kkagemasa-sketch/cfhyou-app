@@ -307,8 +307,18 @@ function render(){
   function _calcNetBreakdown(netInc, age, isSelfSingle, spouseNetInc, isHSide){
     if(netInc<=0)return null;
     const shakaiRate=calcShakaiRate(age);
-    // 配偶者の額面は固定で1度だけ概算（再帰回避：シンプルにspouseNetInc * 1.33で近似）
-    const spouseGrossEst = spouseNetInc>0 ? Math.round(spouseNetInc*1.33) : 0;
+    // 配偶者の額面を推定（配偶者控除判定用）
+    // - 手取り103万以下: 扶養内パート想定で社保ゼロ → gross ≈ net
+    // - 手取り103万超: 単身扱いで二分探索（isSelfSingle=true, spouseNetInc=0 で再帰停止）
+    let spouseGrossEst = 0;
+    if(spouseNetInc>0){
+      if(spouseNetInc<=103){
+        spouseGrossEst = spouseNetInc;
+      } else {
+        const _wBd = _calcNetBreakdown(spouseNetInc, age, true, 0, false);
+        spouseGrossEst = _wBd ? _wBd.gross : Math.round(spouseNetInc*1.33);
+      }
+    }
     // 与えられた gross から内訳を計算する内部関数
     const _compute=(gross)=>{
       const shakai=Math.round(gross*shakaiRate*10)/10;
