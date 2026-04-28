@@ -369,9 +369,12 @@ function mgQA_applyStateToDOM(tab){
     stages = [{yearsAfterDeath:1, mode:'keep', rentAmt:0}];
   }
   window._mgHousingStages = stages;
-  // 団信UIは新方式に任せるため false 固定（stagesで処理）
+  // 1つ目のステージが団信完済 or 売却・賃貸 ならローンを完済する想定で団信ON
+  // (stagesによる多段階処理は未実装のため、最初のステージで判定)
   if(typeof setMGDansin === 'function'){
-    setMGDansin(false);
+    const firstStage = stages[0] || {};
+    const clearsLoan = (firstStage.mode === 'danshin' || firstStage.mode === 'rent');
+    setMGDansin(clearsLoan);
   }
 
   // 車両（keep/stop）
