@@ -612,7 +612,12 @@ function _renderContingencyInner(){
     const baseCtrl=i<normalR.lCtrl.length?normalR.lCtrl[i]:0;
     let lctrlVal;
     if(!isDead){lctrlVal=baseCtrl;}
-    else if(!pairLoanMode){lctrlVal=(targetIsH&&mgDansin)?0:baseCtrl;}
+    else if(!pairLoanMode){
+      // 連帯債務 + 団信「両者」なら奥様死亡でもローン完済 → 控除も0
+      const _jointDansinBoth=jointLoanMode&&document.getElementById('joint-dansin-both')?.checked;
+      const _dansinClears=mgDansin&&(targetIsH||_jointDansinBoth);
+      lctrlVal=_dansinClears?0:baseCtrl;
+    }
     else{
       if((targetIsH&&mgDansinH)||(!targetIsH&&mgDansinW)){
         if(active&&lcYr>=0){
