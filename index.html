@@ -770,6 +770,29 @@ function checkPW(){
           <span style="font-size:15px">👥</span>
           <div><div class="tc-lbl" style="font-size:11px">ペアローン</div></div>
         </div>
+        <div class="tc" id="loan-joint-tab" onclick="setLoanMode('joint')" style="flex:1;padding:7px 10px">
+          <span style="font-size:15px">🤝</span>
+          <div><div class="tc-lbl" style="font-size:11px">連帯債務</div></div>
+        </div>
+      </div>
+      <!-- 連帯債務 追加設定（単独ローンbody内に表示・joint時のみ） -->
+      <div id="loan-joint-extra" style="display:none;background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:10px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:8px">🤝 連帯債務の追加設定</div>
+        <div style="font-size:10px;color:#5a4000;margin-bottom:8px">
+          ※ 借入は1本ですが、住宅ローン控除を持分按分でご主人・奥様それぞれの税額から控除します。
+        </div>
+        <div class="g2" style="margin-bottom:8px">
+          <div class="fg"><label class="lbl" style="font-size:10px">👨 ご主人 持分額</label>
+            <div class="suf"><input class="inp amt-inp" id="joint-share-h" type="number" value="2700" min="0" step="1" oninput="syncJointShare('h');live()"><span class="sl">万円</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:10px">👩 奥様 持分額</label>
+            <div class="suf"><input class="inp amt-inp" id="joint-share-w" type="number" value="1800" min="0" step="1" oninput="syncJointShare('w');live()"><span class="sl">万円</span></div></div>
+        </div>
+        <div id="joint-share-hint" style="font-size:10px;color:#3a8a3a;margin-bottom:8px">✓ 持分合計: 4500万円（借入額と一致）</div>
+        <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:6px">団信加入者</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <label style="font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:4px"><input type="radio" name="joint-dansin" id="joint-dansin-h" value="h" checked oninput="live()">ご主人のみ（標準）</label>
+          <label style="font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:4px"><input type="radio" name="joint-dansin" id="joint-dansin-both" value="both" oninput="live()">両者（フラット35デュエット等）</label>
+        </div>
       </div>
       <!-- 単独ローン設定 -->
       <div id="loan-single-body">
@@ -1558,8 +1581,8 @@ function checkPW(){
 
 
 <!-- v2 モジュール読み込み -->
-<script src="js/state.js?v=14"></script>
-<script src="js/constants.js?v=16"></script>
+<script src="js/state.js?v=15"></script>
+<script src="js/constants.js?v=17"></script>
 <script src="js/market-scenarios.js?v=3"></script>
 <script src="js/market-sim.js?v=6"></script>
 <script src="js/utils.js?v=20"></script>
@@ -1570,11 +1593,11 @@ function checkPW(){
 <script src="js/housing.js?v=25"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
-<script src="js/assets.js?v=11"></script>
+<script src="js/assets.js?v=12"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=60"></script>
+<script src="js/contingency.js?v=61"></script>
 <script src="js/cf-ui.js?v=21"></script>
-<script src="js/cf-calc.js?v=46"></script>
+<script src="js/cf-calc.js?v=47"></script>
 <script src="js/cf-table.js?v=33"></script>
 <script src="js/cf-highlight.js?v=2"></script>
 <script src="js/graphs.js?v=5"></script>
@@ -1582,7 +1605,7 @@ function checkPW(){
 <script src="js/loan-plan.js?v=8"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=44"></script>
+<script src="js/save-load.js?v=45"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=6"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

@@ -636,8 +636,8 @@ function render(){
       inPeriod: lctrlYrs>0 && lcYr<lctrlYrs,
       hasLoan: effLoanAmt>0,
       hasLimit: lctrlLimit>0,
-      remainBal: 0, balCap: lctrlLimit*((pairLoanMode||_flatPair)?2:1),
-      pairMode: pairLoanMode||_flatPair,
+      remainBal: 0, balCap: lctrlLimit*((pairLoanMode||_flatPair||jointLoanMode)?2:1),
+      pairMode: pairLoanMode||_flatPair||jointLoanMode,
       rate: 0.7,
       calcAmount: 0,
       grossEst: 0, taxableBase: 0, itax: 0, juminCtrlMax: 0,
@@ -724,6 +724,45 @@ function render(){
         lc2=Math.round((hApplied+wApplied)*10)/10;
         lc2=Math.max(0,lc2);
       }
+      // 連帯債務モード：借入は1本(remainBalは単独ローンと同じ)。持分按分で住宅ローン控除を分割
+      else if(jointLoanMode&&!_isSingle){
+        const hShare=fv('joint-share-h')||0;
+        const wShare=fv('joint-share-w')||0;
+        const totalShare=hShare+wShare;
+        if(totalShare>0){
+          // 残高を持分按分
+          const hShareBal=remainBal*(hShare/totalShare);
+          const wShareBal=remainBal*(wShare/totalShare);
+          // 奥様の額面・税額を二分探索で逆算
+          const wGrossInc=wInc>0?wInc:0;
+          const _wJointBd=_calcNetBreakdown(wGrossInc, wa, true, 0, false);
+          let wItax=0, wTaxableBase=0, wGrossEst=0;
+          if(_wJointBd){
+            wGrossEst=_wJointBd.gross;
+            wItax=_wJointBd.itax;
+            wTaxableBase=_wJointBd.taxableBase;
+          }
+          const wJuminCtrlMax=Math.min(Math.round(wTaxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
+          const wTaxCapTotal=Math.round((wItax+wJuminCtrlMax)*10)/10;
+          // 各自の計算上の控除額（持分残高 × 0.7%、単独ローン上限で頭打ち）
+          const hCalcAmt=Math.round(Math.min(hShareBal, lctrlLimit)*0.007*10)/10;
+          const wCalcAmt=Math.round(Math.min(wShareBal, lctrlLimit)*0.007*10)/10;
+          // 各自の税額上限で頭打ち
+          const hApplied=Math.max(0, Math.round(Math.min(hCalcAmt, taxCapTotal)*10)/10);
+          const wApplied=Math.max(0, Math.round(Math.min(wCalcAmt, wTaxCapTotal)*10)/10);
+          // 合算をlc2として採用
+          lc2=Math.round((hApplied+wApplied)*10)/10;
+          lc2=Math.max(0, lc2);
+          // breakdown 保存
+          _lctrlBd.jointMode=true;
+          _lctrlBd.hShare=hShare; _lctrlBd.wShare=wShare;
+          _lctrlBd.hBal=Math.round(hShareBal); _lctrlBd.wBal=Math.round(wShareBal);
+          _lctrlBd.hCalcAmount=hCalcAmt; _lctrlBd.wCalcAmount=wCalcAmt;
+          _lctrlBd.hApplied=hApplied; _lctrlBd.wApplied=wApplied;
+          _lctrlBd.wGrossEst=wGrossEst; _lctrlBd.wTaxableBase=wTaxableBase;
+          _lctrlBd.wItax=wItax; _lctrlBd.wJuminCtrlMax=wJuminCtrlMax; _lctrlBd.wTaxCapTotal=wTaxCapTotal;
+        }
+      }
     }
     if(_lctrlDedMode!=='manual'){
       // 元の自動計算値を breakdown に保存（Pass2 の override 上書きに影響されない）
@@ -736,7 +775,7 @@ function render(){
       mode:_lctrlDedMode, lctrlYear, lctrlType, isKosodate,
       totalYrs:lctrlYrs, yearIndex:0, inPeriod:false,
       hasLoan:false, hasLimit:false,
-      remainBal:0, balCap:lctrlLimit*((pairLoanMode||_flatPair)?2:1),
+      remainBal:0, balCap:lctrlLimit*((pairLoanMode||_flatPair||jointLoanMode)?2:1),
       pairMode:pairLoanMode||_flatPair, rate:0.7,
       calcAmount:0, grossEst:0, taxableBase:0, itax:0, juminCtrlMax:0, taxCapTotal:0,
       autoValue:0

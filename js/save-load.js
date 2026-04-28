@@ -286,6 +286,7 @@ function _collectDynamic(){
     });
   });
   d.pairLoanMode=pairLoanMode;
+  d.jointLoanMode=jointLoanMode;
   d.lctrlDedMode=_lctrlDedMode;
   d.lctrlManualDed=_lctrlDedMode==='manual'?getLctrlManualValues():[];
   // 返済計画タブ
@@ -608,7 +609,9 @@ function _restoreDynamic(d){
   if(typeof d.retirePayOn!=='undefined')setRetirePay(d.retirePayOn);
   if(typeof d.wRetirePayOn!=='undefined')setWRetirePay(d.wRetirePayOn);
   if(d.downType)setDownType(d.downType);
-  if(typeof d.pairLoanMode!=='undefined')setLoanMode(d.pairLoanMode?'pair':'single');
+  // ローンモード復元: joint > pair > single の優先順
+  if(typeof d.jointLoanMode!=='undefined'&&d.jointLoanMode) setLoanMode('joint');
+  else if(typeof d.pairLoanMode!=='undefined') setLoanMode(d.pairLoanMode?'pair':'single');
   if(typeof d.carOwn!=='undefined')setCarOwn(d.carOwn);
   if(typeof d.parkOwn!=='undefined')setParkOwn(d.parkOwn);
   const parkFromEl=document.getElementById('park-from-age');
@@ -931,6 +934,7 @@ function _resetSheetState(){
   carOwn=true;parkOwn=true;
   retirePayOn=true;wRetirePayOn=true;
   pairLoanMode=false;
+  jointLoanMode=false;
   // 修繕積立金 手入力チェックをリセット
   const repChk0=document.getElementById('rep-manual-toggle');
   if(repChk0){repChk0.checked=false;if(typeof toggleRepManual==='function')toggleRepManual();}

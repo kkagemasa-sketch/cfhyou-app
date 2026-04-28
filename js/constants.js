@@ -175,6 +175,7 @@ const _ROW_CLS = { incT:'rinct', expT:'rexpt', bal:'rbal', sav:'rsav', lBal:'rlo
 const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-death-age',
   'house-price','down-payment','house-cost','cost-type','loan-yrs','loan-type',
   'loan-h-amt','loan-h-yrs','loan-h-type','rate-h-base','loan-w-amt','loan-w-yrs','loan-w-type','rate-w-base',
+  'joint-share-h','joint-share-w','joint-dansin-h','joint-dansin-both',
   'delivery-year','rent-before',
   'zaikei-h-bal','zaikei-h-monthly','zaikei-h-end','zaikei-w-bal','zaikei-w-monthly','zaikei-w-end',
   'rate-base','sqm','mgmt-fee','mgmt-net','rep-unit','rep-manual-base','rep-manual-override','choki',

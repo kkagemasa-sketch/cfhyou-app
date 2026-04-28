@@ -46,6 +46,7 @@ let carCnt=0;
 let parkOwn=true;
 
 let pairLoanMode=false;
+let jointLoanMode=false;  // 連帯債務モード（借入1本＋持分按分で住宅ローン控除を分割）
 
 let loanCategory='standard'; // 'standard' | 'flat35'
 let flat35Sub='flat35';       // 'flat35' | 'flat20'
