@@ -965,7 +965,10 @@ function _renderContingencyInner(){
       lb=ri(Math.max(0,hLB+wLB));
       MR.lBalH.push(ri(Math.max(0,hLB)));MR.lBalW.push(ri(Math.max(0,wLB)));
     }else{
-      if(isDead&&targetIsH&&mgDansin){lb=0;}
+      // 連帯債務 + 団信「両者」の場合、奥様死亡でも完済される
+      const jointDansinBoth=jointLoanMode&&document.getElementById('joint-dansin-both')?.checked;
+      const dansinClearsBalance=isDead&&mgDansin&&(targetIsH||jointDansinBoth);
+      if(dansinClearsBalance){lb=0;}
       else if(active){lb=ri(Math.max(0,loanType_mg==='equal_payment'?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr+1):lbal_gankin(loanAmt,loanYrs,lcYr+1)));}
       else{lb=ri(loanAmt);}
       MR.lBalH.push(0);MR.lBalW.push(0);
