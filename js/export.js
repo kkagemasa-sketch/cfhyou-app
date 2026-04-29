@@ -235,9 +235,12 @@ async function exportExcelMG(){
   const houseCostDeductMG=costTypeV_mg==='loan'?0:houseCostV;
   const initialOut=downFromOwn+houseCostDeductMG+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
-  const loanAmtV=fv('loan-amt')||0;
   const _isFlat_e=loanCategory==='flat35';
   const _flatPair_e=_isFlat_e&&pairLoanMode;
+  // フラット35の場合は flat-loan-amt から、ペア時は h+w 合算
+  const loanAmtV=_isFlat_e
+    ? (_flatPair_e ? ((fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)) : (fv('flat-loan-amt')||0))
+    : (pairLoanMode ? ((fv('loan-h-amt')||0)+(fv('loan-w-amt')||0)) : (fv('loan-amt')||0));
   const loanYrsV=_isFlat_e?(_flatPair_e?Math.max(iv('flat-loan-h-yrs')||35,iv('flat-loan-w-yrs')||35):(iv('flat-loan-yrs')||35)):(iv('loan-yrs')||35);
   const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
   const rates=_isFlat_e?getFlat35Rates():getRates();
@@ -1248,9 +1251,12 @@ async function exportExcel(){
   const houseCostDeductE=costTypeV==='loan'?0:houseCostV;
   const initialOut=downFromOwn+houseCostDeductE+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
-  const loanAmtV=fv('loan-amt')||0;
   const _isFlat_e=loanCategory==='flat35';
   const _flatPair_e=_isFlat_e&&pairLoanMode;
+  // フラット35の場合は flat-loan-amt から、ペア時は h+w 合算
+  const loanAmtV=_isFlat_e
+    ? (_flatPair_e ? ((fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)) : (fv('flat-loan-amt')||0))
+    : (pairLoanMode ? ((fv('loan-h-amt')||0)+(fv('loan-w-amt')||0)) : (fv('loan-amt')||0));
   const loanYrsV=_isFlat_e?(_flatPair_e?Math.max(iv('flat-loan-h-yrs')||35,iv('flat-loan-w-yrs')||35):(iv('flat-loan-yrs')||35)):(iv('loan-yrs')||35);
   const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
   const rates=_isFlat_e?getFlat35Rates():getRates();
@@ -1445,7 +1451,8 @@ async function exportExcel(){
   if(pairLoanMode&&!_isSingle_e){
     if(R.lBalH&&R.lBalH.some(v=>v>0))push(['ローン残高(主)','',...R.lBalH.slice(0,disp).map(v=>ri(v)),''],'loan');
     if(R.lBalW&&R.lBalW.some(v=>v>0))push(['ローン残高(奥様)','',...R.lBalW.slice(0,disp).map(v=>ri(v)),''],'loan');
-  } else if(fv('loan-amt')>0){
+  } else if(loanAmtV>0){
+    // フラット35単独/連帯債務にも対応（loanAmtVは _isFlat_e/pairLoanMode を加味して取得済）
     push(['ローン残高','',...R.lBal.slice(0,disp).map(v=>ri(v)),''],'loan');
   }
 
