@@ -48,15 +48,27 @@ function mgQA_buildDefaultState(target){
   if(prev) return JSON.parse(JSON.stringify(prev.state));
   // 通常CFから車・駐車場の現在設定を読込
   const firstCar = document.querySelector('#car-list > [id^="car-"]');
-  const carD = { type:'new', price:300, cycle:7, insp:10 };
+  const carD = { type:'new', price:300, cycle:7, insp:10, firstAge:0, endAge:0 };
+  // 生存配偶者の現在年齢（target='h'なら奥様、target='w'ならご主人様）
+  const survivorAge = target==='h'
+    ? (mgQA_iv('wife-age') || 0)
+    : (mgQA_iv('husband-age') || 0);
   if(firstCar){
     const cid = firstCar.id.replace('car-','');
     carD.type = firstCar.dataset.type || 'new';
     carD.price = mgQA_fv(`car-${cid}-price`) || 300;
     carD.cycle = mgQA_iv(`car-${cid}-cycle`) || 7;
     carD.insp = mgQA_fv(`car-${cid}-insp`) || 10;
+    // 初回購入年齢: 通常CFは「年目」入力なので、生存者の現在年齢 + (年目-1) で換算
+    const firstYearOffset = mgQA_iv(`car-${cid}-first`) || 1;
+    carD.firstAge = survivorAge>0 ? (survivorAge + Math.max(0, firstYearOffset-1)) : 0;
+    // 手放す年齢: 通常CFは「歳」入力なのでそのまま継承
+    carD.endAge = mgQA_iv(`car-${cid}-end-age`) || 0;
   }
   const parkMonthlyDef = mgQA_iv('parking') || 15000;
+  // 駐車場の年齢範囲も通常CFから継承（歳単位なので直接）
+  const parkFromDef = mgQA_iv('park-from-age') || 0;
+  const parkToDef = mgQA_iv('park-to-age') || 0;
   return {
     deathYear: 1,
     insurances: [{ type:'none', amount:0 }],
@@ -83,13 +95,13 @@ function mgQA_buildDefaultState(target){
     carPrice: carD.price,     // 万円
     carCycle: carD.cycle,     // 年
     carInsp: carD.insp,       // 万円（車検費用）
-    carFirstAge: 0,           // 初回購入年齢（0=現在年齢から）
-    carEndAge: 0,             // 手放す年齢（0=ずっと）
-    // 駐車場
+    carFirstAge: carD.firstAge,  // 初回購入年齢（通常CFの年目から換算）
+    carEndAge: carD.endAge,      // 手放す年齢（通常CFから継承）
+    // 駐車場（通常CFの年齢範囲を継承）
     parkMode: 'keep',
     parkMonthly: parkMonthlyDef,  // 円/月
-    parkFromAge: 0,
-    parkToAge: 0
+    parkFromAge: parkFromDef,
+    parkToAge: parkToDef
   };
 }
 
