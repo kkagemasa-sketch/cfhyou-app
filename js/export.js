@@ -245,7 +245,13 @@ async function exportExcelMG(){
   const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
   const rates=_isFlat_e?getFlat35Rates():getRates();
   const _flatTypeLabel=`フラット${flat35Sub==='flat50'?'50':flat35Sub==='flat20'?'20':'35'}`;
-  const rateDisp=_isFlat_e?`${rateBaseV}%(${_flatTypeLabel}${_flatPair_e?' ペア':''} ${calcFlat35Points()}pt)`:(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
+  // フラット35: ポイント制で割引された当初金利を表示（rates[0].rate = 1年目の実適用金利）
+  // 例: ベース1.94%+4pt → 0.94%(フラット35 4pt・ベース1.94%)
+  const _flatPt_e=_isFlat_e?calcFlat35Points():0;
+  const _flatYr1Rate=_isFlat_e&&rates.length>0?rates[0].rate:rateBaseV;
+  const rateDisp=_isFlat_e
+    ?`${_flatYr1Rate.toFixed(2)}%(${_flatTypeLabel}${_flatPair_e?' ペア':''} ${_flatPt_e}pt${_flatPt_e>0&&_flatYr1Rate!==rateBaseV?`・ベース${rateBaseV}%`:''})`
+    :(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
   const deliveryYrV=iv('delivery-year')||0;
 
   // ── タイトル行（通常CFと同形式 + E列に万が一ラベル） ──
@@ -654,7 +660,7 @@ async function exportExcelMG(){
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
     if(t==='incTotal'||t==='expTotal')return{hpt:24};
-    if(t==='info')return{hpt:30};
+    if(t==='info')return{hpt:44}; // 折り返し表示の余裕を確保
     return{hpt:18};
   });
 
@@ -877,14 +883,15 @@ async function exportExcelMG(){
       // blank/footer行・範囲外セルは塗りつぶしなし
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const finalAlign=cell._centerAlign?'center':hAlign;
-      const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
       // ペアローン行（👔/👩）は1行表示にしたいのでwrap無効＋shrinkで縮小
       const isPairRow=tp==='info'&&row[0]&&/[\u{1F454}\u{1F469}]/u.test(String(row[0]));
       const wrapText=(tp==='info'&&c>=2&&!isPairRow);
+      // shrinkToFitはペア行（高さ23pt固定で1行表示）のみ。通常info行は折り返し表示にする。
+      const shrinkToFit=isPairRow;
       cell.s={
         font:fObj,
         fill:finalFill,
-        alignment:{vertical:'center',horizontal:finalAlign,wrapText,shrinkToFit:(tp==='info'&&c>=2&&!cell._noFill)},
+        alignment:{vertical:'center',horizontal:finalAlign,wrapText,shrinkToFit},
         border:border,
       };
       // 数値フォーマット（年齢・経過年は通常数字）
@@ -1261,7 +1268,13 @@ async function exportExcel(){
   const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
   const rates=_isFlat_e?getFlat35Rates():getRates();
   const _flatTypeLabel=`フラット${flat35Sub==='flat50'?'50':flat35Sub==='flat20'?'20':'35'}`;
-  const rateDisp=_isFlat_e?`${rateBaseV}%(${_flatTypeLabel}${_flatPair_e?' ペア':''} ${calcFlat35Points()}pt)`:(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
+  // フラット35: ポイント制で割引された当初金利を表示（rates[0].rate = 1年目の実適用金利）
+  // 例: ベース1.94%+4pt → 0.94%(フラット35 4pt・ベース1.94%)
+  const _flatPt_e=_isFlat_e?calcFlat35Points():0;
+  const _flatYr1Rate=_isFlat_e&&rates.length>0?rates[0].rate:rateBaseV;
+  const rateDisp=_isFlat_e
+    ?`${_flatYr1Rate.toFixed(2)}%(${_flatTypeLabel}${_flatPair_e?' ペア':''} ${_flatPt_e}pt${_flatPt_e>0&&_flatYr1Rate!==rateBaseV?`・ベース${rateBaseV}%`:''})`
+    :(rates.length>1?`${rateBaseV}%〜`:`${rateBaseV}%`);
   const deliveryYrV=iv('delivery-year')||0;
   const emptyFill=Array(disp-1).fill('');
 
