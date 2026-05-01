@@ -357,8 +357,18 @@ async function exportExcelMG(){
   push(['経過年','',...MR.yr.map((_,i)=>i+1),'-'],'elapsed');
 
   // ── 年齢（ご主人様と奥様の両方を表示） ──
-  push(['年齢','ご主人様',...MR.hA.slice(0,disp),''],'age');
-  push(['','奥様',...MR.wA.slice(0,disp),''],'age');
+  // 死亡者の年齢には ✝ を付与（死亡年以降すべて）
+  const _deathOffsetE=MR._deathOffset||0;
+  const _hAgeArr=MR.hA.slice(0,disp).map((age,i)=>{
+    const dead=targetIsH&&_deathOffsetE>0&&i>=_deathOffsetE-1;
+    return dead?`✝${age}`:age;
+  });
+  const _wAgeArr=MR.wA.slice(0,disp).map((age,i)=>{
+    const dead=!targetIsH&&_deathOffsetE>0&&i>=_deathOffsetE-1;
+    return dead?`✝${age}`:age;
+  });
+  push(['年齢','ご主人様',..._hAgeArr,''],'age');
+  push(['','奥様',..._wAgeArr,''],'age');
 
   // 子ども年齢
   const children=[];
