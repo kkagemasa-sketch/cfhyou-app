@@ -839,12 +839,47 @@ function _renderContingencyInner(){
           if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=_mgCarInsp;
         }
       }
+      // 死亡後は通常CFの車ローン残債を継続加算（団信なし車ローン想定）
+      if(isDead){
+        document.querySelectorAll('#car-list>[id^="car-"]').forEach(carEl=>{
+          if(carEl.dataset.pay!=='loan')return;
+          const cIdx=carEl.id.replace('car-','');
+          const cPrice=fvd('car-'+cIdx+'-price',300);
+          const cFirst=(iv('car-'+cIdx+'-first')||1)-1;
+          const cCycle=iv('car-'+cIdx+'-cycle')||7;
+          const cDown=fvd('car-'+cIdx+'-down',50);
+          const cLoanYrs=iv('car-'+cIdx+'-loan-yrs')||5;
+          const cLoanRate=fvd('car-'+cIdx+'-loan-rate',2.5)/100/12;
+          const cEndAge=iv('car-'+cIdx+'-end-age')||0;
+          const cActive=cEndAge<30||ha<cEndAge;
+          if(!cActive||cLoanYrs<=0)return;
+          // 最後の購入年(=lastBuy) を求める
+          if(i<cFirst)return;
+          const elapsed=i-cFirst;
+          const lastBuy=cFirst+Math.floor(elapsed/cCycle)*cCycle;
+          const yrsAfterBuy=i-lastBuy;
+          // 購入年は頭金のみ（既にnCar側で計算済とみなす場合は加算しない）
+          if(yrsAfterBuy<=0||yrsAfterBuy>cLoanYrs)return;
+          const principal=(cPrice-cDown)*10000;
+          const monthly=cLoanRate>0?principal*cLoanRate*Math.pow(1+cLoanRate,cLoanYrs*12)/(Math.pow(1+cLoanRate,cLoanYrs*12)-1):principal/cLoanYrs/12;
+          nCar+=Math.round(monthly*12/10000);
+        });
+      }
     }else if(isDead){nCar=0;}
     else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
+    // 万一CFの車行: 死亡後は生存者の車として1行に集約（死者の名前を表示しない）
     if(normalR.carRows&&normalR.carRows.length>0){
-      if(!MR.carRows){MR.carRows=normalR.carRows.map(row=>({key:row.key,lbl:row.lbl,vals:[]}));}
+      if(!MR.carRows){
+        // 死亡後は「🚗 (生存者) 車」1行に集約。生存中は通常CFと同じ複数行を維持。
+        MR.carRows=normalR.carRows.map(row=>({key:row.key,lbl:row.lbl,vals:[]}));
+      }
       if(isDead){
+        // 死亡後: 1行目のラベルを生存者基準に変更し、nCarを集約。他行は0
+        const survLbl=`🚗 ${targetIsH?'奥様':'ご主人様'} 車`;
+        if(MR.carRows[0]&&MR.carRows[0].lbl!==survLbl){
+          MR.carRows[0].lbl=survLbl;
+        }
         MR.carRows.forEach((row,ri2)=>row.vals.push(ri2===0?nCar:0));
       }else{
         MR.carRows.forEach((row,ri2)=>{
