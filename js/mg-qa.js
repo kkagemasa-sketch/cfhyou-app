@@ -89,17 +89,19 @@ function mgQA_buildDefaultState(target){
     ],
     scholarshipEnabled: false,
     scholarships: {},
-    // 車: keep時の詳細設定（通常CFから初期値を引き継ぎ）
-    carMode: 'keep',
-    carType: carD.type,       // 'new' or 'used'
-    carPrice: carD.price,     // 万円
-    carCycle: carD.cycle,     // 年
-    carInsp: carD.insp,       // 万円（車検費用）
-    carFirstAge: carD.firstAge,  // 初回購入年齢（通常CFの年目から換算）
-    carEndAge: carD.endAge,      // 手放す年齢（通常CFから継承）
-    // 駐車場（通常CFの年齢範囲を継承）
+    // 車: 万一時の挙動（デフォルト=通常時と同じ）
+    carInherit: true,         // true=通常CF設定をそのまま使う / false=以下のkeep/stop+詳細を使う
+    carMode: 'keep',          // carInherit=false時のみ有効: 'keep' | 'stop'
+    carType: carD.type,
+    carPrice: carD.price,
+    carCycle: carD.cycle,
+    carInsp: carD.insp,
+    carFirstAge: carD.firstAge,
+    carEndAge: carD.endAge,
+    // 駐車場（デフォルト=通常時と同じ）
+    parkInherit: true,        // true=通常CF設定をそのまま使う
     parkMode: 'keep',
-    parkMonthly: parkMonthlyDef,  // 円/月
+    parkMonthly: parkMonthlyDef,
     parkFromAge: parkFromDef,
     parkToAge: parkToDef
   };
@@ -389,13 +391,18 @@ function mgQA_applyStateToDOM(tab){
     setMGDansin(clearsLoan);
   }
 
-  // 車両（keep/stop）
+  // 車・駐車場の継承フラグを contingency.js に伝える
+  // true=通常CF設定をそのまま使う / false=Q&A詳細設定を使う
+  window._mgQA_carInherit = s.carInherit !== false;
+  window._mgQA_parkInherit = s.parkInherit !== false;
+  // 車両（keep/stop）— 継承時は keep 扱い（通常CF用）。変更時は state.carMode に従う
   if(typeof setMGCarPark === 'function'){
-    setMGCarPark('car', s.carMode === 'keep');
+    const carOn = s.carInherit !== false ? true : (s.carMode === 'keep');
+    setMGCarPark('car', carOn);
   }
   // 車の詳細フィールド（target側のみ書き込み）
   const cp = tab.target;  // 'h' or 'w'
-  if(s.carMode === 'keep'){
+  if(s.carInherit === false && s.carMode === 'keep'){
     if(typeof setMGCarType === 'function') setMGCarType(cp, s.carType === 'used' ? 'used' : 'new');
     const priceEl = document.getElementById(`mg-car-${cp}-price`);
     if(priceEl) priceEl.value = s.carPrice || 0;
@@ -409,12 +416,13 @@ function mgQA_applyStateToDOM(tab){
     if(endEl) endEl.value = s.carEndAge || '';
   }
 
-  // 駐車場（keep/stop）
+  // 駐車場（keep/stop）— 継承時は keep 扱い
   if(typeof setMGCarPark === 'function'){
-    setMGCarPark('park', s.parkMode === 'keep');
+    const parkOn = s.parkInherit !== false ? true : (s.parkMode === 'keep');
+    setMGCarPark('park', parkOn);
   }
   // 駐車場の詳細
-  if(s.parkMode === 'keep'){
+  if(s.parkInherit === false && s.parkMode === 'keep'){
     const monEl = document.getElementById('mg-parking');
     if(monEl) monEl.value = s.parkMonthly || 0;
     const fromEl = document.getElementById(`mg-park-${cp}-from-age`);
@@ -710,7 +718,15 @@ function mgQA_buildPanel(tab){
 
     <!-- Q8: 車 -->
     <div class="sub">🚗 車両費（${spouse}基準）</div>
-    <div class="hint" style="margin-bottom:6px">💡 買換周期・新車/中古で車検タイミングが変わる。処分すると以降の車関連費はゼロ</div>
+    <div class="hint" style="margin-bottom:6px">💡 通常時の車設定をそのまま使うか、万一時のみ変更するかを選択</div>
+    <div class="fg">
+      <label class="lbl">万一時の車</label>
+      <div style="display:flex;gap:6px">
+        ${tog('carInherit','true','変更なし（通常時と同じ）',{asBool:true})}
+        ${tog('carInherit','false','変更する',{asBool:true})}
+      </div>
+    </div>
+    <div style="margin-top:8px;${s.carInherit===false?'':'display:none'}" data-cond="carInherit:false">
     <div class="fg">
       <label class="lbl">車両</label>
       <div style="display:flex;gap:6px">
@@ -746,11 +762,20 @@ function mgQA_buildPanel(tab){
         </div>
       </div>
     </div>
+    </div><!-- /carInherit:false -->
     <div class="divider"></div>
 
     <!-- Q9: 駐車場 -->
     <div class="sub">🅿️ 駐車場（${spouse}基準）</div>
-    <div class="hint" style="margin-bottom:6px">💡 車を処分する場合は通常「停止」。開始/終了年齢で期間限定も可</div>
+    <div class="hint" style="margin-bottom:6px">💡 通常時の駐車場設定をそのまま使うか、万一時のみ変更するかを選択</div>
+    <div class="fg">
+      <label class="lbl">万一時の駐車場</label>
+      <div style="display:flex;gap:6px">
+        ${tog('parkInherit','true','変更なし（通常時と同じ）',{asBool:true})}
+        ${tog('parkInherit','false','変更する',{asBool:true})}
+      </div>
+    </div>
+    <div style="margin-top:8px;${s.parkInherit===false?'':'display:none'}" data-cond="parkInherit:false">
     <div class="fg">
       <label class="lbl">駐車場</label>
       <div style="display:flex;gap:6px">
@@ -773,6 +798,7 @@ function mgQA_buildPanel(tab){
         </div>
       </div>
     </div>
+    </div><!-- /parkInherit:false -->
 
     <div class="hint" style="text-align:center;margin-top:12px;padding:8px;background:#f8fafc;border-radius:6px">
       💨 入力停止から約0.6秒後に自動で再計算されます

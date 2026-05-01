@@ -824,8 +824,14 @@ function _renderContingencyInner(){
     children.forEach((c,ci)=>{MR.edu[ci].push(normalR.edu[ci]?.[i]||0);});
 
     // 車両費
+    // Q&A継承フラグ: true（デフォルト）= 通常CFの値をそのまま使う
+    const _mgCarInherit = window._mgQA_carInherit !== false;
     let nCar=0;
-    if(mgCarKeep){
+    if(_mgCarInherit){
+      // 通常CFの carTotal をそのまま使用（生存中も死亡後も）
+      // ローン継続・買換計画・複数台すべて通常CF通り
+      nCar = i<normalR.carTotal.length ? (normalR.carTotal[i]||0) : 0;
+    } else if(mgCarKeep){
       const sAge=targetIsH?wa:ha;
       if(_mgCarEndAge>0&&sAge>=_mgCarEndAge){nCar=0;}
       else if(sAge>=_mgCarFirst){
@@ -868,20 +874,25 @@ function _renderContingencyInner(){
     }else if(isDead){nCar=0;}
     else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
-    // 万一CFの車行: 死亡後は生存者の車として1行に集約（死者の名前を表示しない）
     if(normalR.carRows&&normalR.carRows.length>0){
       if(!MR.carRows){
-        // 死亡後は「🚗 (生存者) 車」1行に集約。生存中は通常CFと同じ複数行を維持。
         MR.carRows=normalR.carRows.map(row=>({key:row.key,lbl:row.lbl,vals:[]}));
       }
-      if(isDead){
-        // 死亡後: 1行目のラベルを生存者基準に変更し、nCarを集約。他行は0
+      if(_mgCarInherit){
+        // 継承モード: 通常CFの carRows をそのまま使う（ラベルも値も）
+        MR.carRows.forEach((row,ri2)=>{
+          const src=normalR.carRows[ri2];
+          row.vals.push(src&&i<src.vals.length?(src.vals[i]||0):0);
+        });
+      } else if(isDead){
+        // Q&Aモード+死亡後: 1行目のラベルを生存者基準に変更しnCarを集約
         const survLbl=`🚗 ${targetIsH?'奥様':'ご主人様'} 車`;
         if(MR.carRows[0]&&MR.carRows[0].lbl!==survLbl){
           MR.carRows[0].lbl=survLbl;
         }
         MR.carRows.forEach((row,ri2)=>row.vals.push(ri2===0?nCar:0));
-      }else{
+      } else {
+        // Q&Aモード+生存中: 通常CFの値
         MR.carRows.forEach((row,ri2)=>{
           const src=normalR.carRows[ri2];
           row.vals.push(src&&i<src.vals.length?(src.vals[i]||0):0);
@@ -890,8 +901,12 @@ function _renderContingencyInner(){
     }
 
     // 駐車場
+    const _mgParkInherit = window._mgQA_parkInherit !== false;
     let nPrk=0;
-    if(mgParkKeep){
+    if(_mgParkInherit){
+      // 継承モード: 通常CFの prk をそのまま使用
+      nPrk = i<normalR.prk.length ? (normalR.prk[i]||0) : 0;
+    } else if(mgParkKeep){
       const sAge=targetIsH?wa:ha;
       const inRange=(_mgParkFrom<=0||sAge>=_mgParkFrom)&&(_mgParkTo<=0||sAge<=_mgParkTo);
       nPrk=inRange?_mgParkAnnual:0;
