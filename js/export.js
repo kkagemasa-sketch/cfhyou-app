@@ -352,9 +352,9 @@ async function exportExcelMG(){
   push(Array(disp+3).fill(''),'blank');
 
   // ── ヘッダー ──
-  push(['カテゴリ','項目',...MR.yr.map(String),'合計'],'header');
+  push(['カテゴリ','項目',...MR.yr.slice(0,disp).map(String),'合計'],'header');
   // 経過年
-  push(['経過年','',...MR.yr.map((_,i)=>i+1),'-'],'elapsed');
+  push(['経過年','',...MR.yr.slice(0,disp).map((_,i)=>i+1),'-'],'elapsed');
 
   // ── 年齢（ご主人様と奥様の両方を表示） ──
   // 死亡者の年齢には ✝ を付与（死亡年以降すべて）
@@ -374,12 +374,12 @@ async function exportExcelMG(){
   const children=[];
   document.querySelectorAll('[id^="ca-"]').forEach(el=>{children.push({age:parseInt(el.value)||0});});
   children.forEach((c,ci)=>{
-    push(['',cLbls[ci],...MR.yr.map((_,i)=>c.age+i),''],'age');
+    push(['',cLbls[ci],...MR.yr.slice(0,disp).map((_,i)=>c.age+i),''],'age');
   });
 
   // ── イベント（ご主人様と奥様の両方を表示） ──
   // ご主人様イベント
-  push(['イベント','ご主人様',...MR.yr.map((_,i)=>{
+  push(['イベント','ご主人様',...MR.yr.slice(0,disp).map((_,i)=>{
     const ha=hAge+i;
     if(targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return 'ご逝去';
     if(ha===60)return '定年';
@@ -387,7 +387,7 @@ async function exportExcelMG(){
     return '';
   }),''],'event');
   // 奥様イベント
-  push(['','奥様',...MR.yr.map((_,i)=>{
+  push(['','奥様',...MR.yr.slice(0,disp).map((_,i)=>{
     const wa=wAge+i;
     if(!targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return 'ご逝去';
     if(wa===60)return '定年';
@@ -398,7 +398,7 @@ async function exportExcelMG(){
   // 子どもイベント
   const childEvRows2=[];
   children.forEach((c,ci)=>{
-    const ages=MR.yr.map((_,i)=>c.age+i);
+    const ages=MR.yr.slice(0,disp).map((_,i)=>c.age+i);
     const hStartAge_mg=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value));
     childEvRows2.push({rowIdx:rows.length,ages,hStartAge:hStartAge_mg});
     const un=_v(`cu-${ci+1}`)||'plit_h';
