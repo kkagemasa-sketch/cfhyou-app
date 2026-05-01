@@ -192,18 +192,9 @@ async function exportExcelMG(){
   const MR=window._mgMRStore&&window._mgMRStore[mgKey];
   if(!MR){alert('先に万が一CF表を生成してください');return;}
   const N=window.lastR;
-  // 表示年数: 残された配偶者のご逝去年齢まで（通常CFより短くなる場合あり）
-  const _hAgeE=iv('husband-age')||30;
-  const _wAgeE=iv('wife-age')||29;
-  const _hDeathE=iv('h-death-age')||83;
-  const _wDeathE=iv('w-death-age')||88;
-  const _targetIsH_e=rTab==='mg-h';
-  // 生存者のご逝去までをご主人様年齢スケールで算出
-  const _survivorEndHAgeE=_targetIsH_e
-    ? (_hAgeE + (_wDeathE - _wAgeE))  // 奥様が生存者
-    : _hDeathE;                        // ご主人様が生存者
-  const _survivorDispYrsE=Math.max(1, _survivorEndHAgeE - _hAgeE + 1);
-  const disp=Math.min(_survivorDispYrsE, MR.yr.length);
+  // 表示年数: 通常CF表(in-app)と同じ disp を使用してExcelとアプリ表示を一致させる
+  // window.lastDisp = cf-calc.js で計算された通常CF表の表示年数
+  const disp = Math.min(window.lastDisp || MR.yr.length, MR.yr.length);
   const infoSpan=3; // info行1項目あたりの列数（コンパクト化）
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
