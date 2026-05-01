@@ -845,32 +845,8 @@ function _renderContingencyInner(){
           if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=_mgCarInsp;
         }
       }
-      // 死亡後は通常CFの車ローン残債を継続加算（団信なし車ローン想定）
-      if(isDead){
-        document.querySelectorAll('#car-list>[id^="car-"]').forEach(carEl=>{
-          if(carEl.dataset.pay!=='loan')return;
-          const cIdx=carEl.id.replace('car-','');
-          const cPrice=fvd('car-'+cIdx+'-price',300);
-          const cFirst=(iv('car-'+cIdx+'-first')||1)-1;
-          const cCycle=iv('car-'+cIdx+'-cycle')||7;
-          const cDown=fvd('car-'+cIdx+'-down',50);
-          const cLoanYrs=iv('car-'+cIdx+'-loan-yrs')||5;
-          const cLoanRate=fvd('car-'+cIdx+'-loan-rate',2.5)/100/12;
-          const cEndAge=iv('car-'+cIdx+'-end-age')||0;
-          const cActive=cEndAge<30||ha<cEndAge;
-          if(!cActive||cLoanYrs<=0)return;
-          // 最後の購入年(=lastBuy) を求める
-          if(i<cFirst)return;
-          const elapsed=i-cFirst;
-          const lastBuy=cFirst+Math.floor(elapsed/cCycle)*cCycle;
-          const yrsAfterBuy=i-lastBuy;
-          // 購入年は頭金のみ（既にnCar側で計算済とみなす場合は加算しない）
-          if(yrsAfterBuy<=0||yrsAfterBuy>cLoanYrs)return;
-          const principal=(cPrice-cDown)*10000;
-          const monthly=cLoanRate>0?principal*cLoanRate*Math.pow(1+cLoanRate,cLoanYrs*12)/(Math.pow(1+cLoanRate,cLoanYrs*12)-1):principal/cLoanYrs/12;
-          nCar+=Math.round(monthly*12/10000);
-        });
-      }
+      // 「変更する」モード時は Q&A panel の設定で完全上書き
+      // ※通常CFのローン継続加算は廃止（「変更なし」モード=carInherit=true で対応）
     }else if(isDead){nCar=0;}
     else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
