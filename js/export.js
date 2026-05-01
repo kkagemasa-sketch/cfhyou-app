@@ -654,14 +654,20 @@ async function exportExcelMG(){
   // ── 列幅 ──
   ws['!cols']=[{wch:14},{wch:22},...Array(disp).fill({wch:7}),{wch:8}];
 
-  // ── 行高さ（イベント/年齢/経過年は低め、データ行は高め）──
-  ws['!rows']=types.map(t=>{
+  // ── 行高さ（通常CF Excelと統一）──
+  ws['!rows']=types.map((t,ri)=>{
     if(t==='event'||t==='age'||t==='elapsed')return{hpt:14};
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
     if(t==='incTotal'||t==='expTotal')return{hpt:24};
-    if(t==='info')return{hpt:44}; // 折り返し表示の余裕を確保
+    if(t==='info'){
+      // ペア行(ご主人様/奥様)は高さ23
+      const row=rows[ri]||[];
+      const s=String(row[0]||'')+String(row[1]||'');
+      if(/[\u{1F454}\u{1F469}]/u.test(s))return{hpt:23};
+      return{hpt:30};
+    }
     return{hpt:18};
   });
 
