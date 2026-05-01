@@ -252,6 +252,12 @@ function mgQA_calcAndRender(tab, immediate){
   // 自タブのタブボタンをアクティブに戻す（setRTab抑制したので手動）
   document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('on'));
   document.getElementById('rt-'+tab.id)?.classList.add('on');
+  // rTab グローバル変数も手動で同期（Excel出力等が rTab を参照するため）
+  // setRTab を直接呼ぶと右パネルの再描画など副作用があるので変数のみ更新
+  if(typeof window !== 'undefined'){
+    window.rTab = tab.target==='h' ? 'mg-h' : 'mg-w';
+  }
+  try { rTab = tab.target==='h' ? 'mg-h' : 'mg-w'; } catch(e){}
 
   // タブ別にHTMLを保存
   tab.renderedHTML = html;
