@@ -341,7 +341,8 @@ function _renderContingencyInner(){
   const initSav=cashH+cashW+cashJoint+zaikiHBal+zaikiWBal-downDeduct-costDeduct-moveDeduct;
 
   let sav=initSav;
-  const MR={yr:[],hA:[],wA:[],
+  // MR._deathOffset / _targetIsH はレンダリング前に設定（HTML生成時に参照されるため）
+  const MR={_deathOffset:deathYearOffset,_targetIsH:targetIsH,yr:[],hA:[],wA:[],
     hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],insAnnuityRows:[],finLiquid:[],otherInc:[],scholarship:[],
     lCtrl:[],lCtrlBreakdown:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
     dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
@@ -723,7 +724,8 @@ function _renderContingencyInner(){
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         let net=fv2;if(!isNisa){const cost=bal+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs);net=Math.round(fv2-Math.max(0,fv2-cost)*0.20315);}
-        const lbl=customLabel||(isNisa?'NISA':'課税')+'積立(解約)';
+        const _pLblA=p==='h'?'ご主人様':'奥様';
+        const lbl=customLabel||`${isNisa?'積立NISA':'課税積立'}解約(${_pLblA})`;
         secRedeemMap_mg[`accum-${p}-${sid}`]={lbl,val:net};secRedeemTotal+=net;
       });
       document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
@@ -736,7 +738,8 @@ function _renderContingencyInner(){
         let val=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         if(!isNisa){val=Math.round(val-Math.max(0,val-bal)*0.20315);}
-        const lbl=(document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'')||(isNisa?'NISA':'課税')+'一括(解約)';
+        const _pLblB=p==='h'?'ご主人様':'奥様';
+        const lbl=(document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'')||`${isNisa?'NISA':'課税'}一括投資解約(${_pLblB})`;
         secRedeemMap_mg[`stk-${p}-${sid}`]={lbl,val};secRedeemTotal+=val;
       });
     });

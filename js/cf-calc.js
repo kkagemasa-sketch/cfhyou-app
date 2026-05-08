@@ -838,7 +838,8 @@ function render(){
           taxAccum=Math.round(gainAccum*0.20315*10)/10;
           netAccum=Math.round(fv2-taxAccum);
         }
-        const lbl=customLabel||(isNisa?'NISA':'課税')+'積立(解約)';
+        const _pLblR=p==='h'?'ご主人様':'奥様';
+        const lbl=customLabel||`${isNisa?'積立NISA':'課税積立'}解約(${_pLblR})`;
         const _accumKey=`accum-${p}-${sid}`;
         secRedeemMap[_accumKey]={lbl,val:netAccum};
         secRedeemTotal+=netAccum;
@@ -876,7 +877,8 @@ function render(){
           taxStk=Math.round(gainStk*0.20315*10)/10;
           netStk=Math.round(redeemVal-taxStk);
         }
-        const lbl=customLabel||(isNisa?'NISA':'課税')+'一括(解約)';
+        const _pLblS=p==='h'?'ご主人様':'奥様';
+        const lbl=customLabel||`${isNisa?'NISA':'課税'}一括投資解約(${_pLblS})`;
         const _stkKey=`stk-${p}-${sid}`;
         secRedeemMap[_stkKey]={lbl,val:netStk};
         secRedeemTotal+=netStk;
