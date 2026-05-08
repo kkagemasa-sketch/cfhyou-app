@@ -1405,7 +1405,8 @@ function _renderContingencyInner(){
       const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
       const isDeadOwner=p2===_mgDeadP;
       const displayVals=_zeroAfterDeath(row.vals,isDeadOwner);
-      if(!displayVals.slice(0,mgDisp).some(v=>v>0))return;
+      // 通常CF側で値が一度でも出ていれば行を表示（死亡で0になっても行は残す）
+      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
       h+=mgERow(row.lbl,displayVals,row.vals,row.key);
     });
   }else{h+=mgERow('積立投資額',MR.secInvest,N.secInvest,'secInvest');}
@@ -1416,7 +1417,8 @@ function _renderContingencyInner(){
       const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
       const isDeadOwner=p2===_mgDeadP;
       const displayVals=_zeroAfterDeath(row.vals,isDeadOwner);
-      if(!displayVals.slice(0,mgDisp).some(v=>v>0))return;
+      // 通常CF側で値が一度でも出ていれば行を表示（死亡で0になっても行は残す）
+      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
       h+=mgERow(row.lbl,displayVals,row.vals,row.key);
     });
   }else{h+=mgERow('保険料（積立）',MR.insMonthly,N.insMonthly,'insMonthly');}
@@ -1426,7 +1428,8 @@ function _renderContingencyInner(){
       const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
       const isDeadOwner=p2===_mgDeadP;
       const displayVals=_zeroAfterDeath(row.vals,isDeadOwner);
-      if(!displayVals.slice(0,mgDisp).some(v=>v>0))return;
+      // 通常CF側で値が一度でも出ていれば行を表示（死亡で0になっても行は残す）
+      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
       h+=mgERow(row.lbl,displayVals,row.vals,row.key);
     });
   }else{h+=mgERow('一時払い保険',MR.insLumpExp,N.insLumpExp,'insLumpExp');}
