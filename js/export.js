@@ -664,7 +664,7 @@ async function exportExcelMG(){
   }
 
   // ── 列幅 ──
-  ws['!cols']=[{wch:14},{wch:22},...Array(disp).fill({wch:7}),{wch:8}];
+  ws['!cols']=[{wch:14},{wch:28},...Array(disp).fill({wch:7}),{wch:8}];
 
   // ── 行高さ（通常CF Excelと統一）──
   ws['!rows']=types.map((t,ri)=>{
@@ -1622,7 +1622,7 @@ async function exportExcel(){
   }
 
   // 列幅
-  ws['!cols']=[{wch:14},{wch:22},...Array(disp).fill({wch:7}),{wch:8}];
+  ws['!cols']=[{wch:14},{wch:28},...Array(disp).fill({wch:7}),{wch:8}];
 
   // 行高さ（イベント/年齢/経過年は低め、データ行は高め）
   ws['!rows']=types.map((t,ri)=>{
