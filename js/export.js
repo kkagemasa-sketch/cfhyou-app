@@ -881,7 +881,8 @@ async function exportExcelMG(){
       }
 
       // ★ 万が一特有：通常CF表との差分色分け（文字色を赤に変更）
-      if((tp==='inc'||tp==='exp'||tp==='balance'||tp==='savings')&&c>=2&&c<lastCol&&typeof cell.v==='number'){
+      // 年間収支(balance)は計算結果のため、変更ありでも色変更しない（収入/支出/savingsのみ対象）
+      if((tp==='inc'||tp==='exp'||tp==='savings')&&c>=2&&c<lastCol&&typeof cell.v==='number'){
         const colIdx=c-2;
         let normalVal=null;
         const label=row[1]||row[0]||'';
@@ -892,7 +893,6 @@ async function exportExcelMG(){
         else if(label==='遺族年金'&&N.survPension)normalVal=N.survPension[colIdx];
         else if(label==='駐車場代'&&N.prk)normalVal=N.prk[colIdx];
         else if(label==='車両費（購入・車検）'&&N.carTotal)normalVal=N.carTotal[colIdx];
-        else if(tp==='balance'&&N.bal)normalVal=N.bal[colIdx];
         else if(tp==='savings'&&N.sav)normalVal=N.sav[colIdx];
         if(normalVal!==null&&Math.round(normalVal)!==Math.round(cell.v)){
           fObj.color={rgb:C.red};fObj.bold=true;
