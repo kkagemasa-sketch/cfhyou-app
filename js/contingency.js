@@ -1388,43 +1388,44 @@ function _renderContingencyInner(){
     h+=mgERow('車両費（購入・車検）',MR.carTotal,N.carTotal,'carTotal');
   }
   h+=mgERow('駐車場代',MR.prk,N.prk,'prk');
-  // 積立投資額：通常CF表と同じく個別行（死亡者除外）
+  // 積立投資額：通常CF表と同じく個別行
+  // 死亡者の行も表示する（生存中は通常値、死亡後は0で打切）。死亡年以降を0に変換。
   const _mgDeadP=targetIsH?'h':'w';
-  if(N.secInvestRows&&N.secInvestRows.length>1){
+  const _mgDeathOff=MR._deathOffset||0;
+  // 死亡者の行は死亡年以降を0に置き換え、生存者はそのまま
+  const _zeroAfterDeath=(vals,isDeadOwner)=>{
+    if(!isDeadOwner||_mgDeathOff<=0)return vals;
+    return vals.map((v,idx)=>idx>=_mgDeathOff-1?0:v);
+  };
+  if(N.secInvestRows&&N.secInvestRows.length>=1){
     N.secInvestRows.forEach(row=>{
       const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
-      if(p2===_mgDeadP)return;// 死亡者の投資は除外
-      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
-      h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+      const isDeadOwner=p2===_mgDeadP;
+      const displayVals=_zeroAfterDeath(row.vals,isDeadOwner);
+      if(!displayVals.slice(0,mgDisp).some(v=>v>0))return;
+      h+=mgERow(row.lbl,displayVals,row.vals,row.key);
     });
-  }else if(N.secInvestRows&&N.secInvestRows.length===1){
-    const row=N.secInvestRows[0];const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
-    if(p2!==_mgDeadP)h+=mgERow(row.lbl,row.vals,row.vals,row.key);
   }else{h+=mgERow('積立投資額',MR.secInvest,N.secInvest,'secInvest');}
   h+=mgERow('一括投資額',MR.secBuy,N.secBuy,'secBuy');
-  // 保険料（積立）：個別行（死亡者除外）
-  if(N.insMonthlyRows&&N.insMonthlyRows.length>1){
+  // 保険料（積立）：個別行（死亡者の行は死亡後0）
+  if(N.insMonthlyRows&&N.insMonthlyRows.length>=1){
     N.insMonthlyRows.forEach(row=>{
       const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
-      if(p2===_mgDeadP)return;
-      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
-      h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+      const isDeadOwner=p2===_mgDeadP;
+      const displayVals=_zeroAfterDeath(row.vals,isDeadOwner);
+      if(!displayVals.slice(0,mgDisp).some(v=>v>0))return;
+      h+=mgERow(row.lbl,displayVals,row.vals,row.key);
     });
-  }else if(N.insMonthlyRows&&N.insMonthlyRows.length===1){
-    const row=N.insMonthlyRows[0];const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
-    if(p2!==_mgDeadP)h+=mgERow(row.lbl,row.vals,row.vals,row.key);
   }else{h+=mgERow('保険料（積立）',MR.insMonthly,N.insMonthly,'insMonthly');}
-  // 一時払い保険：個別行（死亡者除外）
-  if(N.insLumpExpRows&&N.insLumpExpRows.length>1){
+  // 一時払い保険：個別行（死亡者の行は死亡後0）
+  if(N.insLumpExpRows&&N.insLumpExpRows.length>=1){
     N.insLumpExpRows.forEach(row=>{
       const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
-      if(p2===_mgDeadP)return;
-      if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
-      h+=mgERow(row.lbl,row.vals,row.vals,row.key);
+      const isDeadOwner=p2===_mgDeadP;
+      const displayVals=_zeroAfterDeath(row.vals,isDeadOwner);
+      if(!displayVals.slice(0,mgDisp).some(v=>v>0))return;
+      h+=mgERow(row.lbl,displayVals,row.vals,row.key);
     });
-  }else if(N.insLumpExpRows&&N.insLumpExpRows.length===1){
-    const row=N.insLumpExpRows[0];const k=row.key||'';const p2=k.includes(`-${_mgDeadP}-`)?_mgDeadP:'alive';
-    if(p2!==_mgDeadP)h+=mgERow(row.lbl,row.vals,row.vals,row.key);
   }else{h+=mgERow('一時払い保険',MR.insLumpExp,N.insLumpExp,'insLumpExp');}
   h+=mgERow('結婚のお祝い',MR.wedding,null,'wedding');
   h+=mgERow(_isSingle_mg?'DC拠出':'DC拠出(主)',MR.dcMatchExpH,N.dcMatchExpH,'dcMatchExpH');

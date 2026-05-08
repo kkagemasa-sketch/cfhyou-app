@@ -477,25 +477,37 @@ async function exportExcelMG(){
   });
   addE(_rl('mg-carTotal','車両費（購入・車検）'),MR.carTotal);
   addE(_rl('mg-prk','駐車場代'),MR.prk);
-  // 積立投資額：個別行（死亡者除外）
+  // 積立投資額：個別行（死亡者の行は死亡年以降を0にして表示）
   const _expDeadP=targetIsH?'h':'w';
-  if(N.secInvestRows&&N.secInvestRows.length>1){
-    N.secInvestRows.forEach(row=>{const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';if(p2===_expDeadP)return;addESkip(row.lbl,row.vals,row.vals);});
-  }else if(N.secInvestRows&&N.secInvestRows.length===1){
-    const row=N.secInvestRows[0];const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';if(p2!==_expDeadP)addESkip(row.lbl,row.vals,row.vals);
+  const _expDeathOff=MR._deathOffset||0;
+  const _zeroAfter=(vals,isDeadOwner)=>{
+    if(!isDeadOwner||_expDeathOff<=0)return vals;
+    return vals.map((v,idx)=>idx>=_expDeathOff-1?0:v);
+  };
+  if(N.secInvestRows&&N.secInvestRows.length>=1){
+    N.secInvestRows.forEach(row=>{
+      const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
+      const isDeadOwner=p2===_expDeadP;
+      const displayVals=_zeroAfter(row.vals,isDeadOwner);
+      addESkip(row.lbl,displayVals,row.vals);
+    });
   }else{addESkip(_rl('mg-secInvest','積立投資額'),MR.secInvest,N.secInvest);}
   addESkip(_rl('mg-secBuy','一括投資額'),MR.secBuy,N.secBuy);
-  // 保険料（積立）：個別行（死亡者除外）
-  if(N.insMonthlyRows&&N.insMonthlyRows.length>1){
-    N.insMonthlyRows.forEach(row=>{const k=row.key||'';if(k.includes(`-${_expDeadP}-`))return;addESkip(row.lbl,row.vals,row.vals);});
-  }else if(N.insMonthlyRows&&N.insMonthlyRows.length===1){
-    const row=N.insMonthlyRows[0];if(!row.key?.includes(`-${_expDeadP}-`))addESkip(row.lbl,row.vals,row.vals);
+  // 保険料（積立）：個別行（死亡者の行は死亡年以降を0にして表示）
+  if(N.insMonthlyRows&&N.insMonthlyRows.length>=1){
+    N.insMonthlyRows.forEach(row=>{
+      const k=row.key||'';const isDeadOwner=k.includes(`-${_expDeadP}-`);
+      const displayVals=_zeroAfter(row.vals,isDeadOwner);
+      addESkip(row.lbl,displayVals,row.vals);
+    });
   }else{addESkip(_rl('mg-insMonthly','保険料（積立）'),MR.insMonthly,N.insMonthly);}
-  // 一時払い保険：個別行（死亡者除外）
-  if(N.insLumpExpRows&&N.insLumpExpRows.length>1){
-    N.insLumpExpRows.forEach(row=>{const k=row.key||'';if(k.includes(`-${_expDeadP}-`))return;addESkip(row.lbl,row.vals,row.vals);});
-  }else if(N.insLumpExpRows&&N.insLumpExpRows.length===1){
-    const row=N.insLumpExpRows[0];if(!row.key?.includes(`-${_expDeadP}-`))addESkip(row.lbl,row.vals,row.vals);
+  // 一時払い保険：個別行（死亡者の行は死亡年以降を0にして表示）
+  if(N.insLumpExpRows&&N.insLumpExpRows.length>=1){
+    N.insLumpExpRows.forEach(row=>{
+      const k=row.key||'';const isDeadOwner=k.includes(`-${_expDeadP}-`);
+      const displayVals=_zeroAfter(row.vals,isDeadOwner);
+      addESkip(row.lbl,displayVals,row.vals);
+    });
   }else{addESkip(_rl('mg-insLumpExp','一時払い保険'),MR.insLumpExp,N.insLumpExp);}
   addESkip(_rl('mg-wedding','結婚のお祝い'),MR.wedding,null);
   addESkip(_rl('mg-dcMatchExpH','DC拠出(主)'),MR.dcMatchExpH,N.dcMatchExpH);
