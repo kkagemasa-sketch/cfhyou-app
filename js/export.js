@@ -475,7 +475,7 @@ async function exportExcelMG(){
       push(['',_rl('mg-edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
     }
   });
-  addE(_rl('mg-carTotal','車両費（購入・車検）'),MR.carTotal);
+  addE(_rl('mg-carTotal','車両費・車検'),MR.carTotal);
   addE(_rl('mg-prk','駐車場代'),MR.prk);
   // 積立投資額：個別行（死亡者の行は死亡年以降を0にして表示）
   const _expDeadP=targetIsH?'h':'w';
@@ -892,7 +892,7 @@ async function exportExcelMG(){
         else if(label==='生活費'&&N.lc)normalVal=N.lc[colIdx];
         else if(label==='遺族年金'&&N.survPension)normalVal=N.survPension[colIdx];
         else if(label==='駐車場代'&&N.prk)normalVal=N.prk[colIdx];
-        else if(label==='車両費（購入・車検）'&&N.carTotal)normalVal=N.carTotal[colIdx];
+        else if(label==='車両費・車検'&&N.carTotal)normalVal=N.carTotal[colIdx];
         else if(tp==='savings'&&N.sav)normalVal=N.sav[colIdx];
         if(normalVal!==null&&Math.round(normalVal)!==Math.round(cell.v)){
           fObj.color={rgb:C.red};fObj.bold=true;
@@ -1447,7 +1447,7 @@ async function exportExcel(){
     push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
   });
   // 全車両費(現有・将来)を1行に集約
-  addE('🚗 車両費（購入・車検・ローン）',R.carTotal);
+  addE('車両費・車検',R.carTotal);
   addE(_rl('prk','駐車場代'),R.prk);
   if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
   addE(_rl('secBuy','一括投資額'),R.secBuy);

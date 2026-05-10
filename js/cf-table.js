@@ -307,7 +307,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
   children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`);});
   // 全車両費（現有車・将来購入車）を1行に集約表示
-  h+=eRow('🚗 車両費（購入・車検・ローン）',R.carTotal,'carTotal');
+  h+=eRow('車両費・車検',R.carTotal,'carTotal');
   h+=eRow('駐車場代',R.prk,'prk');
   if(R.secInvestRows&&R.secInvestRows.length>1){R.secInvestRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.secInvestRows&&R.secInvestRows.length===1){h+=eRow(R.secInvestRows[0].lbl,R.secInvestRows[0].vals,R.secInvestRows[0].key);}else{h+=eRow('積立投資額',R.secInvest,'secInvest');}
   h+=eRow('一括投資額',R.secBuy,'secBuy');

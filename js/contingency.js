@@ -1385,7 +1385,7 @@ function _renderContingencyInner(){
     }h+=`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
   });
   // 車両費：全車両費(現有・将来)を1行に集約表示
-  h+=mgERow('🚗 車両費（購入・車検・ローン）',MR.carTotal,N.carTotal,'carTotal');
+  h+=mgERow('車両費・車検',MR.carTotal,N.carTotal,'carTotal');
   h+=mgERow('駐車場代',MR.prk,N.prk,'prk');
   // 積立投資額：通常CF表と同じく個別行
   // 死亡者の行も表示する（生存中は通常値、死亡後は0で打切）。死亡年以降を0に変換。
