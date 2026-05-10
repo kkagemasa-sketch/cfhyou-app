@@ -1446,8 +1446,8 @@ async function exportExcel(){
     const ages=arr.slice(0,disp).map((_,i)=>c.age+i);
     push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
   });
-  if(R.carRows&&R.carRows.length>1){R.carRows.forEach(row=>{addE(row.lbl,row.vals);});}
-  else{addE('車両費（購入・車検）',R.carTotal);}
+  // 全車両費(現有・将来)を1行に集約
+  addE('🚗 車両費（購入・車検・ローン）',R.carTotal);
   addE(_rl('prk','駐車場代'),R.prk);
   if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
   addE(_rl('secBuy','一括投資額'),R.secBuy);

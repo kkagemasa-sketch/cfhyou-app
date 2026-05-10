@@ -285,6 +285,25 @@ function _collectDynamic(){
       loanRate:document.getElementById('car-'+c+'-loan-rate')?.value||'2.5',
     });
   });
+  // 現有車（既保有）の保存
+  d.existingCarCnt=typeof existingCarCnt!=='undefined'?existingCarCnt:0;
+  d.existingCars=[];
+  document.querySelectorAll('#existing-car-list>[id^="ecar-"]').forEach(el=>{
+    const c=el.id.split('-')[1];
+    d.existingCars.push({
+      id:parseInt(c),
+      type:el.dataset.type||'new',
+      pay:el.dataset.pay||'cash',
+      label:document.getElementById('ecar-'+c+'-label')?.value||'',
+      boughtAgo:document.getElementById('ecar-'+c+'-bought-ago')?.value||'3',
+      price:document.getElementById('ecar-'+c+'-price')?.value||'300',
+      endYrs:document.getElementById('ecar-'+c+'-end-yrs')?.value||'5',
+      insp:document.getElementById('ecar-'+c+'-insp')?.value||'10',
+      down:document.getElementById('ecar-'+c+'-down')?.value||'50',
+      loanYrs:document.getElementById('ecar-'+c+'-loan-yrs')?.value||'5',
+      loanRate:document.getElementById('ecar-'+c+'-loan-rate')?.value||'2.5',
+    });
+  });
   d.pairLoanMode=pairLoanMode;
   d.jointLoanMode=jointLoanMode;
   d.lctrlDedMode=_lctrlDedMode;
@@ -632,6 +651,16 @@ function _restoreDynamic(d){
       addCar({label:c.label||'',type:c.type,pay:c.pay,price:c.price,first:c.first,cycle:c.cycle,endAge:c.endAge,insp:c.insp,down:c.down,loanYrs:c.loanYrs,loanRate:c.loanRate});
     });
   }
+  // 現有車の復元
+  if(d.existingCars&&d.existingCars.length>0){
+    const ecCont=document.getElementById('existing-car-list');
+    if(ecCont)ecCont.innerHTML='';
+    if(typeof existingCarCnt!=='undefined')existingCarCnt=0;
+    d.existingCars.forEach(c=>{
+      if(typeof addExistingCar==='function')
+        addExistingCar({label:c.label||'',type:c.type,pay:c.pay,boughtAgo:c.boughtAgo,price:c.price,endYrs:c.endYrs,insp:c.insp,down:c.down,loanYrs:c.loanYrs,loanRate:c.loanRate});
+    });
+  }
   // 通常CF表 遺族年金上書き金額復元
   if($('surv-h-amt')&&d.survHAmt!==undefined)$('surv-h-amt').value=d.survHAmt;
   if($('surv-w-amt')&&d.survWAmt!==undefined)$('surv-w-amt').value=d.survWAmt;
@@ -911,6 +940,9 @@ function _resetSheetState(){
   // 車
   if($('car-list'))$('car-list').innerHTML='';
   carCnt=0;
+  // 現有車（既保有）
+  if($('existing-car-list'))$('existing-car-list').innerHTML='';
+  if(typeof existingCarCnt!=='undefined')existingCarCnt=0;
   // 一時払い保険
   ['h','w'].forEach(p=>{if($(`ins-lump-cont-${p}`))$(`ins-lump-cont-${p}`).innerHTML='';});
   insLumpCnt=0;

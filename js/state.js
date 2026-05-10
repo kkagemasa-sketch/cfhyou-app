@@ -42,6 +42,7 @@ let insSavCnt=0, insLumpCnt=0, secCnt=0;
 
 let carOwn=true;
 let carCnt=0;
+let existingCarCnt=0;  // 現有車（既保有）のカウンタ
 
 let parkOwn=true;
 

@@ -559,6 +559,120 @@ function addCar(defaults){
     </div>`;
   cont.appendChild(el);
 }
+// ===== 現有車（既保有）セクション =====
+function addExistingCar(defaults){
+  if(typeof existingCarCnt==='undefined')window.existingCarCnt=0;
+  existingCarCnt++;
+  const id=existingCarCnt;
+  const d=defaults||{};
+  const cont=document.getElementById('existing-car-list');
+  if(!cont)return;
+  const el=document.createElement('div');
+  el.id='ecar-'+id;
+  el.dataset.type=d.type||'new';
+  el.dataset.pay=d.pay||'cash';
+  el.style.cssText='background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:10px;margin-bottom:8px';
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <span style="font-size:14px">🚙</span>
+      <input class="inp" id="ecar-${id}-label" value="${d.label||''}" placeholder="現有車${id}台目（例:ご主人様車）" style="flex:1;font-size:11px;font-weight:700;padding:4px 8px" oninput="live()">
+      <button class="btn-rm" onclick="rmExistingCar(${id})" style="font-size:11px;padding:2px 8px">× 削除</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <div class="tc ${d.type!=='used'?'on':''}" id="ecar-${id}-new" onclick="setExistingCarType(${id},'new')" style="flex:1;padding:6px;flex-direction:column;align-items:center;text-align:center;gap:2px">
+        <span style="font-size:16px">✨</span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検：初回3年・以降2年</div>
+      </div>
+      <div class="tc ${d.type==='used'?'on':''}" id="ecar-${id}-used" onclick="setExistingCarType(${id},'used')" style="flex:1;padding:6px;flex-direction:column;align-items:center;text-align:center;gap:2px">
+        <span style="font-size:16px">🔄</span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検：2年ごと</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <div class="tc ${d.pay!=='loan'?'on':''}" id="ecar-${id}-pay-cash" onclick="setExistingCarPay(${id},'cash')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">💴 現金一括</div></div>
+      <div class="tc ${d.pay==='loan'?'on':''}" id="ecar-${id}-pay-loan" onclick="setExistingCarPay(${id},'loan')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">🏦 ローン中</div></div>
+    </div>
+    <div class="g3" style="margin-bottom:8px">
+      <div class="fg"><label class="lbl" style="font-size:10px">購入時期</label>
+        <div class="suf"><input class="inp age-inp" id="ecar-${id}-bought-ago" type="number" value="${d.boughtAgo||3}" min="0" max="20" oninput="live()"><span class="sl">年前</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:10px">購入価格</label>
+        <div class="suf"><input class="inp amt-inp" id="ecar-${id}-price" type="number" value="${d.price||300}" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:10px">手放す時期</label>
+        <div class="suf"><input class="inp age-inp" id="ecar-${id}-end-yrs" type="number" value="${d.endYrs||5}" min="0" max="30" oninput="live()"><span class="sl">年後</span></div></div>
+    </div>
+    <div class="g2" style="margin-bottom:8px">
+      <div class="fg"><label class="lbl" style="font-size:10px">車検費用（1回）</label>
+        <div class="suf"><input class="inp amt-inp" id="ecar-${id}-insp" type="number" value="${d.insp||10}" min="0" oninput="live()"><span class="sl">万円</span></div>
+        <span class="hint" id="ecar-${id}-insp-hint" style="font-size:9px">${(d.type||'new')==='new'?'新車：購入から3年後・以降2年ごと':'中古：購入から2年ごと'}</span></div>
+    </div>
+    <div id="ecar-${id}-loan-fields" style="display:${d.pay==='loan'?'':'none'};background:#fff3d0;border:1px solid #ffc000;border-radius:var(--rs);padding:8px">
+      <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:6px">🏦 当初ローン条件（自動で残債計算）</div>
+      <div class="g3">
+        <div class="fg"><label class="lbl" style="font-size:9px">当初頭金</label>
+          <div class="suf"><input class="inp amt-inp" id="ecar-${id}-down" type="number" value="${d.down||50}" min="0" oninput="setExistingCarPay(${id},'loan')"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">当初借入年数</label>
+          <div class="suf"><input class="inp age-inp" id="ecar-${id}-loan-yrs" type="number" value="${d.loanYrs||5}" min="1" max="10" oninput="setExistingCarPay(${id},'loan')"><span class="sl">年</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">当初金利</label>
+          <div class="suf"><input class="inp amt-inp" id="ecar-${id}-loan-rate" type="number" value="${d.loanRate||2.5}" min="0" max="10" step="0.1" oninput="setExistingCarPay(${id},'loan')"><span class="sl">%</span></div></div>
+      </div>
+      <span class="hint ok" id="ecar-${id}-loan-hint" style="font-size:10px">月々：― 万円</span>
+    </div>`;
+  cont.appendChild(el);
+  setExistingCarPay(id,d.pay||'cash');
+}
+function rmExistingCar(id){
+  document.getElementById('ecar-'+id)?.remove();
+  live();
+}
+function setExistingCarType(id,type){
+  const el=document.getElementById('ecar-'+id);
+  if(!el)return;
+  el.dataset.type=type;
+  document.getElementById(`ecar-${id}-new`)?.classList.toggle('on',type!=='used');
+  document.getElementById(`ecar-${id}-used`)?.classList.toggle('on',type==='used');
+  const hint=document.getElementById(`ecar-${id}-insp-hint`);
+  if(hint)hint.textContent=type==='used'?'中古：購入から2年ごと':'新車：購入から3年後・以降2年ごと';
+  live();
+}
+function setExistingCarPay(id,pay){
+  const el=document.getElementById('ecar-'+id);
+  if(!el)return;
+  el.dataset.pay=pay;
+  document.getElementById(`ecar-${id}-pay-cash`)?.classList.toggle('on',pay!=='loan');
+  document.getElementById(`ecar-${id}-pay-loan`)?.classList.toggle('on',pay==='loan');
+  const lf=document.getElementById(`ecar-${id}-loan-fields`);
+  if(lf)lf.style.display=pay==='loan'?'':'none';
+  // 残ローン月数のヒント表示
+  if(pay==='loan'){
+    const boughtAgo=parseFloat(document.getElementById(`ecar-${id}-bought-ago`)?.value)||0;
+    const loanYrs=parseFloat(document.getElementById(`ecar-${id}-loan-yrs`)?.value)||0;
+    const price=parseFloat(document.getElementById(`ecar-${id}-price`)?.value)||0;
+    const down=parseFloat(document.getElementById(`ecar-${id}-down`)?.value)||0;
+    const rate=parseFloat(document.getElementById(`ecar-${id}-loan-rate`)?.value)||0;
+    const principal=Math.max(0,(price-down)*10000);
+    const mr=rate/100/12;
+    const totalMonths=loanYrs*12;
+    const elapsedMonths=boughtAgo*12;
+    const remainMonths=Math.max(0,totalMonths-elapsedMonths);
+    const monthly=mr>0?principal*mr*Math.pow(1+mr,totalMonths)/(Math.pow(1+mr,totalMonths)-1):principal/totalMonths;
+    const monthlyManny=Math.round(monthly/10000*10)/10;
+    const remainYrs=Math.round(remainMonths/12*10)/10;
+    const hint=document.getElementById(`ecar-${id}-loan-hint`);
+    if(hint){
+      if(remainMonths<=0){
+        hint.textContent=`✓ ローン完済済み（経過${boughtAgo}年 ≧ 借入${loanYrs}年）`;
+        hint.className='hint ok';
+      }else{
+        hint.textContent=`月々: ${monthlyManny}万円 × あと約${remainYrs}年（残${remainMonths}ヶ月）`;
+        hint.className='hint ok';
+      }
+    }
+  }
+  live();
+}
+window.addExistingCar=addExistingCar;
+window.rmExistingCar=rmExistingCar;
+window.setExistingCarType=setExistingCarType;
+window.setExistingCarPay=setExistingCarPay;
+
 function rmCar(id){
   document.getElementById('car-'+id)?.remove();
   live();

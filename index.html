@@ -633,6 +633,15 @@ function checkPW(){
       </div>
 
       <div id="car-list-container">
+        <!-- 現在乗っている車（既保有）セクション -->
+        <div style="background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:6px">🚙 現在乗っている車（既保有）</div>
+          <div style="font-size:10px;color:#5a4000;margin-bottom:6px">過去に購入済の車。ローン残債と車検が今後の費用に反映されます。</div>
+          <div id="existing-car-list"></div>
+          <button type="button" onclick="addExistingCar()" style="width:100%;padding:8px;background:#fff3d0;border:2px dashed #ffc000;border-radius:var(--rs);color:#7a5000;font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">＋ 現有車を追加</button>
+        </div>
+        <!-- 将来購入予定の車（既存機能） -->
+        <div style="font-size:11px;font-weight:700;color:#6b5ea8;margin-bottom:6px">🛒 将来購入予定の車</div>
         <div id="car-list"></div>
         <button type="button" onclick="addCar()" style="width:100%;padding:10px;background:#f0ecff;border:2px dashed #c4b0e8;border-radius:var(--rs);color:#6b5ea8;font-weight:700;font-size:12px;cursor:pointer;margin-bottom:10px;font-family:inherit">＋ 車を追加</button>
       </div>
@@ -1581,7 +1590,7 @@ function checkPW(){
 
 
 <!-- v2 モジュール読み込み -->
-<script src="js/state.js?v=15"></script>
+<script src="js/state.js?v=16"></script>
 <script src="js/constants.js?v=17"></script>
 <script src="js/market-scenarios.js?v=3"></script>
 <script src="js/market-sim.js?v=6"></script>
@@ -1593,19 +1602,19 @@ function checkPW(){
 <script src="js/housing.js?v=25"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
-<script src="js/assets.js?v=12"></script>
+<script src="js/assets.js?v=13"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=69"></script>
+<script src="js/contingency.js?v=70"></script>
 <script src="js/cf-ui.js?v=21"></script>
-<script src="js/cf-calc.js?v=48"></script>
-<script src="js/cf-table.js?v=33"></script>
+<script src="js/cf-calc.js?v=49"></script>
+<script src="js/cf-table.js?v=34"></script>
 <script src="js/cf-highlight.js?v=2"></script>
 <script src="js/graphs.js?v=5"></script>
-<script src="js/export.js?v=41"></script>
+<script src="js/export.js?v=42"></script>
 <script src="js/loan-plan.js?v=8"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=45"></script>
+<script src="js/save-load.js?v=46"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=6"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

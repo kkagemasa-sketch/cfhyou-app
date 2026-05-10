@@ -1118,6 +1118,50 @@ function render(){
         if(carRow)carRow.vals.push(thisTotal);
         carBuyAmt+=thisCarAmt; carInspAmt+=thisInspAmt;
       });
+      // 現有車（既保有）の計算: ローン残債継続 + 車検 + 手放し
+      // 全現有車を「🚗 車両費」1行に集約するため、carRows ではなく carBuyAmt/carInspAmt に加算
+      document.querySelectorAll('#existing-car-list>[id^="ecar-"]').forEach(ecEl=>{
+        const ecIdx=ecEl.id.replace('ecar-','');
+        const ecType=ecEl.dataset.type||'new';
+        const ecPay=ecEl.dataset.pay||'cash';
+        const boughtAgo=fvd('ecar-'+ecIdx+'-bought-ago',3);
+        const ecPrice=fvd('ecar-'+ecIdx+'-price',300);
+        const ecInsp=fvd('ecar-'+ecIdx+'-insp',10);
+        const ecEndYrs=fvd('ecar-'+ecIdx+'-end-yrs',5);
+        // 経過年i が手放し年に到達したら以降0
+        if(i>=ecEndYrs)return;
+        // ローン残債継続（経過年0以降、当初借入年数 - 経過年数 が残月数）
+        if(ecPay==='loan'){
+          const ecDown=fvd('ecar-'+ecIdx+'-down',50);
+          const ecLoanYrs=fvd('ecar-'+ecIdx+'-loan-yrs',5);
+          const ecLoanRate=fvd('ecar-'+ecIdx+'-loan-rate',2.5)/100/12;
+          const principal=Math.max(0,(ecPrice-ecDown)*10000);
+          const totalMonths=ecLoanYrs*12;
+          const elapsedMonthsAtStart=boughtAgo*12;  // 経過年0時点の既経過月数
+          const remainMonthsAtStart=Math.max(0,totalMonths-elapsedMonthsAtStart);
+          // 経過年i における残月数を計算
+          const monthsBeforeThisYear=i*12;
+          const remainAtThisYear=Math.max(0,remainMonthsAtStart-monthsBeforeThisYear);
+          if(remainAtThisYear>0){
+            const monthly=ecLoanRate>0?principal*ecLoanRate*Math.pow(1+ecLoanRate,totalMonths)/(Math.pow(1+ecLoanRate,totalMonths)-1):principal/totalMonths;
+            // この年に支払う月数（最大12、残月数で制限）
+            const monthsThisYear=Math.min(12,remainAtThisYear);
+            carBuyAmt+=Math.round(monthly*monthsThisYear/10000);
+          }
+        }
+        // 車検（過去基準）: 購入年からの経過年で次回車検タイミングを計算
+        // 経過年i における「購入からの経過年」= boughtAgo + i
+        const yrFromBuy=boughtAgo+i;
+        if(yrFromBuy>0){
+          if(ecType==='new'){
+            // 新車: 購入から3年後、以降2年ごと
+            if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))carInspAmt+=ecInsp;
+          } else {
+            // 中古: 購入から2年ごと
+            if(yrFromBuy%2===0)carInspAmt+=ecInsp;
+          }
+        }
+      });
       // carRowsのうち今回ループしなかった行（削除済み台）にも0を追加
       R.carRows.forEach(row=>{if(row.vals.length<=i)row.vals.push(0);});
     } else {
