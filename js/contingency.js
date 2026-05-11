@@ -829,27 +829,117 @@ function _renderContingencyInner(){
     // 車両費
     // Q&A継承フラグ: true（デフォルト）= 通常CFの値をそのまま使う
     const _mgCarInherit = window._mgQA_carInherit !== false;
+    // 多台対応: window._mgQA_existingCars / window._mgQA_futureCars が定義されていれば使用
+    const _mgQAExistingCars = Array.isArray(window._mgQA_existingCars) ? window._mgQA_existingCars : null;
+    const _mgQAFutureCars = Array.isArray(window._mgQA_futureCars) ? window._mgQA_futureCars : null;
+    const _useMultiCars = _mgQAExistingCars || _mgQAFutureCars;
     let nCar=0;
     if(_mgCarInherit){
       // 通常CFの carTotal をそのまま使用（生存中も死亡後も）
       // ローン継続・買換計画・複数台すべて通常CF通り
       nCar = i<normalR.carTotal.length ? (normalR.carTotal[i]||0) : 0;
+    } else if(_useMultiCars){
+      // 「変更する」モード（多台対応）: Q&A の現有車・将来車の配列で計算
+      const sAge=targetIsH?wa:ha;
+      // 現有車: ローン残債 + 車検 + 手放し
+      (_mgQAExistingCars||[]).forEach(ec=>{
+        if(!ec)return;
+        const ecEndYrs = parseFloat(ec.endYrs)||0;
+        if(ecEndYrs>0 && i>=ecEndYrs)return;
+        // ローン残債
+        if(ec.pay==='loan'){
+          const ecPrice = parseFloat(ec.price)||0;
+          const ecDown = parseFloat(ec.down)||0;
+          const ecLoanYrs = parseFloat(ec.loanYrs)||0;
+          const ecLoanRate = (parseFloat(ec.loanRate)||0)/100/12;
+          const boughtAgo = parseFloat(ec.boughtAgo)||0;
+          const principal = Math.max(0,(ecPrice-ecDown)*10000);
+          const totalMonths = ecLoanYrs*12;
+          const elapsedMonthsAtStart = boughtAgo*12;
+          const remainAtStart = Math.max(0, totalMonths - elapsedMonthsAtStart);
+          const remainAtThisYear = Math.max(0, remainAtStart - i*12);
+          if(remainAtThisYear>0 && totalMonths>0){
+            const monthly = ecLoanRate>0
+              ? principal*ecLoanRate*Math.pow(1+ecLoanRate,totalMonths)/(Math.pow(1+ecLoanRate,totalMonths)-1)
+              : principal/totalMonths;
+            const monthsThisYear = Math.min(12, remainAtThisYear);
+            nCar += Math.round(monthly*monthsThisYear/10000);
+          }
+        }
+        // 車検（過去基準）
+        const yrFromBuy = (parseFloat(ec.boughtAgo)||0) + i;
+        const ecInsp = parseFloat(ec.insp)||0;
+        if(yrFromBuy>0 && ecInsp>0){
+          if(ec.type==='used'){
+            if(yrFromBuy%2===0) nCar += ecInsp;
+          } else {
+            if(yrFromBuy===3||(yrFromBuy>3 && (yrFromBuy-3)%2===0)) nCar += ecInsp;
+          }
+        }
+      });
+      // 将来車: 購入 + 車検 + ローン月返済
+      (_mgQAFutureCars||[]).forEach(fc=>{
+        if(!fc)return;
+        const fcFirst = (parseFloat(fc.first)||1)-1;
+        const fcCycle = parseFloat(fc.cycle)||7;
+        const fcEndAge = parseFloat(fc.endAge)||0;
+        const fcActive = fcEndAge<30 || sAge<fcEndAge;
+        if(!fcActive)return;
+        const fcPrice = parseFloat(fc.price)||0;
+        const fcInsp = parseFloat(fc.insp)||0;
+        let lastBuy = -1;
+        if(i>=fcFirst){
+          const elapsed = i - fcFirst;
+          lastBuy = fcFirst + Math.floor(elapsed/fcCycle)*fcCycle;
+        }
+        const isBuyYear = i===fcFirst || (i>fcFirst && (i-fcFirst)%fcCycle===0);
+        if(isBuyYear){
+          if(fc.pay==='loan'){
+            const fcDown = parseFloat(fc.down)||0;
+            nCar += fcDown;
+          } else {
+            nCar += fcPrice;
+          }
+        }
+        // ローン月返済
+        if(fc.pay==='loan' && !isBuyYear && lastBuy>=0){
+          const fcDown = parseFloat(fc.down)||0;
+          const fcLoanYrs = parseFloat(fc.loanYrs)||5;
+          const fcLoanRate = (parseFloat(fc.loanRate)||2.5)/100/12;
+          const principal = Math.max(0,(fcPrice-fcDown)*10000);
+          const totalMonths = fcLoanYrs*12;
+          const yrsAfterBuy = i - lastBuy;
+          if(yrsAfterBuy>0 && yrsAfterBuy<=fcLoanYrs){
+            const monthly = fcLoanRate>0
+              ? principal*fcLoanRate*Math.pow(1+fcLoanRate,totalMonths)/(Math.pow(1+fcLoanRate,totalMonths)-1)
+              : principal/totalMonths;
+            nCar += Math.round(monthly*12/10000);
+          }
+        }
+        // 車検
+        if(lastBuy>=0 && !isBuyYear && fcInsp>0){
+          const yrFromBuy = i - lastBuy;
+          if(fc.type==='used'){
+            if(yrFromBuy%2===0) nCar += fcInsp;
+          } else {
+            if(yrFromBuy===3||(yrFromBuy>3 && (yrFromBuy-3)%2===0)) nCar += fcInsp;
+          }
+        }
+      });
     } else if(mgCarKeep){
+      // 旧UI（mg-car-h-* 単一車フィールド）でのフォールバック
       const sAge=targetIsH?wa:ha;
       if(_mgCarEndAge>0&&sAge>=_mgCarEndAge){nCar=0;}
       else if(sAge>=_mgCarFirst){
         const ageFromFirst=sAge-_mgCarFirst;
         if(ageFromFirst%_mgCarCycle===0)nCar+=_mgCarPrice;
         const carAge=ageFromFirst%_mgCarCycle;
-        // 新車: 初回3年後、以降2年ごと / 中古: 2年ごと
         if(_mgCarType==='used'){
           if(carAge>0&&carAge%2===0)nCar+=_mgCarInsp;
         }else{
           if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=_mgCarInsp;
         }
       }
-      // 「変更する」モード時は Q&A panel の設定で完全上書き
-      // ※通常CFのローン継続加算は廃止（「変更なし」モード=carInherit=true で対応）
     }else if(isDead){nCar=0;}
     else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);

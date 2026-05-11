@@ -91,8 +91,12 @@ function mgQA_buildDefaultState(target){
     scholarshipEnabled: false,
     scholarships: {},
     // 車: 万一時の挙動（デフォルト=通常時と同じ）
-    carInherit: true,         // true=通常CF設定をそのまま使う / false=以下のkeep/stop+詳細を使う
-    carMode: 'keep',          // carInherit=false時のみ有効: 'keep' | 'stop'
+    carInherit: true,         // true=通常CF設定をそのまま使う / false=以下の多台設定を使う
+    // 多台対応: 現有車・将来車の配列（carInherit=false時に使用）
+    mgExistingCars: [],       // [{type, pay, boughtAgo, price, insp, endYrs, loanYrs, down, loanRate}]
+    mgFutureCars: [],         // [{type, pay, price, first, cycle, insp, endAge, loanYrs, down, loanRate}]
+    // 旧UI互換用（廃止予定だが既存タブの保存データのため残す）
+    carMode: 'keep',
     carType: carD.type,
     carPrice: carD.price,
     carCycle: carD.cycle,
@@ -430,6 +434,14 @@ function mgQA_applyStateToDOM(tab){
   // true=通常CF設定をそのまま使う / false=Q&A詳細設定を使う
   window._mgQA_carInherit = s.carInherit !== false;
   window._mgQA_parkInherit = s.parkInherit !== false;
+  // 多台対応：現有車・将来車の配列を contingency.js から参照可能に
+  if(s.carInherit === false){
+    window._mgQA_existingCars = Array.isArray(s.mgExistingCars) ? s.mgExistingCars : [];
+    window._mgQA_futureCars   = Array.isArray(s.mgFutureCars)   ? s.mgFutureCars   : [];
+  } else {
+    window._mgQA_existingCars = null;
+    window._mgQA_futureCars   = null;
+  }
   // 車両（keep/stop）— 継承時は keep 扱い（通常CF用）。変更時は state.carMode に従う
   if(typeof setMGCarPark === 'function'){
     const carOn = s.carInherit !== false ? true : (s.carMode === 'keep');
@@ -767,42 +779,8 @@ function mgQA_buildPanel(tab){
         </div>
       </div>
       <div style="margin-top:8px;${s.carInherit===false?'':'display:none'}" data-cond="carInherit:false">
-    <div class="fg">
-      <label class="lbl">車両</label>
-      <div style="display:flex;gap:6px">
-        ${tog('carMode','keep','継続(買換含む)')}
-        ${tog('carMode','stop','処分')}
+        ${mgQA_buildMgCars(tab)}
       </div>
-    </div>
-    <div style="margin-top:8px;${s.carMode==='keep'?'':'display:none'}" data-cond="carMode:keep">
-      <div class="fg">
-        <label class="lbl">車種</label>
-        <div style="display:flex;gap:6px">
-          ${tog('carType','new','✨ 新車')}
-          ${tog('carType','used','🔄 中古')}
-        </div>
-      </div>
-      <div class="g3" style="margin-top:8px">
-        <div class="fg"><label class="lbl">車両価格</label>
-          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.carPrice||300}" data-k="carPrice" data-cf-row="carTotal" data-cf-dyn="carAll"><span class="sl">万円</span></div>
-        </div>
-        <div class="fg"><label class="lbl">乗換周期</label>
-          <div class="suf"><input class="inp age-inp" type="number" min="1" max="20" value="${s.carCycle||7}" data-k="carCycle" data-cf-row="carTotal" data-cf-dyn="carAll"><span class="sl">年ごと</span></div>
-        </div>
-        <div class="fg"><label class="lbl">車検費用</label>
-          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.carInsp||10}" data-k="carInsp" data-cf-row="carTotal" data-cf-dyn="carAll"><span class="sl">万円</span></div>
-        </div>
-      </div>
-      <div class="g2" style="margin-top:8px">
-        <div class="fg"><label class="lbl">初回購入年齢</label>
-          <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.carFirstAge||''}" placeholder="空欄=現在" data-k="carFirstAge" data-cf-row="carTotal" data-cf-dyn="carFirst"><span class="sl">歳</span></div>
-        </div>
-        <div class="fg"><label class="lbl">手放す年齢</label>
-          <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.carEndAge||''}" placeholder="空欄=ずっと" data-k="carEndAge" data-cf-row="carTotal" data-cf-dyn="carEnd"><span class="sl">歳</span></div>
-        </div>
-      </div>
-      </div>
-      </div><!-- /carInherit:false -->
     `)}
 
     ${card(9,'#475569',`🅿️ 駐車場（${spouse}基準）`,`
@@ -1014,6 +992,167 @@ function mgQA_setLcStepMode(tabId, idx, mode){
 window.mgQA_addLcStep = mgQA_addLcStep;
 window.mgQA_removeLcStep = mgQA_removeLcStep;
 window.mgQA_setLcStepMode = mgQA_setLcStepMode;
+
+// --- 万一の現有車・将来車（複数台対応）---
+function mgQA_buildMgCars(tab){
+  const ec = Array.isArray(tab.state.mgExistingCars) ? tab.state.mgExistingCars : [];
+  const fc = Array.isArray(tab.state.mgFutureCars) ? tab.state.mgFutureCars : [];
+  let html = '';
+  // 現有車セクション
+  html += `<div style="background:#fff8e6;border:1px solid #ffc000;border-radius:8px;padding:10px;margin-bottom:10px">`;
+  html += `<div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:6px">🚙 現有車（既保有）</div>`;
+  if(ec.length===0){
+    html += `<div style="padding:6px;color:#94a3b8;font-size:11px">未登録</div>`;
+  } else {
+    ec.forEach((c,i)=>{
+      html += mgQA_buildExistingCarCard(tab.id,i,c);
+    });
+  }
+  html += `<button class="mgqa-btn" onclick="mgQA_addMgExistingCar('${tab.id}')" style="margin-top:4px">+ 現有車を追加</button>`;
+  html += `</div>`;
+  // 将来車セクション
+  html += `<div style="background:#f0ecff;border:1px solid #c4b0e8;border-radius:8px;padding:10px">`;
+  html += `<div style="font-size:11px;font-weight:700;color:#6b5ea8;margin-bottom:6px">🛒 将来購入予定の車</div>`;
+  if(fc.length===0){
+    html += `<div style="padding:6px;color:#94a3b8;font-size:11px">未登録</div>`;
+  } else {
+    fc.forEach((c,i)=>{
+      html += mgQA_buildFutureCarCard(tab.id,i,c);
+    });
+  }
+  html += `<button class="mgqa-btn" onclick="mgQA_addMgFutureCar('${tab.id}')" style="margin-top:4px">+ 将来車を追加</button>`;
+  html += `</div>`;
+  return html;
+}
+function mgQA_buildExistingCarCard(tabId,i,c){
+  const isLoan = c.pay==='loan';
+  const isUsed = c.type==='used';
+  return `
+    <div style="background:white;border:1px solid #fbbf24;border-radius:6px;padding:8px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;color:#92400e">現有車 ${i+1}</div>
+        <button class="mgqa-btn danger" onclick="mgQA_removeMgExistingCar('${tabId}',${i})">×</button>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:4px">
+        <button type="button" class="btn-tog ${!isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'type','new')">✨新車</button>
+        <button type="button" class="btn-tog ${isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'type','used')">🔄中古</button>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:4px">
+        <button type="button" class="btn-tog ${!isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'pay','cash')">💴現金一括</button>
+        <button type="button" class="btn-tog ${isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'pay','loan')">🏦ローン中</button>
+      </div>
+      <div class="g3" style="margin-bottom:4px">
+        <div class="fg"><label class="lbl" style="font-size:10px">購入時期</label>
+          <div class="suf"><input class="inp age-inp" type="number" min="0" value="${c.boughtAgo||3}" data-k="mgExistingCars.${i}.boughtAgo" data-cf-row="carTotal"><span class="sl">年前</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:10px">購入価格</label>
+          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.price||300}" data-k="mgExistingCars.${i}.price" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:10px">手放す</label>
+          <div class="suf"><input class="inp age-inp" type="number" min="0" value="${c.endYrs||5}" data-k="mgExistingCars.${i}.endYrs" data-cf-row="carTotal"><span class="sl">年後</span></div></div>
+      </div>
+      <div class="g2" style="margin-bottom:4px">
+        <div class="fg"><label class="lbl" style="font-size:10px">車検費用</label>
+          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.insp||10}" data-k="mgExistingCars.${i}.insp" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
+      </div>
+      ${isLoan ? `
+        <div style="background:#fff3d0;border:1px solid #ffc000;border-radius:6px;padding:6px;margin-top:4px">
+          <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🏦 当初ローン条件</div>
+          <div class="g3">
+            <div class="fg"><label class="lbl" style="font-size:9px">当初頭金</label>
+              <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.down||50}" data-k="mgExistingCars.${i}.down" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
+            <div class="fg"><label class="lbl" style="font-size:9px">当初借入年数</label>
+              <div class="suf"><input class="inp age-inp" type="number" min="1" max="10" value="${c.loanYrs||5}" data-k="mgExistingCars.${i}.loanYrs" data-cf-row="carTotal"><span class="sl">年</span></div></div>
+            <div class="fg"><label class="lbl" style="font-size:9px">当初金利</label>
+              <div class="suf"><input class="inp amt-inp" type="number" min="0" max="10" step="0.1" value="${c.loanRate||2.5}" data-k="mgExistingCars.${i}.loanRate" data-cf-row="carTotal"><span class="sl">%</span></div></div>
+          </div>
+        </div>` : ''}
+    </div>`;
+}
+function mgQA_buildFutureCarCard(tabId,i,c){
+  const isLoan = c.pay==='loan';
+  const isUsed = c.type==='used';
+  return `
+    <div style="background:white;border:1px solid #c4b0e8;border-radius:6px;padding:8px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;color:#6b5ea8">将来車 ${i+1}</div>
+        <button class="mgqa-btn danger" onclick="mgQA_removeMgFutureCar('${tabId}',${i})">×</button>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:4px">
+        <button type="button" class="btn-tog ${!isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'type','new')">✨新車</button>
+        <button type="button" class="btn-tog ${isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'type','used')">🔄中古</button>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:4px">
+        <button type="button" class="btn-tog ${!isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'pay','cash')">💴現金一括</button>
+        <button type="button" class="btn-tog ${isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'pay','loan')">🏦ローン</button>
+      </div>
+      <div class="g3" style="margin-bottom:4px">
+        <div class="fg"><label class="lbl" style="font-size:10px">車両価格</label>
+          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.price||300}" data-k="mgFutureCars.${i}.price" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:10px">初回購入</label>
+          <div class="suf"><input class="inp age-inp" type="number" min="1" max="30" value="${c.first||1}" data-k="mgFutureCars.${i}.first" data-cf-row="carTotal"><span class="sl">年目</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:10px">乗換周期</label>
+          <div class="suf"><input class="inp age-inp" type="number" min="1" max="20" value="${c.cycle||7}" data-k="mgFutureCars.${i}.cycle" data-cf-row="carTotal"><span class="sl">年ごと</span></div></div>
+      </div>
+      <div class="g2" style="margin-bottom:4px">
+        <div class="fg"><label class="lbl" style="font-size:10px">車検費用</label>
+          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.insp||10}" data-k="mgFutureCars.${i}.insp" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:10px">手放す年齢</label>
+          <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${c.endAge||''}" placeholder="空欄=ずっと" data-k="mgFutureCars.${i}.endAge" data-cf-row="carTotal"><span class="sl">歳</span></div></div>
+      </div>
+      ${isLoan ? `
+        <div style="background:#f0ecff;border:1px solid #c4b0e8;border-radius:6px;padding:6px;margin-top:4px">
+          <div style="font-size:10px;font-weight:700;color:#6b5ea8;margin-bottom:4px">🏦 ローン条件</div>
+          <div class="g3">
+            <div class="fg"><label class="lbl" style="font-size:9px">頭金</label>
+              <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.down||50}" data-k="mgFutureCars.${i}.down" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
+            <div class="fg"><label class="lbl" style="font-size:9px">借入年数</label>
+              <div class="suf"><input class="inp age-inp" type="number" min="1" max="10" value="${c.loanYrs||5}" data-k="mgFutureCars.${i}.loanYrs" data-cf-row="carTotal"><span class="sl">年</span></div></div>
+            <div class="fg"><label class="lbl" style="font-size:9px">金利</label>
+              <div class="suf"><input class="inp amt-inp" type="number" min="0" max="10" step="0.1" value="${c.loanRate||2.5}" data-k="mgFutureCars.${i}.loanRate" data-cf-row="carTotal"><span class="sl">%</span></div></div>
+          </div>
+        </div>` : ''}
+    </div>`;
+}
+function mgQA_addMgExistingCar(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  if(!Array.isArray(tab.state.mgExistingCars)) tab.state.mgExistingCars = [];
+  tab.state.mgExistingCars.push({type:'new',pay:'cash',boughtAgo:3,price:300,insp:10,endYrs:5,loanYrs:5,down:50,loanRate:2.5});
+  mgQA_switchTab(tabId);
+}
+function mgQA_removeMgExistingCar(tabId,i){
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  if(!Array.isArray(tab.state.mgExistingCars)) return;
+  tab.state.mgExistingCars.splice(i,1);
+  mgQA_switchTab(tabId);
+}
+function mgQA_addMgFutureCar(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  if(!Array.isArray(tab.state.mgFutureCars)) tab.state.mgFutureCars = [];
+  tab.state.mgFutureCars.push({type:'new',pay:'cash',price:300,first:1,cycle:7,insp:10,endAge:0,loanYrs:5,down:50,loanRate:2.5});
+  mgQA_switchTab(tabId);
+}
+function mgQA_removeMgFutureCar(tabId,i){
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  if(!Array.isArray(tab.state.mgFutureCars)) return;
+  tab.state.mgFutureCars.splice(i,1);
+  mgQA_switchTab(tabId);
+}
+function mgQA_setMgCarField(tabId,which,i,field,value){
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const arr = which==='existing' ? tab.state.mgExistingCars : tab.state.mgFutureCars;
+  if(!Array.isArray(arr) || !arr[i]) return;
+  arr[i][field] = value;
+  mgQA_switchTab(tabId);
+}
+window.mgQA_addMgExistingCar = mgQA_addMgExistingCar;
+window.mgQA_removeMgExistingCar = mgQA_removeMgExistingCar;
+window.mgQA_addMgFutureCar = mgQA_addMgFutureCar;
+window.mgQA_removeMgFutureCar = mgQA_removeMgFutureCar;
+window.mgQA_setMgCarField = mgQA_setMgCarField;
 
 function mgQA_addHouseStage(tabId){
   const tab = mgQA_tabs.find(t=>t.id===tabId);
