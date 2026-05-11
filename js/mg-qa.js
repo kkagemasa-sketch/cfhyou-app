@@ -12,7 +12,6 @@ window.addEventListener('load', function(){
       if(window._mgQA_activeTabId) return;
       return window._origSyncMGCarFromNormal.apply(this, arguments);
     };
-    console.log('[mgQA] syncMGCarFromNormal wrapped (skipped when QA tab active)');
   }
 });
 //
@@ -539,7 +538,6 @@ function mgQA_wrapSetRTab(){
     return orig.apply(this, arguments);
   };
   _mgQA_setRTabWrapped = true;
-  console.log('[mgQA] setRTab wrapped for left-panel Q&A sync');
 }
 
 // --- タブ削除 ---
@@ -1388,5 +1386,3 @@ function mgQA_fv(id){
 function mgQA_escHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-
-console.log('[mgQA] Q&A万が一機能 loaded');

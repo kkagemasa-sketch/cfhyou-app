@@ -72,7 +72,6 @@ signInAnonymously(auth).catch((e) => {
 // 認証状態監視
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    console.log('[Firebase] 匿名認証完了 uid:', user.uid);
     window._firebaseReady = true;
     window._firebaseReadyResolve(true);
     // マンションマスターを再読み込み（既に初期ロード済みでも最新に更新）

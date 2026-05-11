@@ -470,9 +470,7 @@ async function saveMansionEdit(id){
   if(_selectedMansionId===id)applyMansionData();
   // クラウド保存（チーム共有）
   const ok=await saveMansionToCloud(m);
-  if(ok){
-    console.log('[Firebase] マンション「'+name+'」をクラウドに保存しました');
-  }
+  // 保存完了（クラウド同期）
 }
 async function deleteMansion(id){
   const m=_mansionMaster.find(x=>x.id===id);

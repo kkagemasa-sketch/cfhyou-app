@@ -248,7 +248,7 @@ function render(){
   if(_shocksActive){
     ['h','w'].forEach(p=>{
       const pBaseAge = p==='h'?hAge:wAge;
-      document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+      (_secBalByP&&_secBalByP[p]||document.querySelectorAll(`[id^="sec-bal-${p}-"]`)).forEach(el=>{
         const sid = el.id.split('-').pop();
         const isAccum = document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
         if(!isAccum) return;
@@ -260,7 +260,7 @@ function render(){
         const series = _computeAccumSeries(secKey, bal, monthly, rate, endAge, pBaseAge, pBaseAge);
         if(series) _accumSeriesCache[secKey] = series;
       });
-      document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      (_secStkByP&&_secStkByP[p]||document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`)).forEach(el=>{
         const sid = el.id.split('-').pop();
         const isStock = document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
         if(!isStock) return;
@@ -272,7 +272,7 @@ function render(){
         if(series) _stkSeriesCache[secKey] = series;
       });
       // 一時払い保険シリーズ
-      document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
+      (_insLumpByP&&_insLumpByP[p]||document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`)).forEach(el=>{
         const iid = el.id.split('-').pop();
         const enrollAge = iv(`ins-lump-enroll-${p}-${iid}`)||pBaseAge;
         const amt = fv(`ins-lump-amt-${p}-${iid}`)||0;
@@ -367,6 +367,28 @@ function render(){
     };
   }
 
+  // ===== 年ループ前にDOMクエリをキャッシュ化（パフォーマンス改善） =====
+  // 同一データの場合、ループ内で何度も querySelectorAll するのを避ける
+  // 動作は完全に同じ（ループ中にDOMが変わらない前提）
+  const _scAmtEls=Array.from(document.querySelectorAll('[id^="sc-amt-"]'));
+  const _insMHEls=Array.from(document.querySelectorAll('[id^="ins-m-h-"]'));
+  const _insMWEls=Array.from(document.querySelectorAll('[id^="ins-m-w-"]'));
+  const _insLumpHEls=Array.from(document.querySelectorAll('[id^="ins-lump-enroll-h-"]'));
+  const _insLumpWEls=Array.from(document.querySelectorAll('[id^="ins-lump-enroll-w-"]'));
+  const _secBalHEls=Array.from(document.querySelectorAll('[id^="sec-bal-h-"]'));
+  const _secBalWEls=Array.from(document.querySelectorAll('[id^="sec-bal-w-"]'));
+  const _secStkHEls=Array.from(document.querySelectorAll('[id^="sec-stk-bal-h-"]'));
+  const _secStkWEls=Array.from(document.querySelectorAll('[id^="sec-stk-bal-w-"]'));
+  const _wedAmtEls=Array.from(document.querySelectorAll('[id^="wed-amt-"]'));
+  const _repairEls=Array.from(document.querySelectorAll('#repair-cont>[id^="rep-"]'));
+  const _carEls=Array.from(document.querySelectorAll('#car-list>[id^="car-"]'));
+  const _ecarEls=Array.from(document.querySelectorAll('#existing-car-list>[id^="ecar-"]'));
+  // 人別ヘルパー
+  const _insMByP={h:_insMHEls,w:_insMWEls};
+  const _insLumpByP={h:_insLumpHEls,w:_insLumpWEls};
+  const _secBalByP={h:_secBalHEls,w:_secBalWEls};
+  const _secStkByP={h:_secStkHEls,w:_secStkWEls};
+
   for(let i=0;i<totalYrs;i++){
     const yr=cYear+i, ha=hAge+i, wa=wAge+i;
     const active=i>=delivery, lcYr=i-delivery;
@@ -438,7 +460,7 @@ function render(){
     R.otherInc.push(ri(oiTotal));
     // 奨学金（大学入学年に収入として計上）
     let scTotal=0;
-    document.querySelectorAll('[id^="sc-amt-"]').forEach(el=>{
+    (_scAmtEls||document.querySelectorAll('[id^="sc-amt-"]')).forEach(el=>{
       const cid=el.id.split('-')[2];
       const scOn=document.getElementById(`sc-yes-${cid}`)?.classList.contains('on');
       if(!scOn)return;
@@ -456,7 +478,7 @@ function render(){
       const pBaseAge=p==='h'?hAge:wAge;
       const pLabel=p==='h'?'ご主人':'奥様';
       // 積み立て保険：満期受取（早期解約がない場合のみ）
-      document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
+      (_insMByP&&_insMByP[p]||document.querySelectorAll(`[id^="ins-m-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
         const matAmt=fv(`ins-mat-${p}-${iid}`)||0;
         const matAge=iv(`ins-age-${p}-${iid}`)||0;
@@ -477,7 +499,7 @@ function render(){
         }
       });
       // 一時払い保険：満期受取
-      document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
+      (_insLumpByP&&_insLumpByP[p]||document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
         const enrollAge=iv(`ins-lump-enroll-${p}-${iid}`)||pBaseAge;
         const amt=fv(`ins-lump-amt-${p}-${iid}`)||0;
@@ -792,7 +814,7 @@ function render(){
       const pAge=p==='h'?ha:wa;
       const pBaseAge=p==='h'?hAge:wAge;
       // 積立型の解約
-      document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+      (_secBalByP&&_secBalByP[p]||document.querySelectorAll(`[id^="sec-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
         if(!isAccum)return;
@@ -854,7 +876,7 @@ function render(){
         };
       });
       // 一括投資の解約
-      document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      (_secStkByP&&_secStkByP[p]||document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
         if(!isStock)return;
@@ -892,7 +914,7 @@ function render(){
         };
       });
       // 積立保険の解約／満期受取（個別行として secRedeemRows に追加）
-      document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
+      (_insMByP&&_insMByP[p]||document.querySelectorAll(`[id^="ins-m-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
         const redeemAge=iv(`ins-redeem-${p}-${iid}`)||0;
         if(redeemAge<=0||pAge!==redeemAge)return;
@@ -961,7 +983,7 @@ function render(){
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
       const pLabel=p==='h'?'ご主人様':'奥様';
-      document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+      (_secBalByP&&_secBalByP[p]||document.querySelectorAll(`[id^="sec-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
         if(!isAccum)return;
@@ -986,7 +1008,7 @@ function render(){
     let secBuyTotal=0;
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
-      document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      (_secStkByP&&_secStkByP[p]||document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
         if(!isStock)return;
@@ -1036,7 +1058,7 @@ function render(){
     // 修繕周期の集計（動的要素のみ）
     let repTotal=0;
     if(active&&el2>0){
-      document.querySelectorAll('#repair-cont>[id^="rep-"]').forEach(repEl=>{
+      (_repairEls||document.querySelectorAll('#repair-cont>[id^="rep-"]')).forEach(repEl=>{
         const rid=repEl.id.replace('rep-','');
         const cyc=parseInt(document.getElementById('repair-cycle'+rid)?.value)||0;
         const cost=iv('repair-cost'+rid)||0;
@@ -1068,7 +1090,7 @@ function render(){
     if(!R.carRows)R.carRows=[];
     let carBuyAmt=0, carInspAmt=0;
     if(carOwn){
-      document.querySelectorAll('#car-list>[id^="car-"]').forEach(carEl=>{
+      (_carEls||document.querySelectorAll('#car-list>[id^="car-"]')).forEach(carEl=>{
         const cIdx=carEl.id.replace('car-','');
         const carType=carEl.dataset.type||'new';
         const carPay=carEl.dataset.pay||'cash';
@@ -1120,7 +1142,7 @@ function render(){
       });
       // 現有車（既保有）の計算: ローン残債継続 + 車検 + 手放し
       // 全現有車を「🚗 車両費」1行に集約するため、carRows ではなく carBuyAmt/carInspAmt に加算
-      document.querySelectorAll('#existing-car-list>[id^="ecar-"]').forEach(ecEl=>{
+      (_ecarEls||document.querySelectorAll('#existing-car-list>[id^="ecar-"]')).forEach(ecEl=>{
         const ecIdx=ecEl.id.replace('ecar-','');
         const ecType=ecEl.dataset.type||'new';
         const ecPay=ecEl.dataset.pay||'cash';
@@ -1187,7 +1209,7 @@ function render(){
     R.moveInCost.push(0);
     // 結婚お祝い
     let wedTotal=0;
-    document.querySelectorAll('[id^="wed-amt-"]').forEach(el=>{
+    (_wedAmtEls||document.querySelectorAll('[id^="wed-amt-"]')).forEach(el=>{
       const cid=el.id.split('-')[2];
       const wedOn=document.getElementById(`wed-yes-${cid}`)?.classList.contains('on');
       if(!wedOn)return;
@@ -1204,7 +1226,7 @@ function render(){
       const pAge2=p==='h'?ha:wa;
       const pBase2=p==='h'?hAge:wAge;
       const pLabel2=p==='h'?'ご主人様':'奥様';
-      document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
+      (_insMByP&&_insMByP[p]||document.querySelectorAll(`[id^="ins-m-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
         const enrollAge2=iv(`ins-enroll-${p}-${iid}`)||pBase2;
         const matAge2=iv(`ins-age-${p}-${iid}`)||0;
@@ -1229,7 +1251,7 @@ function render(){
       const pAge2=p==='h'?ha:wa;
       const pBase2=p==='h'?hAge:wAge;
       const pLabel2=p==='h'?'ご主人様':'奥様';
-      document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
+      (_insLumpByP&&_insLumpByP[p]||document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
         const enrollAge2=iv(`ins-lump-enroll-${p}-${iid}`)||pBase2;
         const amt2=fv(`ins-lump-amt-${p}-${iid}`)||0;
@@ -1278,7 +1300,7 @@ function render(){
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
       const pBaseAge=p==='h'?hAge:wAge;
-      document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+      (_secBalByP&&_secBalByP[p]||document.querySelectorAll(`[id^="sec-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
         if(!isAccum)return;
@@ -1339,7 +1361,7 @@ function render(){
     });
     // 【一括投資】（主人・奥様両方）
     ['h','w'].forEach(p=>{
-      document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      (_secStkByP&&_secStkByP[p]||document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
         if(!isStock)return;
