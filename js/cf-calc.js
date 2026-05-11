@@ -132,7 +132,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -1089,6 +1089,7 @@ function render(){
     // 車両購入・車検（複数台対応）
     if(!R.carRows)R.carRows=[];
     let carBuyAmt=0, carInspAmt=0;
+    const _carBdItems=[]; // 内訳記録: {label, type:'buy'|'loan'|'insp', amount}
     if(carOwn){
       (_carEls||document.querySelectorAll('#car-list>[id^="car-"]')).forEach(carEl=>{
         const cIdx=carEl.id.replace('car-','');
@@ -1118,22 +1119,39 @@ function render(){
         }
         const isBuyYear=carActive&&(i===carFirst||(i>carFirst&&(i-carFirst)%carCycle===0));
         let thisCarAmt=0, thisInspAmt=0;
+        // 内訳ラベル: ユーザーカスタム or 1台目/2台目...
+        const _cLblEl=document.getElementById('car-'+cIdx+'-label');
+        const _carLbl=_cLblEl?.value?.trim()||`${cIdx}台目`;
         if(isBuyYear){
-          if(carPay==='cash'){thisCarAmt+=carPrice;}
-          else{thisCarAmt+=carDown;}
+          if(carPay==='cash'){
+            thisCarAmt+=carPrice;
+            _carBdItems.push({label:_carLbl,type:'buy',amount:carPrice});
+          }else{
+            thisCarAmt+=carDown;
+            _carBdItems.push({label:_carLbl,type:'buy',amount:carDown,note:'頭金'});
+          }
         }
         if(carPay==='loan'&&carLoanYrs>0&&lastBuy>=0&&!isBuyYear&&carActive){
           const principal=(carPrice-carDown)*10000;
           const monthly=carLoanRate>0?principal*carLoanRate*Math.pow(1+carLoanRate,carLoanYrs*12)/(Math.pow(1+carLoanRate,carLoanYrs*12)-1):principal/carLoanYrs/12;
           const yrsAfterBuy=i-lastBuy;
-          if(yrsAfterBuy>0&&yrsAfterBuy<=carLoanYrs){thisCarAmt+=Math.round(monthly*12/10000);}
+          if(yrsAfterBuy>0&&yrsAfterBuy<=carLoanYrs){
+            const _loanAmt=Math.round(monthly*12/10000);
+            thisCarAmt+=_loanAmt;
+            _carBdItems.push({label:_carLbl,type:'loan',amount:_loanAmt});
+          }
         }
         if(lastBuy>=0&&!isBuyYear&&carActive){
           const yrFromBuy=i-lastBuy;
+          let inspThisCar=0;
           if(carType==='new'){
-            if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))thisInspAmt+=carInsp;
+            if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))inspThisCar=carInsp;
           } else {
-            if(yrFromBuy%2===0)thisInspAmt+=carInsp;
+            if(yrFromBuy%2===0)inspThisCar=carInsp;
+          }
+          if(inspThisCar>0){
+            thisInspAmt+=inspThisCar;
+            _carBdItems.push({label:_carLbl,type:'insp',amount:inspThisCar});
           }
         }
         const thisTotal=ri(thisCarAmt)+ri(thisInspAmt);
@@ -1150,6 +1168,9 @@ function render(){
         const ecPrice=fvd('ecar-'+ecIdx+'-price',300);
         const ecInsp=fvd('ecar-'+ecIdx+'-insp',10);
         const ecEndYrs=fvd('ecar-'+ecIdx+'-end-yrs',5);
+        // 内訳ラベル
+        const _ecLblEl=document.getElementById('ecar-'+ecIdx+'-label');
+        const _ecLbl=_ecLblEl?.value?.trim()||`現有車${ecIdx}`;
         // 経過年i が手放し年に到達したら以降0
         if(i>=ecEndYrs)return;
         // ローン残債継続（経過年0以降、当初借入年数 - 経過年数 が残月数）
@@ -1159,28 +1180,30 @@ function render(){
           const ecLoanRate=fvd('ecar-'+ecIdx+'-loan-rate',2.5)/100/12;
           const principal=Math.max(0,(ecPrice-ecDown)*10000);
           const totalMonths=ecLoanYrs*12;
-          const elapsedMonthsAtStart=boughtAgo*12;  // 経過年0時点の既経過月数
+          const elapsedMonthsAtStart=boughtAgo*12;
           const remainMonthsAtStart=Math.max(0,totalMonths-elapsedMonthsAtStart);
-          // 経過年i における残月数を計算
           const monthsBeforeThisYear=i*12;
           const remainAtThisYear=Math.max(0,remainMonthsAtStart-monthsBeforeThisYear);
           if(remainAtThisYear>0){
             const monthly=ecLoanRate>0?principal*ecLoanRate*Math.pow(1+ecLoanRate,totalMonths)/(Math.pow(1+ecLoanRate,totalMonths)-1):principal/totalMonths;
-            // この年に支払う月数（最大12、残月数で制限）
             const monthsThisYear=Math.min(12,remainAtThisYear);
-            carBuyAmt+=Math.round(monthly*monthsThisYear/10000);
+            const _ecLoanAmt=Math.round(monthly*monthsThisYear/10000);
+            carBuyAmt+=_ecLoanAmt;
+            if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt});
           }
         }
         // 車検（過去基準）: 購入年からの経過年で次回車検タイミングを計算
-        // 経過年i における「購入からの経過年」= boughtAgo + i
         const yrFromBuy=boughtAgo+i;
         if(yrFromBuy>0){
+          let inspThisCar=0;
           if(ecType==='new'){
-            // 新車: 購入から3年後、以降2年ごと
-            if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))carInspAmt+=ecInsp;
+            if(yrFromBuy===3||(yrFromBuy>3&&(yrFromBuy-3)%2===0))inspThisCar=ecInsp;
           } else {
-            // 中古: 購入から2年ごと
-            if(yrFromBuy%2===0)carInspAmt+=ecInsp;
+            if(yrFromBuy%2===0)inspThisCar=ecInsp;
+          }
+          if(inspThisCar>0){
+            carInspAmt+=inspThisCar;
+            _carBdItems.push({label:_ecLbl,type:'insp',amount:inspThisCar});
           }
         }
       });
@@ -1192,6 +1215,8 @@ function render(){
     R.carBuy.push(ri(carBuyAmt));
     R.carInsp.push(ri(carInspAmt));
     R.carTotal.push(ri(carBuyAmt)+ri(carInspAmt));
+    // 内訳を保存（hover ツールチップ用）
+    R.carBd.push(_carBdItems);
     // 特別支出（複数対応・期間対応・個別行）
     const curYr=cYear+i;
     if(!R.extRows)R.extRows=[];
