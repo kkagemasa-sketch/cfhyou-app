@@ -792,6 +792,61 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   box-shadow: 0 0 0 2px rgba(255,255,255,.35), inset 0 -2px 0 rgba(255,255,255,.4);
 }
 .mgqa-panel { padding: 0; }
+/* 万一Q&Aパネル：番号付き色分けカード（折りたたみ可） */
+.mgqa-card {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  background: white;
+}
+.mgqa-card-header {
+  background: var(--mgqa-color, #475569);
+  color: white;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.mgqa-card-header:hover {
+  filter: brightness(1.08);
+}
+.mgqa-card-no {
+  background: rgba(255,255,255,0.22);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+.mgqa-card-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mgqa-card-toggle {
+  margin-left: auto;
+  font-size: 14px;
+  transition: transform 0.2s;
+}
+.mgqa-card.collapsed .mgqa-card-toggle {
+  transform: rotate(-90deg);
+}
+.mgqa-card-body {
+  padding: 10px 12px;
+}
+.mgqa-card.collapsed .mgqa-card-body {
+  display: none;
+}
 .mgqa-header {
   display: flex;
   flex-direction: column;

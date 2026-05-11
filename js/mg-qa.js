@@ -606,6 +606,17 @@ function mgQA_buildPanel(tab){
     return `<button type="button" class="btn-tog ${active?'on':''}" onclick="mgQA_setState('${tab.id}','${key}',${arg},{rebuild:true})">${label}</button>`;
   };
 
+  // セクションカード（番号付き・色分け・折りたたみ可）
+  const card = (no, color, title, body) => `
+    <div class="mgqa-card" style="--mgqa-color:${color}">
+      <div class="mgqa-card-header" onclick="mgQA_toggleCard(this)">
+        <span class="mgqa-card-no">${no}</span>
+        <span class="mgqa-card-title">${title}</span>
+        <span class="mgqa-card-toggle">▾</span>
+      </div>
+      <div class="mgqa-card-body">${body}</div>
+    </div>`;
+
   return `
     <div class="persona" style="background:#fdf2f8;border-color:#f9a8d4;margin-bottom:8px">
       <span class="persona-icon">🛡️</span>
@@ -615,122 +626,114 @@ function mgQA_buildPanel(tab){
       <button class="btn-tog" onclick="mgQA_deleteTab('${tab.id}')" style="padding:4px 8px;font-size:11px;color:#dc2626;border-color:#fca5a5">🗑削除</button>
     </div>
 
-    <!-- Q1: 死亡時期 -->
-    <div class="sub">⚠️ 逝去時期</div>
-    <div class="g2">
-      <div class="fg"><label class="lbl">${deceased}のご逝去は何年後？</label>
-        <div class="suf"><input class="inp age-inp" type="number" min="1" max="50" value="${s.deathYear}" data-k="deathYear" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}" data-cf-to="${hAge+(s.deathYear||1)-1}"><span class="sl">年後</span></div>
-      </div>
-    </div>
-    <div class="hint">💡 「1年後」=今から1年以内（最も厳しい条件でのシミュレーション）</div>
-    <div class="divider"></div>
-
-    <!-- Q2: 死亡保険金 -->
-    <div class="sub">💰 死亡保険金</div>
-    <div class="hint" style="margin-bottom:6px">💡 複数契約している場合は「+保険を追加」で複数登録。一時金=一括受取 / 年金型=毎年受取</div>
-    <div id="mgqa-ins-${tab.id}">
-      ${s.insurances.map((ins,i)=>mgQA_renderIns(tab.id, i, ins)).join('')}
-    </div>
-    <button class="btn-add" onclick="mgQA_addIns('${tab.id}')" style="margin-top:4px">＋ 保険を追加</button>
-    <div class="divider"></div>
-
-    <!-- Q3: 遺族年金 -->
-    <div class="sub">📋 遺族年金</div>
-    <div class="hint" style="margin-bottom:6px">💡 通常時の年収・家族構成から自動計算（遺族厚生年金＋遺族基礎年金＋中高齢寡婦加算）</div>
-    <div class="g2">
-      <div class="fg"><label class="lbl">遺族年金の設定</label>
-        <div style="display:flex;gap:6px">
-          ${tog('pensionMode','auto','自動計算')}
-          ${tog('pensionMode','manual','手動入力')}
+    ${card(1,'#dc2626','⚠️ 逝去時期',`
+      <div class="g2">
+        <div class="fg"><label class="lbl">${deceased}のご逝去は何年後？</label>
+          <div class="suf"><input class="inp age-inp" type="number" min="1" max="50" value="${s.deathYear}" data-k="deathYear" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}" data-cf-to="${hAge+(s.deathYear||1)-1}"><span class="sl">年後</span></div>
         </div>
       </div>
-      <div class="fg" style="${s.pensionMode==='manual'?'':'display:none'}" data-cond="pensionMode:manual">
-        <label class="lbl">合計遺族年金</label>
-        <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.pensionManual}" data-k="pensionManual" data-cf-row="survPension" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">万/年</span></div>
-      </div>
-    </div>
-    <div class="divider"></div>
+      <div class="hint">💡 「1年後」=今から1年以内（最も厳しい条件でのシミュレーション）</div>
+    `)}
 
-    <!-- Q4: 配偶者の収入 -->
-    <div class="sub">💴 ${spouse}の就労収入</div>
-    <div class="hint" style="margin-bottom:6px">💡 通常時の${spouse}の年収: 約${spouseIncomeHint}万/年（左の③収入で編集）。万が一時に変更する場合は段階設定可</div>
-    <div class="fg">
-      <label class="lbl">万が一後の${spouse}の収入</label>
-      <div style="display:flex;gap:6px">
-        ${tog('incomeMode','same','通常時と同じ')}
-        ${tog('incomeMode','override','変更する')}
+    ${card(2,'#059669','💰 死亡保険金',`
+      <div class="hint" style="margin-bottom:6px">💡 複数契約している場合は「+保険を追加」で複数登録。一時金=一括受取 / 年金型=毎年受取</div>
+      <div id="mgqa-ins-${tab.id}">
+        ${s.insurances.map((ins,i)=>mgQA_renderIns(tab.id, i, ins)).join('')}
       </div>
-    </div>
-    <div style="margin-top:6px;${s.incomeMode==='override'?'':'display:none'}" data-cond="incomeMode:override">
-      ${mgQA_buildIncomeSteps(tab)}
-    </div>
-    <div class="divider"></div>
+      <button class="btn-add" onclick="mgQA_addIns('${tab.id}')" style="margin-top:4px">＋ 保険を追加</button>
+    `)}
 
-    <!-- Q5: 生活費 -->
-    <div class="sub">🛒 死亡後の生活費</div>
-    <div class="hint" style="margin-bottom:6px">💡 通常時の${lcHint}万円/月を基準に、万が一時の生活費を割合で設定（一般的に70%程度に減少）</div>
-    <div class="g2">
-      <div class="fg"><label class="lbl">設定方式</label>
-        <div style="display:flex;gap:6px">
-          ${tog('lcMode','ratio','割合で設定')}
-          ${tog('lcMode','step','段階で設定(未対応)')}
+    ${card(3,'#0284c7','📋 遺族年金',`
+      <div class="hint" style="margin-bottom:6px">💡 通常時の年収・家族構成から自動計算（遺族厚生年金＋遺族基礎年金＋中高齢寡婦加算）</div>
+      <div class="g2">
+        <div class="fg"><label class="lbl">遺族年金の設定</label>
+          <div style="display:flex;gap:6px">
+            ${tog('pensionMode','auto','自動計算')}
+            ${tog('pensionMode','manual','手動入力')}
+          </div>
+        </div>
+        <div class="fg" style="${s.pensionMode==='manual'?'':'display:none'}" data-cond="pensionMode:manual">
+          <label class="lbl">合計遺族年金</label>
+          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.pensionManual}" data-k="pensionManual" data-cf-row="survPension" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">万/年</span></div>
         </div>
       </div>
-      <div class="fg" style="${s.lcMode==='ratio'?'':'display:none'}" data-cond="lcMode:ratio">
-        <label class="lbl">生活費の割合</label>
-        <div class="suf"><input class="inp" type="number" min="10" max="150" value="${s.lcRatio}" data-k="lcRatio" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">%</span></div>
-      </div>
-    </div>
-    <div class="divider"></div>
+    `)}
 
-    <!-- Q6: 住居 -->
-    <div class="sub">🏠 住居</div>
-    <div class="hint" style="margin-bottom:6px">💡 団信加入ローンの場合は完済、賃貸への引越しや段階的切替も可能</div>
-    <div class="fg">
-      <label class="lbl">住居モード</label>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${tog('houseMode','keep','現状維持(ローン継続)')}
-        ${tog('houseMode','danshin','団信で完済')}
-        ${tog('houseMode','rent','売却・賃貸')}
-        ${tog('houseMode','stages','段階的に変更')}
+    ${card(4,'#16a34a',`💴 ${spouse}の就労収入`,`
+      <div class="hint" style="margin-bottom:6px">💡 通常時の${spouse}の年収: 約${spouseIncomeHint}万/年（左の③収入で編集）。万が一時に変更する場合は段階設定可</div>
+      <div class="fg">
+        <label class="lbl">万が一後の${spouse}の収入</label>
+        <div style="display:flex;gap:6px">
+          ${tog('incomeMode','same','通常時と同じ')}
+          ${tog('incomeMode','override','変更する')}
+        </div>
       </div>
-    </div>
-    <div class="g2" style="margin-top:6px;${s.houseMode==='rent'?'':'display:none'}" data-cond="houseMode:rent">
-      <div class="fg"><label class="lbl">新しい家賃</label>
-        <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.houseNewRent||8}" data-k="houseNewRent" data-cf-row="rent" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">万/月</span></div>
+      <div style="margin-top:6px;${s.incomeMode==='override'?'':'display:none'}" data-cond="incomeMode:override">
+        ${mgQA_buildIncomeSteps(tab)}
       </div>
-    </div>
-    <div style="margin-top:6px;${s.houseMode==='stages'?'':'display:none'}" data-cond="houseMode:stages">
-      ${mgQA_buildHouseStages(tab)}
-    </div>
-    <div class="divider"></div>
+    `)}
 
-    <!-- Q7: 奨学金 -->
-    <div class="sub">🎓 お子様の奨学金</div>
-    <div class="hint" style="margin-bottom:6px">💡 高校入学時(16歳)・大学入学時(19歳)のタイミングでお子様ごとに設定</div>
-    <div class="fg">
-      <label class="lbl">万が一時の奨学金</label>
-      <div style="display:flex;gap:6px">
-        ${tog('scholarshipEnabled','false','借りない',{asBool:true})}
-        ${tog('scholarshipEnabled','true','借りる',{asBool:true})}
+    ${card(5,'#d97706','🛒 死亡後の生活費',`
+      <div class="hint" style="margin-bottom:6px">💡 通常時の${lcHint}万円/月を基準に、万が一時の生活費を割合で設定（一般的に70%程度に減少）</div>
+      <div class="g2">
+        <div class="fg"><label class="lbl">設定方式</label>
+          <div style="display:flex;gap:6px">
+            ${tog('lcMode','ratio','割合で設定')}
+            ${tog('lcMode','step','段階で設定(未対応)')}
+          </div>
+        </div>
+        <div class="fg" style="${s.lcMode==='ratio'?'':'display:none'}" data-cond="lcMode:ratio">
+          <label class="lbl">生活費の割合</label>
+          <div class="suf"><input class="inp" type="number" min="10" max="150" value="${s.lcRatio}" data-k="lcRatio" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">%</span></div>
+        </div>
       </div>
-    </div>
-    <div style="margin-top:6px;${s.scholarshipEnabled?'':'display:none'}" data-cond="scholarshipEnabled:true">
-      ${mgQA_buildScholarshipChildren(tab)}
-    </div>
-    <div class="divider"></div>
+    `)}
 
-    <!-- Q8: 車 -->
-    <div class="sub">🚗 車両費（${spouse}基準）</div>
-    <div class="hint" style="margin-bottom:6px">💡 通常時の車設定をそのまま使うか、万一時のみ変更するかを選択</div>
-    <div class="fg">
-      <label class="lbl">万一時の車</label>
-      <div style="display:flex;gap:6px">
-        ${tog('carInherit','true','変更なし（通常時と同じ）',{asBool:true})}
-        ${tog('carInherit','false','変更する',{asBool:true})}
+    ${card(6,'#ea580c','🏠 住居',`
+      <div class="hint" style="margin-bottom:6px">💡 団信加入ローンの場合は完済、賃貸への引越しや段階的切替も可能</div>
+      <div class="fg">
+        <label class="lbl">住居モード</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${tog('houseMode','keep','現状維持(ローン継続)')}
+          ${tog('houseMode','danshin','団信で完済')}
+          ${tog('houseMode','rent','売却・賃貸')}
+          ${tog('houseMode','stages','段階的に変更')}
+        </div>
       </div>
-    </div>
-    <div style="margin-top:8px;${s.carInherit===false?'':'display:none'}" data-cond="carInherit:false">
+      <div class="g2" style="margin-top:6px;${s.houseMode==='rent'?'':'display:none'}" data-cond="houseMode:rent">
+        <div class="fg"><label class="lbl">新しい家賃</label>
+          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.houseNewRent||8}" data-k="houseNewRent" data-cf-row="rent" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">万/月</span></div>
+        </div>
+      </div>
+      <div style="margin-top:6px;${s.houseMode==='stages'?'':'display:none'}" data-cond="houseMode:stages">
+        ${mgQA_buildHouseStages(tab)}
+      </div>
+    `)}
+
+    ${card(7,'#9333ea','🎓 お子様の奨学金',`
+      <div class="hint" style="margin-bottom:6px">💡 高校入学時(16歳)・大学入学時(19歳)のタイミングでお子様ごとに設定</div>
+      <div class="fg">
+        <label class="lbl">万が一時の奨学金</label>
+        <div style="display:flex;gap:6px">
+          ${tog('scholarshipEnabled','false','借りない',{asBool:true})}
+          ${tog('scholarshipEnabled','true','借りる',{asBool:true})}
+        </div>
+      </div>
+      <div style="margin-top:6px;${s.scholarshipEnabled?'':'display:none'}" data-cond="scholarshipEnabled:true">
+        ${mgQA_buildScholarshipChildren(tab)}
+      </div>
+    `)}
+
+    ${card(8,'#4f46e5',`🚗 車両費（${spouse}基準）`,`
+      <div class="hint" style="margin-bottom:6px">💡 通常時の車設定をそのまま使うか、万一時のみ変更するかを選択</div>
+      <div class="fg">
+        <label class="lbl">万一時の車</label>
+        <div style="display:flex;gap:6px">
+          ${tog('carInherit','true','変更なし（通常時と同じ）',{asBool:true})}
+          ${tog('carInherit','false','変更する',{asBool:true})}
+        </div>
+      </div>
+      <div style="margin-top:8px;${s.carInherit===false?'':'display:none'}" data-cond="carInherit:false">
     <div class="fg">
       <label class="lbl">車両</label>
       <div style="display:flex;gap:6px">
@@ -765,50 +768,57 @@ function mgQA_buildPanel(tab){
           <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.carEndAge||''}" placeholder="空欄=ずっと" data-k="carEndAge" data-cf-row="carTotal" data-cf-dyn="carEnd"><span class="sl">歳</span></div>
         </div>
       </div>
-    </div>
-    </div><!-- /carInherit:false -->
-    <div class="divider"></div>
+      </div>
+      </div><!-- /carInherit:false -->
+    `)}
 
-    <!-- Q9: 駐車場 -->
-    <div class="sub">🅿️ 駐車場（${spouse}基準）</div>
-    <div class="hint" style="margin-bottom:6px">💡 通常時の駐車場設定をそのまま使うか、万一時のみ変更するかを選択</div>
-    <div class="fg">
-      <label class="lbl">万一時の駐車場</label>
-      <div style="display:flex;gap:6px">
-        ${tog('parkInherit','true','変更なし（通常時と同じ）',{asBool:true})}
-        ${tog('parkInherit','false','変更する',{asBool:true})}
-      </div>
-    </div>
-    <div style="margin-top:8px;${s.parkInherit===false?'':'display:none'}" data-cond="parkInherit:false">
-    <div class="fg">
-      <label class="lbl">駐車場</label>
-      <div style="display:flex;gap:6px">
-        ${tog('parkMode','keep','継続')}
-        ${tog('parkMode','stop','停止')}
-      </div>
-    </div>
-    <div style="margin-top:8px;${s.parkMode==='keep'?'':'display:none'}" data-cond="parkMode:keep">
-      <div class="g2">
-        <div class="fg"><label class="lbl">月額駐車場代</label>
-          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.parkMonthly||15000}" data-k="parkMonthly" data-cf-row="prk" data-cf-dyn="parkAll"><span class="sl">円/月</span></div>
+    ${card(9,'#475569',`🅿️ 駐車場（${spouse}基準）`,`
+      <div class="hint" style="margin-bottom:6px">💡 通常時の駐車場設定をそのまま使うか、万一時のみ変更するかを選択</div>
+      <div class="fg">
+        <label class="lbl">万一時の駐車場</label>
+        <div style="display:flex;gap:6px">
+          ${tog('parkInherit','true','変更なし（通常時と同じ）',{asBool:true})}
+          ${tog('parkInherit','false','変更する',{asBool:true})}
         </div>
       </div>
-      <div class="g2" style="margin-top:6px">
-        <div class="fg"><label class="lbl">開始年齢</label>
-          <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.parkFromAge||''}" placeholder="空欄=現在" data-k="parkFromAge" data-cf-row="prk" data-cf-dyn="parkFrom"><span class="sl">歳</span></div>
+      <div style="margin-top:8px;${s.parkInherit===false?'':'display:none'}" data-cond="parkInherit:false">
+        <div class="fg">
+          <label class="lbl">駐車場</label>
+          <div style="display:flex;gap:6px">
+            ${tog('parkMode','keep','継続')}
+            ${tog('parkMode','stop','停止')}
+          </div>
         </div>
-        <div class="fg"><label class="lbl">終了年齢</label>
-          <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.parkToAge||''}" placeholder="空欄=ずっと" data-k="parkToAge" data-cf-row="prk" data-cf-dyn="parkTo"><span class="sl">歳</span></div>
+        <div style="margin-top:8px;${s.parkMode==='keep'?'':'display:none'}" data-cond="parkMode:keep">
+          <div class="g2">
+            <div class="fg"><label class="lbl">月額駐車場代</label>
+              <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.parkMonthly||15000}" data-k="parkMonthly" data-cf-row="prk" data-cf-dyn="parkAll"><span class="sl">円/月</span></div>
+            </div>
+          </div>
+          <div class="g2" style="margin-top:6px">
+            <div class="fg"><label class="lbl">開始年齢</label>
+              <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.parkFromAge||''}" placeholder="空欄=現在" data-k="parkFromAge" data-cf-row="prk" data-cf-dyn="parkFrom"><span class="sl">歳</span></div>
+            </div>
+            <div class="fg"><label class="lbl">終了年齢</label>
+              <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.parkToAge||''}" placeholder="空欄=ずっと" data-k="parkToAge" data-cf-row="prk" data-cf-dyn="parkTo"><span class="sl">歳</span></div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    </div><!-- /parkInherit:false -->
+    `)}
 
     <div class="hint" style="text-align:center;margin-top:12px;padding:8px;background:#f8fafc;border-radius:6px">
       💨 入力停止から約0.6秒後に自動で再計算されます
     </div>
   `;
 }
+
+// カードの折りたたみ切替
+function mgQA_toggleCard(headerEl){
+  const card=headerEl?.closest('.mgqa-card');
+  if(card)card.classList.toggle('collapsed');
+}
+window.mgQA_toggleCard=mgQA_toggleCard;
 
 // state 更新ユーティリティ（btn-tog クリックハンドラ用）
 function mgQA_setState(tabId, key, value, opts){
