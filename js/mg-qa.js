@@ -80,6 +80,8 @@ function mgQA_buildDefaultState(target){
     ],
     lcMode: 'ratio',
     lcRatio: 70,
+    // 段階モード（lcMode='step'時に使用）: {base, rate, fromYr, toYr, mode:'free'|'pct', pct}
+    lcSteps: [],
     houseMode: 'keep',
     houseNewRent: 8,
     // 段階的住居: houseMode==='stages' 時に使用
@@ -365,6 +367,34 @@ function mgQA_applyStateToDOM(tab){
       stepBtn.classList.remove('on');
       rF.style.display = '';
       sF.style.display = 'none';
+    }
+  }
+  // 段階モードの場合、Q&A state.lcSteps を旧UIの DOM (.mg-lc-step) に反映
+  // contingency.js の getMGLCSteps() がこの DOM を読んで計算する
+  if(s.lcMode === 'step' && Array.isArray(s.lcSteps)){
+    const stepsCont = document.getElementById('mg-lc-steps-container');
+    if(stepsCont && typeof addMGLCStep === 'function'){
+      stepsCont.innerHTML='';  // 既存の段階をクリア
+      if(typeof window._mgLCStepCount !== 'undefined') window._mgLCStepCount = 0;
+      s.lcSteps.forEach((st, i) => {
+        addMGLCStep();
+        const n = i + 1;
+        // 値を反映
+        const baseEl = document.getElementById(`mg-lsb-${n}`);
+        const rateEl = document.getElementById(`mg-lsr-${n}`);
+        const fromEl = document.getElementById(`mg-lsf-${n}`);
+        const toEl = document.getElementById(`mg-lst-${n}`);
+        const pctEl = document.getElementById(`mg-lspct-${n}`);
+        if(baseEl) baseEl.value = st.base || '';
+        if(rateEl) rateEl.value = st.rate || 0;
+        if(fromEl) fromEl.value = st.fromYr || '';
+        if(toEl) toEl.value = st.toYr || '';
+        if(pctEl) pctEl.value = st.pct || 80;
+        // モード（自由入力 / 前段階の割合）切替（段階1は常にfree）
+        if(i > 0 && typeof setMGLCMode === 'function'){
+          setMGLCMode(n, st.mode === 'pct' ? 'pct' : 'free');
+        }
+      });
     }
   }
 
@@ -674,18 +704,21 @@ function mgQA_buildPanel(tab){
     `)}
 
     ${card(5,'#d97706','🛒 死亡後の生活費',`
-      <div class="hint" style="margin-bottom:6px">💡 通常時の${lcHint}万円/月を基準に、万が一時の生活費を割合で設定（一般的に70%程度に減少）</div>
+      <div class="hint" style="margin-bottom:6px">💡 通常時の${lcHint}万円/月を基準に、万が一時の生活費を設定（割合 or 段階）</div>
       <div class="g2">
         <div class="fg"><label class="lbl">設定方式</label>
           <div style="display:flex;gap:6px">
             ${tog('lcMode','ratio','割合で設定')}
-            ${tog('lcMode','step','段階で設定(未対応)')}
+            ${tog('lcMode','step','段階で設定')}
           </div>
         </div>
         <div class="fg" style="${s.lcMode==='ratio'?'':'display:none'}" data-cond="lcMode:ratio">
           <label class="lbl">生活費の割合</label>
           <div class="suf"><input class="inp" type="number" min="10" max="150" value="${s.lcRatio}" data-k="lcRatio" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">%</span></div>
         </div>
+      </div>
+      <div style="margin-top:8px;${s.lcMode==='step'?'':'display:none'}" data-cond="lcMode:step">
+        ${mgQA_buildLcSteps(tab)}
       </div>
     `)}
 
@@ -893,6 +926,94 @@ function mgQA_buildHouseStages(tab){
   `;
   return html;
 }
+
+// --- 死亡後生活費 段階UI ---
+function mgQA_buildLcSteps(tab){
+  const steps = Array.isArray(tab.state.lcSteps) ? tab.state.lcSteps : [];
+  const startYr = (typeof getCfStartYear==='function') ? getCfStartYear() : new Date().getFullYear();
+  let html = `
+    <div style="font-size:11px;color:#64748b;margin-bottom:6px;line-height:1.5">
+      期間ごとに生活費を変えられます。<b>段階1=自由入力のみ</b>、<b>段階2以降は「前段階の割合」モードも選択可</b>。
+    </div>
+  `;
+  if(steps.length===0){
+    html += '<div style="padding:8px;color:#94a3b8;font-size:11px">段階がまだありません。「+ 段階を追加」してください。</div>';
+  } else {
+    steps.forEach((st, i) => {
+      const isFirst = i===0;
+      const mode = st.mode || 'free';
+      const isPct = mode === 'pct';
+      html += `
+        <div style="background:#fff8e6;border:1px solid #fbbf24;border-radius:6px;padding:8px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:11px;font-weight:700;color:#92400e">段階 ${i+1}</div>
+            <button class="mgqa-btn danger" onclick="mgQA_removeLcStep('${tab.id}', ${i})" title="段階削除">×</button>
+          </div>
+          ${isFirst ? '' : `
+            <div style="display:flex;gap:3px;margin-bottom:6px">
+              <button type="button" class="btn-tog ${!isPct?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setLcStepMode('${tab.id}',${i},'free')">自由入力</button>
+              <button type="button" class="btn-tog ${isPct?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setLcStepMode('${tab.id}',${i},'pct')">前段階の割合</button>
+            </div>
+          `}
+          ${!isPct ? `
+            <div class="g2" style="margin-bottom:4px">
+              <div class="fg"><label class="lbl" style="font-size:10px">金額</label>
+                <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${st.base||''}" placeholder="${isFirst?'空欄=通常生活費':'空欄=前段階引継ぎ'}" data-k="lcSteps.${i}.base" data-cf-row="lc"><span class="sl">万円/年</span></div>
+              </div>
+              <div class="fg"><label class="lbl" style="font-size:10px">上昇率</label>
+                <div class="suf"><input class="inp" type="number" step="0.1" value="${st.rate||0}" data-k="lcSteps.${i}.rate" data-cf-row="lc"><span class="sl">%/年</span></div>
+              </div>
+            </div>
+          ` : `
+            <div class="fg" style="margin-bottom:4px">
+              <label class="lbl" style="font-size:10px">前段階の何%</label>
+              <div class="suf"><input class="inp" type="number" min="1" max="200" value="${st.pct||80}" data-k="lcSteps.${i}.pct" data-cf-row="lc"><span class="sl">%</span></div>
+            </div>
+          `}
+          <div class="g2">
+            <div class="fg"><label class="lbl" style="font-size:10px">開始年</label>
+              <div class="suf"><input class="inp age-inp" type="number" value="${st.fromYr||''}" placeholder="${isFirst?String(startYr):'前段階+1'}" data-k="lcSteps.${i}.fromYr" data-cf-row="lc"><span class="sl">年</span></div>
+            </div>
+            <div class="fg"><label class="lbl" style="font-size:10px">終了年</label>
+              <div class="suf"><input class="inp age-inp" type="number" value="${st.toYr||''}" placeholder="空欄=ずっと" data-k="lcSteps.${i}.toYr" data-cf-row="lc"><span class="sl">年</span></div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+  html += `<button class="mgqa-btn" onclick="mgQA_addLcStep('${tab.id}')" style="margin-top:4px">+ 段階を追加</button>`;
+  return html;
+}
+function mgQA_addLcStep(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  if(!Array.isArray(tab.state.lcSteps)) tab.state.lcSteps = [];
+  const steps = tab.state.lcSteps;
+  const prev = steps[steps.length-1];
+  const startYr = (typeof getCfStartYear==='function') ? getCfStartYear() : new Date().getFullYear();
+  const newFromYr = prev ? ((prev.toYr||prev.fromYr||startYr) + (prev.toYr?1:5)) : startYr;
+  steps.push({ base: 0, rate: 0, fromYr: newFromYr, toYr: 0, mode: steps.length===0?'free':'pct', pct: 80 });
+  mgQA_switchTab(tabId);
+}
+function mgQA_removeLcStep(tabId, idx){
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  if(!Array.isArray(tab.state.lcSteps)) return;
+  tab.state.lcSteps.splice(idx, 1);
+  mgQA_switchTab(tabId);
+}
+function mgQA_setLcStepMode(tabId, idx, mode){
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  if(!Array.isArray(tab.state.lcSteps)) return;
+  if(!tab.state.lcSteps[idx]) return;
+  tab.state.lcSteps[idx].mode = mode;
+  mgQA_switchTab(tabId);
+}
+window.mgQA_addLcStep = mgQA_addLcStep;
+window.mgQA_removeLcStep = mgQA_removeLcStep;
+window.mgQA_setLcStepMode = mgQA_setLcStepMode;
 
 function mgQA_addHouseStage(tabId){
   const tab = mgQA_tabs.find(t=>t.id===tabId);
