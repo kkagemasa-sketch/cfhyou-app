@@ -17,60 +17,149 @@ function addPrepay(yrFrom='',yrTo='',amt=''){
   </div>`;
   return el;
 }
-function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule){
+function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule,options){
   // rateSchedule: [{yr:年目,rate:年利},...] 金利変更スケジュール（省略時は固定金利）
+  // options: {bonusRatio, fiveYearRule, cap125Rule}
+  //   bonusRatio: 0~1 ボーナス払い比率（0=なし、0.3=元金の30%をボーナス払い）
+  //   fiveYearRule: 5年ルール（変動金利時、月返済額を5年間据置）
+  //   cap125Rule: 125%ルール（5年経過時の再計算で旧月額×1.25を上限）
+  const opts = options || {};
+  const bonusRatio = Math.max(0, Math.min(1, opts.bonusRatio || 0));
+  const fiveYearRule = !!opts.fiveYearRule;
+  const cap125Rule = !!opts.cap125Rule;
   const sched=rateSchedule||[];
   function rateForYear(y){
     let r=rateAnnual;
     for(const s of sched){if(y>=s.yr)r=s.rate;else break;}
     return r;
   }
+  // ボーナス払いの場合は元金を分割して別々に計算
+  // monthlyPart: 通常の月12回払いの元金
+  // bonusPart: 半年×2回のボーナス払いの元金
+  const monthlyPrincipal = principal * (1 - bonusRatio);
+  const bonusPrincipal = principal * bonusRatio;
   let mr=rateAnnual/12;
+  const halfRate0 = rateAnnual / 2;
   let n=years*12;
+  let bonusN = years * 2;
+  // 金利0%の特別処理
   if(rateAnnual===0&&sched.length===0){
-    let mp=principal/n;
-    const rows=[];let bal=principal;
-    for(let y=1;y<=years&&bal>0;y++){
+    let mpMonthly=monthlyPrincipal/n;
+    let mpBonus=bonusN>0?bonusPrincipal/bonusN:0;
+    const rows=[];let balM=monthlyPrincipal, balB=bonusPrincipal;
+    for(let y=1;y<=years&&(balM+balB)>0;y++){
       let pp=0;prepays.forEach(p=>{if(p.yr===y)pp+=p.amt});
-      const pay=Math.min(mp*12,bal);const princ=pay;
-      bal=Math.max(0,bal-princ-pp);
-      if(ppType==='reduce'&&pp>0&&bal>0){const remM=(years-y)*12;mp=remM>0?bal/remM:0}
-      rows.push({yr:y,pay:Math.round(pay),principal:Math.round(princ),interest:0,balance:Math.round(bal),prepay:Math.round(pp),monthly:Math.round(mp)});
+      const payMonthly=Math.min(mpMonthly*12,balM);
+      const payBonus=Math.min(mpBonus*2,balB);
+      balM=Math.max(0,balM-payMonthly);
+      balB=Math.max(0,balB-payBonus);
+      // 繰上返済を全体に按分（簡易：月払い分を優先）
+      if(pp>0){
+        const totalBal=balM+balB;
+        if(totalBal>0){
+          const reduceM=Math.min(pp, balM);
+          balM-=reduceM;
+          const reduceB=Math.min(pp-reduceM, balB);
+          balB-=reduceB;
+        }
+      }
+      if(ppType==='reduce'&&pp>0&&(balM+balB)>0){
+        const remM=(years-y)*12;
+        mpMonthly=remM>0?balM/remM:0;
+        const remH=(years-y)*2;
+        mpBonus=remH>0?balB/remH:0;
+      }
+      const totPay=payMonthly+payBonus;
+      const bal=balM+balB;
+      rows.push({yr:y,pay:Math.round(totPay),principal:Math.round(totPay),interest:0,balance:Math.round(bal),prepay:Math.round(pp),monthly:Math.round(mpMonthly),bonusPay:Math.round(mpBonus)});
       if(bal<=0)break;
     }
     return rows;
   }
-  let mp=mr>0?principal*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1):principal/n;
-  const rows=[];let bal=principal;
-  for(let y=1;y<=50&&bal>0;y++){
-    // 金利変更チェック
-    const curRate=rateForYear(y);
-    const curMR=curRate/12;
-    if(curMR!==mr){
-      mr=curMR;
-      // 残期間で月額を再計算
-      const remM=Math.max(1,(years-(y-1))*12);
-      mp=mr>0?bal*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1):bal/remM;
-    }
-    let yearPay=0,yearPrinc=0,yearInt=0;
-    for(let m=1;m<=12&&bal>0;m++){
-      const intM=bal*mr;
-      const princM=Math.min(mp-intM,bal);
-      yearInt+=intM;yearPrinc+=princM;yearPay+=(intM+princM);
-      bal=Math.max(0,bal-princM);
-      if(bal<1)bal=0;
-    }
-    let pp=0;prepays.forEach(p=>{if(p.yr===y)pp+=p.amt});
-    if(pp>0){
-      pp=Math.min(pp,bal);
-      bal=Math.max(0,bal-pp);
-      if(ppType==='reduce'&&bal>0){
-        const remM=Math.max(1,(years-y)*12);
-        mp=mr>0?bal*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1):bal/remM;
+  // 元利均等 月払い + ボーナス払い
+  let mpMonthly = mr>0 ? monthlyPrincipal*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1) : monthlyPrincipal/n;
+  let mpBonus = halfRate0>0 && bonusN>0
+    ? bonusPrincipal*halfRate0*Math.pow(1+halfRate0,bonusN)/(Math.pow(1+halfRate0,bonusN)-1)
+    : (bonusN>0?bonusPrincipal/bonusN:0);
+  const rows=[];
+  let balM = monthlyPrincipal;
+  let balB = bonusPrincipal;
+  let lastBoundaryPayMonthly = mpMonthly;  // 125%ルール用：直前境界の月払い額
+  let lastBoundaryPayBonus = mpBonus;
+  let halfRate = halfRate0;
+  for(let y=1;y<=50&&(balM+balB)>0;y++){
+    const curRate = rateForYear(y);
+    const curMR = curRate/12;
+    const curHalfRate = curRate/2;
+    if(fiveYearRule){
+      // 5年ルール: 5年境界(y=1,6,11,16,...)でのみ月額再計算
+      const isBoundary = (y===1) || ((y-1)%5===0);
+      if(isBoundary && curMR!==mr){
+        mr=curMR;
+        halfRate=curHalfRate;
+        const remM=Math.max(1,(years-(y-1))*12);
+        let newMpMonthly = mr>0 ? balM*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1) : balM/remM;
+        const remH=Math.max(1,(years-(y-1))*2);
+        let newMpBonus = halfRate>0 ? balB*halfRate*Math.pow(1+halfRate,remH)/(Math.pow(1+halfRate,remH)-1) : balB/remH;
+        if(cap125Rule && y>1){
+          newMpMonthly = Math.min(newMpMonthly, lastBoundaryPayMonthly*1.25);
+          newMpBonus = Math.min(newMpBonus, lastBoundaryPayBonus*1.25);
+        }
+        mpMonthly = newMpMonthly;
+        mpBonus = newMpBonus;
+        lastBoundaryPayMonthly = mpMonthly;
+        lastBoundaryPayBonus = mpBonus;
+      } else if(isBoundary){
+        // 金利変わってないが境界 → 念のためカウンタ更新
+        lastBoundaryPayMonthly = mpMonthly;
+        lastBoundaryPayBonus = mpBonus;
+      }
+      // 境界以外で金利変動した場合: mr/halfRate は更新せず据置
+    } else {
+      // 通常: 金利変更時に即時再計算
+      if(curMR!==mr){
+        mr=curMR;
+        halfRate=curHalfRate;
+        const remM=Math.max(1,(years-(y-1))*12);
+        mpMonthly = mr>0 ? balM*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1) : balM/remM;
+        const remH=Math.max(1,(years-(y-1))*2);
+        mpBonus = halfRate>0 ? balB*halfRate*Math.pow(1+halfRate,remH)/(Math.pow(1+halfRate,remH)-1) : balB/remH;
       }
     }
-    rows.push({yr:y,pay:Math.round(yearPay),principal:Math.round(yearPrinc),interest:Math.round(yearInt),balance:Math.round(bal),prepay:Math.round(pp),monthly:Math.round(mp)});
-    if(bal<=0)break;
+    // 5年ルール時は実利率(curMR/curHalfRate)で利息計算、返済額は据置
+    const actualMR = fiveYearRule ? curMR : mr;
+    const actualHalfRate = fiveYearRule ? curHalfRate : halfRate;
+    let yearPay=0, yearPrinc=0, yearInt=0;
+    for(let m=1;m<=12&&(balM+balB)>0;m++){
+      // 月払い分
+      const intM = balM*actualMR;
+      const princM = Math.min(Math.max(0,mpMonthly-intM), balM);
+      yearInt += intM; yearPrinc += princM; yearPay += (intM+princM);
+      balM = Math.max(0, balM - princM);
+      // ボーナス払い (6月・12月)
+      if(balB>0 && (m===6||m===12)){
+        // 半年ぶん利息（簡易：半年率で1回）
+        const intB = balB * actualHalfRate;
+        const princB = Math.min(Math.max(0,mpBonus-intB), balB);
+        yearInt += intB; yearPrinc += princB; yearPay += (intB+princB);
+        balB = Math.max(0, balB - princB);
+      }
+      if(balM<1)balM=0; if(balB<1)balB=0;
+    }
+    // 繰上返済
+    let pp=0;prepays.forEach(p=>{if(p.yr===y)pp+=p.amt});
+    if(pp>0){
+      const reduceM=Math.min(pp, balM); balM-=reduceM;
+      const reduceB=Math.min(pp-reduceM, balB); balB-=reduceB;
+      if(ppType==='reduce'&&(balM+balB)>0){
+        const remM=Math.max(1,(years-y)*12);
+        mpMonthly = mr>0 ? balM*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1) : balM/remM;
+        const remH=Math.max(1,(years-y)*2);
+        mpBonus = halfRate>0 ? balB*halfRate*Math.pow(1+halfRate,remH)/(Math.pow(1+halfRate,remH)-1) : balB/remH;
+      }
+    }
+    rows.push({yr:y,pay:Math.round(yearPay),principal:Math.round(yearPrinc),interest:Math.round(yearInt),balance:Math.round(balM+balB),prepay:Math.round(pp),monthly:Math.round(mpMonthly),bonusPay:Math.round(mpBonus)});
+    if((balM+balB)<=0)break;
   }
   return rows;
 }
@@ -136,6 +225,23 @@ function renderLoanTab(){
           <div id="lp-rate-cont-a" style="margin-top:4px"></div>
           <button class="btn-add" onclick="addLPRate('a')" style="font-size:10px;padding:3px 8px;margin-top:3px">＋ 金利変更を追加</button>
         </details>
+        <details style="margin-top:4px">
+          <summary style="font-size:10px;font-weight:700;color:var(--muted);cursor:pointer">⚙️ 詳細オプション（ボーナス払い・5年/125%ルール）</summary>
+          <div style="margin-top:6px;padding:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                <input type="checkbox" id="lp-bonus-on-a" onchange="renderLoanCalc()"> 🏦 ボーナス併用払い
+              </label>
+              <div class="suf" style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#64748b">比率</span><input class="inp" id="lp-bonus-ratio-a" type="number" value="30" min="0" max="80" step="5" onchange="renderLoanCalc()" style="width:50px;font-size:11px"><span class="sl">%</span></div>
+            </div>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;margin-bottom:4px">
+              <input type="checkbox" id="lp-5yr-rule-a" onchange="document.getElementById('lp-125-rule-a-wrap').style.display=this.checked?'':'none';renderLoanCalc()"> 📅 5年ルール適用（変動金利向け：月額を5年間据置）
+            </label>
+            <label id="lp-125-rule-a-wrap" style="display:none;margin-left:18px;font-size:11px;cursor:pointer">
+              <input type="checkbox" id="lp-125-rule-a" onchange="renderLoanCalc()"> 🎯 125%ルール適用（5年経過時の月額上昇を旧月額×1.25まで）
+            </label>
+          </div>
+        </details>
       </div>
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px;display:none" id="lp-card-b">
         <div style="font-size:12px;font-weight:700;color:#e67e22;margin-bottom:6px">ペアローン（配偶者）</div>
@@ -156,6 +262,23 @@ function renderLoanTab(){
           <summary style="font-size:10px;font-weight:700;color:var(--muted);cursor:pointer">金利変更スケジュール</summary>
           <div id="lp-rate-cont-b" style="margin-top:4px"></div>
           <button class="btn-add" onclick="addLPRate('b')" style="font-size:10px;padding:3px 8px;margin-top:3px">＋ 金利変更を追加</button>
+        </details>
+        <details style="margin-top:4px">
+          <summary style="font-size:10px;font-weight:700;color:var(--muted);cursor:pointer">⚙️ 詳細オプション（ボーナス払い・5年/125%ルール）</summary>
+          <div style="margin-top:6px;padding:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                <input type="checkbox" id="lp-bonus-on-b" onchange="renderLoanCalc()"> 🏦 ボーナス併用払い
+              </label>
+              <div class="suf" style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#64748b">比率</span><input class="inp" id="lp-bonus-ratio-b" type="number" value="30" min="0" max="80" step="5" onchange="renderLoanCalc()" style="width:50px;font-size:11px"><span class="sl">%</span></div>
+            </div>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;margin-bottom:4px">
+              <input type="checkbox" id="lp-5yr-rule-b" onchange="document.getElementById('lp-125-rule-b-wrap').style.display=this.checked?'':'none';renderLoanCalc()"> 📅 5年ルール適用
+            </label>
+            <label id="lp-125-rule-b-wrap" style="display:none;margin-left:18px;font-size:11px;cursor:pointer">
+              <input type="checkbox" id="lp-125-rule-b" onchange="renderLoanCalc()"> 🎯 125%ルール適用
+            </label>
+          </div>
         </details>
       </div>
     </div>
@@ -401,16 +524,38 @@ function renderLoanCalc(){
   const yrsB=pairLoanMode?_lpi('lp-yrs-b')||35:0;
   if(amtA<=0&&amtB<=0){$('lp-table-wrap').innerHTML='';return}
   function calcMP(amt,rate,yrs){const mr=rate/12;const n=yrs*12;return mr>0?amt*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1):amt/n}
-  const mpA=amtA>0?calcMP(amtA,rateA,yrsA):0;
-  const mpB=amtB>0?calcMP(amtB,rateB,yrsB):0;
-  if($('lp-monthly-a'))$('lp-monthly-a').textContent=amtA>0?Math.round(mpA).toLocaleString():'―';
-  if($('lp-monthly-b'))$('lp-monthly-b').textContent=amtB>0?Math.round(mpB).toLocaleString():'―';
+  function calcBonusPay(amt,rate,yrs){const hr=rate/2;const n=yrs*2;return hr>0?amt*hr*Math.pow(1+hr,n)/(Math.pow(1+hr,n)-1):amt/n}
+  // ボーナス払い比率を考慮
+  const _bonusRatioA = document.getElementById('lp-bonus-on-a')?.checked
+    ? Math.min(0.8, Math.max(0, (_lpf('lp-bonus-ratio-a')||30)/100)) : 0;
+  const _bonusRatioB = document.getElementById('lp-bonus-on-b')?.checked
+    ? Math.min(0.8, Math.max(0, (_lpf('lp-bonus-ratio-b')||30)/100)) : 0;
+  const mpA = amtA>0 ? calcMP(amtA*(1-_bonusRatioA), rateA, yrsA) : 0;
+  const mpB = amtB>0 ? calcMP(amtB*(1-_bonusRatioB), rateB, yrsB) : 0;
+  const bpA = amtA>0 && _bonusRatioA>0 ? calcBonusPay(amtA*_bonusRatioA, rateA, yrsA) : 0;
+  const bpB = amtB>0 && _bonusRatioB>0 ? calcBonusPay(amtB*_bonusRatioB, rateB, yrsB) : 0;
+  if($('lp-monthly-a'))$('lp-monthly-a').innerHTML = amtA>0
+    ? (Math.round(mpA).toLocaleString() + (bpA>0?` <span style="font-size:11px;color:#64748b">+ ボーナス${Math.round(bpA).toLocaleString()}円×2/年</span>`:''))
+    : '―';
+  if($('lp-monthly-b'))$('lp-monthly-b').innerHTML = amtB>0
+    ? (Math.round(mpB).toLocaleString() + (bpB>0?` <span style="font-size:11px;color:#64748b">+ ボーナス${Math.round(bpB).toLocaleString()}円×2/年</span>`:''))
+    : '―';
   // 金利変更スケジュール取得
   const ratesA=getLPRates('a');
   const ratesB=getLPRates('b');
+  // ボーナス払い・5年/125%ルール オプション取得
+  function _lpOptions(suffix){
+    const bonusOn = document.getElementById('lp-bonus-on-'+suffix)?.checked;
+    const bonusRatio = bonusOn ? ((_lpf('lp-bonus-ratio-'+suffix)||30)/100) : 0;
+    const fiveYearRule = !!document.getElementById('lp-5yr-rule-'+suffix)?.checked;
+    const cap125Rule = fiveYearRule && !!document.getElementById('lp-125-rule-'+suffix)?.checked;
+    return {bonusRatio, fiveYearRule, cap125Rule};
+  }
+  const optsA = _lpOptions('a');
+  const optsB = _lpOptions('b');
   // 通常償還
-  const normalA=amtA>0?calcAmortization(amtA,rateA,yrsA,[],'term',ratesA):[];
-  const normalB=amtB>0?calcAmortization(amtB,rateB,yrsB,[],'term',ratesB):[];
+  const normalA=amtA>0?calcAmortization(amtA,rateA,yrsA,[],'term',ratesA,optsA):[];
+  const normalB=amtB>0?calcAmortization(amtB,rateB,yrsB,[],'term',ratesB,optsB):[];
   // 繰上返済計算（A+B合算で計算）
   let withPPA=null,withPPB=null;
   let ppAmountA=0,ppAmountB=0,ppAmountTotal=0;
@@ -428,7 +573,7 @@ function renderLoanCalc(){
         const afA=termTo<=normalA.length?normalA[termTo-1]?.balance||0:0;
         ppAmountA=Math.max(0,bfA-afA);
         if(ppAmountA>0){
-          withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:Math.max(1,termFrom-1),amt:ppAmountA}],'term',ratesA);
+          withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:Math.max(1,termFrom-1),amt:ppAmountA}],'term',ratesA,optsA);
         }
       }
       // ローンB（ペアローン時）
@@ -437,7 +582,7 @@ function renderLoanCalc(){
         const afB=termTo<=normalB.length?normalB[termTo-1]?.balance||0:0;
         ppAmountB=Math.max(0,bfB-afB);
         if(ppAmountB>0){
-          withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:Math.max(1,termFrom-1),amt:ppAmountB}],'term',ratesB);
+          withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:Math.max(1,termFrom-1),amt:ppAmountB}],'term',ratesB,optsB);
         }
       }
       ppAmountTotal=ppAmountA+ppAmountB;
@@ -479,7 +624,7 @@ function renderLoanCalc(){
         const remMA=(yrsA-reduceYr)*12;const mrA=rateA/12;
         let newBalA=mrA>0?desiredMPA*(Math.pow(1+mrA,remMA)-1)/(mrA*Math.pow(1+mrA,remMA)):desiredMPA*remMA;
         ppAmountA=Math.max(0,balA-newBalA);
-        if(ppAmountA>0)withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:reduceYr,amt:ppAmountA}],'reduce',ratesA);
+        if(ppAmountA>0)withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:reduceYr,amt:ppAmountA}],'reduce',ratesA,optsA);
       }
       // ローンB
       if(showPP&&normalB.length>=reduceYr){
@@ -487,7 +632,7 @@ function renderLoanCalc(){
         const remMB=(yrsB-reduceYr)*12;const mrB=rateB/12;
         let newBalB=mrB>0?desiredMPB*(Math.pow(1+mrB,remMB)-1)/(mrB*Math.pow(1+mrB,remMB)):desiredMPB*remMB;
         ppAmountB=Math.max(0,balB-newBalB);
-        if(ppAmountB>0)withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:reduceYr,amt:ppAmountB}],'reduce',ratesB);
+        if(ppAmountB>0)withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:reduceYr,amt:ppAmountB}],'reduce',ratesB,optsB);
       }
       ppAmountTotal=ppAmountA+ppAmountB;
       const nIntA=normalA.reduce((s,r)=>s+r.interest,0);
