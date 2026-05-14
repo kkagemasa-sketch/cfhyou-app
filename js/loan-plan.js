@@ -895,21 +895,26 @@ function renderLoanCalc(){
   const thS='padding:4px 6px;font-size:10px;white-space:nowrap';
   const thG='padding:3px 6px;font-size:10px;font-weight:700;text-align:center;border-bottom:2px solid rgba(255,255,255,.3)';
   let colsA=5,ppCol=withPPA?2:0,dedCol=showPair?3:1;
-  // ボーナス列を表示するか（単独ローン時のみ・ボーナス払いON時）
+  // ボーナス列を表示するか
   const _showBonusCol = !showPair && _bonusRatioA > 0;
+  // ペアローン時：A/B 各々のボーナス列
+  const _showBonusColA_pair = showPair && _bonusRatioA > 0;
+  const _showBonusColB_pair = showPair && _bonusRatioB > 0;
   let t=`<table class="cf" style="font-size:11px;border-collapse:collapse;min-width:${showPair?'1200':'700'}px;white-space:nowrap"><thead>`;
   if(showPair){
     // 2行ヘッダー：グループ行
+    const _colsA_pair = 5 + (_showBonusColA_pair?2:0);
+    const _colsB_pair = 4 + (_showBonusColB_pair?2:0);
     t+=`<tr style="background:var(--navy);color:#fff">
       <th rowspan="2" style="${thS};width:30px;text-align:center;border-right:1px solid rgba(255,255,255,.2)">年</th>
-      <th colspan="5" style="${thG};background:#1e40af;border-right:1px solid rgba(255,255,255,.3)">🅰 ご本人様</th>
-      <th colspan="4" style="${thG};background:#92400e;border-right:1px solid rgba(255,255,255,.3)">🅱 配偶者</th>
+      <th colspan="${_colsA_pair}" style="${thG};background:#1e40af;border-right:1px solid rgba(255,255,255,.3)">🅰 ご本人様</th>
+      <th colspan="${_colsB_pair}" style="${thG};background:#92400e;border-right:1px solid rgba(255,255,255,.3)">🅱 配偶者</th>
       <th colspan="2" style="${thG};background:#065f46;border-right:1px solid rgba(255,255,255,.3)">合計</th>
       <th colspan="3" style="${thG};background:#059669;border-right:${withPPA?'1px solid rgba(255,255,255,.3)':'none'}">ローン控除</th>`;
     if(withPPA)t+=`<th colspan="2" style="${thG};background:#6b21a8">繰上効果</th>`;
     t+=`</tr><tr style="background:var(--navy);color:#fff;font-size:9px">
-      <th style="${thS};background:#1e40af">返済額</th><th style="${thS};background:#1e40af">元金</th><th style="${thS};background:#1e40af">利息</th><th style="${thS};background:#1e40af">繰上</th><th style="${thS};background:#1e40af;border-right:1px solid rgba(255,255,255,.3)">残高</th>
-      <th style="${thS};background:#92400e">返済額</th><th style="${thS};background:#92400e">元金</th><th style="${thS};background:#92400e">利息</th><th style="${thS};background:#92400e;border-right:1px solid rgba(255,255,255,.3)">残高</th>
+      <th style="${thS};background:#1e40af">返済額</th>${_showBonusColA_pair?`<th style="${thS};background:#7a5000">ボーナス(1回)</th><th style="${thS};background:#7a5000">ボーナス年計</th>`:''}<th style="${thS};background:#1e40af">元金</th><th style="${thS};background:#1e40af">利息</th><th style="${thS};background:#1e40af">繰上</th><th style="${thS};background:#1e40af;border-right:1px solid rgba(255,255,255,.3)">残高</th>
+      <th style="${thS};background:#92400e">返済額</th>${_showBonusColB_pair?`<th style="${thS};background:#7a5000">ボーナス(1回)</th><th style="${thS};background:#7a5000">ボーナス年計</th>`:''}<th style="${thS};background:#92400e">元金</th><th style="${thS};background:#92400e">利息</th><th style="${thS};background:#92400e;border-right:1px solid rgba(255,255,255,.3)">残高</th>
       <th style="${thS};background:#14532d">返済額</th><th style="${thS};background:#14532d;border-right:1px solid rgba(255,255,255,.3)">残高</th>
       <th style="${thS};background:#059669">A</th><th style="${thS};background:#047857">B</th><th style="${thS};background:#065f46;border-right:${withPPA?'1px solid rgba(255,255,255,.3)':'none'}">計</th>`;
     if(withPPA)t+=`<th style="${thS};background:#7c3aed">通常残高</th><th style="${thS};background:#dc2626">軽減累計</th>`;
@@ -939,14 +944,22 @@ function renderLoanCalc(){
     if(showPair){
       const payAB=(rA?rA.pay:0)+(rB?rB.pay:0);
       const balAB=(rA?rA.balance:0)+(rB?rB.balance:0);
+      const bonusCellsA = _showBonusColA_pair
+        ? `<td style="${td};color:#b45309;background:${i%2===0?'#fffbeb':'#fef3c7'}">${rA&&rA.bonusPay>0?Math.round(rA.bonusPay).toLocaleString():'-'}</td><td style="${td};color:#b45309;background:${i%2===0?'#fffbeb':'#fef3c7'}">${rA&&rA.bonusPay>0?Math.round(rA.bonusPay*2).toLocaleString():'-'}</td>`
+        : '';
+      const bonusCellsB = _showBonusColB_pair
+        ? `<td style="${td};color:#b45309;background:${i%2===0?'#fffbeb':'#fef3c7'}">${rB&&rB.bonusPay>0?Math.round(rB.bonusPay).toLocaleString():'-'}</td><td style="${td};color:#b45309;background:${i%2===0?'#fffbeb':'#fef3c7'}">${rB&&rB.bonusPay>0?Math.round(rB.bonusPay*2).toLocaleString():'-'}</td>`
+        : '';
       t+=`<tr style="background:${bg}${isFinishedA&&!rB?';opacity:.5':''}">
         <td style="${td};text-align:center;font-weight:700;width:30px;${bdR}">${yr}</td>
         <td style="${td};background:${i%2===0?'#eff6ff':'#e8f1fc'}">${rA?Math.round(rA.pay).toLocaleString():'-'}</td>
+        ${bonusCellsA}
         <td style="${td};color:#2563eb;background:${i%2===0?'#eff6ff':'#e8f1fc'}">${rA?Math.round(rA.principal).toLocaleString():'-'}</td>
         <td style="${td};color:#dc2626;background:${i%2===0?'#eff6ff':'#e8f1fc'}">${rA?Math.round(rA.interest).toLocaleString():'-'}</td>
         <td style="${td};color:#7c3aed;background:${i%2===0?'#eff6ff':'#e8f1fc'}">${rA&&rA.prepay>0?Math.round(rA.prepay).toLocaleString():'-'}</td>
         <td style="${td};font-weight:700;background:${i%2===0?'#eff6ff':'#e8f1fc'};${bdR}">${rA?Math.round(rA.balance).toLocaleString():'完済'}</td>
         <td style="${td};background:${i%2===0?'#fef7ed':'#fdf2e2'}">${rB?Math.round(rB.pay).toLocaleString():'-'}</td>
+        ${bonusCellsB}
         <td style="${td};color:#2563eb;background:${i%2===0?'#fef7ed':'#fdf2e2'}">${rB?Math.round(rB.principal).toLocaleString():'-'}</td>
         <td style="${td};color:#dc2626;background:${i%2===0?'#fef7ed':'#fdf2e2'}">${rB?Math.round(rB.interest).toLocaleString():'-'}</td>
         <td style="${td};font-weight:700;background:${i%2===0?'#fef7ed':'#fdf2e2'};${bdR}">${rB?Math.round(rB.balance).toLocaleString():'完済'}</td>
@@ -992,14 +1005,24 @@ function renderLoanCalc(){
     const totPayB=normalB.reduce((s,r)=>s+r.pay,0);
     const totPrincB=normalB.reduce((s,r)=>s+r.principal,0);
     const totIntB=normalB.reduce((s,r)=>s+r.interest,0);
+    const totBonusA_pair = _showBonusColA_pair ? dataA.reduce((s,r)=>s+(r.bonusPay||0)*2,0) : 0;
+    const totBonusB_pair = _showBonusColB_pair ? normalB.reduce((s,r)=>s+(r.bonusPay||0)*2,0) : 0;
+    const bonusTotA_pair = _showBonusColA_pair
+      ? `<td style="${td};background:#7a5000">-</td><td style="${td};background:#7a5000">${totBonusA_pair>0?Math.round(totBonusA_pair).toLocaleString():'-'}</td>`
+      : '';
+    const bonusTotB_pair = _showBonusColB_pair
+      ? `<td style="${td};background:#7a5000">-</td><td style="${td};background:#7a5000">${totBonusB_pair>0?Math.round(totBonusB_pair).toLocaleString():'-'}</td>`
+      : '';
     t+=`<tr style="background:var(--navy);color:#fff;font-weight:700">
       <td style="${td};text-align:center;${bdR}">計</td>
       <td style="${td};background:#1e3a5f">${Math.round(totPayA).toLocaleString()}</td>
+      ${bonusTotA_pair}
       <td style="${td};background:#1e3a5f">${Math.round(totPrincA).toLocaleString()}</td>
       <td style="${td};background:#1e3a5f">${Math.round(totIntA).toLocaleString()}</td>
       <td style="${td};background:#1e3a5f">${totPP>0?Math.round(totPP).toLocaleString():'-'}</td>
       <td style="${td};background:#1e3a5f;${bdR}">-</td>
       <td style="${td};background:#5c3a0f">${Math.round(totPayB).toLocaleString()}</td>
+      ${bonusTotB_pair}
       <td style="${td};background:#5c3a0f">${Math.round(totPrincB).toLocaleString()}</td>
       <td style="${td};background:#5c3a0f">${Math.round(totIntB).toLocaleString()}</td>
       <td style="${td};background:#5c3a0f;${bdR}">-</td>
