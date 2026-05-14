@@ -833,6 +833,7 @@ function render(){
           fv2 = _redeemSeries[i]||0;
         } else if(endAge===0||pAge<=endAge){
           // 野村シミュレーター準拠: 月利 r/12, 月末払い
+          // endAge は inclusive（=その年齢まで積立継続）
           const mr=rate/12;
           const cpd=Math.pow(1+mr,12*yrs);
           const balGrow=bal*cpd;
@@ -840,7 +841,7 @@ function render(){
           fv2=Math.round(balGrow+accumFV);
         } else {
           const mr=rate/12;
-          const yrsAccum=endAge-pBaseAge;
+          const yrsAccum=endAge-pBaseAge+1;  // inclusive: endAgeの年も積立
           const yrsAfter=yrs-yrsAccum;
           const cpdA=Math.pow(1+mr,12*yrsAccum);
           const balAtEnd=bal*cpdA;
@@ -853,7 +854,7 @@ function render(){
         // 取得原価は「取得価格累計(basis)」が入力されていればそれを使用、なければ現在評価額(bal)で近似
         const basis=fv(`sec-basis-${p}-${sid}`)||0;
         const initialCost=basis>0?basis:bal;
-        const costAccum=initialCost+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs);
+        const costAccum=initialCost+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge+1):yrs);
         const gainAccum=Math.max(0,fv2-costAccum);
         let netAccum=fv2, taxAccum=0;
         if(!isNisa){
@@ -1345,8 +1346,9 @@ function render(){
         const _series=_accumSeriesCache[_secKey];
         // 通常利回り版（常に計算し finRowMapBase に足す）
         let fv2Base=0;
-        if(endAge===0||pAge<endAge){
+        if(endAge===0||pAge<=endAge){
           // 野村シミュレーター準拠: 月利 r/12, 月末払い
+          // endAge は inclusive（=その年齢まで積立継続）
           const mr=rate/12;
           const cpd=Math.pow(1+mr,12*yrs);
           const balGrow=bal*cpd;
@@ -1354,7 +1356,7 @@ function render(){
           fv2Base=Math.round(balGrow+accumFV);
         } else {
           const mr=rate/12;
-          const yrsAccum=endAge-pBaseAge;
+          const yrsAccum=endAge-pBaseAge+1;  // inclusive: endAgeの年も積立
           const yrsAfter=yrs-yrsAccum;
           const cpdA=Math.pow(1+mr,12*yrsAccum);
           const balAtEnd=bal*cpdA;
@@ -1365,7 +1367,7 @@ function render(){
         const fv2 = _series ? (_series[i]||0) : fv2Base;
         finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+fv2Base;
         // 積立額累計（開始から現時点まで、積立終了後は endAge 時点で停止）
-        const _effYrsAccum=endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs;
+        const _effYrsAccum=endAge>0&&pAge>endAge?(endAge-pBaseAge+1):yrs;
         const _principal=Math.round((bal+monthly*12*Math.max(0,_effYrsAccum))*10)/10;
         finRowMap[lbl]=(finRowMap[lbl]||0)+fv2;
         finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;

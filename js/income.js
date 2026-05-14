@@ -578,6 +578,10 @@ function updateDCReceiptHint(p){
 function calcAvgHyojun(person, startAge, retireAge){
   const steps=getIncomeSteps(person);
   if(steps.length===0) return null;
+  // 全ステップの収入が0なら、厚生年金加入なし扱いで avgHyojun=0 を返す
+  // （nullを返すとフォールバックでデフォルト値が使われてしまうため）
+  const _hasNonZero = steps.some(s => (s.netFrom||0) > 0 || (s.netTo||0) > 0);
+  if(!_hasNonZero) return 0;
   const NET2GROSS=function(net){
     // 手取り年収→額面年収の変換係数（calcPensionと同じ）
     const c=net<300?0.84:net<500?0.80:net<700?0.77:net<900?0.74:net<1100?0.71:0.68;

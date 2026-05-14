@@ -157,10 +157,10 @@ function addSecurity(person){
       </div>
     </div>
     <div id="sec-accum-fields-${person}-${id}">
-      <div id="sec-nisa-basis-row-${person}-${id}" style="display:none;margin-bottom:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">現在の投資金額（取得価格累計 / 万）</label>
-          <input class="inp amt-inp" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%;max-width:220px">
-          <span style="font-size:9px;color:#475569;margin-left:6px">※生涯枠1800万の消費判定に使用</span>
+      <div id="sec-nisa-basis-row-${person}-${id}" style="margin-bottom:6px">
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">取得価格累計（現在までに投資した元本 / 万）</label>
+          <input class="inp amt-inp" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits();updateBasisHint&&updateBasisHint('${person}','${id}')" style="font-size:11px;padding:4px 6px;width:100%;max-width:220px">
+          <span id="sec-basis-hint-${person}-${id}" style="font-size:9px;color:#475569;margin-left:6px">※NISAは生涯枠1800万の判定／課税口座は譲渡益課税の取得原価に使用</span>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px">
@@ -198,7 +198,9 @@ function setSecTax(person,id,t){
   const typeToggle = document.getElementById(`sec-type-toggle-${person}-${id}`);
   if(typeToggle) typeToggle.style.display = (t==='nisa')?'none':'';
   const basisRow = document.getElementById(`sec-nisa-basis-row-${person}-${id}`);
-  if(basisRow) basisRow.style.display = (t==='nisa')?'':'none';
+  // 課税口座でも譲渡益課税の取得原価として使うため常時表示
+  if(basisRow) basisRow.style.display = '';
+  if(typeof updateBasisHint==='function') updateBasisHint(person, id);
   if(t==='nisa'){
     // NISAは制度上積立型に固定（一括は不可）
     document.getElementById(`sec-acc-${person}-${id}`)?.classList.add('on');
@@ -227,6 +229,28 @@ function setSecTax(person,id,t){
   live();
   if(typeof validateNisaLimits==='function') validateNisaLimits();
 }
+// basis(取得価格累計) のヒント表示更新
+// 課税口座でbasis未入力 → 含み益の課税漏れを警告
+function updateBasisHint(person, id){
+  const hintEl = document.getElementById(`sec-basis-hint-${person}-${id}`);
+  if(!hintEl) return;
+  const isNisa = document.getElementById(`sec-nisa-${person}-${id}`)?.classList.contains('on');
+  const basis = parseFloat(document.getElementById(`sec-basis-${person}-${id}`)?.value)||0;
+  const bal = parseFloat(document.getElementById(`sec-bal-${person}-${id}`)?.value)||0;
+  if(isNisa){
+    hintEl.style.color='#475569';
+    hintEl.textContent='※生涯枠1800万の判定に使用';
+  } else if(basis<=0 && bal>0){
+    hintEl.style.color='#dc2626';
+    hintEl.style.fontWeight='700';
+    hintEl.innerHTML='⚠ 未入力のため現在評価額を取得原価とみなします。含み益がある場合は税金が過少評価されます';
+  } else {
+    hintEl.style.color='#475569';
+    hintEl.style.fontWeight='400';
+    hintEl.textContent='※課税口座の譲渡益課税(20.315%)の取得原価として使用';
+  }
+}
+window.updateBasisHint = updateBasisHint;
 function setSecNisaFrame(person,id,f){
   const prev = document.getElementById(`sec-frame-grow-${person}-${id}`)?.classList.contains('on') ? 'grow'
              : document.getElementById(`sec-frame-tsumi-${person}-${id}`)?.classList.contains('on') ? 'tsumi' : null;
