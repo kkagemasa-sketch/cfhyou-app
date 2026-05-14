@@ -84,10 +84,33 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
   const rows=[];
   let balM = monthlyPrincipal;
   let balB = bonusPrincipal;
+  let unpaidIntM = 0;  // 未払利息（月払い分）— 5年ルール下で月返済額<利息のとき累積
+  let unpaidIntB = 0;  // 未払利息（ボーナス分）
   let lastBoundaryPayMonthly = mpMonthly;  // 125%ルール用：直前境界の月払い額
   let lastBoundaryPayBonus = mpBonus;
   let halfRate = halfRate0;
-  for(let y=1;y<=50&&(balM+balB)>0;y++){
+  // 1期分の支払を処理し、未払利息を更新するヘルパー
+  // returns {intAccrued, princPaid, cashOut, newUnpaid}
+  function _settle(bal, unpaid, rate, payment){
+    const intAccrued = bal * rate;
+    const totalDue = intAccrued + unpaid;
+    // 実支払額の上限：scheduled payment と「残債務+元金」のうち小さい方
+    const maxPayable = totalDue + bal;
+    let cashOut = Math.min(payment, maxPayable);
+    if(cashOut < 0) cashOut = 0;
+    let princPaid, newUnpaid;
+    if(cashOut >= totalDue){
+      // 利息（未払＋当期）を全額支払い、余りを元金に充当
+      princPaid = Math.min(cashOut - totalDue, bal);
+      newUnpaid = 0;
+    } else {
+      // 利息も払いきれない → 不足分が未払利息として累積
+      princPaid = 0;
+      newUnpaid = totalDue - cashOut;
+    }
+    return {intAccrued, princPaid, cashOut, newUnpaid};
+  }
+  for(let y=1;y<=50&&(balM+balB+unpaidIntM+unpaidIntB)>0;y++){
     const curRate = rateForYear(y);
     const curMR = curRate/12;
     const curHalfRate = curRate/2;
@@ -97,6 +120,9 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
       if(isBoundary && curMR!==mr){
         mr=curMR;
         halfRate=curHalfRate;
+        // 未払利息を元金に組み入れて再計算（実銀行の慣行）
+        balM += unpaidIntM; unpaidIntM = 0;
+        balB += unpaidIntB; unpaidIntB = 0;
         const remM=Math.max(1,(years-(y-1))*12);
         let newMpMonthly = mr>0 ? balM*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1) : balM/remM;
         const remH=Math.max(1,(years-(y-1))*2);
@@ -130,27 +156,36 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
     const actualMR = fiveYearRule ? curMR : mr;
     const actualHalfRate = fiveYearRule ? curHalfRate : halfRate;
     let yearPay=0, yearPrinc=0, yearInt=0;
-    for(let m=1;m<=12&&(balM+balB)>0;m++){
+    for(let m=1;m<=12&&(balM+balB+unpaidIntM+unpaidIntB)>0;m++){
       // 月払い分
-      const intM = balM*actualMR;
-      const princM = Math.min(Math.max(0,mpMonthly-intM), balM);
-      yearInt += intM; yearPrinc += princM; yearPay += (intM+princM);
-      balM = Math.max(0, balM - princM);
+      if(balM>0 || unpaidIntM>0){
+        const r = _settle(balM, unpaidIntM, actualMR, mpMonthly);
+        yearInt += r.intAccrued;
+        yearPrinc += r.princPaid;
+        yearPay += r.cashOut;
+        balM = Math.max(0, balM - r.princPaid);
+        unpaidIntM = r.newUnpaid;
+      }
       // ボーナス払い (6月・12月)
-      if(balB>0 && (m===6||m===12)){
-        // 半年ぶん利息（簡易：半年率で1回）
-        const intB = balB * actualHalfRate;
-        const princB = Math.min(Math.max(0,mpBonus-intB), balB);
-        yearInt += intB; yearPrinc += princB; yearPay += (intB+princB);
-        balB = Math.max(0, balB - princB);
+      if((balB>0 || unpaidIntB>0) && (m===6||m===12)){
+        const r = _settle(balB, unpaidIntB, actualHalfRate, mpBonus);
+        yearInt += r.intAccrued;
+        yearPrinc += r.princPaid;
+        yearPay += r.cashOut;
+        balB = Math.max(0, balB - r.princPaid);
+        unpaidIntB = r.newUnpaid;
       }
       if(balM<1)balM=0; if(balB<1)balB=0;
+      if(unpaidIntM<0.01)unpaidIntM=0; if(unpaidIntB<0.01)unpaidIntB=0;
     }
-    // 繰上返済
+    // 繰上返済（未払利息→元金の順で消費）
     let pp=0;prepays.forEach(p=>{if(p.yr===y)pp+=p.amt});
     if(pp>0){
-      const reduceM=Math.min(pp, balM); balM-=reduceM;
-      const reduceB=Math.min(pp-reduceM, balB); balB-=reduceB;
+      let remain = pp;
+      const dM=Math.min(remain,unpaidIntM); unpaidIntM-=dM; remain-=dM;
+      const dB=Math.min(remain,unpaidIntB); unpaidIntB-=dB; remain-=dB;
+      const reduceM=Math.min(remain, balM); balM-=reduceM; remain-=reduceM;
+      const reduceB=Math.min(remain, balB); balB-=reduceB;
       if(ppType==='reduce'&&(balM+balB)>0){
         const remM=Math.max(1,(years-y)*12);
         mpMonthly = mr>0 ? balM*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1) : balM/remM;
@@ -158,8 +193,10 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
         mpBonus = halfRate>0 ? balB*halfRate*Math.pow(1+halfRate,remH)/(Math.pow(1+halfRate,remH)-1) : balB/remH;
       }
     }
-    rows.push({yr:y,pay:Math.round(yearPay),principal:Math.round(yearPrinc),interest:Math.round(yearInt),balance:Math.round(balM+balB),prepay:Math.round(pp),monthly:Math.round(mpMonthly),bonusPay:Math.round(mpBonus)});
-    if((balM+balB)<=0)break;
+    // 残債務 = 元金 + 未払利息（実際に借り手が支払うべき総額）
+    const obligation = balM + balB + unpaidIntM + unpaidIntB;
+    rows.push({yr:y,pay:Math.round(yearPay),principal:Math.round(yearPrinc),interest:Math.round(yearInt),balance:Math.round(obligation),prepay:Math.round(pp),monthly:Math.round(mpMonthly),bonusPay:Math.round(mpBonus),unpaidInt:Math.round(unpaidIntM+unpaidIntB)});
+    if(obligation<=0)break;
   }
   return rows;
 }
