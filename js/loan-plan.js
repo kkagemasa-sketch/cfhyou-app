@@ -220,28 +220,40 @@ function renderLoanTab(){
           <span id="lp-monthly-a" style="font-size:16px;font-weight:800;color:#2563eb;font-family:'Cascadia Code','Consolas',monospace">―</span>
           <span style="font-size:11px;color:var(--muted)">円</span>
         </div>
-        <details style="margin-top:4px">
-          <summary style="font-size:10px;font-weight:700;color:var(--muted);cursor:pointer">金利変更スケジュール</summary>
-          <div id="lp-rate-cont-a" style="margin-top:4px"></div>
-          <button class="btn-add" onclick="addLPRate('a')" style="font-size:10px;padding:3px 8px;margin-top:3px">＋ 金利変更を追加</button>
-        </details>
-        <details style="margin-top:4px">
-          <summary style="font-size:10px;font-weight:700;color:var(--muted);cursor:pointer">⚙️ 詳細オプション（ボーナス払い・5年/125%ルール）</summary>
-          <div style="margin-top:6px;padding:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-              <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
-                <input type="checkbox" id="lp-bonus-on-a" onchange="renderLoanCalc()"> 🏦 ボーナス併用払い
-              </label>
-              <div class="suf" style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#64748b">比率</span><input class="inp" id="lp-bonus-ratio-a" type="number" value="30" min="0" max="80" step="5" onchange="renderLoanCalc()" style="width:50px;font-size:11px"><span class="sl">%</span></div>
+        <div style="margin-top:8px;padding:10px;background:#fff8e6;border:1.5px solid #ffc000;border-radius:8px">
+          <div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px">📈 金利変更スケジュール</div>
+          <div id="lp-rate-cont-a"></div>
+          <button class="btn-add" onclick="addLPRate('a')" style="font-size:11px;padding:5px 12px;margin-top:5px">＋ 金利変更を追加</button>
+        </div>
+        <div style="margin-top:8px;padding:10px;background:#eef5ff;border:1.5px solid #c8d6e8;border-radius:8px">
+          <div style="font-size:12px;font-weight:700;color:#2d5282;margin-bottom:8px">⚙️ 詳細オプション</div>
+          <!-- ボーナス併用払い -->
+          <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;color:#2d5282">
+              <input type="checkbox" id="lp-bonus-on-a" onchange="document.getElementById('lp-bonus-detail-a').style.display=this.checked?'':'none';renderLoanCalc()"> 🏦 ボーナス併用払い
+            </label>
+            <div id="lp-bonus-detail-a" style="display:none;padding-left:22px">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div class="suf" style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:#64748b">1回あたり</span><input class="inp amt-inp" id="lp-bonus-amt-a" type="number" value="100000" min="0" step="10000" onchange="renderLoanCalc()" style="width:90px;font-size:11px"><span class="sl">円</span></div>
+                <span id="lp-bonus-hint-a" style="font-size:10px;color:#64748b">総額 ―</span>
+              </div>
             </div>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;margin-bottom:4px">
-              <input type="checkbox" id="lp-5yr-rule-a" onchange="document.getElementById('lp-125-rule-a-wrap').style.display=this.checked?'':'none';renderLoanCalc()"> 📅 5年ルール適用（変動金利向け：月額を5年間据置）
-            </label>
-            <label id="lp-125-rule-a-wrap" style="display:none;margin-left:18px;font-size:11px;cursor:pointer">
-              <input type="checkbox" id="lp-125-rule-a" onchange="renderLoanCalc()"> 🎯 125%ルール適用（5年経過時の月額上昇を旧月額×1.25まで）
-            </label>
           </div>
-        </details>
+          <!-- 5年ルール -->
+          <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#2d5282">
+              <input type="checkbox" id="lp-5yr-rule-a" onchange="renderLoanCalc()"> 📅 5年ルール適用
+            </label>
+            <div style="font-size:10px;color:#64748b;margin-top:3px;margin-left:22px">変動金利向け：金利が変わっても月額を5年間据置（利息計算は実利率で実施）</div>
+          </div>
+          <!-- 125%ルール -->
+          <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#2d5282">
+              <input type="checkbox" id="lp-125-rule-a" onchange="renderLoanCalc()"> 🎯 125%ルール適用
+            </label>
+            <div style="font-size:10px;color:#64748b;margin-top:3px;margin-left:22px">5年経過時の月額再計算で旧月額×1.25を上限（5年ルールと併用が一般的）</div>
+          </div>
+        </div>
       </div>
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px;display:none" id="lp-card-b">
         <div style="font-size:12px;font-weight:700;color:#e67e22;margin-bottom:6px">ペアローン（配偶者）</div>
@@ -258,28 +270,37 @@ function renderLoanTab(){
           <span id="lp-monthly-b" style="font-size:16px;font-weight:800;color:#e67e22;font-family:'Cascadia Code','Consolas',monospace">―</span>
           <span style="font-size:11px;color:var(--muted)">円</span>
         </div>
-        <details style="margin-top:4px">
-          <summary style="font-size:10px;font-weight:700;color:var(--muted);cursor:pointer">金利変更スケジュール</summary>
-          <div id="lp-rate-cont-b" style="margin-top:4px"></div>
-          <button class="btn-add" onclick="addLPRate('b')" style="font-size:10px;padding:3px 8px;margin-top:3px">＋ 金利変更を追加</button>
-        </details>
-        <details style="margin-top:4px">
-          <summary style="font-size:10px;font-weight:700;color:var(--muted);cursor:pointer">⚙️ 詳細オプション（ボーナス払い・5年/125%ルール）</summary>
-          <div style="margin-top:6px;padding:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-              <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
-                <input type="checkbox" id="lp-bonus-on-b" onchange="renderLoanCalc()"> 🏦 ボーナス併用払い
-              </label>
-              <div class="suf" style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#64748b">比率</span><input class="inp" id="lp-bonus-ratio-b" type="number" value="30" min="0" max="80" step="5" onchange="renderLoanCalc()" style="width:50px;font-size:11px"><span class="sl">%</span></div>
-            </div>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;margin-bottom:4px">
-              <input type="checkbox" id="lp-5yr-rule-b" onchange="document.getElementById('lp-125-rule-b-wrap').style.display=this.checked?'':'none';renderLoanCalc()"> 📅 5年ルール適用
+        <div style="margin-top:8px;padding:10px;background:#fff8e6;border:1.5px solid #ffc000;border-radius:8px">
+          <div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px">📈 金利変更スケジュール</div>
+          <div id="lp-rate-cont-b"></div>
+          <button class="btn-add" onclick="addLPRate('b')" style="font-size:11px;padding:5px 12px;margin-top:5px">＋ 金利変更を追加</button>
+        </div>
+        <div style="margin-top:8px;padding:10px;background:#eef5ff;border:1.5px solid #c8d6e8;border-radius:8px">
+          <div style="font-size:12px;font-weight:700;color:#2d5282;margin-bottom:8px">⚙️ 詳細オプション</div>
+          <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;color:#2d5282">
+              <input type="checkbox" id="lp-bonus-on-b" onchange="document.getElementById('lp-bonus-detail-b').style.display=this.checked?'':'none';renderLoanCalc()"> 🏦 ボーナス併用払い
             </label>
-            <label id="lp-125-rule-b-wrap" style="display:none;margin-left:18px;font-size:11px;cursor:pointer">
+            <div id="lp-bonus-detail-b" style="display:none;padding-left:22px">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div class="suf" style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:#64748b">1回あたり</span><input class="inp amt-inp" id="lp-bonus-amt-b" type="number" value="100000" min="0" step="10000" onchange="renderLoanCalc()" style="width:90px;font-size:11px"><span class="sl">円</span></div>
+                <span id="lp-bonus-hint-b" style="font-size:10px;color:#64748b">総額 ―</span>
+              </div>
+            </div>
+          </div>
+          <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#2d5282">
+              <input type="checkbox" id="lp-5yr-rule-b" onchange="renderLoanCalc()"> 📅 5年ルール適用
+            </label>
+            <div style="font-size:10px;color:#64748b;margin-top:3px;margin-left:22px">変動金利向け：金利が変わっても月額を5年間据置</div>
+          </div>
+          <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#2d5282">
               <input type="checkbox" id="lp-125-rule-b" onchange="renderLoanCalc()"> 🎯 125%ルール適用
             </label>
+            <div style="font-size:10px;color:#64748b;margin-top:3px;margin-left:22px">5年経過時の月額再計算で旧月額×1.25を上限</div>
           </div>
-        </details>
+        </div>
       </div>
     </div>
     <!-- 住宅ローン控除 -->
@@ -525,11 +546,39 @@ function renderLoanCalc(){
   if(amtA<=0&&amtB<=0){$('lp-table-wrap').innerHTML='';return}
   function calcMP(amt,rate,yrs){const mr=rate/12;const n=yrs*12;return mr>0?amt*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1):amt/n}
   function calcBonusPay(amt,rate,yrs){const hr=rate/2;const n=yrs*2;return hr>0?amt*hr*Math.pow(1+hr,n)/(Math.pow(1+hr,n)-1):amt/n}
-  // ボーナス払い比率を考慮
+  // ボーナス払い: 1回額(円)→ボーナス元金を逆算→比率を算出
+  function _bonusRatio(amount, totalPrincipal, rate, years){
+    if(amount<=0 || totalPrincipal<=0 || years<=0) return 0;
+    const hr = rate/2;
+    const n = years*2;
+    // bonusPrincipal = amount × (annuity係数の逆数) = amount × ((1+hr)^n - 1) / (hr × (1+hr)^n)
+    let bonusPrincipal;
+    if(hr>0){
+      bonusPrincipal = amount * (Math.pow(1+hr,n)-1) / (hr * Math.pow(1+hr,n));
+    } else {
+      bonusPrincipal = amount * n;
+    }
+    return Math.min(0.8, Math.max(0, bonusPrincipal/totalPrincipal));
+  }
+  const _bonusAmtA = _lpf('lp-bonus-amt-a')||0;
+  const _bonusAmtB = _lpf('lp-bonus-amt-b')||0;
   const _bonusRatioA = document.getElementById('lp-bonus-on-a')?.checked
-    ? Math.min(0.8, Math.max(0, (_lpf('lp-bonus-ratio-a')||30)/100)) : 0;
+    ? _bonusRatio(_bonusAmtA, amtA, rateA, yrsA) : 0;
   const _bonusRatioB = document.getElementById('lp-bonus-on-b')?.checked
-    ? Math.min(0.8, Math.max(0, (_lpf('lp-bonus-ratio-b')||30)/100)) : 0;
+    ? _bonusRatio(_bonusAmtB, amtB, rateB, yrsB) : 0;
+  // 総額ヒント更新
+  if(_bonusRatioA>0){
+    const total = _bonusAmtA * 2 * yrsA;
+    const ratioPct = (_bonusRatioA*100).toFixed(1);
+    const hintEl = document.getElementById('lp-bonus-hint-a');
+    if(hintEl) hintEl.innerHTML = `総額 = ${_bonusAmtA.toLocaleString()}円 × 2回 × ${yrsA}年 = <strong>${total.toLocaleString()}</strong>円（元金の${ratioPct}%）`;
+  }
+  if(_bonusRatioB>0){
+    const total = _bonusAmtB * 2 * yrsB;
+    const ratioPct = (_bonusRatioB*100).toFixed(1);
+    const hintEl = document.getElementById('lp-bonus-hint-b');
+    if(hintEl) hintEl.innerHTML = `総額 = ${_bonusAmtB.toLocaleString()}円 × 2回 × ${yrsB}年 = <strong>${total.toLocaleString()}</strong>円（元金の${ratioPct}%）`;
+  }
   const mpA = amtA>0 ? calcMP(amtA*(1-_bonusRatioA), rateA, yrsA) : 0;
   const mpB = amtB>0 ? calcMP(amtB*(1-_bonusRatioB), rateB, yrsB) : 0;
   const bpA = amtA>0 && _bonusRatioA>0 ? calcBonusPay(amtA*_bonusRatioA, rateA, yrsA) : 0;
@@ -543,16 +592,17 @@ function renderLoanCalc(){
   // 金利変更スケジュール取得
   const ratesA=getLPRates('a');
   const ratesB=getLPRates('b');
-  // ボーナス払い・5年/125%ルール オプション取得
-  function _lpOptions(suffix){
-    const bonusOn = document.getElementById('lp-bonus-on-'+suffix)?.checked;
-    const bonusRatio = bonusOn ? ((_lpf('lp-bonus-ratio-'+suffix)||30)/100) : 0;
-    const fiveYearRule = !!document.getElementById('lp-5yr-rule-'+suffix)?.checked;
-    const cap125Rule = fiveYearRule && !!document.getElementById('lp-125-rule-'+suffix)?.checked;
-    return {bonusRatio, fiveYearRule, cap125Rule};
-  }
-  const optsA = _lpOptions('a');
-  const optsB = _lpOptions('b');
+  // 5年/125%ルールはチェックボックス独立。ボーナス比率は事前計算済の値を使用
+  const optsA = {
+    bonusRatio: _bonusRatioA,
+    fiveYearRule: !!document.getElementById('lp-5yr-rule-a')?.checked,
+    cap125Rule: !!document.getElementById('lp-125-rule-a')?.checked
+  };
+  const optsB = {
+    bonusRatio: _bonusRatioB,
+    fiveYearRule: !!document.getElementById('lp-5yr-rule-b')?.checked,
+    cap125Rule: !!document.getElementById('lp-125-rule-b')?.checked
+  };
   // 通常償還
   const normalA=amtA>0?calcAmortization(amtA,rateA,yrsA,[],'term',ratesA,optsA):[];
   const normalB=amtB>0?calcAmortization(amtB,rateB,yrsB,[],'term',ratesB,optsB):[];
