@@ -428,12 +428,42 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       if(ratio<-0.15)return ' shock-drop-light';
       return '';
     };
+    // ラベル別の「現時点」残高マップを構築（cf-calcと同じ命名規則）
+    const _curByLbl={};
+    let _curTotal=0;
+    ['h','w'].forEach(p=>{
+      const pLbl=p==='h'?'ご主人様':'奥様';
+      const seen=new Set();
+      document.querySelectorAll(`[id^="sec-bal-${p}-"],[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+        const m=el.id.match(new RegExp(`^sec-(?:stk-)?bal-${p}-(\\d+)$`));
+        if(!m||seen.has(m[1]))return;
+        seen.add(m[1]);
+        const sid=m[1];
+        const isAcc=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
+        const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+        const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        const custom=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+        let val=0, lbl='';
+        if(isAcc){
+          val=fv(`sec-bal-${p}-${sid}`)||0;
+          lbl=custom||((isNisa?'NISA':'課税')+'積み立て('+pLbl+')');
+        } else if(isStock){
+          val=fv(`sec-stk-bal-${p}-${sid}`)||0;
+          lbl=custom||((isNisa?'NISA':'課税')+'一括投資('+pLbl+')');
+        } else return;
+        if(val<=0)return;
+        _curByLbl[lbl]=(_curByLbl[lbl]||0)+val;
+        _curTotal+=val;
+      });
+    });
     if(R.finAssetRows&&R.finAssetRows.length>0){
       R.finAssetRows.forEach(row=>{
         if(!row.vals.slice(0,disp).some(v=>v>0))return;
         const _finKey=`fin-${row.lbl}`;
         const _exp=_hasExplain(_finKey);
-        h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}</td>`;
+        const _cur=_curByLbl[row.lbl]||0;
+        const _curBadge=_cur>0?`<span style="font-size:11px;font-weight:400;opacity:.8">現時点</span><br><span style="font-size:12px;font-weight:700">${_cur.toLocaleString()}万円</span>`:'';
+        h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}${_curBadge?'<br>'+_curBadge:''}</td>`;
         for(let i=0;i<disp;i++){
           const v=ri(row.vals[i]||0);
           const _dCls=_dropCls(row.vals, row.baseVals, i);
@@ -446,7 +476,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       });
     }
     // 合計行（色は個別行側に付けるのでここでは付与しない）
-    h+=`<tr class="rfin rfin-total fin-asset-row" style="font-weight:700"><td>その他金融資産<br>合計</td><td></td>`;
+    const _curTotalBadge=_curTotal>0?`<span style="font-size:11px;font-weight:400;opacity:.8">現時点</span><br><span style="font-size:12px;font-weight:700">${_curTotal.toLocaleString()}万円</span>`:'';
+    h+=`<tr class="rfin rfin-total fin-asset-row" style="font-weight:700"><td>その他金融資産<br>合計</td><td>${_curTotalBadge}</td>`;
     for(let i=0;i<disp;i++){
       const v=ri(R.finAsset[i]);
       h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;

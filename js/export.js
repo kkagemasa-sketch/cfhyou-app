@@ -575,15 +575,41 @@ async function exportExcelMG(){
   // その他金融資産（通常CFと同じ型タグを使用: 'fin', 'finTotal'）
   const _hasFAMG=MR.finAsset&&MR.finAsset.some(v=>v>0);
   if(_hasFAMG){
+    // ラベル別の現時点残高マップ（死亡者の資産は除外）
+    const _deadPExp=targetIsH?'h':'w';
+    const _curByLbl_mg={};
+    let _curTotal_mg=0;
+    ['h','w'].forEach(p=>{
+      if(p===_deadPExp)return; // 死亡者の資産は集計しない
+      const pLbl=p==='h'?'ご主人様':'奥様';
+      const seen=new Set();
+      document.querySelectorAll(`[id^="sec-bal-${p}-"],[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+        const m=el.id.match(new RegExp(`^sec-(?:stk-)?bal-${p}-(\\d+)$`));
+        if(!m||seen.has(m[1]))return;
+        seen.add(m[1]);
+        const sid=m[1];
+        const isAcc=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
+        const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+        const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        const custom=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+        let val=0, lbl='';
+        if(isAcc){val=fv(`sec-bal-${p}-${sid}`)||0; lbl=custom||((isNisa?'NISA':'課税')+'積み立て('+pLbl+')');}
+        else if(isStock){val=fv(`sec-stk-bal-${p}-${sid}`)||0; lbl=custom||((isNisa?'NISA':'課税')+'一括投資('+pLbl+')');}
+        else return;
+        if(val<=0)return;
+        _curByLbl_mg[lbl]=(_curByLbl_mg[lbl]||0)+val;
+        _curTotal_mg+=val;
+      });
+    });
     if(N.finAssetRows&&N.finAssetRows.length>0){
-      const _deadPExp=targetIsH?'h':'w';
       N.finAssetRows.forEach(row=>{
         if(row.person===_deadPExp)return;
         if(!row.vals.slice(0,disp).some(v=>v>0))return;
-        push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v||0)),ri(row.vals[disp-1]||0)],'fin');
+        const _cur=_curByLbl_mg[row.lbl]||0;
+        push([_cur>0?`現時点 ${_cur}万円`:'',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v||0)),ri(row.vals[disp-1]||0)],'fin');
       });
     }
-    push(['その他金融資産合計','',...MR.finAsset.slice(0,disp).map(v=>ri(v)),ri(MR.finAsset[disp-1])],'finTotal');
+    push(['その他金融資産合計',_curTotal_mg>0?`現時点 ${_curTotal_mg}万円`:'',...MR.finAsset.slice(0,disp).map(v=>ri(v)),ri(MR.finAsset[disp-1])],'finTotal');
   }
   // 総金融資産（通常CFと同じ型タグ: 'totalAsset'）
   if(MR.totalAsset)push(['総金融資産','',...MR.totalAsset.slice(0,disp).map(v=>ri(v)),ri(MR.totalAsset[disp-1])],'totalAsset');
@@ -1575,10 +1601,37 @@ async function exportExcel(){
   push(['預貯金残高',_initSavForXls,...R.sav.slice(0,disp).map(v=>ri(v)),ri(R.sav[disp-1])],'savings');
   // 金融資産（finAssetVisibleがfalseの場合は出力しない）
   if(typeof finAssetVisible==='undefined'||finAssetVisible!==false){
-    if(R.finAssetRows)R.finAssetRows.forEach(row=>{
-      if(row.vals.slice(0,disp).some(v=>v>0))push(['',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
+    // ラベル別の現時点残高マップ
+    const _curByLbl_e={};
+    let _curTotal_e=0;
+    ['h','w'].forEach(p=>{
+      const pLbl=p==='h'?'ご主人様':'奥様';
+      const seen=new Set();
+      document.querySelectorAll(`[id^="sec-bal-${p}-"],[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+        const m=el.id.match(new RegExp(`^sec-(?:stk-)?bal-${p}-(\\d+)$`));
+        if(!m||seen.has(m[1]))return;
+        seen.add(m[1]);
+        const sid=m[1];
+        const isAcc=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
+        const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+        const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        const custom=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+        let val=0, lbl='';
+        if(isAcc){val=fv(`sec-bal-${p}-${sid}`)||0; lbl=custom||((isNisa?'NISA':'課税')+'積み立て('+pLbl+')');}
+        else if(isStock){val=fv(`sec-stk-bal-${p}-${sid}`)||0; lbl=custom||((isNisa?'NISA':'課税')+'一括投資('+pLbl+')');}
+        else return;
+        if(val<=0)return;
+        _curByLbl_e[lbl]=(_curByLbl_e[lbl]||0)+val;
+        _curTotal_e+=val;
+      });
     });
-    if(R.finAsset.some(v=>v>0))push(['その他金融資産合計','',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
+    if(R.finAssetRows)R.finAssetRows.forEach(row=>{
+      if(row.vals.slice(0,disp).some(v=>v>0)){
+        const _cur=_curByLbl_e[row.lbl]||0;
+        push([_cur>0?`現時点 ${_cur}万円`:'',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
+      }
+    });
+    if(R.finAsset.some(v=>v>0))push(['その他金融資産合計',_curTotal_e>0?`現時点 ${_curTotal_e}万円`:'',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
     push(['総金融資産','',...R.totalAsset.slice(0,disp).map(v=>ri(v)),ri(R.totalAsset[disp-1])],'totalAsset');
     // 下落シナリオ適用中は通常値（下落なし）を比較行として追加
     const _shocksOnExp=(typeof marketShocks!=='undefined'&&marketShocks.length>0)
