@@ -339,6 +339,42 @@ async function exportExcelMG(){
     infoDataLens.push(rowLen);
   });
 
+  // その他金融資産の現時点合計
+  const _secItems_mg=[];
+  ['h','w'].forEach(p=>{
+    const pLbl=p==='h'?'ご主人様':'奥様';
+    const seen=new Set();
+    document.querySelectorAll(`[id^="sec-bal-${p}-"],[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      const m=el.id.match(new RegExp(`^sec-(?:stk-)?bal-${p}-(\\d+)$`));
+      if(!m||seen.has(m[1]))return;
+      seen.add(m[1]);
+      const sid=m[1];
+      const isAcc=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
+      const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+      const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+      const custom=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+      let val=0,catLbl='';
+      if(isAcc){val=fv(`sec-bal-${p}-${sid}`)||0; catLbl=isNisa?'積立NISA':'課税積立';}
+      else if(isStock){val=fv(`sec-stk-bal-${p}-${sid}`)||0; catLbl=isNisa?'一括NISA':'課税一括投資';}
+      else return;
+      if(val<=0)return;
+      _secItems_mg.push({pLbl,catLbl,custom,val});
+    });
+  });
+  if(_secItems_mg.length>0){
+    const _secTotal_mg=_secItems_mg.reduce((s,it)=>s+it.val,0);
+    const secInfoRow=['📊 その他金融資産','',];
+    _secItems_mg.forEach(it=>{
+      const lbl=it.custom||`${it.catLbl}(${it.pLbl})`;
+      secInfoRow.push(`${lbl}: ${it.val}万円`,..._pad(infoSpan));
+    });
+    secInfoRow.push(`合計: ${_secTotal_mg}万円`,..._pad(infoSpan));
+    const secInfoLen=secInfoRow.length;
+    while(secInfoRow.length<disp+3)secInfoRow.push('');
+    push(secInfoRow,'info');
+    infoDataLens.push(secInfoLen);
+  }
+
   // 注釈・補足メモ（自由記入欄、localStorage保存）
   const _cfNote_mg = (()=>{try{return localStorage.getItem('cf_summary_note')||''}catch(e){return ''}})();
   let _noteRowIdx_mg = -1;
@@ -1384,6 +1420,42 @@ async function exportExcel(){
   push(infoRow2,'info');
   const infoDataLens=[infoRow1Len,infoRow2Len];
   extraPairRows2.forEach(row=>{const rowLen=row.length;while(row.length<disp+3)row.push('');push(row,'info');infoDataLens.push(rowLen);});
+
+  // その他金融資産の現時点合計
+  const _secItems_e=[];
+  ['h','w'].forEach(p=>{
+    const pLbl=p==='h'?'ご主人様':'奥様';
+    const seen=new Set();
+    document.querySelectorAll(`[id^="sec-bal-${p}-"],[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      const m=el.id.match(new RegExp(`^sec-(?:stk-)?bal-${p}-(\\d+)$`));
+      if(!m||seen.has(m[1]))return;
+      seen.add(m[1]);
+      const sid=m[1];
+      const isAcc=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
+      const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+      const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+      const custom=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+      let val=0,catLbl='';
+      if(isAcc){val=fv(`sec-bal-${p}-${sid}`)||0; catLbl=isNisa?'積立NISA':'課税積立';}
+      else if(isStock){val=fv(`sec-stk-bal-${p}-${sid}`)||0; catLbl=isNisa?'一括NISA':'課税一括投資';}
+      else return;
+      if(val<=0)return;
+      _secItems_e.push({pLbl,catLbl,custom,val});
+    });
+  });
+  if(_secItems_e.length>0){
+    const _secTotal_e=_secItems_e.reduce((s,it)=>s+it.val,0);
+    const secInfoRow=['📊 その他金融資産','',];
+    _secItems_e.forEach(it=>{
+      const lbl=it.custom||`${it.catLbl}(${it.pLbl})`;
+      secInfoRow.push(`${lbl}: ${it.val}万円`,..._pad(infoSpan));
+    });
+    secInfoRow.push(`合計: ${_secTotal_e}万円`,..._pad(infoSpan));
+    const secInfoLen=secInfoRow.length;
+    while(secInfoRow.length<disp+3)secInfoRow.push('');
+    push(secInfoRow,'info');
+    infoDataLens.push(secInfoLen);
+  }
 
   // 注釈・補足メモ（自由記入欄、localStorage保存）
   const _cfNote_e = (()=>{try{return localStorage.getItem('cf_summary_note')||''}catch(e){return ''}})();

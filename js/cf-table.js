@@ -83,6 +83,52 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     </div>
   </div>`;
 
+  // 行1.5：その他金融資産の現時点合計（NISA・課税積立・一括投資の項目ごと＋合計）
+  // sec-bal-* (積立型) と sec-stk-bal-* (一括投資型) を集計
+  const _secItems=[];
+  ['h','w'].forEach(p=>{
+    const pLbl=p==='h'?'ご主人様':'奥様';
+    const seen=new Set();
+    document.querySelectorAll(`[id^="sec-bal-${p}-"],[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      const m=el.id.match(new RegExp(`^sec-(?:stk-)?bal-${p}-(\\d+)$`));
+      if(!m||seen.has(m[1]))return;
+      seen.add(m[1]);
+      const sid=m[1];
+      const isAcc=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
+      const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+      const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+      const custom=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+      let val=0,catLbl='';
+      if(isAcc){
+        val=fv(`sec-bal-${p}-${sid}`)||0;
+        catLbl=isNisa?'積立NISA':'課税積立';
+      } else if(isStock){
+        val=fv(`sec-stk-bal-${p}-${sid}`)||0;
+        catLbl=isNisa?'一括NISA':'課税一括投資';
+      } else return;
+      if(val<=0)return;
+      _secItems.push({p,pLbl,sid,catLbl,custom,val,isNisa,isStock});
+    });
+  });
+  if(_secItems.length>0){
+    const _secTotal=_secItems.reduce((s,it)=>s+it.val,0);
+    const _iconFor=(it)=>it.isStock?(it.isNisa?'📈':'📊'):(it.isNisa?'🌱':'💹');
+    const _colorFor=(it)=>it.isNisa?'#059669':'#1e5a9a';
+    let chips='';
+    _secItems.forEach(it=>{
+      const lbl=it.custom||`${it.catLbl}(${it.pLbl})`;
+      chips+=chip(_iconFor(it),lbl,`${it.val.toLocaleString()}万円`,_colorFor(it));
+    });
+    h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:6px;background:#fff">
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">📊 その他金融資産（現時点）</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:stretch">
+        ${chips}
+        ${arrow}
+        ${chip('💰','金融資産合計',`${_secTotal.toLocaleString()}万円`,'var(--navy)')}
+      </div>
+    </div>`;
+  }
+
   // 行2：住宅ローン条件
   const _flatLabel=_isFlat_t?`フラット${flat35Sub==='flat50'?'50':flat35Sub==='flat20'?'20':'35'}`:'';
   const _flatPt=_isFlat_t?calcFlat35Points():0;
