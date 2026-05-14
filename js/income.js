@@ -345,6 +345,14 @@ function _amtVal(el){
   return parseFloat(String(el.value).replace(/,/g,''))||0;
 }
 function calcStepHint(id){
+  // 収入ステップが変わったら年金額も連動再計算（手動入力時もOK：少し遅延でデバウンス）
+  const _personForPension = id.startsWith('h-is')?'h':(id.startsWith('w-is')?'w':null);
+  if(_personForPension){
+    clearTimeout(window._pensionRecalcTimer);
+    window._pensionRecalcTimer = setTimeout(()=>{
+      try{ calcPension(_personForPension); }catch(e){}
+    }, 400);
+  }
   const nf=_amtVal(document.getElementById(`${id}-net-from`));
   const nt=_amtVal(document.getElementById(`${id}-net-to`));
   const af=parseInt(document.getElementById(`${id}-from`)?.value)||0;

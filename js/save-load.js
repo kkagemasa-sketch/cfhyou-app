@@ -1043,11 +1043,22 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // 更新ボタン：先に保存してからページ遷移（2秒デバウンス前に遷移するとデータが消えるのを防止）
 async function saveAndRefresh(){
   clearTimeout(_autoSaveTimer);
+  // フォーカス中の入力欄を確定（blurイベントでフォーマット処理が走るため）
+  try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(e){}
+  // 少し待ってからデータ収集（blur後のDOM反映を待つ）
+  await new Promise(r=>setTimeout(r, 50));
   try{
-    await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:_collectSaveData()});
-  }catch(e){}
+    const data=_collectSaveData();
+    await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data});
+    // 念のためsessionStorageにもバックアップ（IndexedDB失敗時のフォールバック）
+    try{ sessionStorage.setItem('cf_emergency_backup', JSON.stringify(data)); }catch(e){}
+  }catch(e){
+    console.error('保存に失敗しました:', e);
+    if(!confirm('保存に失敗した可能性があります。リロードしますか？\n（キャンセルで踏みとどまれます）'))return;
+  }
   window.location.href=window.location.pathname+'?v='+Date.now();
 }
+window.saveAndRefresh = saveAndRefresh;
 async function restoreAutoSave(){
   try{
     const entry=await dbGet(AUTOSAVE_KEY);
