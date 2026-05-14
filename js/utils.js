@@ -250,6 +250,12 @@ function rowLabelEdit(td){
 }
 
 // CF表の詳細ボックス（自己資金内訳・住宅ローン条件）の折りたたみトグル
+// 自由記入欄の保存（localStorageに永続化、Excel出力時に参照）
+function saveCfSummaryNote(text){
+  try{localStorage.setItem('cf_summary_note', text||'')}catch(e){}
+}
+window.saveCfSummaryNote = saveCfSummaryNote;
+
 function toggleCfSummaryDetail(){
   const box=document.getElementById('cf-summary-detail');
   const btn=document.getElementById('cf-summary-toggle');

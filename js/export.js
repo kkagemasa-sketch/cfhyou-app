@@ -339,6 +339,17 @@ async function exportExcelMG(){
     infoDataLens.push(rowLen);
   });
 
+  // 注釈・補足メモ（自由記入欄、localStorage保存）
+  const _cfNote_mg = (()=>{try{return localStorage.getItem('cf_summary_note')||''}catch(e){return ''}})();
+  let _noteRowIdx_mg = -1;
+  if(_cfNote_mg && _cfNote_mg.trim()){
+    const noteRow = ['📝 注釈・補足','',_cfNote_mg];
+    while(noteRow.length<disp+3)noteRow.push('');
+    push(noteRow,'info');
+    _noteRowIdx_mg = rows.length-1;
+    infoDataLens.push(2);
+  }
+
   // 空行
   push(Array(disp+3).fill(''),'blank');
 
@@ -657,6 +668,19 @@ async function exportExcelMG(){
       if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
     }
   });
+  // 注釈行：col 2 から行末までマージ
+  if(_noteRowIdx_mg>=0){
+    ws['!merges'].push({s:{r:_noteRowIdx_mg,c:2},e:{r:_noteRowIdx_mg,c:disp+2}});
+    const ref=XLSX.utils.encode_cell({r:_noteRowIdx_mg,c:2});
+    if(ws[ref]){
+      ws[ref].s = ws[ref].s || {};
+      ws[ref].s.alignment = {wrapText:true, vertical:'center', horizontal:'left'};
+      ws[ref].s.font = {sz:10, name:'游ゴシック'};
+      ws[ref].s.fill = {patternType:'solid', fgColor:{rgb:'FFFEF7E0'}};
+    }
+    if(!ws['!rows']) ws['!rows']=[];
+    ws['!rows'][_noteRowIdx_mg] = {hpt:Math.max(30, Math.min(120, 18 + Math.ceil(_cfNote_mg.length/30)*14))};
+  }
   // 使用者情報の結合（左のみ、注意文右側は削除済み）
   for(let i=0;i<footerRowCount;i++){
     const r=footerStartRow+i;
@@ -1361,6 +1385,17 @@ async function exportExcel(){
   const infoDataLens=[infoRow1Len,infoRow2Len];
   extraPairRows2.forEach(row=>{const rowLen=row.length;while(row.length<disp+3)row.push('');push(row,'info');infoDataLens.push(rowLen);});
 
+  // 注釈・補足メモ（自由記入欄、localStorage保存）
+  const _cfNote_e = (()=>{try{return localStorage.getItem('cf_summary_note')||''}catch(e){return ''}})();
+  let _noteRowIdx_n = -1;
+  if(_cfNote_e && _cfNote_e.trim()){
+    const noteRow = ['📝 注釈・補足','',_cfNote_e];
+    while(noteRow.length<disp+3)noteRow.push('');
+    push(noteRow,'info');
+    _noteRowIdx_n = rows.length-1;
+    infoDataLens.push(2); // チップマージ作成を回避（後で手動マージ）
+  }
+
   // 空行（塗りつぶしなし）
   push(Array(disp+3).fill(''),'blank');
 
@@ -1615,6 +1650,21 @@ async function exportExcel(){
       if(sc<=disp+2&&ec>=sc)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
     }
   });
+  // 注釈行：col 2 から行末まで1つにマージ（長文対応）
+  if(_noteRowIdx_n>=0){
+    ws['!merges'].push({s:{r:_noteRowIdx_n,c:2},e:{r:_noteRowIdx_n,c:disp+2}});
+    // 注釈セル(col 2)の wrapText とフォント設定
+    const ref=XLSX.utils.encode_cell({r:_noteRowIdx_n,c:2});
+    if(ws[ref]){
+      ws[ref].s = ws[ref].s || {};
+      ws[ref].s.alignment = {wrapText:true, vertical:'center', horizontal:'left'};
+      ws[ref].s.font = {sz:10, name:'游ゴシック'};
+      ws[ref].s.fill = {patternType:'solid', fgColor:{rgb:'FFFEF7E0'}};
+    }
+    // 行高を自動拡張のため、複数行用に高さを増やす
+    if(!ws['!rows']) ws['!rows']=[];
+    ws['!rows'][_noteRowIdx_n] = {hpt:Math.max(30, Math.min(120, 18 + Math.ceil(_cfNote_e.length/30)*14))};
+  }
   // 使用者情報の結合（左のみ、注意文右側は削除済み）
   for(let i=0;i<footerRowCount;i++){
     const r=footerStartRow+i;
