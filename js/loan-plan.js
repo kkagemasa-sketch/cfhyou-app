@@ -193,9 +193,10 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
         mpBonus = halfRate>0 ? balB*halfRate*Math.pow(1+halfRate,remH)/(Math.pow(1+halfRate,remH)-1) : balB/remH;
       }
     }
-    // 残債務 = 元金 + 未払利息（実際に借り手が支払うべき総額）
+    // balance は元金のみ（表示・繰上返済計算との整合性のため）
+    // 未払利息は unpaidInt で別管理し、内部の完済判定にのみ使用
     const obligation = balM + balB + unpaidIntM + unpaidIntB;
-    rows.push({yr:y,pay:Math.round(yearPay),principal:Math.round(yearPrinc),interest:Math.round(yearInt),balance:Math.round(obligation),prepay:Math.round(pp),monthly:Math.round(mpMonthly),bonusPay:Math.round(mpBonus),unpaidInt:Math.round(unpaidIntM+unpaidIntB)});
+    rows.push({yr:y,pay:Math.round(yearPay),principal:Math.round(yearPrinc),interest:Math.round(yearInt),balance:Math.round(balM+balB),prepay:Math.round(pp),monthly:Math.round(mpMonthly),bonusPay:Math.round(mpBonus),unpaidInt:Math.round(unpaidIntM+unpaidIntB)});
     if(obligation<=0)break;
   }
   return rows;
