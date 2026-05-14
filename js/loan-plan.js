@@ -558,7 +558,8 @@ function renderLoanCalc(){
     } else {
       bonusPrincipal = amount * n;
     }
-    return Math.min(0.8, Math.max(0, bonusPrincipal/totalPrincipal));
+    // 上限: 借入額の50%（実銀行の一般的な上限）
+    return Math.min(0.5, Math.max(0, bonusPrincipal/totalPrincipal));
   }
   const _bonusAmtA = _lpf('lp-bonus-amt-a')||0;
   const _bonusAmtB = _lpf('lp-bonus-amt-b')||0;
@@ -566,18 +567,29 @@ function renderLoanCalc(){
     ? _bonusRatio(_bonusAmtA, amtA, rateA, yrsA) : 0;
   const _bonusRatioB = document.getElementById('lp-bonus-on-b')?.checked
     ? _bonusRatio(_bonusAmtB, amtB, rateB, yrsB) : 0;
+  // キャップ前の比率（警告判定用）
+  function _bonusRatioRaw(amount, totalPrincipal, rate, years){
+    if(amount<=0 || totalPrincipal<=0 || years<=0) return 0;
+    const hr = rate/2, n = years*2;
+    const bp = hr>0 ? amount * (Math.pow(1+hr,n)-1) / (hr * Math.pow(1+hr,n)) : amount * n;
+    return bp/totalPrincipal;
+  }
   // 総額ヒント更新
   if(_bonusRatioA>0){
     const total = _bonusAmtA * 2 * yrsA;
     const ratioPct = (_bonusRatioA*100).toFixed(1);
+    const rawA = _bonusRatioRaw(_bonusAmtA, amtA, rateA, yrsA);
+    const warnA = rawA > 0.5 ? ` <span style="color:#dc2626;font-weight:700">⚠ 50%上限を超えるため自動調整されました（要望: ${(rawA*100).toFixed(1)}%）</span>` : '';
     const hintEl = document.getElementById('lp-bonus-hint-a');
-    if(hintEl) hintEl.innerHTML = `総額 = ${_bonusAmtA.toLocaleString()}円 × 2回 × ${yrsA}年 = <strong>${total.toLocaleString()}</strong>円（元金の${ratioPct}%）`;
+    if(hintEl) hintEl.innerHTML = `総額 = ${_bonusAmtA.toLocaleString()}円 × 2回 × ${yrsA}年 = <strong>${total.toLocaleString()}</strong>円（元金の${ratioPct}%）${warnA}`;
   }
   if(_bonusRatioB>0){
     const total = _bonusAmtB * 2 * yrsB;
     const ratioPct = (_bonusRatioB*100).toFixed(1);
+    const rawB = _bonusRatioRaw(_bonusAmtB, amtB, rateB, yrsB);
+    const warnB = rawB > 0.5 ? ` <span style="color:#dc2626;font-weight:700">⚠ 50%上限を超えるため自動調整されました（要望: ${(rawB*100).toFixed(1)}%）</span>` : '';
     const hintEl = document.getElementById('lp-bonus-hint-b');
-    if(hintEl) hintEl.innerHTML = `総額 = ${_bonusAmtB.toLocaleString()}円 × 2回 × ${yrsB}年 = <strong>${total.toLocaleString()}</strong>円（元金の${ratioPct}%）`;
+    if(hintEl) hintEl.innerHTML = `総額 = ${_bonusAmtB.toLocaleString()}円 × 2回 × ${yrsB}年 = <strong>${total.toLocaleString()}</strong>円（元金の${ratioPct}%）${warnB}`;
   }
   const mpA = amtA>0 ? calcMP(amtA*(1-_bonusRatioA), rateA, yrsA) : 0;
   const mpB = amtB>0 ? calcMP(amtB*(1-_bonusRatioB), rateB, yrsB) : 0;
