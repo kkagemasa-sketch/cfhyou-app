@@ -287,7 +287,7 @@ function addIncomeStep(person){
   el.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <span style="font-size:11px;font-weight:700;color:var(--navy)">段階${cnt}</span>
-      <button class="btn-rm" onclick="document.getElementById('${id}').remove();live()">×</button>
+      <button class="btn-rm" onclick="document.getElementById('${id}').remove();if(typeof calcPension==='function')calcPension('${id.startsWith('h-')?'h':'w'}');live()">×</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:6px">
       <div class="fg">
@@ -585,9 +585,9 @@ function updateDCReceiptHint(p){
 // - ステップがない場合: null を返す（呼び出し側でフォールバック）
 function calcAvgHyojun(person, startAge, retireAge){
   const steps=getIncomeSteps(person);
-  if(steps.length===0) return null;
-  // 全ステップの収入が0なら、厚生年金加入なし扱いで avgHyojun=0 を返す
-  // （nullを返すとフォールバックでデフォルト値が使われてしまうため）
+  // ステップ未入力 or 全ステップ0 → 厚生年金加入なし扱いで avgHyojun=0 を返す
+  // （nullを返すとフォールバックでデフォルト値322/541が使われてしまうため）
+  if(steps.length===0) return 0;
   const _hasNonZero = steps.some(s => (s.netFrom||0) > 0 || (s.netTo||0) > 0);
   if(!_hasNonZero) return 0;
   const NET2GROSS=function(net){

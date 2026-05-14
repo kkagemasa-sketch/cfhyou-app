@@ -1047,26 +1047,48 @@ async function saveAndRefresh(){
   try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(e){}
   // 少し待ってからデータ収集（blur後のDOM反映を待つ）
   await new Promise(r=>setTimeout(r, 50));
-  try{
-    const data=_collectSaveData();
-    await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data});
-    // 念のためsessionStorageにもバックアップ（IndexedDB失敗時のフォールバック）
-    try{ sessionStorage.setItem('cf_emergency_backup', JSON.stringify(data)); }catch(e){}
-  }catch(e){
-    console.error('保存に失敗しました:', e);
-    if(!confirm('保存に失敗した可能性があります。リロードしますか？\n（キャンセルで踏みとどまれます）'))return;
+  let data=null;
+  try{ data=_collectSaveData(); }catch(e){ console.error('データ収集エラー:',e); }
+  // ★ 同期的にlocalStorageへバックアップ（IndexedDBが失敗してもこれが残る）
+  if(data){
+    try{ localStorage.setItem('cf_refresh_backup_v1', JSON.stringify({data, ts:Date.now()})); }catch(e){console.warn('localStorage保存失敗:',e);}
+  }
+  // 非同期でIndexedDBにも保存（失敗してもlocalStorageに残っているのでOK）
+  if(data){
+    try{
+      await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data});
+    }catch(e){ console.warn('IndexedDB保存失敗（localStorageバックアップを利用）:',e); }
   }
   window.location.href=window.location.pathname+'?v='+Date.now();
 }
 window.saveAndRefresh = saveAndRefresh;
 async function restoreAutoSave(){
+  // 1. まず更新ボタンのlocalStorageバックアップを確認（最新で確実）
+  let restored=false;
   try{
-    const entry=await dbGet(AUTOSAVE_KEY);
-    if(entry&&entry.data){
-      _applyData(entry.data);
-      _autoSaveRestored=true;
+    const raw=localStorage.getItem('cf_refresh_backup_v1');
+    if(raw){
+      const parsed=JSON.parse(raw);
+      // 5分以内のバックアップなら採用（古いものは無視）
+      if(parsed && parsed.data && parsed.ts && (Date.now()-parsed.ts)<5*60*1000){
+        _applyData(parsed.data);
+        _autoSaveRestored=true;
+        restored=true;
+        // 採用したら削除（次回以降はIndexedDBから読む）
+        localStorage.removeItem('cf_refresh_backup_v1');
+      }
     }
-  }catch(e){}
+  }catch(e){console.warn('localStorageバックアップ読込失敗:',e);}
+  // 2. localStorageが無ければIndexedDB
+  if(!restored){
+    try{
+      const entry=await dbGet(AUTOSAVE_KEY);
+      if(entry&&entry.data){
+        _applyData(entry.data);
+        _autoSaveRestored=true;
+      }
+    }catch(e){}
+  }
 }
 
 // ===== パネルUI =====
