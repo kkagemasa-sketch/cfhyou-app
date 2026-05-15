@@ -57,8 +57,12 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const downFromOwn=(downType==='gift'||downType==='other')?0:downPay;
   const _downOtherText=(()=>{try{return localStorage.getItem('cf_down_other_text')||''}catch(e){return ''}})();
   const _costOtherText=(()=>{try{return localStorage.getItem('cf_cost_other_text')||''}catch(e){return ''}})();
+  const _moveType=document.getElementById('move-type')?.value||'own';
+  const _moveOtherText=(()=>{try{return localStorage.getItem('cf_move_other_text')||''}catch(e){return ''}})();
   const houseCostDeduct=(_costTypeDisp==='loan'||_costTypeDisp==='other')?0:houseCostV;
-  const initialOut=downFromOwn+houseCostDeduct+movingCostV+furnitureInitV;
+  // 引越・家具家電：'other'なら自己資金から差し引かない
+  const moveDeductForTable=(_moveType==='other')?0:(movingCostV+furnitureInitV);
+  const initialOut=downFromOwn+houseCostDeduct+moveDeductForTable;
   const cashAfter=cashTotal-initialOut;
   const cashAfterColor=cashAfter>=0?'var(--green)':'var(--red)';
 
@@ -83,7 +87,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
           ? chip('📝',`諸費用（${_costOtherText||'その他'}）`,`${houseCostV.toLocaleString()}万円`,'#7c3aed')
           : chip('📋','諸費用',`${houseCostV.toLocaleString()}万円`,'var(--red)')
       }
-      ${chip('🚚','引越・家具',`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'var(--red)')}
+      ${_moveType==='other'
+        ? chip('📝',`引越・家具（${_moveOtherText||'その他'}）`,`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'#7c3aed')
+        : chip('🚚','引越・家具',`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'var(--red)')
+      }
       ${arrow}
       ${chip('✅','購入後残高',`${cashAfter.toLocaleString()}万円`,cashAfterColor)}
     </div>

@@ -267,6 +267,8 @@ function _collectDynamic(){
   d.downOtherText = document.getElementById('down-other-text')?.value || '';
   // 諸費用「その他」の自由記述
   d.costOtherText = document.getElementById('cost-other-text')?.value || '';
+  // 引越「その他」の自由記述
+  d.moveOtherText = document.getElementById('move-other-text')?.value || '';
   d.parkFromAge=document.getElementById('park-from-age')?.value||'';
   d.parkToAge=document.getElementById('park-to-age')?.value||'';
   // 動的修繕周期
@@ -655,6 +657,15 @@ function _restoreDynamic(d){
   // 諸費用タイプ復元（cost-type hidden に保存されている場合）
   const _costTypeVal=d.fields?.['cost-type'];
   if(_costTypeVal && typeof setCostType==='function') setCostType(_costTypeVal);
+  // 引越「その他」の自由記述を復元
+  if(typeof d.moveOtherText==='string'){
+    const _mtEl=document.getElementById('move-other-text');
+    if(_mtEl) _mtEl.value = d.moveOtherText;
+    try{ localStorage.setItem('cf_move_other_text', d.moveOtherText); }catch(e){}
+  }
+  // 引越タイプ復元
+  const _moveTypeVal=d.fields?.['move-type'];
+  if(_moveTypeVal && typeof setMoveType==='function') setMoveType(_moveTypeVal);
   // ローンモード復元: joint > pair > single の優先順
   if(typeof d.jointLoanMode!=='undefined'&&d.jointLoanMode) setLoanMode('joint');
   else if(typeof d.pairLoanMode!=='undefined') setLoanMode(d.pairLoanMode?'pair':'single');

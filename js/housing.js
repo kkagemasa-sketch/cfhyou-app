@@ -172,11 +172,42 @@ function onCostOtherTextChange(){
   live(true);
 }
 window.onCostOtherTextChange = onCostOtherTextChange;
-// ページロード時にlocalStorageから諸費用「その他」自由記述を復元
+// ===== 引越・家具家電 支払い方法切替 =====
+function setMoveType(t){
+  document.getElementById('move-type').value=t;
+  document.getElementById('move-own').classList.toggle('on',t==='own');
+  document.getElementById('move-other')?.classList.toggle('on',t==='other');
+  const otherWrap=document.getElementById('move-other-wrap');
+  if(otherWrap) otherWrap.style.display = (t==='other')?'':'none';
+  const hint=document.getElementById('move-type-hint');
+  if(hint){
+    if(t==='other'){
+      hint.textContent='📝 その他の資金源（自己資金は減りません）';
+      hint.style.color='#7c3aed';
+    } else {
+      hint.textContent='';
+    }
+  }
+  live(true);
+}
+window.setMoveType = setMoveType;
+function onMoveOtherTextChange(){
+  const el=document.getElementById('move-other-text');
+  if(!el)return;
+  try{ localStorage.setItem('cf_move_other_text', el.value||''); }catch(e){}
+  live(true);
+}
+window.onMoveOtherTextChange = onMoveOtherTextChange;
+// ページロード時にlocalStorageから諸費用・引越「その他」自由記述を復元
 document.addEventListener('DOMContentLoaded',()=>{
   try{
     const t=localStorage.getItem('cf_cost_other_text');
     const el=document.getElementById('cost-other-text');
+    if(el && t && !el.value) el.value=t;
+  }catch(e){}
+  try{
+    const t=localStorage.getItem('cf_move_other_text');
+    const el=document.getElementById('move-other-text');
     if(el && t && !el.value) el.value=t;
   }catch(e){}
 });

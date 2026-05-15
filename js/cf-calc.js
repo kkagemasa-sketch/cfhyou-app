@@ -24,7 +24,8 @@ function render(){
   const costType0=document.getElementById('cost-type')?.value||'cash';
   // 'cash'のときだけ現預金から差し引き（loan・other は外部資金扱い）
   const costDeduct=(costType0==='cash')?(fv('house-cost')||0):0;
-  const moveDeduct=(fv('moving-cost')||0)+(fv('furniture-init')||0);
+  const _moveType0=document.getElementById('move-type')?.value||'own';
+  const moveDeduct=(_moveType0==='other')?0:((fv('moving-cost')||0)+(fv('furniture-init')||0));
   const initSav=cashH+cashW+cashJoint+zaikiHBal+zaikiWBal-downDeduct-costDeduct-moveDeduct;
   // ご主人収入設定
   // ※ getIncomeSteps / getIncomeAtAge はグローバル版を使用
