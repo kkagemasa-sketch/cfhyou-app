@@ -182,6 +182,14 @@ function _collectDynamic(){
     });
   });
   // 有価証券
+  // amt-inp は blur時に type=text・カンマ付きに変換されるため、
+  // _rawValue 優先＋カンマ除去で生の数値文字列を取得する
+  const _rawVal = (id)=>{
+    const el = document.getElementById(id);
+    if(!el) return '';
+    if(el._rawValue!==undefined && el._rawValue!==null) return String(el._rawValue);
+    return String(el.value||'').replace(/,/g,'');
+  };
   d.securities=[];
   ['h','w'].forEach(p=>{
     document.querySelectorAll(`#securities-cont-${p}>[id^="sec-${p}-"]`).forEach(el=>{
@@ -190,9 +198,9 @@ function _collectDynamic(){
       const isStock=$(`sec-stock-${p}-${id}`)?.classList.contains('on')||false;
       const nisaFrame = $(`sec-frame-grow-${p}-${id}`)?.classList.contains('on') ? 'grow' : 'tsumi';
       d.securities.push({person:p,label:$(`sec-label-${p}-${id}`)?.value||'',taxType:isNisa?'nisa':'taxable',secType:isStock?'stock':'accum',
-        nisaFrame, basis:$(`sec-basis-${p}-${id}`)?.value||'', nisaAnnual:$(`sec-nisa-annual-${p}-${id}`)?.value||'',
-        bal:$(`sec-bal-${p}-${id}`)?.value||'',monthly:$(`sec-monthly-${p}-${id}`)?.value||'',end:$(`sec-end-${p}-${id}`)?.value||'',rate:$(`sec-rate-${p}-${id}`)?.value||'',redeem:$(`sec-redeem-${p}-${id}`)?.value||'',
-        stkBal:$(`sec-stk-bal-${p}-${id}`)?.value||'',stkAge:$(`sec-stk-age-${p}-${id}`)?.value||'',div:$(`sec-div-${p}-${id}`)?.value||'',stkRedeem:$(`sec-stk-redeem-${p}-${id}`)?.value||''});
+        nisaFrame, basis:_rawVal(`sec-basis-${p}-${id}`), nisaAnnual:_rawVal(`sec-nisa-annual-${p}-${id}`),
+        bal:_rawVal(`sec-bal-${p}-${id}`),monthly:_rawVal(`sec-monthly-${p}-${id}`),end:_rawVal(`sec-end-${p}-${id}`),rate:_rawVal(`sec-rate-${p}-${id}`),redeem:_rawVal(`sec-redeem-${p}-${id}`),
+        stkBal:_rawVal(`sec-stk-bal-${p}-${id}`),stkAge:_rawVal(`sec-stk-age-${p}-${id}`),div:_rawVal(`sec-div-${p}-${id}`),stkRedeem:_rawVal(`sec-stk-redeem-${p}-${id}`)});
     });
   });
   // その他収入
@@ -787,12 +795,31 @@ function redoState(){
   _applyData(next);
   _updateUndoRedoBtns();
 }
+// 保存値からカンマを除去する（旧データの "19,543" 等を救済）
+// 文字列にカンマが含まれる場合、数値として再解釈可能ならカンマを除去
+function _cleanNumStr(v){
+  if(typeof v!=='string')return v;
+  if(!v.includes(','))return v;
+  const stripped=v.replace(/,/g,'');
+  return /^-?\d+(\.\d+)?$/.test(stripped) ? stripped : v;
+}
 function _applyData(d){
   try{
     // 万が一タブのキャッシュをクリア（前データの残留を防ぐ）
     window._mgStore=null;
     window._mgMRStore=null;
     window.lastMR=null;
+    // 保存データ全体からカンマ付き数値文字列を救済（再帰的）
+    function _scrub(obj){
+      if(!obj||typeof obj!=='object')return;
+      if(Array.isArray(obj)){obj.forEach(_scrub);return;}
+      Object.keys(obj).forEach(k=>{
+        const v=obj[k];
+        if(typeof v==='string'){obj[k]=_cleanNumStr(v);}
+        else if(v&&typeof v==='object'){_scrub(v);}
+      });
+    }
+    try{ _scrub(d); }catch(e){}
     setType(d.type||'mansion');
     var _defs={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val||_defs[id]||'';}});
