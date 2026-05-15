@@ -462,7 +462,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         const _finKey=`fin-${row.lbl}`;
         const _exp=_hasExplain(_finKey);
         const _cur=_curByLbl[row.lbl]||0;
-        const _curBadge=_cur>0?`<span style="font-size:11px;font-weight:400;opacity:.8">現時点</span><br><span style="font-size:12px;font-weight:700">${_cur.toLocaleString()}万円</span>`:'';
+        const _curBadge=_cur>0?`<span style="font-size:12px;font-weight:700">${_cur.toLocaleString()}万円</span>`:'';
         h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}${_curBadge?'<br>'+_curBadge:''}</td>`;
         for(let i=0;i<disp;i++){
           const v=ri(row.vals[i]||0);
@@ -476,7 +476,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       });
     }
     // 合計行（色は個別行側に付けるのでここでは付与しない）
-    const _curTotalBadge=_curTotal>0?`<span style="font-size:11px;font-weight:400;opacity:.8">現時点</span><br><span style="font-size:12px;font-weight:700">${_curTotal.toLocaleString()}万円</span>`:'';
+    const _curTotalBadge=_curTotal>0?`<span style="font-size:12px;font-weight:700">${_curTotal.toLocaleString()}万円</span>`:'';
     h+=`<tr class="rfin rfin-total fin-asset-row" style="font-weight:700"><td>その他金融資産<br>合計</td><td>${_curTotalBadge}</td>`;
     for(let i=0;i<disp;i++){
       const v=ri(R.finAsset[i]);
