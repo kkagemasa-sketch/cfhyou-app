@@ -726,6 +726,13 @@ function checkPW(){
             <div class="tc" id="down-gift" onclick="setDownType('gift')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
               <div class="tc-lbl" style="font-size:10px">🎁 住宅資金贈与</div>
             </div>
+            <div class="tc" id="down-other" onclick="setDownType('other')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
+              <div class="tc-lbl" style="font-size:10px">📝 その他</div>
+            </div>
+          </div>
+          <div id="down-other-wrap" style="display:none;margin-top:4px">
+            <input class="inp" id="down-other-text" type="text" placeholder="例：株式売却、親からの援助、退職金など" oninput="onDownOtherTextChange()" style="font-size:11px;padding:4px 8px;width:100%">
+            <span class="hint" style="font-size:9px;color:var(--muted)">※ 入力した内容が「自己資金の内訳」に反映されます</span>
           </div>
           <span class="hint" id="down-type-hint" style="font-size:9px;color:var(--muted)"></span></div>
         <!-- 諸費用 -->
@@ -1599,7 +1606,7 @@ function checkPW(){
 <script src="js/income.js?v=20"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=3"></script>
-<script src="js/housing.js?v=25"></script>
+<script src="js/housing.js?v=26"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=14"></script>
@@ -1607,14 +1614,14 @@ function checkPW(){
 <script src="js/contingency.js?v=72"></script>
 <script src="js/cf-ui.js?v=22"></script>
 <script src="js/cf-calc.js?v=52"></script>
-<script src="js/cf-table.js?v=41"></script>
+<script src="js/cf-table.js?v=42"></script>
 <script src="js/cf-highlight.js?v=2"></script>
 <script src="js/graphs.js?v=5"></script>
-<script src="js/export.js?v=46"></script>
+<script src="js/export.js?v=47"></script>
 <script src="js/loan-plan.js?v=15"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=49"></script>
+<script src="js/save-load.js?v=50"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=6"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

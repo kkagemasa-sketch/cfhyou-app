@@ -263,6 +263,8 @@ function _collectDynamic(){
   // 修繕積立金 手入力チェック状態
   d.repManualOn=document.getElementById('rep-manual-toggle')?.checked||false;
   d.downType=downType; d.carOwn=carOwn; d.parkOwn=parkOwn;
+  // 頭金「その他」の自由記述
+  d.downOtherText = document.getElementById('down-other-text')?.value || '';
   d.parkFromAge=document.getElementById('park-from-age')?.value||'';
   d.parkToAge=document.getElementById('park-to-age')?.value||'';
   // 動的修繕周期
@@ -635,6 +637,12 @@ function _restoreDynamic(d){
   }
   if(typeof d.retirePayOn!=='undefined')setRetirePay(d.retirePayOn);
   if(typeof d.wRetirePayOn!=='undefined')setWRetirePay(d.wRetirePayOn);
+  // 頭金「その他」の自由記述を先に復元（setDownTypeでlive()が走る前に値をセット）
+  if(typeof d.downOtherText==='string'){
+    const _otEl=document.getElementById('down-other-text');
+    if(_otEl) _otEl.value = d.downOtherText;
+    try{ localStorage.setItem('cf_down_other_text', d.downOtherText); }catch(e){}
+  }
   if(d.downType)setDownType(d.downType);
   // ローンモード復元: joint > pair > single の優先順
   if(typeof d.jointLoanMode!=='undefined'&&d.jointLoanMode) setLoanMode('joint');

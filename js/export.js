@@ -222,7 +222,7 @@ async function exportExcelMG(){
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
   const cashTotal=cashH+cashW+cashJoint;
   const costTypeV_mg=document.getElementById('cost-type')?.value||'cash';
-  const downFromOwn=downType==='gift'?0:downPay;
+  const downFromOwn=(downType==='gift'||downType==='other')?0:downPay;
   const houseCostDeductMG=costTypeV_mg==='loan'?0:houseCostV;
   const initialOut=downFromOwn+houseCostDeductMG+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
@@ -256,7 +256,7 @@ async function exportExcelMG(){
   const _pad=(n)=>Array(n-1).fill('');
   const infoRow1=['💰 頭金の内訳','',
     `現預金: ${cashTotal}万円`,..._pad(infoSpan),
-    `${downType==='gift'?'頭金(贈与)':'頭金'}: ${downPay}万円`,..._pad(infoSpan),
+    `${downType==='gift'?'頭金(贈与)':downType==='other'?`頭金(${(()=>{try{return localStorage.getItem('cf_down_other_text')||'その他'}catch(e){return 'その他'}})()})`:'頭金'}: ${downPay}万円`,..._pad(infoSpan),
     `${costTypeV_mg==='loan'?'諸費用(込)':'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
     `引越家具: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
     `購入後残高: ${cashAfter}万円`,..._pad(infoSpan),
@@ -1359,7 +1359,7 @@ async function exportExcel(){
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
   const cashTotal=cashH+cashW+cashJoint;
   const costTypeV=document.getElementById('cost-type')?.value||'cash';
-  const downFromOwn=downType==='gift'?0:downPay;
+  const downFromOwn=(downType==='gift'||downType==='other')?0:downPay;
   const houseCostDeductE=costTypeV==='loan'?0:houseCostV;
   const initialOut=downFromOwn+houseCostDeductE+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
@@ -1392,7 +1392,7 @@ async function exportExcel(){
   const _pad=(n)=>Array(n-1).fill('');
   const infoRow1=['💰 頭金の内訳','',
     `現預金: ${cashTotal}万円`,..._pad(infoSpan),
-    `${downType==='gift'?'頭金(贈与)':'頭金'}: ${downPay}万円`,..._pad(infoSpan),
+    `${downType==='gift'?'頭金(贈与)':downType==='other'?`頭金(${(()=>{try{return localStorage.getItem('cf_down_other_text')||'その他'}catch(e){return 'その他'}})()})`:'頭金'}: ${downPay}万円`,..._pad(infoSpan),
     `${costTypeV==='loan'?'諸費用(込)':'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
     `引越家具: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
     `購入後残高: ${cashAfter}万円`,..._pad(infoSpan),

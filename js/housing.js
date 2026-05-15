@@ -115,11 +115,18 @@ function setDownType(t){
   downType=t;
   document.getElementById('down-own').classList.toggle('on',t==='own');
   document.getElementById('down-gift').classList.toggle('on',t==='gift');
+  document.getElementById('down-other')?.classList.toggle('on',t==='other');
+  // その他選択時のみ自由記述欄を表示
+  const otherWrap=document.getElementById('down-other-wrap');
+  if(otherWrap) otherWrap.style.display = (t==='other')?'':'none';
   const hint=document.getElementById('down-type-hint');
   if(hint){
     if(t==='gift'){
       hint.textContent='🎁 贈与のため自己資金は減りません';
       hint.style.color='#2d7dd2';
+    } else if(t==='other'){
+      hint.textContent='📝 その他の資金源（自己資金は減りません）';
+      hint.style.color='#7c3aed';
     } else {
       hint.textContent='自己資金から支出';
       hint.style.color='var(--muted)';
@@ -128,6 +135,22 @@ function setDownType(t){
   // downType はグローバル変数で _getInputHash が検知しないため、force=true で確実に再描画
   live(true);
 }
+// その他の自由記述欄の値変更時：localStorageに保存しCF表を再描画
+function onDownOtherTextChange(){
+  const el=document.getElementById('down-other-text');
+  if(!el)return;
+  try{ localStorage.setItem('cf_down_other_text', el.value||''); }catch(e){}
+  live(true);
+}
+window.onDownOtherTextChange = onDownOtherTextChange;
+// ページロード時にlocalStorageから自由記述を復元（saveデータが無い場合の保険）
+document.addEventListener('DOMContentLoaded',()=>{
+  try{
+    const t=localStorage.getItem('cf_down_other_text');
+    const el=document.getElementById('down-other-text');
+    if(el && t && !el.value) el.value=t;
+  }catch(e){}
+});
 
 // ===== 住宅：諸費用支払い方法切替 =====
 function setCostType(t){
