@@ -745,7 +745,15 @@ function checkPW(){
             <div class="tc" id="cost-loan" onclick="setCostType('loan')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
               <div class="tc-lbl" style="font-size:10px">🏦 ローン組込</div>
             </div>
-          </div></div>
+            <div class="tc" id="cost-other" onclick="setCostType('other')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
+              <div class="tc-lbl" style="font-size:10px">📝 その他</div>
+            </div>
+          </div>
+          <div id="cost-other-wrap" style="display:none;margin-top:4px">
+            <input class="inp" id="cost-other-text" type="text" placeholder="例：株式売却、親からの援助、退職金など" oninput="onCostOtherTextChange()" style="font-size:11px;padding:4px 8px;width:100%">
+            <span class="hint" style="font-size:9px;color:var(--muted)">※ 入力した内容が「自己資金の内訳」に反映されます</span>
+          </div>
+          </div>
       </div>
       <!-- 住宅ローン総額モード（簡易シミュレーション用） -->
       <div id="funding-loan-only-fields" style="display:none;margin-bottom:8px">
@@ -1098,16 +1106,16 @@ function checkPW(){
         </div>
       </div>
 
-      <!-- 引っ越し・家具家電 初期費用 -->
+      <!-- 引っ越し・家具家電 初期費用（統合） -->
       <div class="divider"></div>
       <div class="sub">🚚 引っ越し・家具家電 初期費用</div>
-      <div class="g2" style="margin-bottom:8px">
-        <div class="fg"><label class="lbl">引越費用</label>
-          <div class="suf"><input class="inp amt-inp" id="moving-cost" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-        <div class="fg"><label class="lbl">家具・家電</label>
-          <div class="suf"><input class="inp amt-inp" id="furniture-init" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="100" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+      <div style="margin-bottom:8px">
+        <div class="fg"><label class="lbl">引越・家具家電</label>
+          <div class="suf"><input class="inp amt-inp" id="moving-cost" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="100" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+        <!-- 旧データ互換: 家具・家電を内部的にゼロにしておく（_collectSaveDataで持続） -->
+        <input type="hidden" id="furniture-init" value="0">
       </div>
-      <span class="hint">※ 初期残高から差し引かれます</span>
+      <span class="hint">※ 初期残高から差し引かれます（引越費用と家具・家電をまとめて入力）</span>
 
       <!-- マンション専用 -->
       <div id="m-fields">
@@ -1606,22 +1614,22 @@ function checkPW(){
 <script src="js/income.js?v=20"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=3"></script>
-<script src="js/housing.js?v=26"></script>
+<script src="js/housing.js?v=27"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=14"></script>
 <script src="js/extras.js?v=2"></script>
 <script src="js/contingency.js?v=72"></script>
 <script src="js/cf-ui.js?v=22"></script>
-<script src="js/cf-calc.js?v=52"></script>
-<script src="js/cf-table.js?v=42"></script>
+<script src="js/cf-calc.js?v=53"></script>
+<script src="js/cf-table.js?v=43"></script>
 <script src="js/cf-highlight.js?v=2"></script>
 <script src="js/graphs.js?v=5"></script>
-<script src="js/export.js?v=47"></script>
+<script src="js/export.js?v=48"></script>
 <script src="js/loan-plan.js?v=15"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=50"></script>
+<script src="js/save-load.js?v=51"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=6"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

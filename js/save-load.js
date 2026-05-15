@@ -265,6 +265,8 @@ function _collectDynamic(){
   d.downType=downType; d.carOwn=carOwn; d.parkOwn=parkOwn;
   // 頭金「その他」の自由記述
   d.downOtherText = document.getElementById('down-other-text')?.value || '';
+  // 諸費用「その他」の自由記述
+  d.costOtherText = document.getElementById('cost-other-text')?.value || '';
   d.parkFromAge=document.getElementById('park-from-age')?.value||'';
   d.parkToAge=document.getElementById('park-to-age')?.value||'';
   // 動的修繕周期
@@ -644,6 +646,15 @@ function _restoreDynamic(d){
     try{ localStorage.setItem('cf_down_other_text', d.downOtherText); }catch(e){}
   }
   if(d.downType)setDownType(d.downType);
+  // 諸費用「その他」の自由記述を復元
+  if(typeof d.costOtherText==='string'){
+    const _ctEl=document.getElementById('cost-other-text');
+    if(_ctEl) _ctEl.value = d.costOtherText;
+    try{ localStorage.setItem('cf_cost_other_text', d.costOtherText); }catch(e){}
+  }
+  // 諸費用タイプ復元（cost-type hidden に保存されている場合）
+  const _costTypeVal=d.fields?.['cost-type'];
+  if(_costTypeVal && typeof setCostType==='function') setCostType(_costTypeVal);
   // ローンモード復元: joint > pair > single の優先順
   if(typeof d.jointLoanMode!=='undefined'&&d.jointLoanMode) setLoanMode('joint');
   else if(typeof d.pairLoanMode!=='undefined') setLoanMode(d.pairLoanMode?'pair':'single');
@@ -830,6 +841,15 @@ function _applyData(d){
     try{ _scrub(d); }catch(e){}
     setType(d.type||'mansion');
     var _defs={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
+    // 旧データ互換: 引越費用と家具・家電を統合（moving-cost に合算、furniture-init を0に）
+    if(d.fields){
+      const _moveV=parseFloat(String(d.fields['moving-cost']||'').replace(/,/g,''))||0;
+      const _furnV=parseFloat(String(d.fields['furniture-init']||'').replace(/,/g,''))||0;
+      if(_furnV>0){
+        d.fields['moving-cost']=String(_moveV+_furnV);
+        d.fields['furniture-init']='0';
+      }
+    }
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val||_defs[id]||'';}});
     cfOverrides=d.cfOverrides||{};
     mgOverrides=d.mgOverrides||{};

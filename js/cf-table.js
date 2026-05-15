@@ -56,7 +56,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const _costTypeDisp=document.getElementById('cost-type')?.value||'cash';
   const downFromOwn=(downType==='gift'||downType==='other')?0:downPay;
   const _downOtherText=(()=>{try{return localStorage.getItem('cf_down_other_text')||''}catch(e){return ''}})();
-  const houseCostDeduct=_costTypeDisp==='loan'?0:houseCostV;
+  const _costOtherText=(()=>{try{return localStorage.getItem('cf_cost_other_text')||''}catch(e){return ''}})();
+  const houseCostDeduct=(_costTypeDisp==='loan'||_costTypeDisp==='other')?0:houseCostV;
   const initialOut=downFromOwn+houseCostDeduct+movingCostV+furnitureInitV;
   const cashAfter=cashTotal-initialOut;
   const cashAfterColor=cashAfter>=0?'var(--green)':'var(--red)';
@@ -78,7 +79,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       }
       ${_costTypeDisp==='loan'
         ? chip('📋','諸費用（ローン組込）',`${houseCostV.toLocaleString()}万円`,'#2d7dd2')
-        : chip('📋','諸費用',`${houseCostV.toLocaleString()}万円`,'var(--red)')
+        : _costTypeDisp==='other'
+          ? chip('📝',`諸費用（${_costOtherText||'その他'}）`,`${houseCostV.toLocaleString()}万円`,'#7c3aed')
+          : chip('📋','諸費用',`${houseCostV.toLocaleString()}万円`,'var(--red)')
       }
       ${chip('🚚','引越・家具',`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'var(--red)')}
       ${arrow}

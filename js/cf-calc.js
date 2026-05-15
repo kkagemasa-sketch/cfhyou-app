@@ -22,6 +22,7 @@ function render(){
   const downPay0=fv('down-payment')||0;
   const downDeduct=(downType==='own')?downPay0:0;
   const costType0=document.getElementById('cost-type')?.value||'cash';
+  // 'cash'のときだけ現預金から差し引き（loan・other は外部資金扱い）
   const costDeduct=(costType0==='cash')?(fv('house-cost')||0):0;
   const moveDeduct=(fv('moving-cost')||0)+(fv('furniture-init')||0);
   const initSav=cashH+cashW+cashJoint+zaikiHBal+zaikiWBal-downDeduct-costDeduct-moveDeduct;

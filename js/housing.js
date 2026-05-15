@@ -157,8 +157,29 @@ function setCostType(t){
   document.getElementById('cost-type').value=t;
   document.getElementById('cost-cash').classList.toggle('on',t==='cash');
   document.getElementById('cost-loan').classList.toggle('on',t==='loan');
+  document.getElementById('cost-other')?.classList.toggle('on',t==='other');
+  // その他選択時のみ自由記述欄を表示
+  const otherWrap=document.getElementById('cost-other-wrap');
+  if(otherWrap) otherWrap.style.display = (t==='other')?'':'none';
   calcLoanAmt();
+  live(true);
 }
+// 諸費用「その他」の自由記述変更時
+function onCostOtherTextChange(){
+  const el=document.getElementById('cost-other-text');
+  if(!el)return;
+  try{ localStorage.setItem('cf_cost_other_text', el.value||''); }catch(e){}
+  live(true);
+}
+window.onCostOtherTextChange = onCostOtherTextChange;
+// ページロード時にlocalStorageから諸費用「その他」自由記述を復元
+document.addEventListener('DOMContentLoaded',()=>{
+  try{
+    const t=localStorage.getItem('cf_cost_other_text');
+    const el=document.getElementById('cost-other-text');
+    if(el && t && !el.value) el.value=t;
+  }catch(e){}
+});
 
 // ===== 住宅：引き渡し年→何年後 自動計算 =====
 function calcDelivery(){
