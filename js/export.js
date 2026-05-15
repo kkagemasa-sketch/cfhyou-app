@@ -609,7 +609,9 @@ async function exportExcelMG(){
         if(row.person===_deadPExp)return;
         if(!row.vals.slice(0,disp).some(v=>v>0))return;
         const _cur=_curByLbl_mg[row.lbl]||0;
-        push([_cur>0?`現時点 ${_cur}万円`:'',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v||0)),ri(row.vals[disp-1]||0)],'fin');
+        // 個別行：ラベルと現時点をB列にまとめて表示（A列は空）
+        const _lblWithCur = _cur>0 ? `${row.lbl}　現時点 ${_cur}万円` : row.lbl;
+        push(['',_lblWithCur,...row.vals.slice(0,disp).map(v=>ri(v||0)),ri(row.vals[disp-1]||0)],'fin');
       });
     }
     push(['その他金融資産合計',_curTotal_mg>0?`現時点 ${_curTotal_mg}万円`:'',...MR.finAsset.slice(0,disp).map(v=>ri(v)),ri(MR.finAsset[disp-1])],'finTotal');
@@ -1633,7 +1635,9 @@ async function exportExcel(){
     if(R.finAssetRows)R.finAssetRows.forEach(row=>{
       if(row.vals.slice(0,disp).some(v=>v>0)){
         const _cur=_curByLbl_e[row.lbl]||0;
-        push([_cur>0?`現時点 ${_cur}万円`:'',row.lbl,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
+        // 個別行：ラベルと現時点をB列にまとめて表示（A列は空）
+        const _lblWithCur = _cur>0 ? `${row.lbl}　現時点 ${_cur}万円` : row.lbl;
+        push(['',_lblWithCur,...row.vals.slice(0,disp).map(v=>ri(v)),ri(row.vals[disp-1]||0)],'fin');
       }
     });
     if(R.finAsset.some(v=>v>0))push(['その他金融資産合計',_curTotal_e>0?`現時点 ${_curTotal_e}万円`:'',...R.finAsset.slice(0,disp).map(v=>ri(v)),ri(R.finAsset[disp-1])],'finTotal');
