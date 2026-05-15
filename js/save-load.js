@@ -1095,16 +1095,25 @@ function scheduleAutoSave(){
   },2000);
 }
 // ページ離脱・非表示時に即座保存（Ctrl+Shift+R等でデバウンス前にリロードされるのを防止）
+// IndexedDBは非同期のため、navigateが先に走るとデータが消える可能性あり。
+// そのためlocalStorageへ同期的にバックアップする（saveAndRefreshと同じ仕組み）
 function _saveNow(){
   try{
+    // フォーカス中の入力欄を確定（amt-inp等のblurフォーマットを走らせる）
+    if(document.activeElement && document.activeElement.blur && document.activeElement!==document.body){
+      document.activeElement.blur();
+    }
     const data=_collectSaveData();
+    // ★ localStorageへ同期保存（IndexedDBが間に合わなくてもこれが残る）
+    try{ localStorage.setItem('cf_refresh_backup_v1', JSON.stringify({data, ts:Date.now()})); }catch(e){}
+    // IndexedDBへも非同期で保存試行
     const entry={name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data};
-    // IndexedDBのトランザクションを同期的に開始（完了前にページが閉じても書き込まれる）
     const req=indexedDB.open(DB_NAME,DB_VERSION);
     req.onsuccess=e=>{const db=e.target.result;const tx=db.transaction(STORE_NAME,'readwrite');tx.objectStore(STORE_NAME).put(entry);};
   }catch(e){}
 }
 window.addEventListener('beforeunload',_saveNow);
+window.addEventListener('pagehide',_saveNow);  // モバイル/iOSはbeforeunloadが信頼できないためpagehideも
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_saveNow();});
 // 更新ボタン：先に保存してからページ遷移（2秒デバウンス前に遷移するとデータが消えるのを防止）
 async function saveAndRefresh(){
