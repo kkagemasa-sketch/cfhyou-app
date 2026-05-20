@@ -1591,6 +1591,8 @@ async function exportExcel(){
   addI(_rl('insMat','保険満期金'),R.insMat);
   if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(row.lbl,row.vals);});
   addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
+  // 自動資産取崩し（預貯金マイナス補填）
+  if(R.autoLiq&&R.autoLiq.some(v=>v>0)) addI('📤 自動資産取崩し',R.autoLiq);
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -1628,6 +1630,8 @@ async function exportExcel(){
   addE(_isSingle_e?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH);
   if(!_isSingle_e)addE('iDeCo拠出(奥様)',R.idecoExpW);
   if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('特別支出',R.ext);}
+  // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
+  if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)) addE('💰 譲渡益課税(自動取崩し)',R.autoLiqTax);
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 

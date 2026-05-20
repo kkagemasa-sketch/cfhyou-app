@@ -327,6 +327,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 有価証券解約：銘柄ごとに個別行で表示
   if(R.secRedeemRows){R.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
   h+=iRow('奨学金',R.scholarship,'scholarship')+iRow('児童手当',R.teate,'teate')+iRow('住宅ローン控除',R.lCtrl,'lCtrl');
+  // 自動資産取崩し（預貯金マイナス補填、有価証券からの取崩し額）
+  if(R.autoLiq&&R.autoLiq.some(v=>v>0)){
+    h+=iRow('📤 自動資産取崩し',R.autoLiq,'autoLiq');
+  }
   // カスタム収入行
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{h+=_customRow(r,disp,'rinc');});
   h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('inc')" class="btn-add-row">＋ 収入行を追加</button></td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
@@ -411,6 +415,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=eRow(_isSingle_t?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH,'idecoExpH');
   if(!_isSingle_t)h+=eRow('iDeCo拠出(奥様)',R.idecoExpW,'idecoExpW');
   if(R.extRows&&R.extRows.length>1){R.extRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.extRows&&R.extRows.length===1){h+=eRow(R.extRows[0].lbl,R.extRows[0].vals,R.extRows[0].key);}else{h+=eRow('特別支出',R.ext,'ext');}
+  // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
+  if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)){
+    h+=eRow('💰 譲渡益課税(自動取崩し)',R.autoLiqTax,'autoLiqTax');
+  }
   // カスタム支出行
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{h+=_customRow(r,disp,'rexp');});
   h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('exp')" class="btn-add-row">＋ 支出行を追加</button></td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
@@ -439,12 +447,21 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   }
   const savLast=ri(R.sav[disp-1]);
   h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
+  // 自動取崩しのON/OFF状態
+  const _autoLiqOff = (()=>{try{return localStorage.getItem('cf_auto_liq_off')==='1'}catch(e){return false}})();
+  const _hasAnyLiq = R.autoLiq && R.autoLiq.some(v=>v>0);
   // 警告サマリ行：預貯金マイナス期間があれば赤い注意行を表示
   if(_negYears.length>0){
     const _firstNegYr = R.yr[_negYears[0]];
     const _lastNegYr = R.yr[_negYears[_negYears.length-1]];
     const _yearSpan = _negYears.length===1 ? `${_firstNegYr}年` : `${_firstNegYr}〜${_lastNegYr}年`;
-    h+=`<tr class="rsav-warn"><td colspan="${disp+3}" style="background:#fff5f5;border-left:4px solid #dc2626;padding:6px 12px;color:#7a1a1a;font-size:11px;font-weight:600">⚠ 預貯金がマイナスになる年があります（${_yearSpan} / ${_negYears.length}年間 / 最大不足額 ▲${Math.abs(_minSav).toLocaleString()}万円）— 実際は借入または有価証券の取崩しが必要です</td></tr>`;
+    const _toggleMsg = _autoLiqOff ? '🔄 自動取崩しをONにして補填' : '🔄 自動取崩しをOFFにして借入想定で計算';
+    h+=`<tr class="rsav-warn"><td colspan="${disp+3}" style="background:#fff5f5;border-left:4px solid #dc2626;padding:6px 12px;color:#7a1a1a;font-size:11px;font-weight:600">⚠ 預貯金がマイナスになる年があります（${_yearSpan} / ${_negYears.length}年間 / 最大不足額 ▲${Math.abs(_minSav).toLocaleString()}万円）— ${_autoLiqOff?'借入想定で計算中':'有価証券の取崩しでも補填できない不足額です'} <button onclick="toggleAutoLiq()" style="margin-left:8px;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer">${_toggleMsg}</button></td></tr>`;
+  } else if(_hasAnyLiq){
+    // マイナスはないが取崩しが発生している場合: 情報行を表示
+    const _liqTotal = R.autoLiq.slice(0,disp).reduce((a,b)=>a+ri(b),0);
+    const _taxTotal = R.autoLiqTax.slice(0,disp).reduce((a,b)=>a+ri(b),0);
+    h+=`<tr class="rsav-warn"><td colspan="${disp+3}" style="background:#eff6ff;border-left:4px solid #2563eb;padding:6px 12px;color:#1e3a5f;font-size:11px;font-weight:600">📤 自動資産取崩し実行中：預貯金マイナス補填のため有価証券から累計 ${_liqTotal.toLocaleString()}万円 を取崩し（うち譲渡益課税 ${_taxTotal.toLocaleString()}万円） <button onclick="toggleAutoLiq()" style="margin-left:8px;background:#475569;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer">🔄 自動取崩しをOFF（借入想定で計算）</button></td></tr>`;
   }
   if(R.finAsset.some(v=>v>0)){
     // 個別行を表示

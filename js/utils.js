@@ -255,6 +255,15 @@ function saveCfSummaryNote(text){
   try{localStorage.setItem('cf_summary_note', text||'')}catch(e){}
 }
 window.saveCfSummaryNote = saveCfSummaryNote;
+// 自動資産取崩しのON/OFF切替
+function toggleAutoLiq(){
+  try{
+    const off = localStorage.getItem('cf_auto_liq_off')==='1';
+    localStorage.setItem('cf_auto_liq_off', off?'0':'1');
+  }catch(e){}
+  if(typeof live==='function')live(true);
+}
+window.toggleAutoLiq = toggleAutoLiq;
 
 function toggleCfSummaryDetail(){
   const box=document.getElementById('cf-summary-detail');
