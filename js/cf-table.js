@@ -422,7 +422,30 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const bt=R.bal.slice(0,disp).reduce((a,b)=>a+ri(b),0);
   h+=`<td class="${bt<0?'vn':'vp'}">${bt>=0?bt.toLocaleString():'▲'+Math.abs(bt).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">年間収支</span></td></tr>`;
   const _initSavV=ri(window._purchaseInitSav||0);const _initSavTxt=_initSavV>=0?_initSavV.toLocaleString():'▲'+Math.abs(_initSavV).toLocaleString();const _initSavStyle=_initSavV<0?'color:#ffaaaa':'';
-  h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;for(let i=0;i<disp;i++){const v=ri(R.sav[i]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`}const savLast=ri(R.sav[disp-1]);h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
+  // 預貯金マイナスの年を検出（警告用）
+  const _negYears=[];
+  let _minSav=0;
+  for(let i=0;i<disp;i++){
+    const v=ri(R.sav[i]);
+    if(v<0){_negYears.push(i); if(v<_minSav)_minSav=v;}
+  }
+  h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;
+  for(let i=0;i<disp;i++){
+    const v=ri(R.sav[i]);
+    // 警告: 預貯金がマイナスのセルは赤背景＋⚠️アイコン（実態は借入を意味することへの注意喚起）
+    const _warnCls = v<0 ? ' cell-savneg' : '';
+    const _warnIcon = v<0 ? '<span title="預貯金がマイナスです。実際は借入または資産取崩しが必要です" style="color:#dc2626;font-weight:700;margin-right:2px">⚠</span>' : '';
+    h+=`<td class="${v<0?'vn':''}${_warnCls}">${_warnIcon}${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+  }
+  const savLast=ri(R.sav[disp-1]);
+  h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
+  // 警告サマリ行：預貯金マイナス期間があれば赤い注意行を表示
+  if(_negYears.length>0){
+    const _firstNegYr = R.yr[_negYears[0]];
+    const _lastNegYr = R.yr[_negYears[_negYears.length-1]];
+    const _yearSpan = _negYears.length===1 ? `${_firstNegYr}年` : `${_firstNegYr}〜${_lastNegYr}年`;
+    h+=`<tr class="rsav-warn"><td colspan="${disp+3}" style="background:#fff5f5;border-left:4px solid #dc2626;padding:6px 12px;color:#7a1a1a;font-size:11px;font-weight:600">⚠ 預貯金がマイナスになる年があります（${_yearSpan} / ${_negYears.length}年間 / 最大不足額 ▲${Math.abs(_minSav).toLocaleString()}万円）— 実際は借入または有価証券の取崩しが必要です</td></tr>`;
+  }
   if(R.finAsset.some(v=>v>0)){
     // 個別行を表示
     // 「大きなイベント年」の色クラス: その年のシナリオと通常想定の乖離増分で判定

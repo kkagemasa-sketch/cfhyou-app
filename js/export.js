@@ -575,6 +575,17 @@ async function exportExcelMG(){
   push(['年間収支','',...MR.bal.slice(0,disp).map(v=>ri(v)),ri(MR.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
   const _mgInitSavForXls=ri(window._purchaseInitSav||0);
   push(['預貯金残高',_mgInitSavForXls,...MR.sav.slice(0,disp).map(v=>ri(v)),ri(MR.sav[disp-1])],'savings');
+  // 預貯金マイナス期間があれば警告行を挿入
+  {
+    const _negYrsMG=[];let _minSavMG=0;
+    for(let i=0;i<disp;i++){const v=ri(MR.sav[i]);if(v<0){_negYrsMG.push(MR.yr[i]);if(v<_minSavMG)_minSavMG=v;}}
+    if(_negYrsMG.length>0){
+      const _span=_negYrsMG.length===1?`${_negYrsMG[0]}年`:`${_negYrsMG[0]}〜${_negYrsMG[_negYrsMG.length-1]}年`;
+      const _msg=`⚠ 預貯金がマイナスになる年があります（${_span} / ${_negYrsMG.length}年間 / 最大不足額 ▲${Math.abs(_minSavMG).toLocaleString()}万円）— 実際は借入または有価証券の取崩しが必要です`;
+      const _row=[_msg];while(_row.length<disp+3)_row.push('');
+      push(_row,'savWarn');
+    }
+  }
   // その他金融資産（通常CFと同じ型タグを使用: 'fin', 'finTotal'）
   const _hasFAMG=MR.finAsset&&MR.finAsset.some(v=>v>0);
   if(_hasFAMG){
@@ -763,6 +774,7 @@ async function exportExcelMG(){
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
+    if(t==='savWarn')return{hpt:28};
     if(t==='incTotal'||t==='expTotal')return{hpt:24};
     if(t==='info'){
       // ペア行(ご主人様/奥様)は高さ23
@@ -773,6 +785,23 @@ async function exportExcelMG(){
     }
     return{hpt:18};
   });
+
+  // savWarn行: 全列を結合し、赤い警告スタイルを適用
+  {
+    const _swIdx=types.indexOf('savWarn');
+    if(_swIdx>=0){
+      ws['!merges']=ws['!merges']||[];
+      ws['!merges'].push({s:{r:_swIdx,c:0},e:{r:_swIdx,c:disp+2}});
+      const _ref=XLSX.utils.encode_cell({r:_swIdx,c:0});
+      if(ws[_ref]){
+        ws[_ref].s=ws[_ref].s||{};
+        ws[_ref].s.fill={patternType:'solid',fgColor:{rgb:'FFFFF5F5'}};
+        ws[_ref].s.font={sz:10,bold:true,color:{rgb:'FF7A1A1A'},name:'游ゴシック'};
+        ws[_ref].s.alignment={vertical:'center',horizontal:'left',wrapText:true};
+        ws[_ref].s.border={left:{style:'thick',color:{rgb:'FFDC2626'}},top:{style:'thin',color:{rgb:'FFDC2626'}},bottom:{style:'thin',color:{rgb:'FFDC2626'}}};
+      }
+    }
+  }
 
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
@@ -1606,6 +1635,17 @@ async function exportExcel(){
   push(['年間収支','',...R.bal.slice(0,disp).map(v=>ri(v)),ri(R.bal.slice(0,disp).reduce((a,b)=>a+b,0))],'balance');
   const _initSavForXls=ri(window._purchaseInitSav||0);
   push(['預貯金残高',_initSavForXls,...R.sav.slice(0,disp).map(v=>ri(v)),ri(R.sav[disp-1])],'savings');
+  // 預貯金マイナス期間があれば警告行を挿入
+  {
+    const _negYrsExp=[];let _minSavExp=0;
+    for(let i=0;i<disp;i++){const v=ri(R.sav[i]);if(v<0){_negYrsExp.push(R.yr[i]);if(v<_minSavExp)_minSavExp=v;}}
+    if(_negYrsExp.length>0){
+      const _span=_negYrsExp.length===1?`${_negYrsExp[0]}年`:`${_negYrsExp[0]}〜${_negYrsExp[_negYrsExp.length-1]}年`;
+      const _msg=`⚠ 預貯金がマイナスになる年があります（${_span} / ${_negYrsExp.length}年間 / 最大不足額 ▲${Math.abs(_minSavExp).toLocaleString()}万円）— 実際は借入または有価証券の取崩しが必要です`;
+      const _row=[_msg];while(_row.length<disp+3)_row.push('');
+      push(_row,'savWarn');
+    }
+  }
   // 金融資産（finAssetVisibleがfalseの場合は出力しない）
   if(typeof finAssetVisible==='undefined'||finAssetVisible!==false){
     // ラベル別の現時点残高マップ
@@ -1814,6 +1854,7 @@ async function exportExcel(){
     if(t==='blank')return{hpt:6};
     if(t==='footer')return{hpt:13};
     if(t==='savings')return{hpt:30};
+    if(t==='savWarn')return{hpt:28};
     if(t==='incTotal'||t==='expTotal')return{hpt:24};
     if(t==='info'){
       // ペア行(ご主人様/奥様)は高さ23
@@ -1824,6 +1865,23 @@ async function exportExcel(){
     }
     return{hpt:18};
   });
+
+  // savWarn行: 全列を結合し、赤い警告スタイルを適用
+  {
+    const _swIdx=types.indexOf('savWarn');
+    if(_swIdx>=0){
+      ws['!merges']=ws['!merges']||[];
+      ws['!merges'].push({s:{r:_swIdx,c:0},e:{r:_swIdx,c:disp+2}});
+      const _ref=XLSX.utils.encode_cell({r:_swIdx,c:0});
+      if(ws[_ref]){
+        ws[_ref].s=ws[_ref].s||{};
+        ws[_ref].s.fill={patternType:'solid',fgColor:{rgb:'FFFFF5F5'}};
+        ws[_ref].s.font={sz:10,bold:true,color:{rgb:'FF7A1A1A'},name:'游ゴシック'};
+        ws[_ref].s.alignment={vertical:'center',horizontal:'left',wrapText:true};
+        ws[_ref].s.border={left:{style:'thick',color:{rgb:'FFDC2626'}},top:{style:'thin',color:{rgb:'FFDC2626'}},bottom:{style:'thin',color:{rgb:'FFDC2626'}}};
+      }
+    }
+  }
 
   // 行固定＋左2列固定
   const headerRowIdx=types.indexOf('header');
