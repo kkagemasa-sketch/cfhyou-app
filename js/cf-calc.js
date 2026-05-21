@@ -1476,6 +1476,11 @@ function render(){
       if(!R.autoLiqByLbl[lbl])R.autoLiqByLbl[lbl]={gross:[],tax:[]};
     });
     const b=R.incT[i]-R.expT[i];R.bal.push(b);sav+=b;
+    // 丸め誤差吸収: 自動取崩しが実行された年で sav が ±2万円以内なら 0 にスナップ
+    // （取崩し額と税額の整数四捨五入で sav が ±1万円程度ずれることがあるため）
+    if(_autoLiqG > 0 && sav > -2 && sav < 2){
+      sav = 0;
+    }
     // 財形貯蓄の積立（支出には含めないが資産として加算）
     let _savExtra=0;
     // 財形貯蓄（主人・奥様）
