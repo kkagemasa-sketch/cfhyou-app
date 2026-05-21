@@ -1000,11 +1000,27 @@ function render(){
         }
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        // ── 自動取崩しによる減額（過去の取崩しを複利成長分も含めて差し引き） ──
+        // securityStateの該当エントリーから過去の取崩し履歴を取得
+        const _redeemMatchAcc = securityState.find(ss=>ss.sid===sid && ss.p===p && ss.type==='accum');
+        let _redeemLiqReductionAcc = 0;
+        let _redeemCostReductionAcc = 0;
+        if(_redeemMatchAcc){
+          for(const liq of _redeemMatchAcc.liquidations){
+            if(liq.year < i){
+              _redeemLiqReductionAcc += liq.gross*Math.pow(1+_redeemMatchAcc.rate, i-liq.year);
+              _redeemCostReductionAcc += liq.costReduced;
+            }
+          }
+          fv2 = Math.max(0, fv2 - Math.round(_redeemLiqReductionAcc));
+        }
         // 課税口座：譲渡益課税 20.315%（所得税15%+住民税5%+復興特別所得税0.315%）
         // 取得原価は「取得価格累計(basis)」が入力されていればそれを使用、なければ現在評価額(bal)で近似
         const basis=fv(`sec-basis-${p}-${sid}`)||0;
         const initialCost=basis>0?basis:bal;
-        const costAccum=initialCost+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge+1):yrs);
+        const costAccumRaw=initialCost+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge+1):yrs);
+        // 自動取崩しで減少した取得原価を反映
+        const costAccum=Math.max(0, costAccumRaw - _redeemCostReductionAcc);
         const gainAccum=Math.max(0,fv2-costAccum);
         let netAccum=fv2, taxAccum=0;
         if(!isNisa){
@@ -1040,11 +1056,29 @@ function render(){
         // シナリオ適用時はシリーズキャッシュの解約年の値を使う
         const _redeemStkKey=`sec-stk-${p}-${sid}`;
         const _redeemStkSeries=_stkSeriesCache[_redeemStkKey];
-        const redeemVal = _redeemStkSeries ? (_redeemStkSeries[i]||0) : Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        let redeemVal = _redeemStkSeries ? (_redeemStkSeries[i]||0) : Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        // ── 自動取崩しによる減額（過去の取崩しを複利成長分も含めて差し引き） ──
+        const _redeemMatchStk = securityState.find(ss=>ss.sid===sid && ss.p===p && ss.type==='stock');
+        let _redeemCostReductionStk = 0;
+        if(_redeemMatchStk){
+          let _redeemLiqReductionStk = 0;
+          for(const liq of _redeemMatchStk.liquidations){
+            if(liq.year < i){
+              _redeemLiqReductionStk += liq.gross*Math.pow(1+_redeemMatchStk.rate, i-liq.year);
+              _redeemCostReductionStk += liq.costReduced;
+            }
+          }
+          redeemVal = Math.max(0, redeemVal - Math.round(_redeemLiqReductionStk));
+        }
+        // 取得原価: basisが入力されていればそれを、なければ初期評価額bal
+        const _stkBasis = fv(`sec-basis-${p}-${sid}`)||0;
+        const _stkCostBase = _stkBasis>0 ? _stkBasis : bal;
+        // 自動取崩しで減少した取得原価を反映
+        const _stkCostAdjusted = Math.max(0, _stkCostBase - _redeemCostReductionStk);
         // 課税口座：譲渡益課税 20.315%
-        const gainStk=Math.max(0,redeemVal-bal);
+        const gainStk=Math.max(0,redeemVal-_stkCostAdjusted);
         let netStk=redeemVal, taxStk=0;
         if(!isNisa){
           taxStk=Math.round(gainStk*0.20315*10)/10;
@@ -1476,9 +1510,12 @@ function render(){
       if(!R.autoLiqByLbl[lbl])R.autoLiqByLbl[lbl]={gross:[],tax:[]};
     });
     const b=R.incT[i]-R.expT[i];R.bal.push(b);sav+=b;
-    // 丸め誤差吸収: 自動取崩しが実行された年で sav が ±2万円以内なら 0 にスナップ
-    // （取崩し額と税額の整数四捨五入で sav が ±1万円程度ずれることがあるため）
-    if(_autoLiqG > 0 && sav > -2 && sav < 2){
+    // 丸め誤差吸収: 自動取崩しが直近の年で実行されている、または前年が0付近の場合、
+    // sav が ±2万円以内なら 0 にスナップ。これは：
+    // - 取崩し時の整数四捨五入で 0 付近に1〜2万円のドリフトが累積するため
+    // - 自動取崩しが続いている期間は理論上 sav=0 が期待されるため
+    const _wasNearZero = i>0 && R.sav.length>0 && Math.abs(R.sav[i-1]) <= 1;
+    if((_autoLiqG > 0 || _wasNearZero) && sav > -2 && sav < 2 && _autoLiqEnabled){
       sav = 0;
     }
     // 財形貯蓄の積立（支出には含めないが資産として加算）
