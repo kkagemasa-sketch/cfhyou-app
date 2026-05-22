@@ -1241,6 +1241,32 @@ function _renderContingencyInner(){
     MR.wedding.push(i<normalR.wedding.length?normalR.wedding[i]:0);
     MR.ext.push(i<normalR.ext.length?normalR.ext[i]:0);
 
+    // ─ 万一Q&Aの住居モード反映（売却・賃貸 / 団信完済 / 段階的変更） ─
+    // window._mgHousingStages: [{yearsAfterDeath, mode:'keep'|'danshin'|'rent', rentAmt}]
+    // mode='rent' で売却・賃貸 → 家賃発生、固定資産税/修繕費/専有部分/家具買替を停止
+    let _newRentAnnual = 0;
+    if(isDead && Array.isArray(window._mgHousingStages) && window._mgHousingStages.length>0){
+      const _ysd = i - (deathYearOffset-1) + 1; // 死亡からの経過年（死亡年=1）
+      let _activeStage = null;
+      for(const st of window._mgHousingStages){
+        if(_ysd >= (st.yearsAfterDeath||1)) _activeStage = st;
+        else break;
+      }
+      if(_activeStage){
+        if(_activeStage.mode === 'rent'){
+          // 売却・賃貸: 家賃を新設、保有関連支出を停止
+          _newRentAnnual = ri((_activeStage.rentAmt||0)*12);
+          MR.rent[i] = _newRentAnnual;
+          MR.ptx[i] = 0;
+          MR.rep[i] = 0;
+          MR.senyu[i] = 0;
+          MR.furn[i] = 0;
+        }
+        // 'danshin' は団信完済（lRepは別途dansinロジックで0化）。ptx等は継続でOK
+        // 'keep' は何もしない（通常CFと同じ）
+      }
+    }
+
     // 支出合計（個別計算）
     let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i];
     children.forEach((c,ci)=>expTotal+=MR.edu[ci][i]);
