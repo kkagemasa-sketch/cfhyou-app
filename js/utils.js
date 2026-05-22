@@ -476,6 +476,12 @@ function deleteCustomRow(id){
 
 function _getInputHash(){
   let s='';
-  document.querySelectorAll('input,select').forEach(el=>{if(el.id)s+=el.id+'='+el.value+'|';});
+  document.querySelectorAll('input,select').forEach(el=>{
+    if(!el.id)return;
+    // チェックボックスは .value が常に "on" なので .checked を見る必要がある
+    // （これを見ないと「自動調整なし」等のトグルでCF表が再計算されない）
+    const v = el.type==='checkbox' ? (el.checked?'1':'0') : el.value;
+    s += el.id + '=' + v + '|';
+  });
   return s;
 }
