@@ -493,6 +493,8 @@ async function exportExcelMG(){
   addISkip('奨学金',MR.scholarship,N.scholarship);
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
+  // 自動資産取崩し（万一CF用）
+  if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) addI('📤 自動資産取崩し',MR.autoLiq);
   mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...MR.incT.slice(0,disp).map(v=>ri(v)),ri(MR.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -568,6 +570,8 @@ async function exportExcelMG(){
   if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{addESkip(row.lbl,row.vals,row.vals);});}
   else if(N.extRows&&N.extRows.length===1){addESkip(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals);}
   else{addESkip(_rl('mg-ext','特別支出'),MR.ext,null);}
+  // 譲渡益課税（自動取崩しに伴う 20.315% 課税）— 万一CF
+  if(MR.autoLiqTax&&MR.autoLiqTax.some(v=>v>0)) addE('💰 譲渡益課税(自動取崩し)',MR.autoLiqTax);
   mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 

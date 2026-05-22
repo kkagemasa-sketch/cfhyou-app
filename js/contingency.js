@@ -353,6 +353,8 @@ function _renderContingencyInner(){
     carTotal:[],carRows:null,prk:[],wedding:[],ext:[],houseCostArr:[],moveInCost:[],expT:[],
     bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],
     finAsset:[],totalAsset:[],finAssetRows:null,
+    // 自動資産取崩し（万一CF用）
+    autoLiq:[],autoLiqTax:[],autoLiqDetails:[],
     evH:[],evW:[],evC:[],
     needCoverage:0};
   children.forEach(()=>{MR.edu.push([]);MR.evC.push([]);});
@@ -485,6 +487,138 @@ function _renderContingencyInner(){
   const choki_mg=iv('choki');
   const taxRed_mg=isM_mg?PROP_TAX_RELIEF.mansion_general:(choki_mg?PROP_TAX_RELIEF.kodate_choki:PROP_TAX_RELIEF.kodate_general);
   const extraItems_mg=getExtraItems();
+
+  // ===== 自動資産取崩し（万一CF用） =====
+  // 死亡者の証券は対象外（生存者の証券のみ取崩し可能）
+  const _mgAutoLiqEnabled = (()=>{try{return localStorage.getItem('cf_auto_liq_off')!=='1'}catch(e){return true}})();
+  const _mgSecurityState = [];
+  ['h','w'].forEach(p=>{
+    if(p===_deadP)return;  // 死亡者の証券は除外
+    const pBaseAge = p==='h'?hAge:wAge;
+    const pLbl = p==='h'?'ご主人様':'奥様';
+    // 積立型
+    document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+      const sid=el.id.split('-').pop();
+      const isAcc=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
+      if(!isAcc)return;
+      const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on')||false;
+      const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+      const lbl=customLabel||((isNisa?'NISA':'課税')+'積み立て('+pLbl+')');
+      const bal=fv(`sec-bal-${p}-${sid}`)||0;
+      const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
+      if(bal<=0&&monthly<=0)return;
+      _mgSecurityState.push({
+        sid, p, type:'accum', lbl, isNisa, baseAge:pBaseAge,
+        bal, monthly,
+        endAge:iv(`sec-end-${p}-${sid}`)||0,
+        rate:fvd(`sec-rate-${p}-${sid}`,5)/100,
+        redeemAge:iv(`sec-redeem-${p}-${sid}`)||0,
+        basisInput:fv(`sec-basis-${p}-${sid}`)||0,
+        liquidations:[]
+      });
+    });
+    // 一括投資
+    document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      const sid=el.id.split('-').pop();
+      const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+      if(!isStock)return;
+      const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on')||false;
+      const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
+      const lbl=customLabel||((isNisa?'NISA':'課税')+'一括投資('+pLbl+')');
+      const bal=fv(`sec-stk-bal-${p}-${sid}`)||0;
+      if(bal<=0)return;
+      _mgSecurityState.push({
+        sid, p, type:'stock', lbl, isNisa, baseAge:pBaseAge,
+        bal, monthly:0,
+        rate:(fv(`sec-div-${p}-${sid}`)||0)/100,
+        investAge:iv(`sec-stk-age-${p}-${sid}`)||0,
+        redeemAge:iv(`sec-stk-redeem-${p}-${sid}`)||0,
+        basisInput:fv(`sec-basis-${p}-${sid}`)||0,
+        liquidations:[]
+      });
+    });
+  });
+  // 生(raw)将来価値
+  function _mgRawFV(s,i){
+    const pAge = (s.p==='h'?hAge:wAge)+i;
+    if(s.redeemAge>0 && pAge>=s.redeemAge)return 0;
+    if(s.type==='accum'){
+      const yrs=i+1;
+      const mr=s.rate/12;
+      if(s.endAge===0||pAge<=s.endAge){
+        const cpd=Math.pow(1+mr,12*yrs);
+        return s.bal*cpd + (mr>0?s.monthly*(cpd-1)/mr:s.monthly*12*yrs);
+      } else {
+        const yrsAccum=s.endAge-s.baseAge+1;
+        const yrsAfter=yrs-yrsAccum;
+        const cpdA=Math.pow(1+mr,12*yrsAccum);
+        return (s.bal*cpdA + (mr>0?s.monthly*(cpdA-1)/mr:s.monthly*12*yrsAccum))*Math.pow(1+mr,12*Math.max(0,yrsAfter));
+      }
+    } else {
+      if(s.investAge>0 && pAge<s.investAge)return 0;
+      const yrsHeld=s.investAge>0?(pAge-s.investAge):(i+1);
+      return s.bal*Math.pow(1+s.rate,Math.max(0,yrsHeld));
+    }
+  }
+  function _mgEffFV(s,i,includeCurrentYear){
+    let raw=_mgRawFV(s,i);
+    let reduction=0;
+    for(const liq of s.liquidations){
+      const cmp = includeCurrentYear ? (liq.year<=i) : (liq.year<i);
+      if(cmp) reduction += liq.gross*Math.pow(1+s.rate,i-liq.year);
+    }
+    return Math.max(0,raw-reduction);
+  }
+  function _mgEffCost(s,i){
+    const pAge=(s.p==='h'?hAge:wAge)+i;
+    let cost;
+    if(s.type==='accum'){
+      const effYrs=(s.endAge>0&&pAge>s.endAge)?(s.endAge-s.baseAge+1):(i+1);
+      cost = (s.basisInput>0?s.basisInput:s.bal) + s.monthly*12*Math.max(0,effYrs);
+    } else {
+      cost = s.basisInput>0?s.basisInput:s.bal;
+    }
+    for(const liq of s.liquidations){
+      if(liq.year<i) cost -= liq.costReduced;
+    }
+    return Math.max(0,cost);
+  }
+  function _mgAutoLiquidate(shortfall, year){
+    if(shortfall<=0) return {gross:0,tax:0};
+    let totalGross=0, totalTax=0;
+    const groups = [
+      _mgSecurityState.filter(s=>!s.isNisa),
+      _mgSecurityState.filter(s=>s.isNisa)
+    ];
+    for(const group of groups){
+      if(shortfall<=0.01) break;
+      const eligibles = group.map(s=>{
+        const eff=_mgEffFV(s,year,false);
+        const cost=_mgEffCost(s,year);
+        const gainRatio = eff>0 ? Math.max(0,(eff-cost)/eff) : 0;
+        const taxRate = s.isNisa ? 0 : gainRatio*0.20315;
+        return {s,eff,cost,taxRate};
+      }).filter(x=>x.eff>0);
+      if(eligibles.length===0)continue;
+      const weightedNetMax = eligibles.reduce((s,x)=>s+x.eff*(1-x.taxRate),0);
+      if(weightedNetMax<=0)continue;
+      const ratio = Math.min(1, shortfall/weightedNetMax);
+      let groupNet=0;
+      eligibles.forEach(x=>{
+        const take = x.eff*ratio;
+        if(take<=0.01)return;
+        const tax = take*x.taxRate;
+        const net = take-tax;
+        const costReduced = x.eff>0 ? x.cost*take/x.eff : 0;
+        x.s.liquidations.push({year, gross:take, tax, costReduced});
+        totalGross += take;
+        totalTax += tax;
+        groupNet += net;
+      });
+      shortfall -= groupNet;
+    }
+    return {gross:totalGross, tax:totalTax};
+  }
 
   for(let i=0;i<totalYrs;i++){
     const yr=cYear+i, ha=hAge+i, wa=wAge+i;
@@ -1055,8 +1189,27 @@ function _renderContingencyInner(){
     children.forEach((c,ci)=>expTotal+=MR.edu[ci][i]);
     MR.expT.push(ri(expTotal));
 
-    // 収支・残高
-    const bal=incTotal-ri(expTotal);
+    // ─ 自動資産取崩し（万一CF用） ─
+    // 預貯金マイナス時に生存者の有価証券から自動取崩し
+    let _mgAutoLiqG=0, _mgAutoLiqT=0, _mgAutoLiqByLbl={};
+    if(_mgAutoLiqEnabled){
+      const _tentBal = incTotal - ri(expTotal);
+      const _tentSav = sav + _tentBal;
+      if(_tentSav < -0.5){
+        const _liq = _mgAutoLiquidate(-_tentSav, i);
+        _mgAutoLiqG = _liq.gross;
+        _mgAutoLiqT = _liq.tax;
+        // 収入合計に取崩し額を加算、支出合計に税額を加算
+        MR.incT[i] = ri(MR.incT[i] + _mgAutoLiqG);
+        MR.expT[i] = ri(MR.expT[i] + _mgAutoLiqT);
+      }
+    }
+    MR.autoLiq.push(ri(_mgAutoLiqG));
+    MR.autoLiqTax.push(ri(_mgAutoLiqT));
+    MR.autoLiqDetails.push(_mgAutoLiqByLbl);
+
+    // 収支・残高（auto-liq反映後の値で再計算）
+    const bal=MR.incT[i]-MR.expT[i];
     MR.bal.push(bal);
     // 財形貯蓄（生存者のみ）
     let _savExtra=0;
@@ -1074,6 +1227,11 @@ function _renderContingencyInner(){
     }
     MR.savExtra.push(_savExtra);
     sav+=bal;
+    // 丸め誤差吸収: 自動取崩し継続中（前年が0付近）なら sav の±2万円スナップ
+    const _mgWasNearZero = i>0 && MR.sav.length>0 && Math.abs(MR.sav[i-1])<=1;
+    if((_mgAutoLiqG>0 || _mgWasNearZero) && sav>-2 && sav<2 && _mgAutoLiqEnabled){
+      sav = 0;
+    }
     MR.sav.push(ri(sav));
 
     // ローン残高
@@ -1116,6 +1274,17 @@ function _renderContingencyInner(){
       // base側は normalR.finAssetBase が集約値のみなので、全体をperson割合で按分（簡略）
       mgFinAssetBase = mgFinAsset; // 死亡時は個別行からのみ算出、baseも同じ値
     }
+    // 自動取崩しによる finAsset 減額（今年までの累計取崩し額の複利成長分）
+    let _mgFinLiqReduction = 0;
+    _mgSecurityState.forEach(s=>{
+      for(const liq of s.liquidations){
+        if(liq.year<=i) _mgFinLiqReduction += liq.gross*Math.pow(1+s.rate, i-liq.year);
+      }
+    });
+    if(_mgFinLiqReduction>0){
+      mgFinAsset = Math.max(0, mgFinAsset - _mgFinLiqReduction);
+      mgFinAssetBase = Math.max(0, mgFinAssetBase - _mgFinLiqReduction);
+    }
     MR.finAsset.push(ri(mgFinAsset));
     MR.finAssetBase = MR.finAssetBase || [];
     MR.finAssetBase.push(ri(mgFinAssetBase));
@@ -1139,8 +1308,8 @@ function _renderContingencyInner(){
 
   // ── mgOverrides後処理 ──
   if(Object.keys(mgOverrides).length>0){
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','autoLiq'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR[key]&&c2<MR[key].length)MR[key][c2]=val;});
@@ -1422,6 +1591,8 @@ function _renderContingencyInner(){
   h+=mgRow('奨学金',MR.scholarship,N.scholarship,'scholarship');
   h+=mgRow('児童手当',MR.teate,null,'teate');
   h+=mgRow('住宅ローン控除',MR.lCtrl,N.lCtrl,'lCtrl');
+  // 自動資産取崩し（預貯金マイナス補填）
+  if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) h+=mgRow('📤 自動資産取崩し',MR.autoLiq,null,'autoLiq');
   // カスタム収入行（万が一専用）
   mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
@@ -1529,6 +1700,8 @@ function _renderContingencyInner(){
   if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgERow(row.lbl,row.vals,row.vals,row.key);});}
   else if(N.extRows&&N.extRows.length===1){h+=mgERow(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals,N.extRows[0].key);}
   else{h+=mgERow('特別支出',MR.ext,null,'ext');}
+  // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
+  if(MR.autoLiqTax&&MR.autoLiqTax.some(v=>v>0)) h+=mgERow('💰 譲渡益課税(自動取崩し)',MR.autoLiqTax,null,'autoLiqTax');
   // カスタム支出行（万が一専用）
   mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{
     const vals=Array.from({length:mgDisp},(_,i2)=>mgOverrides[r.id]?.[i2]||0);
@@ -1550,9 +1723,35 @@ function _renderContingencyInner(){
   h+=`<td class="${bt_mg<0?'vn':'vp'}">${bt_mg>=0?bt_mg.toLocaleString():'▲'+Math.abs(bt_mg).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">年間収支</span></td></tr>`;
 
   const _mgInitSavV=ri(window._purchaseInitSav||0);const _mgInitSavTxt=_mgInitSavV>=0?_mgInitSavV.toLocaleString():'▲'+Math.abs(_mgInitSavV).toLocaleString();const _mgInitSavStyle=_mgInitSavV<0?'color:#ffaaaa':'';
+  // 預貯金マイナスの年を検出（警告用）
+  const _mgNegYears=[];
+  let _mgMinSav=0;
+  for(let i2=0;i2<mgDisp;i2++){
+    const v=ri(MR.sav[i2]);
+    if(v<0){_mgNegYears.push(i2); if(v<_mgMinSav)_mgMinSav=v;}
+  }
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_mgInitSavStyle}">${_mgInitSavTxt}万円</span></td>`;
-  for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.sav[i2]);h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;}
+  for(let i2=0;i2<mgDisp;i2++){
+    const v=ri(MR.sav[i2]);
+    const _mgWarnCls = v<0 ? ' cell-savneg' : '';
+    const _mgWarnIcon = v<0 ? '<span title="預貯金がマイナスです" style="color:#dc2626;font-weight:700;margin-right:2px">⚠</span>' : '';
+    h+=`<td class="${v<0?'vn':''}${_mgWarnCls}">${_mgWarnIcon}${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+  }
   const _mgSavLast=ri(MR.sav[mgDisp-1]);h+=`<td>${_mgSavLast>=0?_mgSavLast.toLocaleString():'▲'+Math.abs(_mgSavLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
+  // 自動取崩し情報行 or 警告行
+  const _mgAutoLiqOff = (()=>{try{return localStorage.getItem('cf_auto_liq_off')==='1'}catch(e){return false}})();
+  const _mgHasAnyLiq = MR.autoLiq && MR.autoLiq.some(v=>v>0);
+  if(_mgNegYears.length>0){
+    const _mgFirstNegYr = MR.yr[_mgNegYears[0]];
+    const _mgLastNegYr = MR.yr[_mgNegYears[_mgNegYears.length-1]];
+    const _mgYearSpan = _mgNegYears.length===1 ? `${_mgFirstNegYr}年` : `${_mgFirstNegYr}〜${_mgLastNegYr}年`;
+    const _mgToggleMsg = _mgAutoLiqOff ? '🔄 自動取崩しをONにして補填' : '🔄 自動取崩しをOFFにして借入想定で計算';
+    h+=`<tr class="rsav-warn"><td colspan="${mgDisp+3}" style="background:#fff5f5;border-left:4px solid #dc2626;padding:6px 12px;color:#7a1a1a;font-size:11px;font-weight:600">⚠ 預貯金がマイナスになる年があります（${_mgYearSpan} / ${_mgNegYears.length}年間 / 最大不足額 ▲${Math.abs(_mgMinSav).toLocaleString()}万円）— ${_mgAutoLiqOff?'借入想定で計算中':'有価証券の取崩しでも補填できない不足額です'} <button onclick="toggleAutoLiq()" style="margin-left:8px;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer">${_mgToggleMsg}</button> <button onclick="showAutoLiqHelp()" style="margin-left:4px;background:#fff;color:#7a1a1a;border:1px solid #7a1a1a;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">❓ 計算ルール</button></td></tr>`;
+  } else if(_mgHasAnyLiq){
+    const _mgLiqTotal = MR.autoLiq.slice(0,mgDisp).reduce((a,b)=>a+ri(b),0);
+    const _mgTaxTotal = MR.autoLiqTax.slice(0,mgDisp).reduce((a,b)=>a+ri(b),0);
+    h+=`<tr class="rsav-warn"><td colspan="${mgDisp+3}" style="background:#eff6ff;border-left:4px solid #2563eb;padding:6px 12px;color:#1e3a5f;font-size:11px;font-weight:600">📤 自動資産取崩し実行中：万一時の不足補填のため有価証券から累計 ${_mgLiqTotal.toLocaleString()}万円 を取崩し（うち譲渡益課税 ${_mgTaxTotal.toLocaleString()}万円） <button onclick="toggleAutoLiq()" style="margin-left:8px;background:#475569;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer">🔄 自動取崩しをOFF（借入想定で計算）</button> <button onclick="showAutoLiqHelp()" style="margin-left:4px;background:#fff;color:#1e3a5f;border:1px solid #2563eb;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">❓ 計算ルール</button></td></tr>`;
+  }
 
   // その他金融資産（個別行 + 合計）
   const _hasFinAsset=MR.finAsset.some(v=>v>0);
