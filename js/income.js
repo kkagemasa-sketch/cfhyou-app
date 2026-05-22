@@ -227,14 +227,21 @@ function updatePensionAdjustHint(person){
   const sign = pct>0?'+':'';
   const label = receiveAge<65?'🔻 繰上げ':'🔺 繰下げ';
   const noAdj = noAdjustCb?.checked;
-  const applied = noAdj
-    ? `<span style="color:#999">（自動調整OFF：入力値 ${baseAmt}万円 をそのまま使用）</span>`
-    : `<strong style="color:#b8860b">→ CF表には ${adjusted}万円/年 を反映</strong>`;
+  let mainText='';
+  if(noAdj){
+    // 自動調整OFFのとき: 「実際に使う値」を強調し、参考として調整後の値を併記
+    mainText = `${label} ${receiveAge}歳 受給<br>
+      <strong style="color:#1e3a5f;font-size:12px">📌 CF表には ${baseAmt}万円/年 をそのまま反映（自動調整OFF）</strong>
+      <span style="color:#94a3b8;font-size:10px">　参考: 制度どおりの調整なら ${baseAmt}万 × ${Math.round(rate*1000)/1000} = ${adjusted}万円/年</span>`;
+  } else {
+    mainText = `${label} ${receiveAge}歳 受給 → 調整率 <strong>${sign}${pct}%</strong>（${baseAmt}万 × ${Math.round(rate*1000)/1000} = ${adjusted}万円/年）<br>
+      <strong style="color:#b8860b">→ CF表には ${adjusted}万円/年 を反映</strong>`;
+  }
   let beTxt = '';
   if(be){
     beTxt = `<br>📊 損益分岐: <strong>${be.ageYears}歳${be.ageMonths}ヶ月</strong>頃までに亡くなる場合は65歳受給が有利、それ以降まで生きる場合は${be.advantage}が有利`;
   }
-  hintEl.innerHTML = `${label} ${receiveAge}歳 受給 → 調整率 <strong>${sign}${pct}%</strong>（${baseAmt}万 × ${Math.round(rate*1000)/1000} = ${adjusted}万円/年）<br>${applied}${beTxt}`;
+  hintEl.innerHTML = mainText + beTxt;
   hintEl.style.display = 'block';
 }
 
@@ -345,13 +352,19 @@ function _amtVal(el){
   return parseFloat(String(el.value).replace(/,/g,''))||0;
 }
 function calcStepHint(id){
-  // 収入ステップが変わったら年金額も連動再計算（手動入力時もOK：少し遅延でデバウンス）
+  // 収入ステップが変わったら年金額も連動再計算（デバウンスで400ms遅延）
+  // ただし「自動調整なし」がチェックされている人は、ユーザーが手動管理している
+  // 意図と解釈し、auto-calc で年金額を上書きしない
   const _personForPension = id.startsWith('h-is')?'h':(id.startsWith('w-is')?'w':null);
   if(_personForPension){
-    clearTimeout(window._pensionRecalcTimer);
-    window._pensionRecalcTimer = setTimeout(()=>{
-      try{ calcPension(_personForPension); }catch(e){}
-    }, 400);
+    const _noAdjustEl = document.getElementById(`pension-${_personForPension}-noadjust`);
+    const _isManualMode = !!_noAdjustEl?.checked;
+    if(!_isManualMode){
+      clearTimeout(window._pensionRecalcTimer);
+      window._pensionRecalcTimer = setTimeout(()=>{
+        try{ calcPension(_personForPension); }catch(e){}
+      }, 400);
+    }
   }
   const nf=_amtVal(document.getElementById(`${id}-net-from`));
   const nt=_amtVal(document.getElementById(`${id}-net-to`));
