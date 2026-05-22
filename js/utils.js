@@ -265,6 +265,104 @@ function toggleAutoLiq(){
 }
 window.toggleAutoLiq = toggleAutoLiq;
 
+// 自動資産取崩しの計算ルールを説明するモーダル
+function showAutoLiqHelp(){
+  // 既存モーダルを削除
+  document.getElementById('auto-liq-help-modal')?.remove();
+  const modal=document.createElement('div');
+  modal.id='auto-liq-help-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic UI","Meiryo",sans-serif';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:10px;max-width:780px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;padding:16px 24px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:16px;font-weight:700">📤 自動資産取崩しの計算ルール</div>
+        <button onclick="document.getElementById('auto-liq-help-modal').remove()" style="background:transparent;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 12px;font-size:12px;cursor:pointer">✕ 閉じる</button>
+      </div>
+      <div style="padding:20px 24px;font-size:13px;line-height:1.7;color:#1a3a6a">
+
+        <h3 style="font-size:14px;font-weight:700;color:#dc2626;border-left:4px solid #dc2626;padding-left:10px;margin:0 0 12px">▍ 機能の概要</h3>
+        <p style="margin:0 0 16px">預貯金残高がマイナスになる年に、<strong>有価証券から自動的に取崩して補填</strong>します。
+        借入による補填を避け、現実的な「資産取崩し計画」をシミュレーションします。</p>
+
+        <h3 style="font-size:14px;font-weight:700;color:#dc2626;border-left:4px solid #dc2626;padding-left:10px;margin:24px 0 12px">▍ 取崩しの優先順位</h3>
+        <ol style="margin:0 0 16px;padding-left:24px">
+          <li style="margin-bottom:6px"><strong>課税口座</strong>（一括投資・課税積立）から先に取崩し</li>
+          <li style="margin-bottom:6px"><strong>NISA口座</strong>は最後まで温存（非課税枠を長く活かす）</li>
+          <li style="margin-bottom:6px">同じ優先順位内では、ご主人/奥様問わず<strong>残高比例で配分</strong></li>
+        </ol>
+
+        <h3 style="font-size:14px;font-weight:700;color:#dc2626;border-left:4px solid #dc2626;padding-left:10px;margin:24px 0 12px">▍ 譲渡益課税の計算</h3>
+        <div style="background:#fef7ed;border:1px solid #fcd34d;border-radius:6px;padding:12px;margin-bottom:16px">
+          <div style="font-weight:700;margin-bottom:8px">課税口座の場合（NISAは非課税で計算スキップ）</div>
+          <div style="font-family:'Cascadia Code',Consolas,monospace;font-size:11px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:10px;margin-bottom:8px">
+            含み益率 = max(0, (現在評価額 − 取得原価) / 現在評価額)<br>
+            税率 = 含み益率 × 20.315%<br>
+            <small style="color:#475569">※20.315% = 所得税15% + 住民税5% + 復興特別所得税0.315%</small>
+          </div>
+          <div style="font-size:11px;color:#475569">📌 取得原価は「取得価格累計（basis）」が入力されていればそれを使用、なければ現在評価額で代用（含み益0で計算）</div>
+        </div>
+
+        <h3 style="font-size:14px;font-weight:700;color:#dc2626;border-left:4px solid #dc2626;padding-left:10px;margin:24px 0 12px">▍ 取崩し額の計算フロー</h3>
+        <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;padding:12px;margin-bottom:16px">
+          <div style="margin-bottom:8px"><strong>① 不足額（shortfall）の計算</strong></div>
+          <div style="font-family:'Cascadia Code',Consolas,monospace;font-size:11px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:8px;margin-bottom:12px">
+            shortfall = 当年支出 − 当年収入 − 前年預貯金残高
+          </div>
+
+          <div style="margin-bottom:8px"><strong>② 取崩し総額（gross）の算出（税込み逆算）</strong></div>
+          <div style="font-family:'Cascadia Code',Consolas,monospace;font-size:11px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:8px;margin-bottom:12px">
+            net = take × (1 − 税率)<br>
+            合計net = shortfall を満たすには：<br>
+            ratio = shortfall / Σ(評価額 × (1 − 税率))<br>
+            各証券からの取崩し額 = 評価額 × ratio
+          </div>
+
+          <div style="margin-bottom:8px"><strong>③ 結果</strong></div>
+          <div style="font-family:'Cascadia Code',Consolas,monospace;font-size:11px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:8px">
+            CF表上の収入「📤 自動資産取崩し」 = gross（取崩し総額）<br>
+            CF表上の支出「💰 譲渡益課税」 = gross × 税率<br>
+            預貯金残高への補填額 = gross − 税額（= 当初の不足額）
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;font-weight:700;color:#dc2626;border-left:4px solid #dc2626;padding-left:10px;margin:24px 0 12px">▍ 取崩し後の残高への影響</h3>
+        <p style="margin:0 0 12px">取崩した有価証券は、翌年以降も<strong>取崩し分の複利成長を失った状態</strong>で表示されます。</p>
+        <div style="background:#f0f9ff;border:1px solid #7dd3fc;border-radius:6px;padding:12px;margin-bottom:16px;font-size:12px">
+          <strong>計算式:</strong><br>
+          <span style="font-family:'Cascadia Code',Consolas,monospace;font-size:11px">
+          年N時点の残高 = 元のFV − Σ(取崩し額 × (1 + 利回り)^(N − 取崩し年))
+          </span>
+        </div>
+
+        <h3 style="font-size:14px;font-weight:700;color:#dc2626;border-left:4px solid #dc2626;padding-left:10px;margin:24px 0 12px">▍ 計算例</h3>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px;margin-bottom:16px;font-size:12px">
+          <p style="margin:0 0 8px"><strong>シナリオ:</strong> 課税口座 評価額 2,040万 / 取得原価 1,600万 / 不足額 100万</p>
+          <ol style="margin:8px 0;padding-left:20px">
+            <li>含み益率 = (2,040 − 1,600) / 2,040 = <strong>21.6%</strong></li>
+            <li>税率 = 21.6% × 20.315% = <strong>4.4%</strong></li>
+            <li>取崩し額 = 100 / (1 − 0.044) = <strong>104.6万円</strong></li>
+            <li>税額 = 104.6 × 4.4% = <strong>4.6万円</strong></li>
+            <li>手取り = 104.6 − 4.6 = <strong>100万円</strong> ✓ 不足額をカバー</li>
+            <li>取崩し後の残高 = 2,040 − 104.6 = <strong>1,935.4万円</strong></li>
+          </ol>
+        </div>
+
+        <h3 style="font-size:14px;font-weight:700;color:#dc2626;border-left:4px solid #dc2626;padding-left:10px;margin:24px 0 12px">▍ 注意事項</h3>
+        <ul style="margin:0;padding-left:24px">
+          <li style="margin-bottom:6px">課税口座の<strong>取得原価（basis）が未入力</strong>の場合、現在評価額を取得原価として近似します（=含み益0 = 税金0で計算されます）。実態と乖離する可能性があります。</li>
+          <li style="margin-bottom:6px">解約年齢（redeemAge）に達した有価証券は自動取崩しの対象外。その年に通常解約処理されます。</li>
+          <li style="margin-bottom:6px">有価証券の評価額が不足を満たせない場合は、預貯金がマイナスのまま残ります（借入が必要）。</li>
+          <li style="margin-bottom:6px">本機能はあくまでシミュレーション。実際の運用では証券担保ローンや部分取崩しなど多様な選択肢があります。</li>
+        </ul>
+
+      </div>
+    </div>
+  `;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
+window.showAutoLiqHelp = showAutoLiqHelp;
+
 function toggleCfSummaryDetail(){
   const box=document.getElementById('cf-summary-detail');
   const btn=document.getElementById('cf-summary-toggle');

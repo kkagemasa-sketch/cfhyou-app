@@ -136,7 +136,10 @@ function render(){
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
     // 自動資産取崩し: 預貯金マイナス時に有価証券から自動取崩し
-    autoLiq:[],autoLiqTax:[],autoLiqByLbl:{},autoLiqDetails:[],
+    // autoLiq: 当年取崩し総額の配列
+    // autoLiqTax: 当年譲渡益課税の配列
+    // autoLiqDetails[i] = {lbl: {gross, tax}} — 当年の各証券別取崩し内訳
+    autoLiq:[],autoLiqTax:[],autoLiqDetails:[],
     // イベント文字列
     evH:[],evW:[],evC:children.map(()=>[])};
 
@@ -493,6 +496,81 @@ function render(){
     }
     return Math.max(0,cost);
   }
+  // DC/iDeCo受取の事前計算（auto-liq判定で使用）
+  // 当年のDC/iDeCo受取金額を、本来のfinAsset計算前にプレ計算する
+  // これにより、退職時の一時金などが反映され、不要な自動取崩しが回避される
+  function _peekDcIdecoReceipts(yearIdx){
+    let total=0;
+    ['h','w'].forEach(p=>{
+      const d=dcIdeco[p];
+      if(!d)return;
+      const ha_y=hAge+yearIdx, wa_y=wAge+yearIdx;
+      const pAge=p==='h'?ha_y:wa_y;
+      const pBaseAge=p==='h'?hAge:wAge;
+      const totalMonthly=d.employer+d.matching;
+      const hasDC=totalMonthly>0||d.dcInitBal>0;
+      const hasIdeco=d.idecoMonthly>0||d.idecoInitBal>0;
+      if(!hasDC&&!hasIdeco)return;
+      const _aliveForDC=(p==='h')?(hDeathAge===0||ha_y<=hDeathAge):(wDeathAge===0||wa_y<=wDeathAge);
+      if(!_aliveForDC)return;
+      if(pAge<d.receiveAge)return;  // まだ受取開始前
+      const _fvWithInit=(initBal,monthly,rate,yrs)=>{
+        const mr=rate/12;
+        const cpd=mr>0?Math.pow(1+mr,12*yrs):1;
+        const grow=initBal*cpd;
+        const contrib=monthly>0?(mr>0?monthly*(cpd-1)/mr:monthly*12*yrs):0;
+        return grow+contrib;
+      };
+      const yrsToReceive=d.receiveAge-pBaseAge;
+      let _dcBalAtR=0, _idecoBalAtR=0;
+      if(hasDC){
+        const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
+        const rate=d.dcRate;
+        const balAtEnd=_fvWithInit(d.dcInitBal,totalMonthly,rate,yrsContrib);
+        _dcBalAtR=balAtEnd*(rate>0?Math.pow(1+rate/12,12*Math.max(0,yrsToReceive-yrsContrib)):1);
+      }
+      if(hasIdeco){
+        const yrsContrib=Math.min(d.retAge-pBaseAge, yrsToReceive);
+        const rate=d.idecoRate;
+        const balAtEnd=_fvWithInit(d.idecoInitBal,d.idecoMonthly,rate,yrsContrib);
+        _idecoBalAtR=balAtEnd*(rate>0?Math.pow(1+rate/12,12*Math.max(0,yrsToReceive-yrsContrib)):1);
+      }
+      const dcKinzoku=Math.max(1,d.retAge-(p==='h'?pHStart:pWStart));
+      const _parseAY=(m)=>{const mt=String(m||'').match(/(annuity|combo)(\d+)?/);return mt&&mt[2]?parseInt(mt[2]):20;};
+      const annuityYears=_parseAY(d.method);
+      const isLump=d.method==='lump';
+      const isAnnuity=/^annuity/.test(d.method||'');
+      const isCombo=/^combo/.test(d.method||'');
+      // DC
+      if(Math.round(_dcBalAtR)>0){
+        const br=Math.round(_dcBalAtR);
+        if(isLump){
+          if(pAge===d.receiveAge) total += (typeof calcTaishokuNet==='function'?calcTaishokuNet(br,dcKinzoku):br);
+        } else if(isAnnuity){
+          if(pAge<d.receiveAge+annuityYears) total += Math.round(br/annuityYears);
+        } else if(isCombo){
+          const half=Math.round(br/2);
+          if(pAge===d.receiveAge) total += (typeof calcTaishokuNet==='function'?calcTaishokuNet(half,dcKinzoku):half);
+          if(pAge<d.receiveAge+annuityYears) total += Math.round(half/annuityYears);
+        }
+      }
+      // iDeCo
+      if(Math.round(_idecoBalAtR)>0){
+        const br=Math.round(_idecoBalAtR);
+        if(isLump){
+          if(pAge===d.receiveAge) total += (typeof calcTaishokuNet==='function'?calcTaishokuNet(br,dcKinzoku):br);
+        } else if(isAnnuity){
+          if(pAge<d.receiveAge+annuityYears) total += Math.round(br/annuityYears);
+        } else if(isCombo){
+          const half=Math.round(br/2);
+          if(pAge===d.receiveAge) total += (typeof calcTaishokuNet==='function'?calcTaishokuNet(half,dcKinzoku):half);
+          if(pAge<d.receiveAge+annuityYears) total += Math.round(half/annuityYears);
+        }
+      }
+    });
+    return total;
+  }
+
   // 自動取崩し実行：shortfallネット円を確保するため、優先順位順に取崩し
   // 戻り値: {gross:総取崩し額, tax:税額合計, byLbl:{lbl→gross/tax}}
   function _autoLiquidate(shortfall, year){
@@ -1490,7 +1568,10 @@ function render(){
     // ─ 自動資産取崩し（預貯金マイナス時のみ） ─
     let _autoLiqG=0, _autoLiqT=0, _autoLiqByLbl={};
     if(_autoLiqEnabled){
-      const _tentBal = R.incT[i]-R.expT[i];
+      // DC/iDeCo受取は後の処理で R.incT に加算されるが、自動取崩し判定では
+      // 先回りして考慮する（受取年に不必要な取崩しを防ぐ）
+      const _peekDcIdeco = _peekDcIdecoReceipts(i);
+      const _tentBal = R.incT[i] + _peekDcIdeco - R.expT[i];
       const _tentSav = sav + _tentBal;
       if(_tentSav < -0.5){  // 0.5円未満の誤差は無視
         const _liq = _autoLiquidate(-_tentSav, i);
@@ -1505,10 +1586,6 @@ function render(){
     R.autoLiq.push(ri(_autoLiqG));
     R.autoLiqTax.push(ri(_autoLiqT));
     R.autoLiqDetails.push(_autoLiqByLbl);
-    // ラベル別の累計取崩し額を記録（finAsset表示で使う）
-    Object.keys(_autoLiqByLbl).forEach(lbl=>{
-      if(!R.autoLiqByLbl[lbl])R.autoLiqByLbl[lbl]={gross:[],tax:[]};
-    });
     const b=R.incT[i]-R.expT[i];R.bal.push(b);sav+=b;
     // 丸め誤差吸収: 自動取崩しが直近の年で実行されている、または前年が0付近の場合、
     // sav が ±2万円以内なら 0 にスナップ。これは：
@@ -1594,7 +1671,15 @@ function render(){
         finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+fv2Base;
         // 積立額累計（開始から現時点まで、積立終了後は endAge 時点で停止）
         const _effYrsAccum=endAge>0&&pAge>endAge?(endAge-pBaseAge+1):yrs;
-        const _principal=Math.round((bal+monthly*12*Math.max(0,_effYrsAccum))*10)/10;
+        let _principal=Math.round((bal+monthly*12*Math.max(0,_effYrsAccum))*10)/10;
+        // 自動取崩しによる取得原価の減少も反映（breakdown表示の整合性）
+        if(_matchSec){
+          let _principalReduction=0;
+          for(const liq of _matchSec.liquidations){
+            if(liq.year<=i) _principalReduction += liq.costReduced;
+          }
+          _principal = Math.max(0, Math.round((_principal - _principalReduction)*10)/10);
+        }
         finRowMap[lbl]=(finRowMap[lbl]||0)+fv2;
         finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;
         // 内訳保存: ラベル単位で年ごとに追加
@@ -1648,18 +1733,28 @@ function render(){
           }
         }
         finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_evalBase;
-        const _gainS=Math.round((_eval-bal)*10)/10;
+        // 一括投資の取得原価: basisがあればそれ、なければ初期評価額(bal) — 取崩しによる原価減少も反映
+        const _stkBasisIn = fv(`sec-basis-${p}-${sid}`)||0;
+        let _stkPrincipal = _stkBasisIn>0 ? _stkBasisIn : bal;
+        if(_matchSecStk){
+          let _stkPrincReduction=0;
+          for(const liq of _matchSecStk.liquidations){
+            if(liq.year<=i) _stkPrincReduction += liq.costReduced;
+          }
+          _stkPrincipal = Math.max(0, Math.round((_stkPrincipal - _stkPrincReduction)*10)/10);
+        }
+        const _gainS=Math.round((_eval-_stkPrincipal)*10)/10;
         finRowMap[lbl]=(finRowMap[lbl]||0)+_eval;
         // 内訳保存
         if(!R.finAssetBd[lbl])R.finAssetBd[lbl]={};
         if(!R.finAssetBd[lbl][i])R.finAssetBd[lbl][i]={items:[],total:0,principalTotal:0,gainTotal:0};
         R.finAssetBd[lbl][i].items.push({
           type:'stk', person:p, isNisa,
-          principal:bal, evaluation:_eval, gain:_gainS,
+          principal:_stkPrincipal, evaluation:_eval, gain:_gainS,
           rate:rate*100, yrsHeld, investAge
         });
         R.finAssetBd[lbl][i].total+=_eval;
-        R.finAssetBd[lbl][i].principalTotal+=bal;
+        R.finAssetBd[lbl][i].principalTotal+=_stkPrincipal;
         R.finAssetBd[lbl][i].gainTotal+=_gainS;
         finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;
       });
