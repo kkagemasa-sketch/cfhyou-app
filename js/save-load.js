@@ -218,6 +218,8 @@ function _collectDynamic(){
   // 万が一シミュレーション
   d.mg={target:mgTarget,dansin:mgDansin,dansinH:mgDansinH,dansinW:mgDansinW,survMode:mgSurvMode,
     deathYear:$('mg-death-year')?.value||'',survAmt:$('mg-surv-amt')?.value||'',lcRatio:$('mg-lc-ratio')?.value||'',
+    // 遺族年金の段階入力
+    survSteps:(()=>{const arr=[];document.querySelectorAll('#mg-surv-steps-cont>[id^="mss-"]').forEach(el=>{const m=el.id.match(/^mss-(\d+)$/);if(!m)return;const sid=m[1];arr.push({from:$(`mss-from-${sid}`)?.value||'',to:$(`mss-to-${sid}`)?.value||'',amt:$(`mss-amt-${sid}`)?.value||''});});return arr;})(),
     lcMode:$('mg-lc-mode-step')?.classList.contains('on')?'step':'ratio',
     scholarshipOn:$('mg-scholarship-yes')?.classList.contains('on')||false,
     scholarshipAmt:$('mg-scholarship-amt')?.value||'',scholarshipAge:$('mg-scholarship-age')?.value||'',
@@ -526,6 +528,17 @@ function _restoreDynamic(d){
     if(typeof setMGSurvMode==='function')setMGSurvMode(mg.survMode||'auto');
     if($('mg-death-year'))$('mg-death-year').value=mg.deathYear||'1';
     if($('mg-surv-amt'))$('mg-surv-amt').value=mg.survAmt||'0';
+    // 遺族年金の段階入力を復元
+    const _ssCont = document.getElementById('mg-surv-steps-cont');
+    if(_ssCont){
+      _ssCont.innerHTML = '';
+      if(typeof _mgSurvStepCnt !== 'undefined') _mgSurvStepCnt = 0;
+      if(Array.isArray(mg.survSteps)){
+        mg.survSteps.forEach(s=>{
+          if(typeof addMgSurvStep==='function') addMgSurvStep(s.from, s.to, s.amt);
+        });
+      }
+    }
     if($('mg-lc-ratio'))$('mg-lc-ratio').value=mg.lcRatio||'70';
     // 生活費モード
     if(mg.lcMode==='step'){

@@ -1361,8 +1361,13 @@ function checkPW(){
             <button class="btn-tog" id="mg-surv-manual" onclick="setMGSurvMode('manual')">手入力</button>
           </div>
         </div>
-        <div class="fg" id="mg-surv-manual-wrap" style="display:none"><label class="lbl">遺族年金額（年額）</label>
-          <div class="suf"><input class="inp amt-inp" id="mg-surv-amt" type="number" value="0" min="0" onfocus="scrollToCFRow('survPension')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円/年</span></div></div>
+        <div class="fg" id="mg-surv-manual-wrap" style="display:none">
+          <label class="lbl">遺族年金額（年額）— 生存者の年齢で段階設定可</label>
+          <div class="suf"><input class="inp amt-inp" id="mg-surv-amt" type="number" value="0" min="0" onfocus="scrollToCFRow('survPension')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円/年（既定値・段階未設定時）</span></div>
+          <div id="mg-surv-steps-cont" style="margin-top:6px;display:flex;flex-direction:column;gap:4px"></div>
+          <button class="btn-add" onclick="addMgSurvStep()" style="font-size:10px;padding:4px 8px;margin-top:4px">＋ 段階を追加</button>
+          <span class="hint" style="font-size:9px;color:var(--muted);display:block;margin-top:2px">※ 段階を追加すると、生存者の年齢に応じて遺族年金額を切り替えられます。未設定の年齢には上の既定値を使用。</span>
+        </div>
       </div>
       <div class="fg" style="margin-top:4px">
         <span class="hint ok" id="mg-surv-hint">遺族厚生年金＋遺族基礎年金を自動計算します</span>
@@ -1634,7 +1639,7 @@ function checkPW(){
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=14"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=74"></script>
+<script src="js/contingency.js?v=75"></script>
 <script src="js/cf-ui.js?v=22"></script>
 <script src="js/cf-calc.js?v=58"></script>
 <script src="js/cf-table.js?v=47"></script>
@@ -1644,7 +1649,7 @@ function checkPW(){
 <script src="js/loan-plan.js?v=15"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=53"></script>
+<script src="js/save-load.js?v=54"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=6"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

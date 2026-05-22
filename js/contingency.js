@@ -1,5 +1,60 @@
 // contingency.js — 万が一シミュレーション
 // ===== 万が一シミュレーション関数群 =====
+// ===== 万一CF 遺族年金: 段階入力 =====
+// 各ステップは {from年齢, to年齢, 金額} を持つ。生存者の年齢に応じて該当ステップの金額を使用。
+let _mgSurvStepCnt = 0;
+function addMgSurvStep(from, to, amt){
+  _mgSurvStepCnt++;
+  const id = _mgSurvStepCnt;
+  const cont = document.getElementById('mg-surv-steps-cont');
+  if(!cont) return;
+  const el = document.createElement('div');
+  el.id = `mss-${id}`;
+  el.style.cssText = 'display:flex;gap:4px;align-items:center;background:#f5f8fc;border:1px solid #d8e2ed;border-radius:4px;padding:4px 6px';
+  el.innerHTML = `
+    <input type="number" class="inp age-inp" id="mss-from-${id}" value="${from||''}" placeholder="開始" min="0" max="120" style="width:50px;font-size:11px;padding:3px" oninput="live(true)">
+    <span style="font-size:10px;color:var(--muted)">〜</span>
+    <input type="number" class="inp age-inp" id="mss-to-${id}" value="${to||''}" placeholder="終了" min="0" max="120" style="width:50px;font-size:11px;padding:3px" oninput="live(true)">
+    <span style="font-size:10px;color:var(--muted)">歳</span>
+    <input type="number" class="inp amt-inp" id="mss-amt-${id}" value="${amt||''}" placeholder="金額" min="0" style="width:80px;font-size:11px;padding:3px" oninput="live(true)">
+    <span style="font-size:10px;color:var(--muted)">万円/年</span>
+    <button class="btn-rm" onclick="removeMgSurvStep(${id})" style="margin-left:auto">×</button>
+  `;
+  cont.appendChild(el);
+}
+function removeMgSurvStep(id){
+  document.getElementById(`mss-${id}`)?.remove();
+  if(typeof live==='function') live(true);
+}
+window.addMgSurvStep = addMgSurvStep;
+window.removeMgSurvStep = removeMgSurvStep;
+// 生存者年齢から該当ステップの遺族年金額を返す。未マッチ時は既定値(mg-surv-amt)
+function getMgSurvAmtAtAge(survAge){
+  const cont = document.getElementById('mg-surv-steps-cont');
+  if(!cont) return fv('mg-surv-amt')||0;
+  const steps = [];
+  cont.querySelectorAll('[id^="mss-"]').forEach(el=>{
+    const idMatch = el.id.match(/^mss-(\d+)$/);
+    if(!idMatch) return;
+    const sid = idMatch[1];
+    const from = parseInt(document.getElementById(`mss-from-${sid}`)?.value);
+    const to = parseInt(document.getElementById(`mss-to-${sid}`)?.value);
+    const amt = parseFloat(String(document.getElementById(`mss-amt-${sid}`)?.value||'').replace(/,/g,''))||0;
+    if(!isNaN(from) && from>=0){
+      steps.push({from, to:isNaN(to)?999:to, amt});
+    }
+  });
+  // ステップが無い→既定値
+  if(steps.length===0) return fv('mg-surv-amt')||0;
+  // 該当ステップを検索（年齢が範囲内のもの）
+  for(const s of steps){
+    if(survAge>=s.from && survAge<=s.to) return s.amt;
+  }
+  // どのステップにも該当しない→既定値（または0）
+  return fv('mg-surv-amt')||0;
+}
+window.getMgSurvAmtAtAge = getMgSurvAmtAtAge;
+
 function setMGTarget(t){
   mgTarget=t;
   $('mg-target-h').classList.toggle('on',t==='h');
@@ -681,7 +736,9 @@ function _renderContingencyInner(){
     let survP=0;
     if(isDead){
       if(mgSurvMode==='manual'){
-        survP=survManualAmt;
+        // 生存者の年齢に応じて段階別金額を取得（未設定時は mg-surv-amt 既定値）
+        const _survAge = targetIsH ? wa : ha;
+        survP = (typeof getMgSurvAmtAtAge==='function') ? getMgSurvAmtAtAge(_survAge) : survManualAmt;
       }else{
         // 遺族厚生年金用：死亡時の被保険者期間ベース＋300月みなし
         const hDeathAgeCalc=targetIsH?deathAge:(hAge+deathYearOffset-1);
