@@ -1438,21 +1438,41 @@ function render(){
         if(i>=ecEndYrs)return;
         // ローン残債継続（経過年0以降、当初借入年数 - 経過年数 が残月数）
         if(ecPay==='loan'){
-          const ecDown=fvd('ecar-'+ecIdx+'-down',50);
-          const ecLoanYrs=fvd('ecar-'+ecIdx+'-loan-yrs',5);
-          const ecLoanRate=fvd('ecar-'+ecIdx+'-loan-rate',2.5)/100/12;
-          const principal=Math.max(0,(ecPrice-ecDown)*10000);
-          const totalMonths=ecLoanYrs*12;
-          const elapsedMonthsAtStart=boughtAgo*12;
-          const remainMonthsAtStart=Math.max(0,totalMonths-elapsedMonthsAtStart);
-          const monthsBeforeThisYear=i*12;
-          const remainAtThisYear=Math.max(0,remainMonthsAtStart-monthsBeforeThisYear);
-          if(remainAtThisYear>0){
-            const monthly=ecLoanRate>0?principal*ecLoanRate*Math.pow(1+ecLoanRate,totalMonths)/(Math.pow(1+ecLoanRate,totalMonths)-1):principal/totalMonths;
-            const monthsThisYear=Math.min(12,remainAtThisYear);
-            const _ecLoanAmt=Math.round(monthly*monthsThisYear/10000);
-            carBuyAmt+=_ecLoanAmt;
-            if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt});
+          const ecLoanMode=document.getElementById('ecar-'+ecIdx+'-loan-mode')?.value||'original';
+          if(ecLoanMode==='reverse'){
+            // 逆算モード: 月々 + ボーナス × 残年数
+            const ecMonthly=fvd('ecar-'+ecIdx+'-loan-monthly',0);
+            const ecBonus=fvd('ecar-'+ecIdx+'-loan-bonus',0);
+            const ecRemainYrs=fvd('ecar-'+ecIdx+'-loan-remain-yrs',0);
+            // CF表のi年目（0=現在年）にローン支払いを計上
+            // 残年数 ecRemainYrs を超えたら支払い終了
+            if(i<ecRemainYrs){
+              // 部分年（例: 残年数3.5年で i=3 の場合、月々半年分のみ）
+              const fracYear=Math.min(1, ecRemainYrs-i);
+              const monthsThisYear=Math.round(12*fracYear);
+              const bonusThisYear=fracYear>=0.5?2:(fracYear>=0.25?1:0); // 半年以上残→2回、四半期以上→1回
+              const _ecLoanAmt=Math.round(ecMonthly*monthsThisYear+ecBonus*bonusThisYear);
+              carBuyAmt+=_ecLoanAmt;
+              if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt});
+            }
+          } else {
+            // 当初借入モード（既存ロジック）
+            const ecDown=fvd('ecar-'+ecIdx+'-down',50);
+            const ecLoanYrs=fvd('ecar-'+ecIdx+'-loan-yrs',5);
+            const ecLoanRate=fvd('ecar-'+ecIdx+'-loan-rate',2.5)/100/12;
+            const principal=Math.max(0,(ecPrice-ecDown)*10000);
+            const totalMonths=ecLoanYrs*12;
+            const elapsedMonthsAtStart=boughtAgo*12;
+            const remainMonthsAtStart=Math.max(0,totalMonths-elapsedMonthsAtStart);
+            const monthsBeforeThisYear=i*12;
+            const remainAtThisYear=Math.max(0,remainMonthsAtStart-monthsBeforeThisYear);
+            if(remainAtThisYear>0){
+              const monthly=ecLoanRate>0?principal*ecLoanRate*Math.pow(1+ecLoanRate,totalMonths)/(Math.pow(1+ecLoanRate,totalMonths)-1):principal/totalMonths;
+              const monthsThisYear=Math.min(12,remainAtThisYear);
+              const _ecLoanAmt=Math.round(monthly*monthsThisYear/10000);
+              carBuyAmt+=_ecLoanAmt;
+              if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt});
+            }
           }
         }
         // 車検（過去基準）: 購入年からの経過年で次回車検タイミングを計算

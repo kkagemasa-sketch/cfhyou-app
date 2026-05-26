@@ -318,6 +318,11 @@ function _collectDynamic(){
       down:document.getElementById('ecar-'+c+'-down')?.value||'50',
       loanYrs:document.getElementById('ecar-'+c+'-loan-yrs')?.value||'5',
       loanRate:document.getElementById('ecar-'+c+'-loan-rate')?.value||'2.5',
+      // 逆算モード関連
+      loanInputMode:document.getElementById('ecar-'+c+'-loan-mode')?.value||'original',
+      loanMonthly:document.getElementById('ecar-'+c+'-loan-monthly')?.value||'',
+      loanBonus:document.getElementById('ecar-'+c+'-loan-bonus')?.value||'',
+      loanRemainYrs:document.getElementById('ecar-'+c+'-loan-remain-yrs')?.value||'',
     });
   });
   d.pairLoanMode=pairLoanMode;
@@ -709,7 +714,16 @@ function _restoreDynamic(d){
     if(typeof existingCarCnt!=='undefined')existingCarCnt=0;
     d.existingCars.forEach(c=>{
       if(typeof addExistingCar==='function')
-        addExistingCar({label:c.label||'',type:c.type,pay:c.pay,boughtAgo:c.boughtAgo,price:c.price,endYrs:c.endYrs,insp:c.insp,down:c.down,loanYrs:c.loanYrs,loanRate:c.loanRate});
+        addExistingCar({
+          label:c.label||'',type:c.type,pay:c.pay,boughtAgo:c.boughtAgo,
+          price:c.price,endYrs:c.endYrs,insp:c.insp,down:c.down,
+          loanYrs:c.loanYrs,loanRate:c.loanRate,
+          // 逆算モード関連
+          loanInputMode:c.loanInputMode||'original',
+          loanMonthly:c.loanMonthly||'',
+          loanBonus:c.loanBonus||'',
+          loanRemainYrs:c.loanRemainYrs||''
+        });
     });
   }
   // 通常CF表 遺族年金上書き金額復元

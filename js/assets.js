@@ -628,16 +628,40 @@ function addExistingCar(defaults){
         <span class="hint" id="ecar-${id}-insp-hint" style="font-size:9px">${(d.type||'new')==='new'?'新車：購入から3年後・以降2年ごと':'中古：購入から2年ごと'}</span></div>
     </div>
     <div id="ecar-${id}-loan-fields" style="display:${d.pay==='loan'?'':'none'};background:#fff3d0;border:1px solid #ffc000;border-radius:var(--rs);padding:8px">
-      <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:6px">🏦 当初ローン条件（自動で残債計算）</div>
-      <div class="g3">
-        <div class="fg"><label class="lbl" style="font-size:9px">当初頭金</label>
-          <div class="suf"><input class="inp amt-inp" id="ecar-${id}-down" type="number" value="${d.down||50}" min="0" oninput="setExistingCarPay(${id},'loan')"><span class="sl">万円</span></div></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">当初借入年数</label>
-          <div class="suf"><input class="inp age-inp" id="ecar-${id}-loan-yrs" type="number" value="${d.loanYrs||5}" min="1" max="10" oninput="setExistingCarPay(${id},'loan')"><span class="sl">年</span></div></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">当初金利</label>
-          <div class="suf"><input class="inp amt-inp" id="ecar-${id}-loan-rate" type="number" value="${d.loanRate||2.5}" min="0" max="10" step="0.1" oninput="setExistingCarPay(${id},'loan')"><span class="sl">%</span></div></div>
+      <div style="display:flex;gap:4px;margin-bottom:6px">
+        <div class="tc ${(d.loanInputMode||'original')==='original'?'on':''}" id="ecar-${id}-loan-mode-original" onclick="setExistingCarLoanMode(${id},'original')" style="flex:1;padding:4px 6px"><div class="tc-lbl" style="font-size:10px">📋 当初借入条件から</div></div>
+        <div class="tc ${d.loanInputMode==='reverse'?'on':''}" id="ecar-${id}-loan-mode-reverse" onclick="setExistingCarLoanMode(${id},'reverse')" style="flex:1;padding:4px 6px"><div class="tc-lbl" style="font-size:10px">🔄 現在の支払いから逆算</div></div>
       </div>
-      <span class="hint ok" id="ecar-${id}-loan-hint" style="font-size:10px">月々：― 万円</span>
+      <input type="hidden" id="ecar-${id}-loan-mode" value="${d.loanInputMode||'original'}">
+
+      <!-- モード①: 当初借入条件 -->
+      <div id="ecar-${id}-loan-original-fields" style="display:${(d.loanInputMode||'original')==='original'?'':'none'}">
+        <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🏦 当初ローン条件（自動で残債計算）</div>
+        <div class="g3">
+          <div class="fg"><label class="lbl" style="font-size:9px">当初頭金</label>
+            <div class="suf"><input class="inp amt-inp" id="ecar-${id}-down" type="number" value="${d.down||50}" min="0" oninput="setExistingCarPay(${id},'loan')"><span class="sl">万円</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">当初借入年数</label>
+            <div class="suf"><input class="inp age-inp" id="ecar-${id}-loan-yrs" type="number" value="${d.loanYrs||5}" min="1" max="10" oninput="setExistingCarPay(${id},'loan')"><span class="sl">年</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">当初金利</label>
+            <div class="suf"><input class="inp amt-inp" id="ecar-${id}-loan-rate" type="number" value="${d.loanRate||2.5}" min="0" max="10" step="0.1" oninput="setExistingCarPay(${id},'loan')"><span class="sl">%</span></div></div>
+        </div>
+      </div>
+
+      <!-- モード②: 現在の支払いから逆算 -->
+      <div id="ecar-${id}-loan-reverse-fields" style="display:${d.loanInputMode==='reverse'?'':'none'}">
+        <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🔄 現在の支払い情報を入力（金額×期間で残債を概算）</div>
+        <div class="g3">
+          <div class="fg"><label class="lbl" style="font-size:9px">月々の支払い</label>
+            <div class="suf"><input class="inp amt-inp" id="ecar-${id}-loan-monthly" type="number" value="${d.loanMonthly||3}" min="0" step="0.1" oninput="setExistingCarPay(${id},'loan')"><span class="sl">万円/月</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">ボーナス時加算</label>
+            <div class="suf"><input class="inp amt-inp" id="ecar-${id}-loan-bonus" type="number" value="${d.loanBonus||0}" min="0" step="0.1" oninput="setExistingCarPay(${id},'loan')"><span class="sl">万円/回</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">残りの返済年数</label>
+            <div class="suf"><input class="inp age-inp" id="ecar-${id}-loan-remain-yrs" type="number" value="${d.loanRemainYrs||3}" min="0" max="20" step="0.5" oninput="setExistingCarPay(${id},'loan')"><span class="sl">年</span></div></div>
+        </div>
+        <div style="font-size:9px;color:#475569;margin-top:3px">※ボーナスは年2回（6月・12月）想定。残債は (月々×12 + ボーナス×2) × 残年数 で概算</div>
+      </div>
+
+      <span class="hint ok" id="ecar-${id}-loan-hint" style="font-size:10px;display:block;margin-top:6px">月々：― 万円</span>
     </div>`;
   cont.appendChild(el);
   setExistingCarPay(id,d.pay||'cash');
@@ -666,32 +690,66 @@ function setExistingCarPay(id,pay){
   if(lf)lf.style.display=pay==='loan'?'':'none';
   // 残ローン月数のヒント表示
   if(pay==='loan'){
-    const boughtAgo=parseFloat(document.getElementById(`ecar-${id}-bought-ago`)?.value)||0;
-    const loanYrs=parseFloat(document.getElementById(`ecar-${id}-loan-yrs`)?.value)||0;
-    const price=parseFloat(document.getElementById(`ecar-${id}-price`)?.value)||0;
-    const down=parseFloat(document.getElementById(`ecar-${id}-down`)?.value)||0;
-    const rate=parseFloat(document.getElementById(`ecar-${id}-loan-rate`)?.value)||0;
-    const principal=Math.max(0,(price-down)*10000);
-    const mr=rate/100/12;
-    const totalMonths=loanYrs*12;
-    const elapsedMonths=boughtAgo*12;
-    const remainMonths=Math.max(0,totalMonths-elapsedMonths);
-    const monthly=mr>0?principal*mr*Math.pow(1+mr,totalMonths)/(Math.pow(1+mr,totalMonths)-1):principal/totalMonths;
-    const monthlyManny=Math.round(monthly/10000*10)/10;
-    const remainYrs=Math.round(remainMonths/12*10)/10;
     const hint=document.getElementById(`ecar-${id}-loan-hint`);
-    if(hint){
-      if(remainMonths<=0){
-        hint.textContent=`✓ ローン完済済み（経過${boughtAgo}年 ≧ 借入${loanYrs}年）`;
-        hint.className='hint ok';
-      }else{
-        hint.textContent=`月々: ${monthlyManny}万円 × あと約${remainYrs}年（残${remainMonths}ヶ月）`;
-        hint.className='hint ok';
+    const mode=document.getElementById(`ecar-${id}-loan-mode`)?.value||'original';
+    if(mode==='reverse'){
+      // 逆算モード: 月々 + ボーナス × 残年数 で年額と残債を概算
+      const monthly=parseFloat(document.getElementById(`ecar-${id}-loan-monthly`)?.value)||0;
+      const bonus=parseFloat(document.getElementById(`ecar-${id}-loan-bonus`)?.value)||0;
+      const remainYrs=parseFloat(document.getElementById(`ecar-${id}-loan-remain-yrs`)?.value)||0;
+      const annual=monthly*12+bonus*2;
+      const totalRemain=Math.round(annual*remainYrs*10)/10;
+      if(hint){
+        if(remainYrs<=0||annual<=0){
+          hint.textContent='⚠️ 月々と残年数を入力してください';
+          hint.className='hint';
+        }else{
+          hint.textContent=`年額: ${Math.round(annual*10)/10}万円/年（月々${monthly}万＋ボーナス${bonus}万×2）× あと${remainYrs}年 → 残債概算 ${totalRemain}万円`;
+          hint.className='hint ok';
+        }
+      }
+    }else{
+      // 当初借入モード: 既存の計算
+      const boughtAgo=parseFloat(document.getElementById(`ecar-${id}-bought-ago`)?.value)||0;
+      const loanYrs=parseFloat(document.getElementById(`ecar-${id}-loan-yrs`)?.value)||0;
+      const price=parseFloat(document.getElementById(`ecar-${id}-price`)?.value)||0;
+      const down=parseFloat(document.getElementById(`ecar-${id}-down`)?.value)||0;
+      const rate=parseFloat(document.getElementById(`ecar-${id}-loan-rate`)?.value)||0;
+      const principal=Math.max(0,(price-down)*10000);
+      const mr=rate/100/12;
+      const totalMonths=loanYrs*12;
+      const elapsedMonths=boughtAgo*12;
+      const remainMonths=Math.max(0,totalMonths-elapsedMonths);
+      const monthly=mr>0?principal*mr*Math.pow(1+mr,totalMonths)/(Math.pow(1+mr,totalMonths)-1):principal/totalMonths;
+      const monthlyManny=Math.round(monthly/10000*10)/10;
+      const remainYrsCalc=Math.round(remainMonths/12*10)/10;
+      if(hint){
+        if(remainMonths<=0){
+          hint.textContent=`✓ ローン完済済み（経過${boughtAgo}年 ≧ 借入${loanYrs}年）`;
+          hint.className='hint ok';
+        }else{
+          hint.textContent=`月々: ${monthlyManny}万円 × あと約${remainYrsCalc}年（残${remainMonths}ヶ月）`;
+          hint.className='hint ok';
+        }
       }
     }
   }
   live();
 }
+// 既保有車ローン入力モード切替（original=当初借入条件 / reverse=現在の支払いから逆算）
+function setExistingCarLoanMode(id, mode){
+  const modeEl=document.getElementById(`ecar-${id}-loan-mode`);
+  if(modeEl)modeEl.value=mode;
+  document.getElementById(`ecar-${id}-loan-mode-original`)?.classList.toggle('on',mode==='original');
+  document.getElementById(`ecar-${id}-loan-mode-reverse`)?.classList.toggle('on',mode==='reverse');
+  const origF=document.getElementById(`ecar-${id}-loan-original-fields`);
+  const revF=document.getElementById(`ecar-${id}-loan-reverse-fields`);
+  if(origF)origF.style.display=mode==='original'?'':'none';
+  if(revF)revF.style.display=mode==='reverse'?'':'none';
+  // 再計算してヒント更新＋CF表反映
+  setExistingCarPay(id,'loan');
+}
+window.setExistingCarLoanMode=setExistingCarLoanMode;
 window.addExistingCar=addExistingCar;
 window.rmExistingCar=rmExistingCar;
 window.setExistingCarType=setExistingCarType;
