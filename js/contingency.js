@@ -1040,22 +1040,37 @@ function _renderContingencyInner(){
         if(ecEndYrs>0 && i>=ecEndYrs)return;
         // ローン残債
         if(ec.pay==='loan'){
-          const ecPrice = parseFloat(ec.price)||0;
-          const ecDown = parseFloat(ec.down)||0;
-          const ecLoanYrs = parseFloat(ec.loanYrs)||0;
-          const ecLoanRate = (parseFloat(ec.loanRate)||0)/100/12;
-          const boughtAgo = parseFloat(ec.boughtAgo)||0;
-          const principal = Math.max(0,(ecPrice-ecDown)*10000);
-          const totalMonths = ecLoanYrs*12;
-          const elapsedMonthsAtStart = boughtAgo*12;
-          const remainAtStart = Math.max(0, totalMonths - elapsedMonthsAtStart);
-          const remainAtThisYear = Math.max(0, remainAtStart - i*12);
-          if(remainAtThisYear>0 && totalMonths>0){
-            const monthly = ecLoanRate>0
-              ? principal*ecLoanRate*Math.pow(1+ecLoanRate,totalMonths)/(Math.pow(1+ecLoanRate,totalMonths)-1)
-              : principal/totalMonths;
-            const monthsThisYear = Math.min(12, remainAtThisYear);
-            nCar += Math.round(monthly*monthsThisYear/10000);
+          const ecLoanMode = ec.loanInputMode || 'original';
+          if(ecLoanMode==='reverse'){
+            // 逆算モード: 月々 + ボーナス × 残年数
+            const ecMonthly = parseFloat(ec.loanMonthly)||0;
+            const ecBonus = parseFloat(ec.loanBonus)||0;
+            const ecRemainYrs = parseFloat(ec.loanRemainYrs)||0;
+            if(i<ecRemainYrs){
+              const fracYear = Math.min(1, ecRemainYrs-i);
+              const monthsThisYear = Math.round(12*fracYear);
+              const bonusThisYear = fracYear>=0.5?2:(fracYear>=0.25?1:0);
+              nCar += Math.round(ecMonthly*monthsThisYear+ecBonus*bonusThisYear);
+            }
+          } else {
+            // 当初借入モード（既存ロジック）
+            const ecPrice = parseFloat(ec.price)||0;
+            const ecDown = parseFloat(ec.down)||0;
+            const ecLoanYrs = parseFloat(ec.loanYrs)||0;
+            const ecLoanRate = (parseFloat(ec.loanRate)||0)/100/12;
+            const boughtAgo = parseFloat(ec.boughtAgo)||0;
+            const principal = Math.max(0,(ecPrice-ecDown)*10000);
+            const totalMonths = ecLoanYrs*12;
+            const elapsedMonthsAtStart = boughtAgo*12;
+            const remainAtStart = Math.max(0, totalMonths - elapsedMonthsAtStart);
+            const remainAtThisYear = Math.max(0, remainAtStart - i*12);
+            if(remainAtThisYear>0 && totalMonths>0){
+              const monthly = ecLoanRate>0
+                ? principal*ecLoanRate*Math.pow(1+ecLoanRate,totalMonths)/(Math.pow(1+ecLoanRate,totalMonths)-1)
+                : principal/totalMonths;
+              const monthsThisYear = Math.min(12, remainAtThisYear);
+              nCar += Math.round(monthly*monthsThisYear/10000);
+            }
           }
         }
         // 車検（過去基準）

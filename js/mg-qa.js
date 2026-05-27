@@ -1053,18 +1053,38 @@ function mgQA_buildExistingCarCard(tabId,i,c){
         <div class="fg"><label class="lbl" style="font-size:10px">車検費用</label>
           <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.insp||10}" data-k="mgExistingCars.${i}.insp" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
       </div>
-      ${isLoan ? `
+      ${isLoan ? (()=>{
+        const loanMode = c.loanInputMode || 'original';
+        return `
         <div style="background:#fff3d0;border:1px solid #ffc000;border-radius:6px;padding:6px;margin-top:4px">
-          <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🏦 当初ローン条件</div>
-          <div class="g3">
-            <div class="fg"><label class="lbl" style="font-size:9px">当初頭金</label>
-              <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.down||50}" data-k="mgExistingCars.${i}.down" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
-            <div class="fg"><label class="lbl" style="font-size:9px">当初借入年数</label>
-              <div class="suf"><input class="inp age-inp" type="number" min="1" max="10" value="${c.loanYrs||5}" data-k="mgExistingCars.${i}.loanYrs" data-cf-row="carTotal"><span class="sl">年</span></div></div>
-            <div class="fg"><label class="lbl" style="font-size:9px">当初金利</label>
-              <div class="suf"><input class="inp amt-inp" type="number" min="0" max="10" step="0.1" value="${c.loanRate||2.5}" data-k="mgExistingCars.${i}.loanRate" data-cf-row="carTotal"><span class="sl">%</span></div></div>
+          <div style="display:flex;gap:4px;margin-bottom:4px">
+            <button type="button" class="btn-tog ${loanMode==='original'?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'loanInputMode','original')">📋 当初借入条件から</button>
+            <button type="button" class="btn-tog ${loanMode==='reverse'?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'loanInputMode','reverse')">🔄 現在の支払いから逆算</button>
           </div>
-        </div>` : ''}
+          ${loanMode==='reverse' ? `
+            <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🔄 現在の支払い情報</div>
+            <div class="g3">
+              <div class="fg"><label class="lbl" style="font-size:9px">月々の支払い</label>
+                <div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${c.loanMonthly||3}" data-k="mgExistingCars.${i}.loanMonthly" data-cf-row="carTotal"><span class="sl">万円/月</span></div></div>
+              <div class="fg"><label class="lbl" style="font-size:9px">ボーナス時加算</label>
+                <div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${c.loanBonus||0}" data-k="mgExistingCars.${i}.loanBonus" data-cf-row="carTotal"><span class="sl">万円/回</span></div></div>
+              <div class="fg"><label class="lbl" style="font-size:9px">残りの返済年数</label>
+                <div class="suf"><input class="inp age-inp" type="number" min="0" max="20" step="0.5" value="${c.loanRemainYrs||3}" data-k="mgExistingCars.${i}.loanRemainYrs" data-cf-row="carTotal"><span class="sl">年</span></div></div>
+            </div>
+            <div style="font-size:9px;color:#475569;margin-top:3px">※ボーナスは年2回想定。年額=月々×12+ボーナス×2</div>
+          ` : `
+            <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🏦 当初ローン条件</div>
+            <div class="g3">
+              <div class="fg"><label class="lbl" style="font-size:9px">当初頭金</label>
+                <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.down||50}" data-k="mgExistingCars.${i}.down" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
+              <div class="fg"><label class="lbl" style="font-size:9px">当初借入年数</label>
+                <div class="suf"><input class="inp age-inp" type="number" min="1" max="10" value="${c.loanYrs||5}" data-k="mgExistingCars.${i}.loanYrs" data-cf-row="carTotal"><span class="sl">年</span></div></div>
+              <div class="fg"><label class="lbl" style="font-size:9px">当初金利</label>
+                <div class="suf"><input class="inp amt-inp" type="number" min="0" max="10" step="0.1" value="${c.loanRate||2.5}" data-k="mgExistingCars.${i}.loanRate" data-cf-row="carTotal"><span class="sl">%</span></div></div>
+            </div>
+          `}
+        </div>`;
+      })() : ''}
     </div>`;
 }
 function mgQA_buildFutureCarCard(tabId,i,c){
@@ -1116,7 +1136,7 @@ function mgQA_addMgExistingCar(tabId){
   const tab = mgQA_tabs.find(t=>t.id===tabId);
   if(!tab) return;
   if(!Array.isArray(tab.state.mgExistingCars)) tab.state.mgExistingCars = [];
-  tab.state.mgExistingCars.push({type:'new',pay:'cash',boughtAgo:3,price:300,insp:10,endYrs:5,loanYrs:5,down:50,loanRate:2.5});
+  tab.state.mgExistingCars.push({type:'new',pay:'cash',boughtAgo:3,price:300,insp:10,endYrs:5,loanYrs:5,down:50,loanRate:2.5,loanInputMode:'original',loanMonthly:3,loanBonus:0,loanRemainYrs:3});
   mgQA_switchTab(tabId);
 }
 function mgQA_removeMgExistingCar(tabId,i){
