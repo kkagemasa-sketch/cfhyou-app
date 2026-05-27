@@ -23,6 +23,30 @@ function eduCosts(cid){
   EDU.high[hi].forEach((v,i)=>{c[16+i]=v||0});
   // 大学：19歳〜
   if(un!=='none')(EDU.univ[un]||EDU.univ.plit_h).forEach((v,i)=>{c[19+i]=v||0});
+  // 大学院: 大学が4年制(non-medical, non-senmon)の場合に対応
+  // path: none / master(2年) / both(修士2年+博士3年)
+  const gradPath = _v(`cgrad-path-${cid}`)||'none';
+  const gradCourse = _v(`cgrad-course-${cid}`)||'psci_h';
+  if(gradPath!=='none' && un!=='none'){
+    // 大学卒業後の年齢（大学卒業年数に依存）
+    const univArr = EDU.univ[un] || [];
+    const gradStartAge = 19 + univArr.length; // 4年制なら23歳開始
+    // 修士（2年）
+    const mArr = (EDU.grad && EDU.grad.master && EDU.grad.master[gradCourse]) || [];
+    mArr.forEach((v,i)=>{
+      const age = gradStartAge + i;
+      if(age<c.length) c[age] = (c[age]||0) + (v||0);
+    });
+    // 博士（3年）— gradPath='both' のみ
+    if(gradPath==='both'){
+      const dArr = (EDU.grad && EDU.grad.doctor && EDU.grad.doctor[gradCourse]) || [];
+      const docStartAge = gradStartAge + mArr.length;
+      dArr.forEach((v,i)=>{
+        const age = docStartAge + i;
+        if(age<c.length) c[age] = (c[age]||0) + (v||0);
+      });
+    }
+  }
   return c;
 }
 

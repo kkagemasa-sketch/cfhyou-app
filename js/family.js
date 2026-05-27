@@ -107,6 +107,22 @@ function addChild(){
           <option value="none">進学なし</option>
         </select></div>
     </div>
+    <!-- 大学院（修士+博士） -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+      <div class="fg"><label class="lbl" style="font-size:9px">大学院</label>
+        <select class="sel" id="cgrad-path-${id}" onfocus="scrollToCFRowEduStage(${id},'grad')" onblur="cfRowBlur()" onchange="toggleGradCourse(${id});live()" style="font-size:11px;padding:4px 6px">
+          <option value="none" selected>進学なし</option>
+          <option value="master">修士のみ (2年)</option>
+          <option value="both">修士 (2年) + 博士 (3年)</option>
+        </select></div>
+      <div class="fg" id="cgrad-course-wrap-${id}" style="display:none"><label class="lbl" style="font-size:9px">大学院コース</label>
+        <select class="sel" id="cgrad-course-${id}" onfocus="scrollToCFRowEduStage(${id},'grad')" onblur="cfRowBlur()" onchange="scrollToCFRowEduStage(${id},'grad');live()" style="font-size:11px;padding:4px 6px">
+          <option value="nat_h">国立（自宅）</option><option value="nat_b">国立（下宿）</option>
+          <option value="plit_h">私立文系（自宅）</option><option value="plit_b">私立文系（下宿）</option>
+          <option value="psci_h" selected>私立理系（自宅）</option><option value="psci_b">私立理系（下宿）</option>
+          <option value="med_h">私立医系（自宅）</option><option value="med_b">私立医系（下宿）</option>
+        </select></div>
+    </div>
     <div id="cprev-${id}" style="margin-top:5px;font-size:10px;color:var(--muted)"></div>
     <div class="divider" style="margin:8px 0"></div>
     <div style="font-size:10px;font-weight:700;color:#1a6b2e;margin-bottom:5px">🎓 奨学金</div>
@@ -155,6 +171,15 @@ function rmChild(id){
   });
   live();
 }
+// 大学院セレクトの「進学なし」以外で大学院コース欄を表示
+function toggleGradCourse(id){
+  const path=document.getElementById(`cgrad-path-${id}`)?.value||'none';
+  const wrap=document.getElementById(`cgrad-course-wrap-${id}`);
+  if(wrap) wrap.style.display = (path==='none')?'none':'';
+  if(typeof scrollToCFRowEduStage==='function') scrollToCFRowEduStage(id,'grad');
+}
+window.toggleGradCourse = toggleGradCourse;
+
 function setScholarship(id,on){
   document.getElementById(`sc-no-${id}`).classList.toggle('on',!on);
   document.getElementById(`sc-yes-${id}`).classList.toggle('on',on);

@@ -462,6 +462,9 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
 .ev-high ,.edu-high {background:#f3eeff!important;color:#3a008a!important;font-weight:600!important}
 .ev-univ ,.edu-univ {background:#ffd8a0!important;color:#6b2000!important;font-weight:600!important}
 .ev-senmon,.edu-senmon{background:#edf6ff!important;color:#003480!important;font-weight:600!important}
+/* 大学院: 大学(#ffd8a0)と同系色だが、修士は濃いオレンジ、博士はさらに濃いブラウン系 */
+.ev-grad-m,.edu-grad-m{background:#f0a868!important;color:#4a1500!important;font-weight:600!important}
+.ev-grad-d,.edu-grad-d{background:#cc7a30!important;color:#fff!important;font-weight:600!important}
 
 /* 数値カラー */
 .vp{color:var(--plus);font-weight:600}

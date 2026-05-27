@@ -277,9 +277,19 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       else if(ca>=19){
         const un=_v(`cu-${ci+1}`)||'plit_h';
         const univLen=(EDU.univ[un]||[]).length;
-        if(univLen>0&&ca<19+univLen){
+        const gradPath=_v(`cgrad-path-${ci+1}`)||'none';
+        const gradCourse=_v(`cgrad-course-${ci+1}`)||'psci_h';
+        const mLen = (gradPath!=='none' && EDU.grad?.master?.[gradCourse]) ? EDU.grad.master[gradCourse].length : 0;
+        const dLen = (gradPath==='both' && EDU.grad?.doctor?.[gradCourse]) ? EDU.grad.doctor[gradCourse].length : 0;
+        if(univLen>0 && ca<19+univLen){
           cls=un.startsWith('senmon')?'ev-senmon':'ev-univ';
           if(ca===19)label=un.startsWith('senmon')?'専門入学':'大学入学';
+        } else if(mLen>0 && ca>=19+univLen && ca<19+univLen+mLen){
+          cls='ev-grad-m';
+          if(ca===19+univLen)label='修士入学';
+        } else if(dLen>0 && ca>=19+univLen+mLen && ca<19+univLen+mLen+dLen){
+          cls='ev-grad-d';
+          if(ca===19+univLen+mLen)label='博士入学';
         }
       }
       h+=`<td class="${cls}${getColCls(i)}">${label}</td>`;

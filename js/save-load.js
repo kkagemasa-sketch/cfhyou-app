@@ -93,6 +93,7 @@ function _collectDynamic(){
       hoiku:[0,1,2,3,4,5,6].map(a=>$(`hn-${a}-${cid}`)?.value||''),
       elem:$(`ce-${cid}`)?.value||'public', mid:$(`cm-${cid}`)?.value||'public',
       high:$(`ch-${cid}`)?.value||'public', univ:$(`cu-${cid}`)?.value||'plit_h',
+      gradPath:$(`cgrad-path-${cid}`)?.value||'none', gradCourse:$(`cgrad-course-${cid}`)?.value||'psci_h',
       scOn:$(`sc-yes-${cid}`)?.classList.contains('on')||false,
       scAmt:$(`sc-amt-${cid}`)?.value||'', scStart:$(`sc-start-${cid}`)?.value||'',
       wedOn:$(`wed-yes-${cid}`)?.classList.contains('on')||false,
@@ -368,6 +369,9 @@ function _restoreDynamic(d){
     if($(`cm-${cid}`))$(`cm-${cid}`).value=c.mid||'public';
     if($(`ch-${cid}`))$(`ch-${cid}`).value=c.high||'public';
     if($(`cu-${cid}`))$(`cu-${cid}`).value=c.univ||'plit_h';
+    if($(`cgrad-path-${cid}`))$(`cgrad-path-${cid}`).value=c.gradPath||'none';
+    if($(`cgrad-course-${cid}`))$(`cgrad-course-${cid}`).value=c.gradCourse||'psci_h';
+    if(typeof toggleGradCourse==='function')toggleGradCourse(cid);
     if(c.scOn)setScholarship(cid,true);
     if(c.scOn&&$(`sc-amt-${cid}`))$(`sc-amt-${cid}`).value=c.scAmt;
     if(c.scOn&&$(`sc-start-${cid}`))$(`sc-start-${cid}`).value=c.scStart;
