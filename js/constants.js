@@ -101,6 +101,17 @@ const EDU_TABLE = {
       med_h:  [328, 318, 318],
       med_b:  [439, 429, 429],
       none:[]
+    },
+    // 医歯博士課程（4年・修士不要） — 医学部・歯学部6年制卒後の直接進学想定
+    // 1年目: 入学金約30万 + 学費 + 生活費、2-4年目: 学費+生活費
+    medical:{
+      // 国立医歯系大学院（学費は通常の国立と同水準）
+      nat_h:  [109, 81, 81, 81],
+      nat_b:  [220, 192, 192, 192],
+      // 私立医歯系大学院（学費が高額）
+      med_h:  [328, 318, 318, 318],
+      med_b:  [439, 429, 429, 429],
+      none:[]
     }
   }
 };
@@ -196,6 +207,10 @@ const eduColors={
   mid:  {bg:'FFfffcda',fg:'FF5a4000'},
   high: {bg:'FFf3eeff',fg:'FF3a008a'},
   univ: {bg:'FFffd8a0',fg:'FF6b2000'},
+  // 大学院（修士・博士・医歯博士） — 大学(#ffd8a0)と同系色で段階的に濃く
+  grad_m:{bg:'FFf0a868',fg:'FF4a1500'},
+  grad_d:{bg:'FFcc7a30',fg:'FFffffff'},
+  grad_med:{bg:'FFb8431f',fg:'FFffffff'}
 };
 
 const _W_ROWS  = ['wInc','pW','wRPay','wAge'];

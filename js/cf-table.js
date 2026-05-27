@@ -279,8 +279,19 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         const univLen=(EDU.univ[un]||[]).length;
         const gradPath=_v(`cgrad-path-${ci+1}`)||'none';
         const gradCourse=_v(`cgrad-course-${ci+1}`)||'psci_h';
-        const mLen = (gradPath!=='none' && EDU.grad?.master?.[gradCourse]) ? EDU.grad.master[gradCourse].length : 0;
-        const dLen = (gradPath==='both' && EDU.grad?.doctor?.[gradCourse]) ? EDU.grad.doctor[gradCourse].length : 0;
+        // パスに応じて修士/博士/医歯博士の年数を判定
+        let mLen=0, dLen=0, medLen=0;
+        if(gradPath==='master'){
+          mLen = (EDU.grad?.master?.[gradCourse]||[]).length;
+        } else if(gradPath==='both'){
+          mLen = (EDU.grad?.master?.[gradCourse]||[]).length;
+          dLen = (EDU.grad?.doctor?.[gradCourse]||[]).length;
+        } else if(gradPath==='doctor'){
+          dLen = (EDU.grad?.doctor?.[gradCourse]||[]).length;
+        } else if(gradPath==='med'){
+          const _medCourse = ['nat_h','nat_b','med_h','med_b'].includes(gradCourse) ? gradCourse : 'med_h';
+          medLen = (EDU.grad?.medical?.[_medCourse]||[]).length;
+        }
         if(univLen>0 && ca<19+univLen){
           cls=un.startsWith('senmon')?'ev-senmon':'ev-univ';
           if(ca===19)label=un.startsWith('senmon')?'専門入学':'大学入学';
@@ -289,7 +300,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
           if(ca===19+univLen)label='修士入学';
         } else if(dLen>0 && ca>=19+univLen+mLen && ca<19+univLen+mLen+dLen){
           cls='ev-grad-d';
-          if(ca===19+univLen+mLen)label='博士入学';
+          if(ca===19+univLen+mLen)label=(gradPath==='doctor')?'博士入学':'博士入学';
+        } else if(medLen>0 && ca>=19+univLen && ca<19+univLen+medLen){
+          cls='ev-grad-med';
+          if(ca===19+univLen)label='医歯博士入学';
         }
       }
       h+=`<td class="${cls}${getColCls(i)}">${label}</td>`;
@@ -351,10 +365,19 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const eRow=(lbl,arr,rowKey)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(tot===0&&vals.every(v=>v===0||v===undefined))return'';let r=`<tr class="rexp"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
 
   // 教育費専用行レンダラー（年齢に応じて色分け・univコース受け取り）
-  const eduRow=(lbl,arr,childAge0,univCourse,rowKey)=>{
+  const eduRow=(lbl,arr,childAge0,univCourse,rowKey,childIdx)=>{
     const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return'';
     const un=univCourse||'plit_h';
     const univLen=(EDU.univ[un]||[]).length;
+    // 大学院期間も色分け範囲に含める
+    const cidForGrad=(childIdx||0)+1;
+    const gPath=_v(`cgrad-path-${cidForGrad}`)||'none';
+    const gCourse=_v(`cgrad-course-${cidForGrad}`)||'psci_h';
+    let mLen=0,dLen=0,medLen=0;
+    if(gPath==='master'){mLen=(EDU.grad?.master?.[gCourse]||[]).length;}
+    else if(gPath==='both'){mLen=(EDU.grad?.master?.[gCourse]||[]).length;dLen=(EDU.grad?.doctor?.[gCourse]||[]).length;}
+    else if(gPath==='doctor'){dLen=(EDU.grad?.doctor?.[gCourse]||[]).length;}
+    else if(gPath==='med'){const _mc=['nat_h','nat_b','med_h','med_b'].includes(gCourse)?gCourse:'med_h';medLen=(EDU.grad?.medical?.[_mc]||[]).length;}
     const dl=_rl(rowKey,lbl);
     const _exp=_hasExplain(rowKey);
     let r=`<tr class="rexp"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;
@@ -368,6 +391,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         else if(ca>=13&&ca<=15)cls='edu-mid';
         else if(ca>=16&&ca<=18)cls='edu-high';
         else if(ca>=19&&ca<19+univLen)cls=un.startsWith('senmon')?'edu-senmon':'edu-univ';
+        else if(mLen>0 && ca>=19+univLen && ca<19+univLen+mLen)cls='edu-grad-m';
+        else if(dLen>0 && ca>=19+univLen+mLen && ca<19+univLen+mLen+dLen)cls='edu-grad-d';
+        else if(medLen>0 && ca>=19+univLen && ca<19+univLen+medLen)cls='edu-grad-med';
       } else {cls='vz';}
       if(isOvr)cls+=' cell-ovr';
       const _showIcon=_exp&&dv>0;
@@ -384,7 +410,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   else{h+=eRow('住宅ローン返済',R.lRep,'lRep');}
   if(isM)h+=eRow('修繕積立金',R.rep,'rep');
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
-  children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`);});
+  children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`,ci);});
   // 全車両費（現有車・将来購入車）を1行に集約表示 + hover内訳ツールチップ
   (()=>{
     const lbl='車両費・車検';

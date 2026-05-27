@@ -465,6 +465,8 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
 /* 大学院: 大学(#ffd8a0)と同系色だが、修士は濃いオレンジ、博士はさらに濃いブラウン系 */
 .ev-grad-m,.edu-grad-m{background:#f0a868!important;color:#4a1500!important;font-weight:600!important}
 .ev-grad-d,.edu-grad-d{background:#cc7a30!important;color:#fff!important;font-weight:600!important}
+/* 医歯博士: 医系を意識した赤系オレンジ */
+.ev-grad-med,.edu-grad-med{background:#b8431f!important;color:#fff!important;font-weight:600!important}
 
 /* 数値カラー */
 .vp{color:var(--plus);font-weight:600}

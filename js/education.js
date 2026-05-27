@@ -23,26 +23,48 @@ function eduCosts(cid){
   EDU.high[hi].forEach((v,i)=>{c[16+i]=v||0});
   // 大学：19歳〜
   if(un!=='none')(EDU.univ[un]||EDU.univ.plit_h).forEach((v,i)=>{c[19+i]=v||0});
-  // 大学院: 大学が4年制(non-medical, non-senmon)の場合に対応
-  // path: none / master(2年) / both(修士2年+博士3年)
+  // 大学院: 大学卒業後に進学（医歯博士は6年制学部卒後）
+  // path: none / master(修士2年) / both(修士2年+博士3年) / doctor(博士のみ3年) / med(医歯博士4年)
   const gradPath = _v(`cgrad-path-${cid}`)||'none';
   const gradCourse = _v(`cgrad-course-${cid}`)||'psci_h';
   if(gradPath!=='none' && un!=='none'){
     // 大学卒業後の年齢（大学卒業年数に依存）
     const univArr = EDU.univ[un] || [];
-    const gradStartAge = 19 + univArr.length; // 4年制なら23歳開始
-    // 修士（2年）
-    const mArr = (EDU.grad && EDU.grad.master && EDU.grad.master[gradCourse]) || [];
-    mArr.forEach((v,i)=>{
-      const age = gradStartAge + i;
-      if(age<c.length) c[age] = (c[age]||0) + (v||0);
-    });
-    // 博士（3年）— gradPath='both' のみ
-    if(gradPath==='both'){
-      const dArr = (EDU.grad && EDU.grad.doctor && EDU.grad.doctor[gradCourse]) || [];
+    const gradStartAge = 19 + univArr.length; // 4年制なら23歳、6年制(医学部)なら25歳開始
+    if(gradPath === 'master'){
+      // 修士のみ（2年）
+      const mArr = (EDU.grad?.master?.[gradCourse]) || [];
+      mArr.forEach((v,i)=>{
+        const age = gradStartAge + i;
+        if(age<c.length) c[age] = (c[age]||0) + (v||0);
+      });
+    } else if(gradPath === 'both'){
+      // 修士（2年） + 博士（3年）
+      const mArr = (EDU.grad?.master?.[gradCourse]) || [];
+      mArr.forEach((v,i)=>{
+        const age = gradStartAge + i;
+        if(age<c.length) c[age] = (c[age]||0) + (v||0);
+      });
+      const dArr = (EDU.grad?.doctor?.[gradCourse]) || [];
       const docStartAge = gradStartAge + mArr.length;
       dArr.forEach((v,i)=>{
         const age = docStartAge + i;
+        if(age<c.length) c[age] = (c[age]||0) + (v||0);
+      });
+    } else if(gradPath === 'doctor'){
+      // 博士のみ（3年）— 修士は既に他で取得済みと仮定
+      const dArr = (EDU.grad?.doctor?.[gradCourse]) || [];
+      dArr.forEach((v,i)=>{
+        const age = gradStartAge + i;
+        if(age<c.length) c[age] = (c[age]||0) + (v||0);
+      });
+    } else if(gradPath === 'med'){
+      // 医歯博士（4年・修士不要）— 医学部歯学部6年卒後の直接進学
+      // 医歯博士コースは nat_h/nat_b/med_h/med_b のみ対応。それ以外は psci_h で代替
+      const _medCourse = ['nat_h','nat_b','med_h','med_b'].includes(gradCourse) ? gradCourse : 'med_h';
+      const medArr = (EDU.grad?.medical?.[_medCourse]) || [];
+      medArr.forEach((v,i)=>{
+        const age = gradStartAge + i;
         if(age<c.length) c[age] = (c[age]||0) + (v||0);
       });
     }
@@ -178,3 +200,33 @@ function getEduStage(age){
   if(age>=19&&age<=22)return 'univ';
   return null;
 }
+// 子供ごとの教育段階判定（大学院パスを考慮）
+function getEduStageForChild(age, cid){
+  const base = getEduStage(age);
+  if(base) return base;
+  // 大学・大学院期間（年齢19以降）
+  const un = _v(`cu-${cid}`)||'plit_h';
+  const univLen = (EDU.univ[un]||[]).length;
+  if(age>=19 && age<19+univLen) return 'univ';
+  const gPath = _v(`cgrad-path-${cid}`)||'none';
+  const gCourse = _v(`cgrad-course-${cid}`)||'psci_h';
+  if(gPath==='none' || age<19+univLen) return null;
+  if(gPath==='master'){
+    const mLen=(EDU.grad?.master?.[gCourse]||[]).length;
+    if(age>=19+univLen && age<19+univLen+mLen) return 'grad_m';
+  } else if(gPath==='both'){
+    const mLen=(EDU.grad?.master?.[gCourse]||[]).length;
+    const dLen=(EDU.grad?.doctor?.[gCourse]||[]).length;
+    if(age>=19+univLen && age<19+univLen+mLen) return 'grad_m';
+    if(age>=19+univLen+mLen && age<19+univLen+mLen+dLen) return 'grad_d';
+  } else if(gPath==='doctor'){
+    const dLen=(EDU.grad?.doctor?.[gCourse]||[]).length;
+    if(age>=19+univLen && age<19+univLen+dLen) return 'grad_d';
+  } else if(gPath==='med'){
+    const _mc=['nat_h','nat_b','med_h','med_b'].includes(gCourse)?gCourse:'med_h';
+    const medLen=(EDU.grad?.medical?.[_mc]||[]).length;
+    if(age>=19+univLen && age<19+univLen+medLen) return 'grad_med';
+  }
+  return null;
+}
+window.getEduStageForChild = getEduStageForChild;

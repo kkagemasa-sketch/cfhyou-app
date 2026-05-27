@@ -446,13 +446,24 @@ async function exportExcelMG(){
     const hSA=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${ci+1}`)?.value));
     const hTp=_v(`hoiku-type-${ci+1}`)||'hoikuen';
     const hLb=hTp==='youchien'?'幼稚園入園':'保育園入園';
+    const _ul=(EDU.univ[un]||[]).length;
+    const _gPath=_v(`cgrad-path-${ci+1}`)||'none';
+    const _gCourse=_v(`cgrad-course-${ci+1}`)||'psci_h';
+    let _mL=0,_dL=0,_medL=0;
+    if(_gPath==='master'){_mL=(EDU.grad?.master?.[_gCourse]||[]).length;}
+    else if(_gPath==='both'){_mL=(EDU.grad?.master?.[_gCourse]||[]).length;_dL=(EDU.grad?.doctor?.[_gCourse]||[]).length;}
+    else if(_gPath==='doctor'){_dL=(EDU.grad?.doctor?.[_gCourse]||[]).length;}
+    else if(_gPath==='med'){const __mc=['nat_h','nat_b','med_h','med_b'].includes(_gCourse)?_gCourse:'med_h';_medL=(EDU.grad?.medical?.[__mc]||[]).length;}
     push(['',cLbls[ci],...ages.map(ca=>{
       if(ca===0)return '誕生';
       if(ca===hSA&&ca<=6)return hLb;
       if(ca===7)return '小学入学';
       if(ca===13)return '中学入学';
       if(ca===16)return '高校入学';
-      if(ca===19)return un.startsWith('senmon')?'専門入学':'大学入学';
+      if(_ul>0 && ca===19)return un.startsWith('senmon')?'専門入学':'大学入学';
+      if(_mL>0 && ca===19+_ul)return '修士入学';
+      if(_dL>0 && ca===19+_ul+_mL)return '博士入学';
+      if(_medL>0 && ca===19+_ul)return '医歯博士入学';
       return '';
     }),''],'event');
   });
@@ -524,7 +535,7 @@ async function exportExcelMG(){
       const arr=MR.edu[ci];
       const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;
       const ages=arr.map((_,i)=>c.age+i);
-      push(['',_rl('mg-edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
+      push(['',_rl('mg-edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages,ci:ci+1});
     }
   });
   addE(_rl('mg-carTotal','車両費・車検'),MR.carTotal);
@@ -854,11 +865,11 @@ async function exportExcelMG(){
 
   // 子どもイベント行マップ（入園年齢を含む）
   const childEvMapMG={};
-  childEvRows2.forEach(cr=>{childEvMapMG[cr.rowIdx]={ages:cr.ages,hStartAge:cr.hStartAge};});
+  childEvRows2.forEach((cr,idx)=>{childEvMapMG[cr.rowIdx]={ages:cr.ages,hStartAge:cr.hStartAge,ci:idx+1};});
   // 教育費行マップ
   const eduRowMapMG={};
   types.forEach((tp,r)=>{
-    if(tp&&typeof tp==='object'&&tp.type==='edu'){eduRowMapMG[r]=tp.ages;}
+    if(tp&&typeof tp==='object'&&tp.type==='edu'){eduRowMapMG[r]={ages:tp.ages,ci:tp.ci||1};}
   });
 
   const lastCol=disp+2; // 合計列index
@@ -970,13 +981,13 @@ async function exportExcelMG(){
 
       // 子どもイベント行：教育段階ごとの色分け（入園年齢を考慮）
       if(childEvMapMG[r]&&c>=2&&c<lastCol){
-        const {ages,hStartAge=1}=childEvMapMG[r];
+        const {ages,hStartAge=1,ci:_cid=1}=childEvMapMG[r];
         const colIdx=c-2;
         if(ages&&ages[colIdx]!==undefined){
           const age=ages[colIdx];
           let stage=null;
           if(age>=hStartAge&&age<=6)stage='hoiku';
-          else if(age>=7)stage=getEduStage(age);
+          else if(age>=7)stage=(typeof getEduStageForChild==='function'?getEduStageForChild(age,_cid):getEduStage(age));
           if(stage&&eduColors[stage]){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
@@ -986,10 +997,10 @@ async function exportExcelMG(){
       }
       // 教育費行：費用>0のセルのみ年齢に応じた色分け（入園前の0円セルは色なし）
       if(eduRowMapMG[r]&&c>=2&&c<lastCol&&typeof cell.v==='number'&&cell.v>0){
-        const ages=eduRowMapMG[r];
+        const {ages,ci:_cid=1}=eduRowMapMG[r];
         const colIdx=c-2;
         if(ages&&ages[colIdx]!==undefined){
-          const stage=getEduStage(ages[colIdx]);
+          const stage=(typeof getEduStageForChild==='function'?getEduStageForChild(ages[colIdx],_cid):getEduStage(ages[colIdx]));
           if(stage&&eduColors[stage]){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
@@ -1619,7 +1630,7 @@ async function exportExcel(){
     const arr=R.edu[ci];if(!arr)return;
     const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;
     const ages=arr.slice(0,disp).map((_,i)=>c.age+i);
-    push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages});
+    push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages,ci:ci+1});
   });
   // 全車両費(現有・将来)を1行に集約
   addE('車両費・車検',R.carTotal);
@@ -1941,12 +1952,12 @@ async function exportExcel(){
 
   // 子どもイベント行の行番号→{ages, hStartAge}マップ
   const childEvMap={};
-  childEvRows.forEach(cr=>{childEvMap[cr.rowIdx]={ages:cr.ages,hStartAge:cr.hStartAge};});
+  childEvRows.forEach((cr,idx)=>{childEvMap[cr.rowIdx]={ages:cr.ages,hStartAge:cr.hStartAge,ci:idx+1};});
 
   // 教育費行マップ（行番号→年齢配列）
   const eduRowMap={};
   types.forEach((tp,r)=>{
-    if(tp&&typeof tp==='object'&&tp.type==='edu'){eduRowMap[r]=tp.ages;}
+    if(tp&&typeof tp==='object'&&tp.type==='edu'){eduRowMap[r]={ages:tp.ages,ci:tp.ci||1};}
   });
 
   const lastCol=disp+2; // 合計列index
@@ -2080,13 +2091,13 @@ async function exportExcel(){
 
       // 子どもイベント行：教育段階ごとの色分け（入園年齢を考慮）
       if(childEvMap[r]&&c>=2&&c<lastCol){
-        const {ages,hStartAge=1}=childEvMap[r];
+        const {ages,hStartAge=1,ci:_cid=1}=childEvMap[r];
         const colIdx=c-2;
         if(ages&&ages[colIdx]!==undefined){
           const age=ages[colIdx];
           let stage=null;
           if(age>=hStartAge&&age<=6)stage='hoiku';
-          else if(age>=7)stage=getEduStage(age);
+          else if(age>=7)stage=(typeof getEduStageForChild==='function'?getEduStageForChild(age,_cid):getEduStage(age));
           if(stage&&eduColors[stage]){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};
@@ -2096,10 +2107,10 @@ async function exportExcel(){
       }
       // 教育費行：費用>0のセルのみ年齢に応じた色分け（入園前の0円セルは色なし）
       if(eduRowMap[r]&&c>=2&&c<lastCol&&typeof cell.v==='number'&&cell.v>0){
-        const ages=eduRowMap[r];
+        const {ages,ci:_cid=1}=eduRowMap[r];
         const colIdx=c-2;
         if(ages&&ages[colIdx]!==undefined){
-          const stage=getEduStage(ages[colIdx]);
+          const stage=(typeof getEduStageForChild==='function'?getEduStageForChild(ages[colIdx],_cid):getEduStage(ages[colIdx]));
           if(stage&&eduColors[stage]){
             cellFill={patternType:'solid',fgColor:{rgb:eduColors[stage].bg}};
             fObj.color={rgb:eduColors[stage].fg};

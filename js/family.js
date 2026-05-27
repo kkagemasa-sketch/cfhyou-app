@@ -107,13 +107,15 @@ function addChild(){
           <option value="none">進学なし</option>
         </select></div>
     </div>
-    <!-- 大学院（修士+博士） -->
+    <!-- 大学院（修士+博士／博士のみ／医歯博士） -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
       <div class="fg"><label class="lbl" style="font-size:9px">大学院</label>
         <select class="sel" id="cgrad-path-${id}" onfocus="scrollToCFRowEduStage(${id},'grad')" onblur="cfRowBlur()" onchange="toggleGradCourse(${id});live()" style="font-size:11px;padding:4px 6px">
           <option value="none" selected>進学なし</option>
           <option value="master">修士のみ (2年)</option>
           <option value="both">修士 (2年) + 博士 (3年)</option>
+          <option value="doctor">博士のみ (3年)</option>
+          <option value="med">医歯博士 (4年・修士不要)</option>
         </select></div>
       <div class="fg" id="cgrad-course-wrap-${id}" style="display:none"><label class="lbl" style="font-size:9px">大学院コース</label>
         <select class="sel" id="cgrad-course-${id}" onfocus="scrollToCFRowEduStage(${id},'grad')" onblur="cfRowBlur()" onchange="scrollToCFRowEduStage(${id},'grad');live()" style="font-size:11px;padding:4px 6px">

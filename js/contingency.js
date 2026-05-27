@@ -1733,12 +1733,29 @@ function _renderContingencyInner(){
   children.forEach((c,ci)=>{
     const eduArr=MR.edu[ci];const tot=eduArr.slice(0,mgDisp).reduce((a,b)=>a+b,0);if(tot===0)return;
     const un=_v(`cu-${ci+1}`)||'plit_h';const univLen=(EDU.univ[un]||[]).length;
+    // 大学院期間も色分け範囲に含める
+    const _gPath=_v(`cgrad-path-${ci+1}`)||'none';
+    const _gCourse=_v(`cgrad-course-${ci+1}`)||'psci_h';
+    let _mL=0,_dL=0,_medL=0;
+    if(_gPath==='master'){_mL=(EDU.grad?.master?.[_gCourse]||[]).length;}
+    else if(_gPath==='both'){_mL=(EDU.grad?.master?.[_gCourse]||[]).length;_dL=(EDU.grad?.doctor?.[_gCourse]||[]).length;}
+    else if(_gPath==='doctor'){_dL=(EDU.grad?.doctor?.[_gCourse]||[]).length;}
+    else if(_gPath==='med'){const __mc=['nat_h','nat_b','med_h','med_b'].includes(_gCourse)?_gCourse:'med_h';_medL=(EDU.grad?.medical?.[__mc]||[]).length;}
     const rowKey='edu'+ci;const dl=_rl('mg-'+rowKey,`${cLbls[ci]}教育費`);
     h+=`<tr class="rexp"><td></td><td ${_ce} data-rowlbl="mg-${rowKey}" data-default="${cLbls[ci]}教育費" onblur="rowLabelEdit(this)" ${_kd}>${dl}</td>`;
     for(let i2=0;i2<mgDisp;i2++){
       const ov=mgOverrides[rowKey]?.[i2];const v=ov!==undefined?ov:(eduArr[i2]||0);const ca=c.age+i2;const isOvr=ov!==undefined;
       let cls=v===0?'vz':'';
-      if(v>0){if(ca>=1&&ca<=6)cls='edu-hoiku';else if(ca>=7&&ca<=12)cls='edu-elem';else if(ca>=13&&ca<=15)cls='edu-mid';else if(ca>=16&&ca<=18)cls='edu-high';else if(ca>=19&&ca<19+univLen)cls=un.startsWith('senmon')?'edu-senmon':'edu-univ';}
+      if(v>0){
+        if(ca>=1&&ca<=6)cls='edu-hoiku';
+        else if(ca>=7&&ca<=12)cls='edu-elem';
+        else if(ca>=13&&ca<=15)cls='edu-mid';
+        else if(ca>=16&&ca<=18)cls='edu-high';
+        else if(ca>=19&&ca<19+univLen)cls=un.startsWith('senmon')?'edu-senmon':'edu-univ';
+        else if(_mL>0 && ca>=19+univLen && ca<19+univLen+_mL)cls='edu-grad-m';
+        else if(_dL>0 && ca>=19+univLen+_mL && ca<19+univLen+_mL+_dL)cls='edu-grad-d';
+        else if(_medL>0 && ca>=19+univLen && ca<19+univLen+_medL)cls='edu-grad-med';
+      }
       if(isOvr)cls+=' cell-ovr';
       cls+=getMgColCls(i2);
       h+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():'-'}</td>`;

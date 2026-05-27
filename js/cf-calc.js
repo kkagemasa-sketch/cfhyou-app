@@ -2043,7 +2043,21 @@ function render(){
       else if(ca>=7&&ca<=12)ev=ca===7?'小学入学':'';
       else if(ca>=13&&ca<=15)ev=ca===13?'中学入学':'';
       else if(ca>=16&&ca<=18)ev=ca===16?'高校入学':'';
-      else if(ca>=19){const un2=_v(`cu-${cid}`)||'plit_h';const ul2=(EDU.univ[un2]||[]).length;if(ul2>0&&ca<19+ul2)ev=ca===19?(un2.startsWith('senmon')?'専門入学':'大学入学'):'';}
+      else if(ca>=19){
+        const un2=_v(`cu-${cid}`)||'plit_h';
+        const ul2=(EDU.univ[un2]||[]).length;
+        const gPath=_v(`cgrad-path-${cid}`)||'none';
+        const gCourse=_v(`cgrad-course-${cid}`)||'psci_h';
+        let mLen2=0,dLen2=0,medLen2=0;
+        if(gPath==='master'){mLen2=(EDU.grad?.master?.[gCourse]||[]).length;}
+        else if(gPath==='both'){mLen2=(EDU.grad?.master?.[gCourse]||[]).length;dLen2=(EDU.grad?.doctor?.[gCourse]||[]).length;}
+        else if(gPath==='doctor'){dLen2=(EDU.grad?.doctor?.[gCourse]||[]).length;}
+        else if(gPath==='med'){const _mc=['nat_h','nat_b','med_h','med_b'].includes(gCourse)?gCourse:'med_h';medLen2=(EDU.grad?.medical?.[_mc]||[]).length;}
+        if(ul2>0 && ca<19+ul2) ev=ca===19?(un2.startsWith('senmon')?'専門入学':'大学入学'):'';
+        else if(mLen2>0 && ca===19+ul2) ev='修士入学';
+        else if(dLen2>0 && ca===19+ul2+mLen2) ev='博士入学';
+        else if(medLen2>0 && ca===19+ul2) ev='医歯博士入学';
+      }
       R.evC[ci].push(ev);
     });
   }
