@@ -91,9 +91,52 @@ function checkPW(){
     <button class="btn-h" onclick="exportJSON()" title="現在のデータをJSONファイルとしてPCに保存（バックアップ）" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">📤 ファイルに保存</button>
     <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">📥 ファイルから復元</button>
     <button class="btn-h" id="btn-mansion-mgmt" onclick="openMansionMgmt()" title="マンションマスターデータの登録・編集" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">🏢 マンション管理</button>
+    <button class="btn-h" onclick="openAboutModal()" title="バージョン情報・ライセンス・規約類" style="background:rgba(100,116,139,.25);border-color:rgba(148,163,184,.4)">ⓘ</button>
 
   </div>
 </header>
+
+<!-- About モーダル -->
+<div id="about-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif" onclick="if(event.target===this)closeAboutModal()">
+  <div style="background:#fff;border-radius:10px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+    <div style="background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:16px;font-weight:700">ⓘ HouseFit について</div>
+      <button onclick="closeAboutModal()" style="background:transparent;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 12px;font-size:12px;cursor:pointer">✕ 閉じる</button>
+    </div>
+    <div style="padding:20px 24px">
+      <div style="font-size:13px;color:#1a3a6a;line-height:1.7;margin-bottom:16px">
+        <div style="font-weight:700;font-size:15px;color:#1e3a5f;margin-bottom:4px">🏠 HouseFit</div>
+        <div style="font-size:12px;color:#475569">住宅購入のキャッシュフローシミュレーションツール</div>
+      </div>
+      <div style="border-top:1px solid #e2e8f0;padding-top:14px;display:flex;flex-direction:column;gap:8px">
+        <a href="licenses.html" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#1e3a5f;font-size:13px;background:#f8fafc">
+          <span style="font-size:16px">📜</span>
+          <span style="flex:1">オープンソースライセンス</span>
+          <span style="color:#94a3b8;font-size:11px">↗</span>
+        </a>
+        <a href="terms.html" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#94a3b8;font-size:13px;background:#f8fafc;cursor:not-allowed" onclick="event.preventDefault();alert('利用規約は準備中です')">
+          <span style="font-size:16px">📄</span>
+          <span style="flex:1">利用規約</span>
+          <span style="font-size:10px;color:#cbd5e1">準備中</span>
+        </a>
+        <a href="privacy.html" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#94a3b8;font-size:13px;background:#f8fafc;cursor:not-allowed" onclick="event.preventDefault();alert('プライバシーポリシーは準備中です')">
+          <span style="font-size:16px">🔒</span>
+          <span style="flex:1">プライバシーポリシー</span>
+          <span style="font-size:10px;color:#cbd5e1">準備中</span>
+        </a>
+      </div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;line-height:1.6">
+        ⚠️ 本ツールの試算結果は参考値です。実際の資金計画は税理士・ファイナンシャルプランナー等の専門家にご相談ください。
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function openAboutModal(){const m=document.getElementById('about-modal');if(m)m.style.display='flex';}
+function closeAboutModal(){const m=document.getElementById('about-modal');if(m)m.style.display='none';}
+window.openAboutModal=openAboutModal;
+window.closeAboutModal=closeAboutModal;
+</script>
 
 <div class="layout">
 

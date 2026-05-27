@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>オープンソースライセンス - HouseFit</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+      background: #f7f9fc;
+      color: #1a3a6a;
+      margin: 0;
+      padding: 0;
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e40af, #2563eb);
+      color: #fff;
+      padding: 32px 24px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 16px rgba(30,64,175,0.15);
+    }
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .header p {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.95;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #2563eb;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .intro {
+      background: #fff;
+      border-left: 4px solid #2563eb;
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin-bottom: 32px;
+      font-size: 13px;
+      color: #475569;
+    }
+    .lib-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .lib-header {
+      background: #f8fafc;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lib-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e3a5f;
+    }
+    .lib-license-badge {
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .lib-url {
+      margin-left: auto;
+      font-size: 11px;
+    }
+    .lib-url a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    .lib-url a:hover { text-decoration: underline; }
+    .lib-body {
+      padding: 16px 20px;
+    }
+    .lib-desc {
+      font-size: 12px;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+    .lib-copyright {
+      background: #f0f9ff;
+      border-left: 3px solid #7dd3fc;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-family: 'Cascadia Code', Consolas, Menlo, monospace;
+      color: #0c4a6e;
+      margin-bottom: 12px;
+    }
+    details {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+    }
+    summary {
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #2563eb;
+      user-select: none;
+      padding: 4px 0;
+    }
+    summary:hover { color: #1e40af; }
+    .license-text {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 12px;
+      margin-top: 10px;
+      font-family: 'Cascadia Code', Consolas, Menlo, monospace;
+      font-size: 11px;
+      color: #334155;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .footer {
+      margin-top: 40px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">← アプリに戻る</a>
+
+    <div class="header">
+      <h1>📜 オープンソースライセンス</h1>
+      <p>HouseFit は以下のオープンソースソフトウェア（OSS）を利用しています。各ライブラリの著作権とライセンス条文に従って表記いたします。</p>
+    </div>
+
+    <div class="intro">
+      🙏 これらの素晴らしいライブラリの開発者・コントリビューター各位に深く感謝いたします。<br>
+      各ライセンスの全文は、各セクションの「ライセンス全文を表示」をクリックしてご確認ください。
+    </div>
+
+    <!-- Chart.js -->
+    <div class="lib-card">
+      <div class="lib-header">
+        <div class="lib-name">Chart.js</div>
+        <div class="lib-license-badge">MIT License</div>
+        <div class="lib-url"><a href="https://www.chartjs.org/" target="_blank" rel="noopener">公式サイト ↗</a></div>
+      </div>
+      <div class="lib-body">
+        <div class="lib-desc">グラフ描画ライブラリ。CF表のグラフ表示に使用。</div>
+        <div class="lib-copyright">Copyright (c) 2014-2024 Chart.js Contributors</div>
+        <details>
+          <summary>▶ ライセンス全文を表示</summary>
+          <div class="license-text">The MIT License (MIT)
+
+Copyright (c) 2014-2024 Chart.js Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- JSZip -->
+    <div class="lib-card">
+      <div class="lib-header">
+        <div class="lib-name">JSZip</div>
+        <div class="lib-license-badge">MIT License</div>
+        <div class="lib-url"><a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener">公式サイト ↗</a></div>
+      </div>
+      <div class="lib-body">
+        <div class="lib-desc">ZIPファイル生成ライブラリ。Excel出力（XLSXはZIP形式）に使用。</div>
+        <div class="lib-copyright">Copyright (c) 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso</div>
+        <details>
+          <summary>▶ ライセンス全文を表示</summary>
+          <div class="license-text">JSZip is dual-licensed. You may use it under the MIT license *or* the
+GPLv3 license.
+
+The MIT License
+===============
+
+Copyright (c) 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- xlsx-style -->
+    <div class="lib-card">
+      <div class="lib-header">
+        <div class="lib-name">xlsx-style</div>
+        <div class="lib-license-badge">Apache License 2.0</div>
+        <div class="lib-url"><a href="https://github.com/protobi/js-xlsx" target="_blank" rel="noopener">GitHub ↗</a></div>
+      </div>
+      <div class="lib-body">
+        <div class="lib-desc">Excel (XLSX) ファイル生成ライブラリ（書式付き対応版）。SheetJS xlsx をベースに装飾機能を拡張。CF表のExcel出力に使用。</div>
+        <div class="lib-copyright">Copyright (C) 2012-present SheetJS LLC<br>Copyright (C) 2015-present Protobi LLC</div>
+        <details>
+          <summary>▶ ライセンス全文を表示</summary>
+          <div class="license-text">                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+   --------------------------------------------------------------------
+
+   ライセンス全文（要約）:
+
+   Apache License 2.0 では以下が許可されています:
+   - 商用利用
+   - 改変
+   - 配布
+   - 特許利用
+   - 私的利用
+
+   条件:
+   - ライセンスと著作権表記を含めること
+   - 変更点を明示すること
+
+   制限:
+   - 商標利用は不可
+   - 保証なし
+
+   詳細: http://www.apache.org/licenses/LICENSE-2.0</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- FileSaver.js -->
+    <div class="lib-card">
+      <div class="lib-header">
+        <div class="lib-name">FileSaver.js</div>
+        <div class="lib-license-badge">MIT License</div>
+        <div class="lib-url"><a href="https://github.com/eligrey/FileSaver.js" target="_blank" rel="noopener">GitHub ↗</a></div>
+      </div>
+      <div class="lib-body">
+        <div class="lib-desc">クライアントサイドでファイルを保存するライブラリ。Excelダウンロードに使用。</div>
+        <div class="lib-copyright">Copyright © 2016 Eli Grey</div>
+        <details>
+          <summary>▶ ライセンス全文を表示</summary>
+          <div class="license-text">The MIT License
+
+Copyright © 2016 Eli Grey.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- Firebase JS SDK -->
+    <div class="lib-card">
+      <div class="lib-header">
+        <div class="lib-name">Firebase JavaScript SDK</div>
+        <div class="lib-license-badge">Apache License 2.0</div>
+        <div class="lib-url"><a href="https://github.com/firebase/firebase-js-sdk" target="_blank" rel="noopener">GitHub ↗</a></div>
+      </div>
+      <div class="lib-body">
+        <div class="lib-desc">Google Firebase のクライアントSDK。マンションマスター情報の共有・認証に使用。</div>
+        <div class="lib-copyright">Copyright (c) 2017-present Google LLC</div>
+        <details>
+          <summary>▶ ライセンス全文を表示</summary>
+          <div class="license-text">                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements. See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+   Copyright (c) 2017-present Google LLC</div>
+        </details>
+      </div>
+    </div>
+
+    <div class="footer">
+      ご質問・お気づきの点がございましたら、お問い合わせフォームまでご連絡ください。<br>
+      © HouseFit. ライセンス表記は法令およびOSS各ライセンスの遵守のため掲載しています。
+    </div>
+  </div>
+</body>
+</html>
