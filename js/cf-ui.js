@@ -96,10 +96,36 @@ function validate(){
   const ha=iv('husband-age');if(ha<20||ha>80)errs.push({id:'husband-age',msg:'ご主人様の年齢は20〜80歳'});
   if(fv('loan-amt')<=0)errs.push({id:'loan-amt',msg:'借入金額を入力してください'});
   // ローン完済年齢チェック（80歳超え警告）
-  const loanYrsChk=iv('loan-yrs')||35;
+  // モード別に正しい借入年数を参照する：
+  //  - フラット35ペア:  flat-loan-h-yrs / flat-loan-w-yrs の最大値
+  //  - フラット35単独:  flat-loan-yrs
+  //  - 変動ペア:        loan-h-yrs / loan-w-yrs の最大値
+  //  - 変動単独/連帯:   loan-yrs
   const deliveryChk=iv('delivery')||0;
-  const loanEndAge=ha+deliveryChk+loanYrsChk;
-  if(loanEndAge>80)errs.push({id:'loan-yrs',msg:`⚠️ ローン完済時${loanEndAge}歳 — 80歳を超えています（銀行審査に影響する可能性）`});
+  const _isFlatChk = (typeof loanCategory!=='undefined' && loanCategory==='flat35');
+  const _isPairChk = (typeof pairLoanMode!=='undefined' && pairLoanMode);
+  let _loanYrsChk = 0, _whichField = 'loan-yrs';
+  if(_isFlatChk && _isPairChk){
+    const _h=iv('flat-loan-h-yrs')||0, _w=iv('flat-loan-w-yrs')||0;
+    _loanYrsChk = Math.max(_h, _w);
+    _whichField = _h>=_w ? 'flat-loan-h-yrs' : 'flat-loan-w-yrs';
+  } else if(_isFlatChk){
+    _loanYrsChk = iv('flat-loan-yrs')||35;
+    _whichField = 'flat-loan-yrs';
+  } else if(_isPairChk){
+    const _h=iv('loan-h-yrs')||0, _w=iv('loan-w-yrs')||0;
+    _loanYrsChk = Math.max(_h, _w);
+    _whichField = _h>=_w ? 'loan-h-yrs' : 'loan-w-yrs';
+  } else {
+    _loanYrsChk = iv('loan-yrs')||35;
+  }
+  // 完済年齢チェックの基準年齢: ペアローン時はご主人/奥様のうち年長者を基準
+  const _waChk = iv('wife-age')||0;
+  const _baseAgeChk = _isPairChk ? Math.max(ha, _waChk) : ha;
+  const loanEndAge = _baseAgeChk + deliveryChk + _loanYrsChk;
+  if(_loanYrsChk>0 && loanEndAge>80){
+    errs.push({id:_whichField, msg:`⚠️ ローン完済時${loanEndAge}歳 — 80歳を超えています（銀行審査に影響する可能性）`});
+  }
   // 収入ステップは任意入力のためvalidation省略
   document.querySelectorAll('.inp.err').forEach(e=>e.classList.remove('err'));
   const bar=$('err-bar'),lst=$('err-list');
