@@ -495,6 +495,10 @@ async function exportExcelMG(){
   addISkip('配偶者年金',MR.pW,N.pW);
   addI('遺族年金',MR.survPension);
   addISkip('死亡保険金',MR.insPayArr);
+  // 年金型保険（個別行：実額がある契約のみ）
+  if(MR.insAnnuityRows&&MR.insAnnuityRows.length>0){
+    MR.insAnnuityRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.name||'年金型保険',row.vals);});
+  }
   addISkip('金融資産現金化',MR.finLiquid);
   addISkip('DC受取(主)',MR.dcReceiptH,N.dcReceiptH);
   addISkip('DC受取(奥様)',MR.dcReceiptW,N.dcReceiptW);
