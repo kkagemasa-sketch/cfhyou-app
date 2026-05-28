@@ -385,16 +385,15 @@ function _renderContingencyInner(){
     const cid=el.id.split('-')[1];children.push({age:parseInt(el.value)||0,costs:eduCosts(cid)});
   });
 
-  // 初期残高（通常と同じ）
+  // 初期残高（通常と同じ）— 財形貯蓄は「その他金融資産」扱いのため含めない
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
-  const zaikiHBal=fv('zaikei-h-bal')||0, zaikiWBal=fv('zaikei-w-bal')||0;
   const downPay0=fv('down-payment')||0;
   const downDeduct=(downType==='own')?downPay0:0;
   const costType0=document.getElementById('cost-type')?.value||'cash';
   const costDeduct=(costType0==='cash')?(fv('house-cost')||0):0;
   const _moveType_mg=document.getElementById('move-type')?.value||'own';
   const moveDeduct=(_moveType_mg==='other')?0:((fv('moving-cost')||0)+(fv('furniture-init')||0));
-  const initSav=cashH+cashW+cashJoint+zaikiHBal+zaikiWBal-downDeduct-costDeduct-moveDeduct;
+  const initSav=cashH+cashW+cashJoint-downDeduct-costDeduct-moveDeduct;
 
   let sav=initSav;
   // MR._deathOffset / _targetIsH はレンダリング前に設定（HTML生成時に参照されるため）
@@ -1309,21 +1308,8 @@ function _renderContingencyInner(){
     // 収支・残高（auto-liq反映後の値で再計算）
     const bal=MR.incT[i]-MR.expT[i];
     MR.bal.push(bal);
-    // 財形貯蓄（生存者のみ）
-    let _savExtra=0;
-    [_aliveP].forEach(p=>{
-      const pAge=p==='h'?ha:wa;const pRetAge=p==='h'?retAge_mg:wRetAge_mg;
-      const zm=fv(`zaikei-${p}-monthly`)||0;const ze=iv(`zaikei-${p}-end`)||0;
-      if(zm>0&&(ze===0||pAge<(ze||pRetAge))){sav+=zm*12;_savExtra+=zm*12;}
-    });
-    if(!isDead){
-      [_deadP].forEach(p=>{
-        const pAge=p==='h'?ha:wa;const pRetAge=p==='h'?retAge_mg:wRetAge_mg;
-        const zm=fv(`zaikei-${p}-monthly`)||0;const ze=iv(`zaikei-${p}-end`)||0;
-        if(zm>0&&(ze===0||pAge<(ze||pRetAge))){sav+=zm*12;_savExtra+=zm*12;}
-      });
-    }
-    MR.savExtra.push(_savExtra);
+    // 財形貯蓄は「その他金融資産」扱いに移行したため、預貯金残高には加算しない
+    MR.savExtra.push(0);
     sav+=bal;
     // 丸め誤差吸収: 自動取崩し継続中（前年が0付近）なら sav の±2万円スナップ
     const _mgWasNearZero = i>0 && MR.sav.length>0 && Math.abs(MR.sav[i-1])<=1;

@@ -17,7 +17,7 @@ function render(){
   const ratesH=pairLoanMode?getPairRates('h'):[], ratesW=pairLoanMode?getPairRates('w'):[];
   // 自己資産：現預金合計を初期残高に
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
-  const zaikiHBal=fv('zaikei-h-bal')||0, zaikiWBal=fv('zaikei-w-bal')||0;
+  // 財形貯蓄は「その他金融資産」扱い（預貯金には含めない）
   // 頭金（自己資金）・諸費用（現金払い）・引越/家具費用は前提条件として初期残高から差し引く
   const downPay0=fv('down-payment')||0;
   const downDeduct=(downType==='own')?downPay0:0;
@@ -26,7 +26,7 @@ function render(){
   const costDeduct=(costType0==='cash')?(fv('house-cost')||0):0;
   const _moveType0=document.getElementById('move-type')?.value||'own';
   const moveDeduct=(_moveType0==='other')?0:((fv('moving-cost')||0)+(fv('furniture-init')||0));
-  const initSav=cashH+cashW+cashJoint+zaikiHBal+zaikiWBal-downDeduct-costDeduct-moveDeduct;
+  const initSav=cashH+cashW+cashJoint-downDeduct-costDeduct-moveDeduct;
   // ご主人収入設定
   // ※ getIncomeSteps / getIncomeAtAge はグローバル版を使用
   const hSteps=getIncomeSteps('h');
@@ -1615,18 +1615,9 @@ function render(){
     if((_autoLiqG > 0 || _wasNearZero) && sav > -2 && sav < 2 && _autoLiqEnabled){
       sav = 0;
     }
-    // 財形貯蓄の積立（支出には含めないが資産として加算）
-    let _savExtra=0;
-    // 財形貯蓄（主人・奥様）
-    ['h','w'].forEach(p=>{
-      const pAge=p==='h'?ha:wa;
-      const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
-      const zm=fv(`zaikei-${p}-monthly`)||0;
-      const ze=iv(`zaikei-${p}-end`)||0;
-      if(zm>0&&(ze===0||pAge<(ze||pRetAge))){sav+=zm*12;_savExtra+=zm*12;}
-    });
-    // 積み立て証券の資産増加は預貯金残高に含めない（その他金融資産で別途表示）
-    R.savExtra.push(_savExtra);
+    // 財形貯蓄は「その他金融資産」扱いに移行したため、預貯金残高には加算しない
+    // （財形の残高推移は後段の finRowMap で別途追跡する）
+    R.savExtra.push(0);
     R.sav.push(ri(sav));
     // ─── その他金融資産（有価証券＋積立保険 - 個別追跡） ───
     if(!R.finAssetRows)R.finAssetRows=[];
@@ -1958,6 +1949,34 @@ function render(){
     // DC/iDeCo受取をincTに加算
     const dcIdecoReceiptTotal=dcReceiptH+dcReceiptW+idecoReceiptH+idecoReceiptW;
     if(dcIdecoReceiptTotal>0){R.incT[i]+=ri(dcIdecoReceiptTotal);R.bal[i]+=ri(dcIdecoReceiptTotal);sav+=ri(dcIdecoReceiptTotal);R.sav[i]=ri(sav);}
+    // ─── 財形貯蓄（その他金融資産扱い・利回り0%固定） ───
+    ['h','w'].forEach(p=>{
+      const pAge=p==='h'?ha:wa;
+      const pBaseAge=p==='h'?hAge:wAge;
+      const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
+      const zbal=fv(`zaikei-${p}-bal`)||0;
+      const zm=fv(`zaikei-${p}-monthly`)||0;
+      const ze=iv(`zaikei-${p}-end`)||0;
+      if(zbal<=0&&zm<=0)return;
+      const _zThresh=ze>0?ze:pRetAge;
+      const _zContribYrs=Math.min(i+1,Math.max(0,_zThresh-pBaseAge));
+      const zVal=Math.round(zbal+zm*12*_zContribYrs);
+      const _pLblZ=p==='h'?'ご主人様':'奥様';
+      const lblZ=`財形貯蓄(${_pLblZ})`;
+      finRowMap[lblZ]=(finRowMap[lblZ]||0)+zVal;
+      finRowMapBase[lblZ]=(finRowMapBase[lblZ]||0)+zVal;
+      finRowPerson[lblZ]=p;
+      if(!R.finAssetBd[lblZ])R.finAssetBd[lblZ]={};
+      if(!R.finAssetBd[lblZ][i])R.finAssetBd[lblZ][i]={items:[],total:0,principalTotal:0,gainTotal:0};
+      R.finAssetBd[lblZ][i].items.push({
+        type:'zaikei', person:p, isNisa:false,
+        initBal:zbal, monthly:zm, rate:0,
+        principal:zVal, evaluation:zVal, gain:0,
+        yrs:i+1, endAge:_zThresh
+      });
+      R.finAssetBd[lblZ][i].total+=zVal;
+      R.finAssetBd[lblZ][i].principalTotal+=zVal;
+    });
     // 【積立保険】はその他金融資産行から除外（推計精度が低いため）
     // finAssetRowsに追記（毎年動的にキーを管理）
     Object.keys(finRowMap).forEach(k=>{

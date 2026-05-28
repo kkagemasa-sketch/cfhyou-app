@@ -275,9 +275,8 @@ function updateHints(){
   // delivery-hint は calcDelivery() で管理（calcLoanAmtはoninputで管理）
   // 現預金合計ヒント＋購入後残高
   const chH=fv('cash-h')||0,chW=fv('cash-w')||0,chJ=fv('cash-joint')||0;
-  // ★ 財形貯蓄も預貯金扱い（CF表本体の initSav と一致させる）
-  const _zaikiH2=fv('zaikei-h-bal')||0, _zaikiW2=fv('zaikei-w-bal')||0;
-  const chTot=chH+chW+chJ+_zaikiH2+_zaikiW2;
+  // 財形貯蓄は「その他金融資産」扱いのため、ここには含めない
+  const chTot=chH+chW+chJ;
   const cashTotEl=document.getElementById('cash-total-hint');
   if(cashTotEl)cashTotEl.textContent=`合計：${chTot.toLocaleString()}万円`;
   const _costType0=document.getElementById('cost-type')?.value||'cash';

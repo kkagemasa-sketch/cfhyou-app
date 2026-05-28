@@ -49,9 +49,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
 
   // 前提条件バー：自己資金内訳 ＋ 住宅ローン条件
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
-  // ★ 財形貯蓄も預貯金扱い（CF表本体の initSav と一致させる）
-  const _zaikiH=fv('zaikei-h-bal')||0, _zaikiW=fv('zaikei-w-bal')||0;
-  const cashTotal=cashH+cashW+cashJoint+_zaikiH+_zaikiW;
+  // 財形貯蓄は「その他金融資産」扱いのため、ここには含めない
+  const cashTotal=cashH+cashW+cashJoint;
   const houseCostV=fv('house-cost')||0;
   const movingCostV=fv('moving-cost')||0;
   const furnitureInitV=fv('furniture-init')||0;
