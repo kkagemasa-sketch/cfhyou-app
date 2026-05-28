@@ -2064,8 +2064,10 @@ function render(){
 
   // ─── cfOverrides後処理: サブ行上書きを合計・収支・残高に反映 ───
   if(Object.keys(cfOverrides).length>0||cfCustomRows.length>0){
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW'];
+    // ★ autoLiq (自動資産取崩し) と autoLiqTax (譲渡益課税) を含めないと、
+    //   手動編集発生時に年間収支から自動取崩し分が消えて計算ズレが発生
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','autoLiq'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{
