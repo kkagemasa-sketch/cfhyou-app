@@ -12,6 +12,9 @@
 <script src="js/vendors/jszip.min.js"></script>
 <script src="js/vendors/xlsx-style.min.js"></script>
 <script src="js/vendors/FileSaver.min.js"></script>
+<!-- Sentry エラー監視（DSN未設定時はローカルログのみ動作） -->
+<script src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js" crossorigin="anonymous"></script>
+<script src="js/error-monitor.js?v=1"></script>
 <link rel="stylesheet" href="css/style.css?v=37">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
@@ -142,7 +145,11 @@ function checkPW(){
           <span style="color:#94a3b8;font-size:11px">→</span>
         </a>
       </div>
-      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;line-height:1.6">
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="downloadErrorLog()" style="flex:1;padding:8px 10px;border:1px solid #fcd34d;background:#fffbeb;color:#7a5000;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" title="エラーログをダウンロードしてサポートに送信できます">🐛 エラーログを送信</button>
+        <button onclick="clearErrorLog()" style="padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit" title="ローカルに保存されたエラーログを削除">🗑️</button>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;line-height:1.6">
         ⚠️ 本ツールの試算結果は参考値です。実際の資金計画は税理士・ファイナンシャルプランナー等の専門家にご相談ください。
       </div>
     </div>
