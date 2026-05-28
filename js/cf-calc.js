@@ -2110,7 +2110,24 @@ function render(){
       if(cfOverrides['expT']?.[i]!==undefined){R.expT[i]=cfOverrides['expT'][i];}
       else{let t=expKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(R.edu[ci]?.[i]||0));cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.expT[i]=t;}
       R.bal[i]=R.incT[i]-R.expT[i];
-      newSav+=R.bal[i]+(R.savExtra[i]||0);
+      // ★ 初回計算と同じ順序でsavを更新（snap処理を再現）：
+      //   1) bal（DC受取を除く）を加算
+      //   2) snap判定（±2万円以内かつ自動取崩し中なら0にスナップ）
+      //   3) savExtra（財形）を加算
+      //   4) DC受取（dcReceiptH/W + idecoReceiptH/W）を加算
+      const _dcContrib = (R.dcReceiptH?.[i]||0) + (R.dcReceiptW?.[i]||0)
+                       + (R.idecoReceiptH?.[i]||0) + (R.idecoReceiptW?.[i]||0);
+      const _balNoDc = R.bal[i] - _dcContrib;
+      newSav += _balNoDc;
+      // snap判定（初回計算と同条件）
+      const _autoLiqG_i = R.autoLiq?.[i] || 0;
+      const _prevSavForSnap = i>0 ? R.sav[i-1] : initSav;
+      const _wasNearZeroR = i>0 && Math.abs(_prevSavForSnap) <= 1;
+      if((_autoLiqG_i > 0 || _wasNearZeroR) && newSav > -2 && newSav < 2 && _autoLiqEnabled){
+        newSav = 0;
+      }
+      newSav += (R.savExtra[i]||0);
+      newSav += _dcContrib;
       R.sav[i]=ri(newSav);
       R.totalAsset[i]=R.sav[i]+ri(R.finAsset[i]||0);
     }
