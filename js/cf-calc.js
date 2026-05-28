@@ -134,7 +134,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
     // 自動資産取崩し: 預貯金マイナス時に有価証券から自動取崩し
     // autoLiq: 当年取崩し総額の配列
     // autoLiqTax: 当年譲渡益課税の配列
@@ -1268,25 +1268,46 @@ function render(){
     });
     R.secInvest.push(ri(secInvestTotal));
     // ─── 財形貯蓄積立額（支出計上・個別行） ───
+    // 手取年収は財形天引き前の額面なので、財形積立を支出に計上することで
+    // 預貯金から差し引かれて財形その他金融資産へ移動する流れが表現される。
     if(!R.zaikeiRows)R.zaikeiRows=[];
+    if(!R.zaikeiRedeemRows)R.zaikeiRedeemRows=[];
     let zaikeiExpTotal=0;
+    let zaikeiRedeemTotal=0;
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
+      const pBaseAge=p==='h'?hAge:wAge;
       const pLabel=p==='h'?'ご主人様':'奥様';
       const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
+      const zbal=fv(`zaikei-${p}-bal`)||0;
       const zm=fv(`zaikei-${p}-monthly`)||0;
       const ze=iv(`zaikei-${p}-end`)||0;
-      if(zm<=0)return;
+      if(zbal<=0&&zm<=0)return;
       const _zThresh2=ze>0?ze:pRetAge;
       const isActiveZ=pAge<_zThresh2;
       const vZ=isActiveZ?ri(zm*12):0;
+      // 支出行（積立）
       const rowKeyZ=`zaikei-${p}`;
       let rowZ=R.zaikeiRows.find(r=>r.key===rowKeyZ);
       if(!rowZ){rowZ={lbl:`財形積立(${pLabel})`,vals:[],key:rowKeyZ};R.zaikeiRows.push(rowZ);}
       rowZ.vals.push(vZ);
       zaikeiExpTotal+=vZ;
+      // 解約処理：終了年齢に到達した年に累計残高を全額収入計上
+      const rowKeyZR=`zaikeiRedeem-${p}`;
+      let rowZR=R.zaikeiRedeemRows.find(r=>r.key===rowKeyZR);
+      if(!rowZR){rowZR={lbl:`財形解約(${pLabel})`,vals:[],key:rowKeyZR};R.zaikeiRedeemRows.push(rowZR);}
+      let vZR=0;
+      if(pAge===_zThresh2){
+        const _contribYrsR=Math.max(0,_zThresh2-pBaseAge);
+        vZR=Math.round(zbal+zm*12*_contribYrsR);
+      }
+      rowZR.vals.push(vZR);
+      zaikeiRedeemTotal+=vZR;
     });
     R.zaikeiExp.push(ri(zaikeiExpTotal));
+    R.zaikeiRedeem.push(ri(zaikeiRedeemTotal));
+    // 解約金は初回計算の R.incT[i] に後から加算（順序の都合：incT.push は line 1217）
+    if(zaikeiRedeemTotal>0)R.incT[i]=ri((R.incT[i]||0)+zaikeiRedeemTotal);
     // ─── 一括投資購入額（投資開始年齢に支出計上）───
     let secBuyTotal=0;
     ['h','w'].forEach(p=>{
@@ -1980,7 +2001,9 @@ function render(){
       if(zbal<=0&&zm<=0)return;
       const _zThresh=ze>0?ze:pRetAge;
       const _zContribYrs=Math.min(i+1,Math.max(0,_zThresh-pBaseAge));
-      const zVal=Math.round(zbal+zm*12*_zContribYrs);
+      // 解約年齢に到達したらその年から残高を0に（一括解約済みの扱い）
+      const _zRedeemed=pAge>=_zThresh;
+      const zVal=_zRedeemed?0:Math.round(zbal+zm*12*_zContribYrs);
       const _pLblZ=p==='h'?'ご主人様':'奥様';
       const lblZ=`財形貯蓄(${_pLblZ})`;
       finRowMap[lblZ]=(finRowMap[lblZ]||0)+zVal;
@@ -2105,7 +2128,7 @@ function render(){
   if(Object.keys(cfOverrides).length>0||cfCustomRows.length>0){
     // ★ autoLiq (自動資産取崩し) と autoLiqTax (譲渡益課税) を含めないと、
     //   手動編集発生時に年間収支から自動取崩し分が消えて計算ズレが発生
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','autoLiq'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','zaikeiRedeem','autoLiq'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;

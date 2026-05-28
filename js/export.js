@@ -506,6 +506,8 @@ async function exportExcelMG(){
   addISkip('iDeCo受取(奥様)',MR.idecoReceiptW,N.idecoReceiptW);
   addISkip('保険満期金',MR.insMat,N.insMat);
   if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.lbl,row.vals);});
+  // 財形解約（個別行：実額がある人のみ）
+  if(N.zaikeiRedeemRows&&N.zaikeiRedeemRows.length>0){N.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addISkip(row.lbl,row.vals);});}
   addISkip('奨学金',MR.scholarship,N.scholarship);
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
@@ -1617,6 +1619,8 @@ async function exportExcel(){
   if(!_isSingle_e)addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW);
   addI(_rl('insMat','保険満期金'),R.insMat);
   if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(row.lbl,row.vals);});
+  // 財形解約（個別行：実額がある人のみ）
+  if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addI(row.lbl,row.vals);});}
   addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
   // 自動資産取崩し（預貯金マイナス補填）
   if(R.autoLiq&&R.autoLiq.some(v=>v>0)) addI('📤 自動資産取崩し',R.autoLiq);
