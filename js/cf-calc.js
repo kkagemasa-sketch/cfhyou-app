@@ -1282,9 +1282,14 @@ function render(){
       const zbal=fv(`zaikei-${p}-bal`)||0;
       const zm=fv(`zaikei-${p}-monthly`)||0;
       const ze=iv(`zaikei-${p}-end`)||0;
+      const zr=iv(`zaikei-${p}-redeem`)||0;
       if(zbal<=0&&zm<=0)return;
-      const _zThresh2=ze>0?ze:pRetAge;
-      const isActiveZ=pAge<_zThresh2;
+      // 積立終了年齢（未入力なら定年）／解約年齢（未入力なら積立終了と同時）
+      const _zEnd=ze>0?ze:pRetAge;
+      const _zRedeemAge=zr>0?zr:_zEnd;
+      // 解約年齢 < 積立終了年齢 のときは解約年齢で積立も打ち切り
+      const _zStopContribAge=Math.min(_zEnd,_zRedeemAge);
+      const isActiveZ=pAge<_zStopContribAge;
       const vZ=isActiveZ?ri(zm*12):0;
       // 支出行（積立）
       const rowKeyZ=`zaikei-${p}`;
@@ -1292,13 +1297,14 @@ function render(){
       if(!rowZ){rowZ={lbl:`財形積立(${pLabel})`,vals:[],key:rowKeyZ};R.zaikeiRows.push(rowZ);}
       rowZ.vals.push(vZ);
       zaikeiExpTotal+=vZ;
-      // 解約処理：終了年齢に到達した年に累計残高を全額収入計上
+      // 解約処理：解約年齢に到達した年に累計残高を全額収入計上
       const rowKeyZR=`zaikeiRedeem-${p}`;
       let rowZR=R.zaikeiRedeemRows.find(r=>r.key===rowKeyZR);
       if(!rowZR){rowZR={lbl:`財形解約(${pLabel})`,vals:[],key:rowKeyZR};R.zaikeiRedeemRows.push(rowZR);}
       let vZR=0;
-      if(pAge===_zThresh2){
-        const _contribYrsR=Math.max(0,_zThresh2-pBaseAge);
+      if(pAge===_zRedeemAge){
+        // 解約時点までの拠出年数（解約年齢が積立終了より前なら短くなる）
+        const _contribYrsR=Math.max(0,_zStopContribAge-pBaseAge);
         vZR=Math.round(zbal+zm*12*_contribYrsR);
       }
       rowZR.vals.push(vZR);
@@ -1998,11 +2004,15 @@ function render(){
       const zbal=fv(`zaikei-${p}-bal`)||0;
       const zm=fv(`zaikei-${p}-monthly`)||0;
       const ze=iv(`zaikei-${p}-end`)||0;
+      const zr=iv(`zaikei-${p}-redeem`)||0;
       if(zbal<=0&&zm<=0)return;
-      const _zThresh=ze>0?ze:pRetAge;
-      const _zContribYrs=Math.min(i+1,Math.max(0,_zThresh-pBaseAge));
+      const _zEnd=ze>0?ze:pRetAge;
+      const _zRedeemAge=zr>0?zr:_zEnd;
+      const _zStopContribAge=Math.min(_zEnd,_zRedeemAge);
+      // 拠出は積立終了 or 解約年齢のどちらか早い方まで
+      const _zContribYrs=Math.min(i+1,Math.max(0,_zStopContribAge-pBaseAge));
       // 解約年齢に到達したらその年から残高を0に（一括解約済みの扱い）
-      const _zRedeemed=pAge>=_zThresh;
+      const _zRedeemed=pAge>=_zRedeemAge;
       const zVal=_zRedeemed?0:Math.round(zbal+zm*12*_zContribYrs);
       const _pLblZ=p==='h'?'ご主人様':'奥様';
       const lblZ=`財形貯蓄(${_pLblZ})`;

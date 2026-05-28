@@ -284,6 +284,8 @@ window.closeAboutModal=closeAboutModal;
             <div class="suf"><input class="inp amt-inp" id="zaikei-h-monthly" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円/月</span></div></div>
           <div class="fg"><label class="lbl" style="font-size:9px">積立終了年齢</label>
             <div class="suf"><input class="inp age-inp" id="zaikei-h-end" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:60" min="20" max="80" oninput="live()"><span class="sl">歳</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">解約年齢<span style="font-weight:400;color:var(--muted);font-size:9px">（空欄=積立終了と同時）</span></label>
+            <div class="suf"><input class="inp age-inp" id="zaikei-h-redeem" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
         </div>
         <div class="divider"></div>
         <div class="sub">📈 有価証券（ご主人様）</div>
@@ -306,6 +308,8 @@ window.closeAboutModal=closeAboutModal;
             <div class="suf"><input class="inp amt-inp" id="zaikei-w-monthly" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円/月</span></div></div>
           <div class="fg"><label class="lbl" style="font-size:9px">積立終了年齢</label>
             <div class="suf"><input class="inp age-inp" id="zaikei-w-end" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:60" min="20" max="80" oninput="live()"><span class="sl">歳</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">解約年齢<span style="font-weight:400;color:var(--muted);font-size:9px">（空欄=積立終了と同時）</span></label>
+            <div class="suf"><input class="inp age-inp" id="zaikei-w-redeem" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
         </div>
         <div class="divider"></div>
         <div class="sub">📈 有価証券（奥様）</div>
