@@ -220,7 +220,9 @@ async function exportExcelMG(){
   const movingCostV=fv('moving-cost')||0;
   const furnitureInitV=fv('furniture-init')||0;
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
-  const cashTotal=cashH+cashW+cashJoint;
+  // ★ 財形貯蓄も預貯金扱い（CF表本体の initSav と一致させる）
+  const _zaikiHe=fv('zaikei-h-bal')||0, _zaikiWe=fv('zaikei-w-bal')||0;
+  const cashTotal=cashH+cashW+cashJoint+_zaikiHe+_zaikiWe;
   const costTypeV_mg=document.getElementById('cost-type')?.value||'cash';
   const downFromOwn=(downType==='gift'||downType==='other')?0:downPay;
   const houseCostDeductMG=(costTypeV_mg==='loan'||costTypeV_mg==='other')?0:houseCostV;
@@ -1410,7 +1412,9 @@ async function exportExcel(){
   const movingCostV=fv('moving-cost')||0;
   const furnitureInitV=fv('furniture-init')||0;
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
-  const cashTotal=cashH+cashW+cashJoint;
+  // ★ 財形貯蓄も預貯金扱い（CF表本体の initSav と一致させる）
+  const _zaikiHe2=fv('zaikei-h-bal')||0, _zaikiWe2=fv('zaikei-w-bal')||0;
+  const cashTotal=cashH+cashW+cashJoint+_zaikiHe2+_zaikiWe2;
   const costTypeV=document.getElementById('cost-type')?.value||'cash';
   const downFromOwn=(downType==='gift'||downType==='other')?0:downPay;
   const houseCostDeductE=(costTypeV==='loan'||costTypeV==='other')?0:houseCostV;

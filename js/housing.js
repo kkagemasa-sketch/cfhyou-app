@@ -275,13 +275,16 @@ function updateHints(){
   // delivery-hint は calcDelivery() で管理（calcLoanAmtはoninputで管理）
   // 現預金合計ヒント＋購入後残高
   const chH=fv('cash-h')||0,chW=fv('cash-w')||0,chJ=fv('cash-joint')||0;
-  const chTot=chH+chW+chJ;
+  // ★ 財形貯蓄も預貯金扱い（CF表本体の initSav と一致させる）
+  const _zaikiH2=fv('zaikei-h-bal')||0, _zaikiW2=fv('zaikei-w-bal')||0;
+  const chTot=chH+chW+chJ+_zaikiH2+_zaikiW2;
   const cashTotEl=document.getElementById('cash-total-hint');
   if(cashTotEl)cashTotEl.textContent=`合計：${chTot.toLocaleString()}万円`;
   const _costType0=document.getElementById('cost-type')?.value||'cash';
   const _downDeduct=(downType==='own')?(fv('down-payment')||0):0;
   const _costDeduct=(_costType0==='cash')?(fv('house-cost')||0):0;
-  const _moveDeduct=(fv('moving-cost')||0)+(fv('furniture-init')||0);
+  const _moveType2=document.getElementById('move-type')?.value||'own';
+  const _moveDeduct=(_moveType2==='other')?0:((fv('moving-cost')||0)+(fv('furniture-init')||0));
   const _cashAfter=chTot-_downDeduct-_costDeduct-_moveDeduct;
   const cashAfterEl=document.getElementById('cash-after-hint');
   if(cashAfterEl){
