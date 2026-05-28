@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>使い方ガイド・FAQ - HouseFit</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif; background: #f7f9fc; color: #1a3a6a; margin: 0; padding: 0; line-height: 1.7; }
+    .layout { display: grid; grid-template-columns: 240px 1fr; gap: 0; min-height: 100vh; }
+    .sidebar { background: #1e3a5f; color: #fff; padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sidebar-title { padding: 0 20px 16px; font-size: 16px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 12px; }
+    .sidebar-section { padding: 8px 0; }
+    .sidebar-section-title { padding: 8px 20px 4px; font-size: 11px; font-weight: 700; color: #93c5fd; letter-spacing: 0.05em; text-transform: uppercase; }
+    .sidebar a { display: block; padding: 8px 20px; color: #cbd5e1; text-decoration: none; font-size: 13px; border-left: 3px solid transparent; transition: all 0.15s; }
+    .sidebar a:hover { background: rgba(255,255,255,0.08); color: #fff; border-left-color: #60a5fa; }
+    .content { padding: 40px 48px 80px; max-width: 920px; }
+    .back-link { display: inline-block; margin-bottom: 20px; color: #2563eb; text-decoration: none; font-size: 13px; font-weight: 600; }
+    .back-link:hover { text-decoration: underline; }
+    h1 { font-size: 28px; font-weight: 800; color: #1e3a5f; margin: 0 0 8px; }
+    h2 { font-size: 22px; font-weight: 700; color: #1e3a5f; margin: 40px 0 12px; padding-bottom: 8px; border-bottom: 3px solid #2563eb; }
+    h3 { font-size: 17px; font-weight: 700; color: #1e3a5f; margin: 24px 0 8px; padding-left: 12px; border-left: 4px solid #2563eb; }
+    h4 { font-size: 14px; font-weight: 700; color: #1e3a5f; margin: 16px 0 6px; }
+    p { font-size: 14px; color: #334155; margin: 8px 0; }
+    ul, ol { font-size: 14px; color: #334155; padding-left: 22px; }
+    li { margin-bottom: 4px; }
+    .lead { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+    .step { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #2563eb; color: #fff; border-radius: 50%; font-size: 12px; font-weight: 700; margin-right: 8px; }
+    .tip { background: #eff6ff; border-left: 4px solid #2563eb; padding: 12px 16px; border-radius: 6px; margin: 12px 0; font-size: 13px; color: #1e3a5f; }
+    .warn { background: #fff5f5; border-left: 4px solid #dc2626; padding: 12px 16px; border-radius: 6px; margin: 12px 0; font-size: 13px; color: #7a1a1a; }
+    .info { background: #f0fdf4; border-left: 4px solid #10b981; padding: 12px 16px; border-radius: 6px; margin: 12px 0; font-size: 13px; color: #064e3b; }
+    .faq-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; margin: 10px 0; overflow: hidden; }
+    .faq-q { background: #f8fafc; padding: 12px 16px; font-weight: 700; color: #1e3a5f; font-size: 14px; cursor: pointer; user-select: none; display: flex; gap: 8px; }
+    .faq-q::before { content: "Q"; background: #2563eb; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+    .faq-a { padding: 12px 16px 16px 46px; font-size: 13px; color: #475569; line-height: 1.7; }
+    .faq-a::before { content: "A: "; font-weight: 700; color: #10b981; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+    th, td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: #f8fafc; color: #1e3a5f; font-weight: 700; }
+    code { background: #f1f5f9; padding: 1px 6px; border-radius: 3px; font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; color: #1e3a5f; }
+    .key { display: inline-block; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 11px; box-shadow: 0 1px 0 #94a3b8; }
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .content { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="sidebar-title">📚 使い方ガイド</div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">はじめに</div>
+        <a href="#about">HouseFitとは</a>
+        <a href="#quickstart">3分でスタート</a>
+        <a href="#system">推奨環境</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">基本操作</div>
+        <a href="#family">家族構成</a>
+        <a href="#income">収入入力</a>
+        <a href="#housing">住宅ローン</a>
+        <a href="#education">教育費（大学院対応）</a>
+        <a href="#assets">資産・運用</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">機能別</div>
+        <a href="#cftable">CF表の見方</a>
+        <a href="#contingency">万一CF</a>
+        <a href="#loanplan">返済計画</a>
+        <a href="#marketsim">運用シミュ</a>
+        <a href="#autoliq">自動取崩し</a>
+        <a href="#excel">Excel出力</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">高度な機能</div>
+        <a href="#save">保存・復元</a>
+        <a href="#presenter">プレゼンモード</a>
+        <a href="#scenario">複数プラン比較</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">サポート</div>
+        <a href="#faq">よくある質問</a>
+        <a href="#trouble">トラブル対処</a>
+        <a href="#shortcuts">ショートカット</a>
+        <a href="#contact">お問い合わせ</a>
+      </div>
+    </nav>
+
+    <main class="content">
+      <a href="index.html" class="back-link" onclick="if(history.length>1){event.preventDefault();history.back();}">← アプリに戻る</a>
+
+      <h1>📚 HouseFit 使い方ガイド・FAQ</h1>
+      <p class="lead">住宅購入とライフプランのキャッシュフローシミュレーションツール「HouseFit」の使い方を分かりやすく解説します。</p>
+
+      <!-- ====== はじめに ====== -->
+
+      <h2 id="about">🏠 HouseFitとは</h2>
+      <p>HouseFitは、FP（ファイナンシャルプランナー）や住宅営業担当の方が、お客様の住宅購入計画や生涯のキャッシュフローを「見える化」するためのシミュレーションツールです。</p>
+      <h4>主な機能</h4>
+      <ul>
+        <li>📊 60年間のキャッシュフロー表を自動生成</li>
+        <li>🏦 住宅ローン（変動・フラット35・ペアローン・連帯債務）対応</li>
+        <li>🎓 教育費（小学校〜大学・専門学校・大学院）対応</li>
+        <li>💸 万一の試算（収入の半分が消失するシナリオ）</li>
+        <li>📈 資産運用・自動取崩しシミュレーション</li>
+        <li>📄 Excel出力でお客様への提案書作成</li>
+      </ul>
+
+      <h2 id="quickstart">🚀 3分でスタート</h2>
+      <p>初めての方は、以下の順に入力していくと一通りのCF表が完成します。</p>
+
+      <div class="step">
+        <span class="step-num">1</span><strong>家族構成を入力</strong>
+        <ul style="margin:6px 0 0">
+          <li>お客様氏名、世帯タイプ（夫婦/単身）</li>
+          <li>ご主人様・奥様の現在年齢、ご逝去想定年齢</li>
+          <li>お子様の年齢・性別・進学コース</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <span class="step-num">2</span><strong>収入を入力</strong>
+        <ul style="margin:6px 0 0">
+          <li>段階入力で年齢ごとの手取り年収を設定（最低2段階推奨）</li>
+          <li>年金額は「概算計算」ボタンで自動計算可能</li>
+          <li>退職金、副業収入も入力可能</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <span class="step-num">3</span><strong>住宅・ローン設定</strong>
+        <ul style="margin:6px 0 0">
+          <li>住宅価格、頭金、諸費用、引越・家具家電</li>
+          <li>ローン期間・金利を入力（フラット35の場合は自動計算）</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <span class="step-num">4</span><strong>右側のCF表が自動更新</strong>
+        <ul style="margin:6px 0 0">
+          <li>入力に応じてリアルタイムで再計算</li>
+          <li>赤色は要注意（マイナス収支、預貯金不足等）</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <span class="step-num">5</span><strong>Excel出力で提案書作成</strong>
+        <ul style="margin:6px 0 0">
+          <li>右上の「Excel出力」ボタンでPC上のExcelファイルを保存</li>
+          <li>お客様への印刷・配布が可能</li>
+        </ul>
+      </div>
+
+      <h2 id="system">💻 推奨環境</h2>
+      <table>
+        <thead>
+          <tr><th>項目</th><th>推奨</th><th>最低</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>ブラウザ</td><td>Chrome / Edge / Safari 最新版</td><td>最新の2バージョン以内</td></tr>
+          <tr><td>画面サイズ</td><td>13インチ以上のPC</td><td>1280×800以上</td></tr>
+          <tr><td>OS</td><td>Windows 10/11、macOS 12+</td><td>—</td></tr>
+          <tr><td>通信</td><td>安定したインターネット</td><td>一部機能はオフライン可</td></tr>
+          <tr><td>その他</td><td>JavaScript・Cookie 有効</td><td>必須</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ====== 基本操作 ====== -->
+
+      <h2 id="family">👨‍👩‍👧‍👦 家族構成の入力</h2>
+      <h3>お子様の追加・削除</h3>
+      <p>左パネル「①家族」セクションで、お子様を最大4人まで追加できます。</p>
+      <ul>
+        <li><strong>追加</strong>: 「＋ お子様を追加」ボタン</li>
+        <li><strong>削除</strong>: 各お子様カードの「× 削除」ボタン</li>
+      </ul>
+      <h3>進学コースの設定</h3>
+      <p>小学校・中学校・高校・大学・大学院 を個別に選択できます。</p>
+      <ul>
+        <li><strong>小・中・高</strong>: 公立 / 私立</li>
+        <li><strong>大学</strong>: 国立(自宅/下宿) / 私文 / 私理 / 私立医科 / 専門学校 / 進学なし</li>
+        <li><strong>大学院</strong>: 進学なし / 修士のみ(2年) / 修士＋博士(5年) / 博士のみ(3年) / 医歯博士(4年・修士不要)</li>
+      </ul>
+      <div class="tip">
+        💡 進学コース変更時、教育費が自動再計算されます。CF表で色分け表示されるので、どの段階の費用かが一目で分かります。
+      </div>
+
+      <h2 id="income">💰 収入入力</h2>
+      <h3>段階入力で年齢別に設定</h3>
+      <p>ご主人様・奥様の収入は「段階」で入力します。年齢の節目で収入が変わる場合に便利です。</p>
+      <div class="step">
+        <strong>入力例：ご主人様</strong>
+        <ul style="margin:6px 0 0">
+          <li>段階1: 30歳→50歳、500万→700万円（昇給期）</li>
+          <li>段階2: 51歳→60歳、700万→650万円（管理職定着〜役職定年）</li>
+          <li>段階3: 61歳→65歳、650万→400万円（再雇用）</li>
+        </ul>
+      </div>
+      <p>段階間は線形補間で計算されます。</p>
+
+      <h3>年金額の概算計算</h3>
+      <p>「🔄 概算計算」ボタンで、収入ステップに基づいて生涯平均標準報酬月額から年金額を概算できます。</p>
+      <div class="warn">
+        ⚠️ 概算計算は厚労省データに基づくものであり、実際の年金額とは異なる場合があります。ねんきん定期便の金額がある場合はそれを直接入力してください。「自動調整しない」にチェックを入れると入力値が固定されます。
+      </div>
+
+      <h3>育休・産休・時短</h3>
+      <p>育休期間中の収入を別途設定できます。育児休業給付金は手取り年収の約67%（最初の6ヶ月）→50%（以降）として概算されます。</p>
+
+      <h2 id="housing">🏠 住宅ローン設定</h2>
+      <h3>ローンモード</h3>
+      <table>
+        <thead>
+          <tr><th>モード</th><th>特徴</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>単独ローン</strong></td><td>主契約者1人。シンプル。</td></tr>
+          <tr><td><strong>ペアローン</strong></td><td>主契約者2人で別々のローン。住宅ローン控除も各自利用可。</td></tr>
+          <tr><td><strong>連帯債務</strong></td><td>ローンは1本だが2人で負担。フラット35での選択肢。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>変動金利の段階設定</h3>
+      <p>「金利変更スケジュール」で、5年目から1.0%、11年目から1.5% といった段階的な金利上昇シナリオを試算できます。</p>
+
+      <h3>フラット35</h3>
+      <p>フラット35を選ぶと、月次更新される実際の金利テーブルから自動で適用金利を計算します。性能評価ポイント（省エネ・耐震等）による金利優遇も対応。</p>
+
+      <h2 id="education">🎓 教育費（大学院対応）</h2>
+      <p>各お子様ごとに学校種別を選択すると、文部科学省「子供の学習費調査」等の公的データに基づく教育費が自動計上されます。</p>
+
+      <h3>大学院費用の参考データ</h3>
+      <table>
+        <thead>
+          <tr><th>コース</th><th>修士(2年合計)</th><th>博士(3年合計)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>国立(自宅)</td><td>190万円</td><td>253万円</td></tr>
+          <tr><td>国立(下宿)</td><td>412万円</td><td>576万円</td></tr>
+          <tr><td>私立理系(自宅)</td><td>340万円</td><td>423万円</td></tr>
+          <tr><td>私立理系(下宿)</td><td>618万円</td><td>850万円</td></tr>
+          <tr><td>私立医系(自宅)</td><td>726万円</td><td>964万円</td></tr>
+        </tbody>
+      </table>
+
+      <div class="tip">
+        💡 「医歯博士(4年・修士不要)」は医学部・歯学部の6年制大学院ルート。修士課程を経由しません。
+      </div>
+
+      <h2 id="assets">💎 資産・運用</h2>
+      <h3>有価証券の入力</h3>
+      <p>NISA、課税口座、積立、一括投資など複数の有価証券を登録できます。</p>
+      <ul>
+        <li>現時点の評価額</li>
+        <li>毎月の積立額</li>
+        <li>想定利回り</li>
+        <li>積立終了年齢、解約年齢</li>
+        <li>取得価格累計（譲渡益課税の計算用）</li>
+      </ul>
+
+      <h3>現有車・将来車</h3>
+      <p>既に保有している車のローン残債を「現在の支払いから逆算」モードで入力可能。月々の支払額・ボーナス・残り年数から残債を概算します。</p>
+
+      <!-- ====== 機能別 ====== -->
+
+      <h2 id="cftable">📊 CF表の見方</h2>
+      <p>右側のCF表は、入力に応じてリアルタイムで更新されます。</p>
+
+      <h3>セルの色分け</h3>
+      <ul>
+        <li><strong>赤色（▲）</strong>: マイナス（赤字）</li>
+        <li><strong>緑色</strong>: 黒字</li>
+        <li><strong>イベント行の色</strong>: 教育段階の色（保育→小→中→高→大学→大学院）</li>
+        <li><strong>濃いオレンジ</strong>: 修士入学</li>
+        <li><strong>ブラウン</strong>: 博士入学</li>
+        <li><strong>赤系</strong>: 医歯博士入学</li>
+      </ul>
+
+      <h3>セルの編集</h3>
+      <p>CF表の数値セルは直接編集可能です。一時的な値の差し替えで「もしも〇〇だったら」を試算できます。</p>
+      <div class="tip">
+        💡 上書きしたセルは「↺ 上書きリセット」ボタンで一括復元できます。
+      </div>
+
+      <h2 id="contingency">⚠️ 万一CF</h2>
+      <p>主契約者の万一を想定したシミュレーション。「ご主人様 万が一」「奥様 万が一」のタブで切替。</p>
+
+      <h3>主な変動要素</h3>
+      <ul>
+        <li>死亡保険金（一時受取／年金型）</li>
+        <li>遺族年金（自動計算 or 手動入力で段階設定可能）</li>
+        <li>奥様/ご主人様の就労収入</li>
+        <li>死亡後の生活費（割合 or 段階設定）</li>
+        <li>住居モード（継続/団信完済/売却・賃貸）</li>
+        <li>団信加入の有無</li>
+      </ul>
+
+      <h2 id="loanplan">🏦 返済計画</h2>
+      <p>「返済計画」タブで、繰上返済シミュレーションができます。</p>
+      <ul>
+        <li>期間短縮型：返済期間を短くする</li>
+        <li>返済額軽減型：月々の返済額を減らす</li>
+        <li>ボーナス払い、5年ルール、125%ルールにも対応</li>
+      </ul>
+
+      <h2 id="marketsim">📈 運用シミュ</h2>
+      <p>過去の相場シナリオを適用してCF表を再計算できます。</p>
+      <ul>
+        <li>リーマンショック級下落（-50%）</li>
+        <li>ITバブル崩壊シナリオ</li>
+        <li>長期低成長シナリオ</li>
+        <li>カスタム下落シナリオ（年と下落率を指定）</li>
+      </ul>
+
+      <h2 id="autoliq">📤 自動取崩し</h2>
+      <p>預貯金がマイナスになる年に、有価証券から自動的に取崩して補填する機能。</p>
+      <h3>取崩しルール</h3>
+      <ol>
+        <li>課税口座から優先的に取崩し</li>
+        <li>NISA口座は最後まで温存</li>
+        <li>同じ優先順位内ではご主人/奥様問わず残高比例で按分</li>
+      </ol>
+      <h3>譲渡益課税の計算</h3>
+      <p>課税口座の場合、含み益部分に20.315%（所得税15%＋住民税5%＋復興特別所得税0.315%）の譲渡益課税が自動計上されます。</p>
+      <div class="tip">
+        💡 警告行の「❓ 計算ルール」ボタンで詳細な計算式を確認できます。
+      </div>
+
+      <h2 id="excel">📁 Excel出力</h2>
+      <p>右上の「Excel出力」ボタンで、お客様提示用のExcelファイルを生成できます。</p>
+      <h3>含まれる内容</h3>
+      <ul>
+        <li>自己資金の内訳</li>
+        <li>住宅ローン条件</li>
+        <li>注釈・補足メモ（任意）</li>
+        <li>60年間のCF表（収入・支出・残高）</li>
+        <li>金融資産推移</li>
+        <li>免責事項・ご確認事項（別シート「ご確認事項」）</li>
+      </ul>
+
+      <!-- ====== 高度な機能 ====== -->
+
+      <h2 id="save">💾 保存・復元</h2>
+      <h3>自動保存</h3>
+      <p>入力2秒後に自動的にローカル保存されます。ブラウザを閉じても再開時に復元されます。</p>
+      <h3>スロット保存</h3>
+      <p>「💾 保存/読込」ボタンで、複数のお客様データをスロットに分けて保存できます。</p>
+      <h3>ファイル保存</h3>
+      <p>「📤 ファイルに保存」でJSONファイルとしてPCにバックアップ可能。「📥 ファイルから復元」で読み込みできます。</p>
+      <div class="warn">
+        ⚠️ データはお使いのブラウザのローカルストレージに保存されます。別のPC・別のブラウザでは復元できないため、定期的にJSONバックアップを推奨します。
+      </div>
+
+      <h2 id="presenter">🎯 プレゼンモード</h2>
+      <p>お客様の前で説明する際、マウスポインタをオレンジの大きな円で強調表示します。</p>
+
+      <h2 id="scenario">📑 複数プラン比較</h2>
+      <p>CF表上部のタブ「＋」ボタンで、別案のCF表を追加できます。Aプラン・Bプランを並べて比較可能。</p>
+
+      <!-- ====== サポート ====== -->
+
+      <h2 id="faq">❓ よくある質問</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">入力したお客様データはどこに保存されますか？</div>
+        <div class="faq-a">お使いのブラウザのローカルストレージ（IndexedDB）に保存され、原則として当社サーバーには送信されません。別のPCで開くには「ファイルに保存」でJSONを書き出して移行してください。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">計算結果は正確ですか？</div>
+        <div class="faq-a">公開データ（厚労省・文科省・国税庁等）と一般的な計算式に基づく概算です。実際の税額・年金額は個人の状況により異なりますので、参考値としてご利用ください。最終的な投資・税務判断は専門家にご相談ください。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">スマホでも使えますか？</div>
+        <div class="faq-a">閲覧は可能ですが、入力編集はPC（13インチ以上）を推奨します。CF表は60年分の横長表のため、PCの大画面で見やすくなっています。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">同じデータを複数のPCで共有できますか？</div>
+        <div class="faq-a">現状は「ファイル保存（JSON）」で書き出して、別のPCで「ファイルから復元」する形式です。クラウド同期機能は今後のアップデートで対応予定。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">CF表の数値を直接編集したい</div>
+        <div class="faq-a">数値セルをクリックすると編集可能になります。一度編集したセルは色付きで表示され、「↺ 上書きリセット」で一括復元できます。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">年金額が実際と違う気がする</div>
+        <div class="faq-a">概算計算は標準報酬月額×加入月数の単純計算なので、個別の昇給履歴や育休期間等は反映されません。ねんきん定期便の数値があれば直接入力し、「自動調整しない」にチェックを入れると固定値で計算されます。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">住宅ローン控除はどう計算されている？</div>
+        <div class="faq-a">入居年・住宅種別・世帯属性（子育て・若者夫婦世帯）に応じて、借入限度額×0.7%を所得税・住民税の上限内で計算しています。詳細は控除セルの計算根拠ポップアップで確認できます。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">「預貯金がマイナスになる」と警告が出る</div>
+        <div class="faq-a">将来のある時点で家計収支が破綻することを示します。自動取崩し機能がONなら、有価証券から自動補填します。OFFなら借入想定で計算されます。詳細は警告行の「計算ルール」ボタンをクリック。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">退職金はどう入力する？</div>
+        <div class="faq-a">「収入」セクションで退職金額と受取年齢を入力します。退職所得控除＋1/2課税で手取り化されます。一括受取か年金型かを選択可能。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Excel出力ができない</div>
+        <div class="faq-a">ブラウザの「ファイルダウンロード」設定をご確認ください。Edgeの場合「ダウンロード前に常に確認する」が有効だと、保存先選択ダイアログが表示されます。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">マンション管理データを他のFPと共有したい</div>
+        <div class="faq-a">「🏢 マンション管理」ボタンから登録すると、Firebase経由で同じアプリを使うFP間で共有されます（顧客情報は共有されません）。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">過去のバージョンに戻したい</div>
+        <div class="faq-a">「◀ 戻る」「進む ▶」ボタンで操作履歴を辿れます（Ctrl+Z / Ctrl+Y も対応）。最大30回分の操作を遡れます。</div>
+      </div>
+
+      <h2 id="trouble">🛠️ トラブル対処</h2>
+
+      <h3>入力した値が反映されない</h3>
+      <ol>
+        <li>「↻ 更新」ボタンを押す</li>
+        <li>それでも直らない場合、ブラウザの<span class="key">Ctrl</span>＋<span class="key">Shift</span>＋<span class="key">R</span>でハードリフレッシュ</li>
+      </ol>
+
+      <h3>データが消えた</h3>
+      <ol>
+        <li>「💾 保存/読込」スロットを確認</li>
+        <li>「📥 ファイルから復元」でバックアップJSONを読み込み</li>
+        <li>「◀ 戻る」で操作履歴を遡る</li>
+      </ol>
+
+      <h3>計算がおかしい</h3>
+      <ol>
+        <li>該当セルをクリックして計算根拠を確認</li>
+        <li>入力値の単位（万円/円）を確認</li>
+        <li>年齢設定が正しいか確認</li>
+        <li>「↺ 上書きリセット」で手動編集を解除</li>
+      </ol>
+
+      <h3>Excel出力が遅い・落ちる</h3>
+      <ol>
+        <li>表示年数を短くする（「全体表示」スライダ）</li>
+        <li>他のタブを閉じてメモリを確保</li>
+        <li>ブラウザを再起動</li>
+      </ol>
+
+      <h2 id="shortcuts">⌨️ ショートカット</h2>
+      <table>
+        <thead>
+          <tr><th>キー</th><th>機能</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="key">Ctrl</span>＋<span class="key">Z</span></td><td>元に戻す（Undo）</td></tr>
+          <tr><td><span class="key">Ctrl</span>＋<span class="key">Y</span></td><td>やり直し（Redo）</td></tr>
+          <tr><td><span class="key">Ctrl</span>＋<span class="key">Shift</span>＋<span class="key">R</span></td><td>ハードリフレッシュ</td></tr>
+          <tr><td><span class="key">Enter</span>（セル編集時）</td><td>確定</td></tr>
+          <tr><td><span class="key">Esc</span>（セル編集時）</td><td>キャンセル</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="contact">📧 お問い合わせ</h2>
+      <p>本ガイドで解決しない場合、以下までご連絡ください。</p>
+      <div class="step">
+        <strong>Housing FP株式会社</strong><br>
+        〒532-0011 大阪府大阪市淀川区西中島7-1-5 ReTerra新大阪3F<br>
+        電話: 06-7711-8520<br>
+        受付時間: 平日 9:00～18:00（土日祝・年末年始を除く）
+      </div>
+
+      <div class="info" style="margin-top:32px">
+        ✅ 本ガイドは継続的に更新されます。バージョンアップ情報はアプリ内のお知らせ機能でご確認ください。<br>
+        <span style="font-size:11px;color:#94a3b8">最終更新日: 2026年5月28日</span>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
