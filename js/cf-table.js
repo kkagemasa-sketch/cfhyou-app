@@ -124,10 +124,17 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       _secItems.push({p,pLbl,sid,catLbl,custom,val,isNisa,isStock});
     });
   });
+  // 財形貯蓄も「その他金融資産」として表示
+  ['h','w'].forEach(p=>{
+    const pLbl=p==='h'?'ご主人様':'奥様';
+    const zbal=fv(`zaikei-${p}-bal`)||0;
+    if(zbal<=0)return;
+    _secItems.push({p,pLbl,sid:'zaikei',catLbl:'財形貯蓄',custom:'',val:zbal,isNisa:false,isStock:false,isZaikei:true});
+  });
   if(_secItems.length>0){
     const _secTotal=_secItems.reduce((s,it)=>s+it.val,0);
-    const _iconFor=(it)=>it.isStock?(it.isNisa?'📈':'📊'):(it.isNisa?'🌱':'💹');
-    const _colorFor=(it)=>it.isNisa?'#059669':'#1e5a9a';
+    const _iconFor=(it)=>it.isZaikei?'🏛️':it.isStock?(it.isNisa?'📈':'📊'):(it.isNisa?'🌱':'💹');
+    const _colorFor=(it)=>it.isZaikei?'#7c5e1a':it.isNisa?'#059669':'#1e5a9a';
     let chips='';
     _secItems.forEach(it=>{
       const lbl=it.custom||`${it.catLbl}(${it.pLbl})`;
