@@ -1281,8 +1281,21 @@ function _renderContingencyInner(){
       }
     }
 
+    // 財形積立（生存者のみ、死亡後は死亡者分を除外）
+    let zaikeiExpVal=i<(normalR.zaikeiExp?.length||0)?(normalR.zaikeiExp[i]||0):0;
+    if(isDead&&normalR.zaikeiRows){
+      zaikeiExpVal=0;
+      normalR.zaikeiRows.forEach(row=>{
+        const k=row.key||'';const p2=k.endsWith('-h')?'h':k.endsWith('-w')?'w':'both';
+        if(p2===_deadP)return;
+        zaikeiExpVal+=(row.vals[i]||0);
+      });
+    }
+    MR.zaikeiExp=MR.zaikeiExp||[];
+    MR.zaikeiExp.push(ri(zaikeiExpVal));
+
     // 支出合計（個別計算）
-    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i];
+    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal);
     children.forEach((c,ci)=>expTotal+=MR.edu[ci][i]);
     MR.expT.push(ri(expTotal));
 
@@ -1393,7 +1406,7 @@ function _renderContingencyInner(){
   // ── mgOverrides後処理 ──
   if(Object.keys(mgOverrides).length>0){
     const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','autoLiqTax'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR[key]&&c2<MR[key].length)MR[key][c2]=val;});
@@ -1797,6 +1810,8 @@ function _renderContingencyInner(){
   if(!_isSingle_mg)h+=mgERow('DC拠出(奥様)',MR.dcMatchExpW,N.dcMatchExpW,'dcMatchExpW');
   h+=mgERow(_isSingle_mg?'iDeCo拠出':'iDeCo拠出(主)',MR.idecoExpH,N.idecoExpH,'idecoExpH');
   if(!_isSingle_mg)h+=mgERow('iDeCo拠出(奥様)',MR.idecoExpW,N.idecoExpW,'idecoExpW');
+  // 財形積立（個別行：通常CFと同じく実額がある人のみ表示）
+  if(N.zaikeiRows&&N.zaikeiRows.length>0){N.zaikeiRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgERow(row.lbl,row.vals,row.vals,row.key);});}
   // 特別支出：個別行
   if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgERow(row.lbl,row.vals,row.vals,row.key);});}
   else if(N.extRows&&N.extRows.length===1){h+=mgERow(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals,N.extRows[0].key);}

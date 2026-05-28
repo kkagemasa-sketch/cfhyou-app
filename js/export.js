@@ -578,6 +578,8 @@ async function exportExcelMG(){
   addESkip(_rl('mg-dcMatchExpW','DC拠出(奥様)'),MR.dcMatchExpW,N.dcMatchExpW);
   addESkip(_rl('mg-idecoExpH','iDeCo拠出(主)'),MR.idecoExpH,N.idecoExpH);
   addESkip(_rl('mg-idecoExpW','iDeCo拠出(奥様)'),MR.idecoExpW,N.idecoExpW);
+  // 財形積立（個別行：実額がある人のみ）
+  if(N.zaikeiRows&&N.zaikeiRows.length>0){N.zaikeiRows.forEach(row=>{if(row.vals.some(v=>v>0))addESkip(row.lbl,row.vals,row.vals);});}
   // 特別支出：個別行
   if(N.extRows&&N.extRows.length>1){N.extRows.forEach(row=>{addESkip(row.lbl,row.vals,row.vals);});}
   else if(N.extRows&&N.extRows.length===1){addESkip(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals);}
@@ -1650,6 +1652,8 @@ async function exportExcel(){
   if(!_isSingle_e)addE('DC拠出(奥様)',R.dcMatchExpW);
   addE(_isSingle_e?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH);
   if(!_isSingle_e)addE('iDeCo拠出(奥様)',R.idecoExpW);
+  // 財形積立（個別行：実額がある人のみ）
+  if(R.zaikeiRows&&R.zaikeiRows.length>0){R.zaikeiRows.forEach(row=>{if(row.vals.some(v=>v>0))addE(row.lbl,row.vals);});}
   if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('特別支出',R.ext);}
   // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
   if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)) addE('💰 譲渡益課税(自動取崩し)',R.autoLiqTax);

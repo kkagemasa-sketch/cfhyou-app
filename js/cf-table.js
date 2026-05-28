@@ -451,6 +451,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(!_isSingle_t)h+=eRow('DC拠出(奥様)',R.dcMatchExpW,'dcMatchExpW');
   h+=eRow(_isSingle_t?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH,'idecoExpH');
   if(!_isSingle_t)h+=eRow('iDeCo拠出(奥様)',R.idecoExpW,'idecoExpW');
+  // 財形積立（個別行：実額がある人のみ表示）
+  if(R.zaikeiRows&&R.zaikeiRows.length>0){R.zaikeiRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}
   if(R.extRows&&R.extRows.length>1){R.extRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.extRows&&R.extRows.length===1){h+=eRow(R.extRows[0].lbl,R.extRows[0].vals,R.extRows[0].key);}else{h+=eRow('特別支出',R.ext,'ext');}
   // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
   if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)){

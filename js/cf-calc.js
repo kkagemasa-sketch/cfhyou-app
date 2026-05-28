@@ -134,7 +134,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
     // 自動資産取崩し: 預貯金マイナス時に有価証券から自動取崩し
     // autoLiq: 当年取崩し総額の配列
     // autoLiqTax: 当年譲渡益課税の配列
@@ -1267,6 +1267,26 @@ function render(){
       });
     });
     R.secInvest.push(ri(secInvestTotal));
+    // ─── 財形貯蓄積立額（支出計上・個別行） ───
+    if(!R.zaikeiRows)R.zaikeiRows=[];
+    let zaikeiExpTotal=0;
+    ['h','w'].forEach(p=>{
+      const pAge=p==='h'?ha:wa;
+      const pLabel=p==='h'?'ご主人様':'奥様';
+      const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
+      const zm=fv(`zaikei-${p}-monthly`)||0;
+      const ze=iv(`zaikei-${p}-end`)||0;
+      if(zm<=0)return;
+      const _zThresh2=ze>0?ze:pRetAge;
+      const isActiveZ=pAge<_zThresh2;
+      const vZ=isActiveZ?ri(zm*12):0;
+      const rowKeyZ=`zaikei-${p}`;
+      let rowZ=R.zaikeiRows.find(r=>r.key===rowKeyZ);
+      if(!rowZ){rowZ={lbl:`財形積立(${pLabel})`,vals:[],key:rowKeyZ};R.zaikeiRows.push(rowZ);}
+      rowZ.vals.push(vZ);
+      zaikeiExpTotal+=vZ;
+    });
+    R.zaikeiExp.push(ri(zaikeiExpTotal));
     // ─── 一括投資購入額（投資開始年齢に支出計上）───
     let secBuyTotal=0;
     ['h','w'].forEach(p=>{
@@ -1582,7 +1602,7 @@ function render(){
     const _idecoH=(dcIdeco.h.idecoMonthly>0&&ha<dcIdeco.h.retAge)?ri(dcIdeco.h.idecoMonthly*12):0;
     const _idecoW=(dcIdeco.w.idecoMonthly>0&&wa<dcIdeco.w.retAge)?ri(dcIdeco.w.idecoMonthly*12):0;
     R.idecoExpH.push(_idecoH);R.idecoExpW.push(_idecoW);
-    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i];
+    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     // ─ 自動資産取崩し（預貯金マイナス時のみ） ─
@@ -2086,7 +2106,7 @@ function render(){
     // ★ autoLiq (自動資産取崩し) と autoLiqTax (譲渡益課税) を含めないと、
     //   手動編集発生時に年間収支から自動取崩し分が消えて計算ズレが発生
     const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','autoLiqTax'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{
