@@ -283,7 +283,10 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.use
     document.body.style.cursor='';
     document.body.style.userSelect='';
     resizer.classList.remove('dragging');
-    pl.style.transition='';
+    // ★ pl は mousedown/mousemove のローカル変数だったため未定義参照エラーになる
+    //   ここで再取得して transition を戻す
+    const pl=document.querySelector('.panel-l');
+    if(pl)pl.style.transition='';
   });
   // タッチ対応
   resizer.addEventListener('touchstart',e=>{
