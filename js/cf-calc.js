@@ -2025,7 +2025,7 @@ function render(){
         type:'zaikei', person:p, isNisa:false,
         initBal:zbal, monthly:zm, rate:0,
         principal:zVal, evaluation:zVal, gain:0,
-        yrs:i+1, endAge:_zThresh
+        yrs:i+1, endAge:_zEnd, redeemAge:_zRedeemAge
       });
       R.finAssetBd[lblZ][i].total+=zVal;
       R.finAssetBd[lblZ][i].principalTotal+=zVal;
