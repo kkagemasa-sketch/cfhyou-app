@@ -940,6 +940,7 @@ function render(){
       _lctrlBd.grossEst=grossEst;
       _lctrlBd.taxableBase=taxableBase;
       _lctrlBd.itax=itax;
+      _lctrlBd.jumin=jumin;  // 本来の住民税額（参考値・控除上限の根拠を可視化するため）
       _lctrlBd.juminCtrlMax=juminCtrlMax;
       _lctrlBd.taxCapTotal=taxCapTotal;
       // ペアローン時は奥様側の税額情報も追加
@@ -947,10 +948,11 @@ function render(){
         // 奥様の手取りから額面を二分探索で逆算（ペアローン共働き想定で配偶者控除なし＝isHSide=false, 単身扱い）
         const wGrossInc=wInc>0?wInc:0;
         const _wLctrlBd = _calcNetBreakdown(wGrossInc, wa, true, 0, false);
-        let wItax=0, wTaxableBase=0, wGrossEst=0;
+        let wItax=0, wJumin=0, wTaxableBase=0, wGrossEst=0;
         if(_wLctrlBd){
           wGrossEst=_wLctrlBd.gross;
           wItax=_wLctrlBd.itax;
+          wJumin=_wLctrlBd.jumin;
           wTaxableBase=_wLctrlBd.taxableBase;
         }
         const wJuminCtrlMax=Math.min(Math.round(wTaxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
@@ -958,6 +960,7 @@ function render(){
         _lctrlBd.wGrossEst=wGrossEst;
         _lctrlBd.wTaxableBase=wTaxableBase;
         _lctrlBd.wItax=wItax;
+        _lctrlBd.wJumin=wJumin;  // 本来の住民税額（参考値）
         _lctrlBd.wJuminCtrlMax=wJuminCtrlMax;
         _lctrlBd.wTaxCapTotal=wTaxCapTotal;
         // 各自の計算上の控除額（自分のローン残高 × 0.7%、単独ローン上限で頭打ち）

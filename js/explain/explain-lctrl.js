@@ -192,6 +192,7 @@
             <div style="margin-top:4px;padding-top:4px;border-top:1px dashed #bfdbfe">推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
             <div>課税所得: ${explainFmt(bd.taxableBase,'万円')}</div>
             <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
+            <div>本来の住民税額: ${explainFmt(bd.jumin,'万円')} <span style="color:#94a3b8">（参考）</span></div>
             <div>住民税上限: ${explainFmt(bd.juminCtrlMax,'万円')}</div>
             <div style="margin-top:3px;padding-top:3px;border-top:1px solid #bfdbfe">税額上限: ${explainFmt((bd.itax||0)+(bd.juminCtrlMax||0),'万円')}</div>
             <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:2px solid #1e5a9a;color:#1e5a9a">適用: ${explainFmt(bd.hApplied,'万円')}</div>
@@ -203,6 +204,7 @@
             <div style="margin-top:4px;padding-top:4px;border-top:1px dashed #fbcfe8">推定額面年収: ${explainFmt(bd.wGrossEst,'万円')}</div>
             <div>課税所得: ${explainFmt(bd.wTaxableBase,'万円')}</div>
             <div>所得税: ${explainFmt(bd.wItax,'万円')}</div>
+            <div>本来の住民税額: ${explainFmt(bd.wJumin,'万円')} <span style="color:#94a3b8">（参考）</span></div>
             <div>住民税上限: ${explainFmt(bd.wJuminCtrlMax,'万円')}</div>
             <div style="margin-top:3px;padding-top:3px;border-top:1px solid #fbcfe8">税額上限: ${explainFmt(bd.wTaxCapTotal,'万円')}</div>
             <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:2px solid #9a1e5a;color:#9a1e5a">適用: ${explainFmt(bd.wApplied,'万円')}</div>
@@ -220,6 +222,7 @@
         <div>推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
         <div>課税所得ベース: ${explainFmt(bd.taxableBase,'万円')}</div>
         <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
+        <div>本来の住民税額: ${explainFmt(bd.jumin,'万円')} <span style="color:#94a3b8">（参考・所得割10%＋均等割5,000円）</span></div>
         <div>住民税控除上限: ${explainFmt(bd.juminCtrlMax,'万円')} <span style="color:#94a3b8">（課税所得×5%、上限9.75万円）</span></div>
     `;
 
