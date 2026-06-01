@@ -60,6 +60,17 @@ window.onload=()=>{
   document.addEventListener('focus',selectInput,true);
   document.addEventListener('click',selectInput,true);
 
+  // ホイール誤操作防止：type=number にフォーカスがある状態でスクロールしても
+  // 値が±1されないようにする（ブラウザ標準動作の無効化）
+  // 注：フォーカス中はページスクロールも止まる。ページスクロールしたい場合は
+  // 入力欄以外をクリックしてフォーカスを外してからスクロールしてください。
+  document.addEventListener('wheel',e=>{
+    const ae=document.activeElement;
+    if(ae&&ae.tagName==='INPUT'&&ae.type==='number'){
+      e.preventDefault();
+    }
+  },{passive:false});
+
   // 全角数字→半角数字の自動変換（数値入力欄のみ、IME変換中はスキップ）
   document.addEventListener('input',e=>{
     // IME変換中は絶対にvalueを書き換えない（日本語入力が壊れる）
