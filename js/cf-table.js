@@ -33,6 +33,12 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 詳細ボックス（自己資金の内訳＋住宅ローン条件）の折りたたみ状態
   const _cfSumHidden = (()=>{try{return localStorage.getItem('cf_summary_collapsed')==='1'}catch(e){return false}})();
   const _togLabel = _cfSumHidden ? '▸ 詳細を表示' : '▾ 詳細を隠す';
+  // 自動取崩し ON/OFF 状態
+  const _autoLiqOffTop = (()=>{try{return localStorage.getItem('cf_auto_liq_off')==='1'}catch(e){return false}})();
+  const _liqBtnLabel = _autoLiqOffTop ? '📤 自動取崩し OFF' : '📤 自動取崩し ON';
+  const _liqBtnStyle = _autoLiqOffTop
+    ? 'background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1'
+    : 'background:#ecfdf5;color:#047857;border:1px solid #6ee7b7';
 
   // お客様名・物件タイプバッジ
   let h=`<div class="r-summary"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
@@ -41,7 +47,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       <span style="background:${isM?'var(--teal)':'var(--green)'};color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${isM?'🏢 マンション':'🏡 戸建て'}</span>
       <span style="font-size:11px;color:var(--muted)">全${total}年間 / ご主人${hAge}〜${hAge+total-1}歳</span>
     </div>
-    <button id="cf-summary-toggle" onclick="toggleCfSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:#eef5ff;color:#1e5a9a;border:1px solid #c8d6e8;padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_togLabel}</button>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button onclick="toggleAutoLiq()" title="預貯金マイナス時に有価証券を自動取崩して補填する機能のON/OFF" style="${_liqBtnStyle};padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_liqBtnLabel}</button>
+      <button id="cf-summary-toggle" onclick="toggleCfSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:#eef5ff;color:#1e5a9a;border:1px solid #c8d6e8;padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_togLabel}</button>
+    </div>
   </div>`;
 
   // 詳細ボックスをまとめて折りたたみ可能なコンテナで囲む
