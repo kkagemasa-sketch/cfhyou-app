@@ -488,29 +488,13 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;
   for(let i=0;i<disp;i++){
     const v=ri(R.sav[i]);
-    // 警告: 預貯金がマイナスのセルは赤背景＋⚠️アイコン（実態は借入を意味することへの注意喚起）
-    const _warnCls = v<0 ? ' cell-savneg' : '';
-    const _warnIcon = v<0 ? '<span title="預貯金がマイナスです。実際は借入または資産取崩しが必要です" style="color:#dc2626;font-weight:700;margin-right:2px">⚠</span>' : '';
-    h+=`<td class="${v<0?'vn':''}${_warnCls}">${_warnIcon}${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+    // 預貯金マイナス：シンプルな赤背景のみ（旧デザイン）
+    h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
   const savLast=ri(R.sav[disp-1]);
   h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
-  // 自動取崩しのON/OFF状態
-  const _autoLiqOff = (()=>{try{return localStorage.getItem('cf_auto_liq_off')==='1'}catch(e){return false}})();
-  const _hasAnyLiq = R.autoLiq && R.autoLiq.some(v=>v>0);
-  // 警告サマリ行：預貯金マイナス期間があれば赤い注意行を表示
-  if(_negYears.length>0){
-    const _firstNegYr = R.yr[_negYears[0]];
-    const _lastNegYr = R.yr[_negYears[_negYears.length-1]];
-    const _yearSpan = _negYears.length===1 ? `${_firstNegYr}年` : `${_firstNegYr}〜${_lastNegYr}年`;
-    const _toggleMsg = _autoLiqOff ? '🔄 自動取崩しをONにして補填' : '🔄 自動取崩しをOFFにして借入想定で計算';
-    h+=`<tr class="rsav-warn"><td colspan="${disp+3}" style="background:#fff5f5;border-left:4px solid #dc2626;padding:6px 12px;color:#7a1a1a;font-size:11px;font-weight:600">⚠ 預貯金がマイナスになる年があります（${_yearSpan} / ${_negYears.length}年間 / 最大不足額 ▲${Math.abs(_minSav).toLocaleString()}万円）— ${_autoLiqOff?'借入想定で計算中':'有価証券の取崩しでも補填できない不足額です'} <button onclick="toggleAutoLiq()" style="margin-left:8px;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer">${_toggleMsg}</button> <button onclick="showAutoLiqHelp()" style="margin-left:4px;background:#fff;color:#7a1a1a;border:1px solid #7a1a1a;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">❓ 計算ルール</button></td></tr>`;
-  } else if(_hasAnyLiq){
-    // マイナスはないが取崩しが発生している場合: 情報行を表示
-    const _liqTotal = R.autoLiq.slice(0,disp).reduce((a,b)=>a+ri(b),0);
-    const _taxTotal = R.autoLiqTax.slice(0,disp).reduce((a,b)=>a+ri(b),0);
-    h+=`<tr class="rsav-warn"><td colspan="${disp+3}" style="background:#eff6ff;border-left:4px solid #2563eb;padding:6px 12px;color:#1e3a5f;font-size:11px;font-weight:600">📤 自動資産取崩し実行中：預貯金マイナス補填のため有価証券から累計 ${_liqTotal.toLocaleString()}万円 を取崩し（うち譲渡益課税 ${_taxTotal.toLocaleString()}万円） <button onclick="toggleAutoLiq()" style="margin-left:8px;background:#475569;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer">🔄 自動取崩しをOFF（借入想定で計算）</button> <button onclick="showAutoLiqHelp()" style="margin-left:4px;background:#fff;color:#1e3a5f;border:1px solid #2563eb;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">❓ 計算ルール</button></td></tr>`;
-  }
+  // 警告サマリ行は廃止（旧デザイン：シンプルな赤背景のみで警告）
+  // 取崩し機能の計算は引き続き有効。表示行・トグルボタンのみ非表示。
   if(R.finAsset.some(v=>v>0)){
     // 個別行を表示
     // 「大きなイベント年」の色クラス: その年のシナリオと通常想定の乖離増分で判定

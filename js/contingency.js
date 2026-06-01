@@ -1864,25 +1864,11 @@ function _renderContingencyInner(){
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_mgInitSavStyle}">${_mgInitSavTxt}万円</span></td>`;
   for(let i2=0;i2<mgDisp;i2++){
     const v=ri(MR.sav[i2]);
-    const _mgWarnCls = v<0 ? ' cell-savneg' : '';
-    const _mgWarnIcon = v<0 ? '<span title="預貯金がマイナスです" style="color:#dc2626;font-weight:700;margin-right:2px">⚠</span>' : '';
-    h+=`<td class="${v<0?'vn':''}${_mgWarnCls}">${_mgWarnIcon}${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+    // 預貯金マイナス：シンプルな赤背景のみ（旧デザイン）
+    h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
   const _mgSavLast=ri(MR.sav[mgDisp-1]);h+=`<td>${_mgSavLast>=0?_mgSavLast.toLocaleString():'▲'+Math.abs(_mgSavLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
-  // 自動取崩し情報行 or 警告行
-  const _mgAutoLiqOff = (()=>{try{return localStorage.getItem('cf_auto_liq_off')==='1'}catch(e){return false}})();
-  const _mgHasAnyLiq = MR.autoLiq && MR.autoLiq.some(v=>v>0);
-  if(_mgNegYears.length>0){
-    const _mgFirstNegYr = MR.yr[_mgNegYears[0]];
-    const _mgLastNegYr = MR.yr[_mgNegYears[_mgNegYears.length-1]];
-    const _mgYearSpan = _mgNegYears.length===1 ? `${_mgFirstNegYr}年` : `${_mgFirstNegYr}〜${_mgLastNegYr}年`;
-    const _mgToggleMsg = _mgAutoLiqOff ? '🔄 自動取崩しをONにして補填' : '🔄 自動取崩しをOFFにして借入想定で計算';
-    h+=`<tr class="rsav-warn"><td colspan="${mgDisp+3}" style="background:#fff5f5;border-left:4px solid #dc2626;padding:6px 12px;color:#7a1a1a;font-size:11px;font-weight:600">⚠ 預貯金がマイナスになる年があります（${_mgYearSpan} / ${_mgNegYears.length}年間 / 最大不足額 ▲${Math.abs(_mgMinSav).toLocaleString()}万円）— ${_mgAutoLiqOff?'借入想定で計算中':'有価証券の取崩しでも補填できない不足額です'} <button onclick="toggleAutoLiq()" style="margin-left:8px;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer">${_mgToggleMsg}</button> <button onclick="showAutoLiqHelp()" style="margin-left:4px;background:#fff;color:#7a1a1a;border:1px solid #7a1a1a;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">❓ 計算ルール</button></td></tr>`;
-  } else if(_mgHasAnyLiq){
-    const _mgLiqTotal = MR.autoLiq.slice(0,mgDisp).reduce((a,b)=>a+ri(b),0);
-    const _mgTaxTotal = MR.autoLiqTax.slice(0,mgDisp).reduce((a,b)=>a+ri(b),0);
-    h+=`<tr class="rsav-warn"><td colspan="${mgDisp+3}" style="background:#eff6ff;border-left:4px solid #2563eb;padding:6px 12px;color:#1e3a5f;font-size:11px;font-weight:600">📤 自動資産取崩し実行中：万一時の不足補填のため有価証券から累計 ${_mgLiqTotal.toLocaleString()}万円 を取崩し（うち譲渡益課税 ${_mgTaxTotal.toLocaleString()}万円） <button onclick="toggleAutoLiq()" style="margin-left:8px;background:#475569;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer">🔄 自動取崩しをOFF（借入想定で計算）</button> <button onclick="showAutoLiqHelp()" style="margin-left:4px;background:#fff;color:#1e3a5f;border:1px solid #2563eb;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">❓ 計算ルール</button></td></tr>`;
-  }
+  // 警告サマリ行は廃止（旧デザインに統一）— 取り崩し計算ロジックは引き続き有効
 
   // その他金融資産（個別行 + 合計）
   const _hasFinAsset=MR.finAsset.some(v=>v>0);
