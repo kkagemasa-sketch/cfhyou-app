@@ -920,8 +920,12 @@ function render(){
       const calcCtrl=Math.round(cappedBal*0.007*10)/10;
       // 所得税・住民税から上限を推計（ご主人の手取りから額面を逆算）
       // _calcNetBreakdown の二分探索を再利用して TAX 表の線形補間を廃止
-      const grossInc=hInc>0?hInc:0;
-      const _hLctrlBd = _calcNetBreakdown(grossInc, ha, _isSingle, wInc>0?wInc:0, true);
+      // 育休年は給付金が主体で非課税扱い→所得税0として住宅ローン控除を計算
+      const _hMatLeave = R.mlH && R.mlH[i];
+      const _wMatLeaveForSpouse = R.mlW && R.mlW[i];
+      const grossInc=(hInc>0 && !_hMatLeave)?hInc:0;
+      const spouseIncForCalc = (wInc>0 && !_wMatLeaveForSpouse) ? wInc : 0;
+      const _hLctrlBd = _calcNetBreakdown(grossInc, ha, _isSingle, spouseIncForCalc, true);
       let itax=0, jumin=0, taxableBase=0, grossEst=0;
       if(_hLctrlBd){
         grossEst=_hLctrlBd.gross;
@@ -943,10 +947,13 @@ function render(){
       _lctrlBd.jumin=jumin;  // 本来の住民税額（参考値・控除上限の根拠を可視化するため）
       _lctrlBd.juminCtrlMax=juminCtrlMax;
       _lctrlBd.taxCapTotal=taxCapTotal;
+      _lctrlBd.hMatLeave=!!_hMatLeave;  // ご主人の当年が育休フラグ（説明モーダル用）
       // ペアローン時は奥様側の税額情報も追加
       if((pairLoanMode||_flatPair)&&!_isSingle){
         // 奥様の手取りから額面を二分探索で逆算（ペアローン共働き想定で配偶者控除なし＝isHSide=false, 単身扱い）
-        const wGrossInc=wInc>0?wInc:0;
+        // 育休年は給付金が主体で非課税扱い→所得税0として住宅ローン控除を計算
+        const _wMatLeave = R.mlW && R.mlW[i];
+        const wGrossInc=(wInc>0 && !_wMatLeave)?wInc:0;
         const _wLctrlBd = _calcNetBreakdown(wGrossInc, wa, true, 0, false);
         let wItax=0, wJumin=0, wTaxableBase=0, wGrossEst=0;
         if(_wLctrlBd){
@@ -963,6 +970,7 @@ function render(){
         _lctrlBd.wJumin=wJumin;  // 本来の住民税額（参考値）
         _lctrlBd.wJuminCtrlMax=wJuminCtrlMax;
         _lctrlBd.wTaxCapTotal=wTaxCapTotal;
+        _lctrlBd.wMatLeave=!!_wMatLeave;  // 奥様の当年が育休フラグ（説明モーダル用）
         // 各自の計算上の控除額（自分のローン残高 × 0.7%、単独ローン上限で頭打ち）
         const hCalcAmt=Math.round(Math.min(_hBal,lctrlLimit)*0.007*10)/10;
         const wCalcAmt=Math.round(Math.min(_wBal,lctrlLimit)*0.007*10)/10;
@@ -987,7 +995,9 @@ function render(){
           const hShareBal=remainBal*(hShare/totalShare);
           const wShareBal=remainBal*(wShare/totalShare);
           // 奥様の額面・税額を二分探索で逆算
-          const wGrossInc=wInc>0?wInc:0;
+          // 育休年は給付金が主体で非課税扱い→所得税0として住宅ローン控除を計算
+          const _wJointMatLeave = R.mlW && R.mlW[i];
+          const wGrossInc=(wInc>0 && !_wJointMatLeave)?wInc:0;
           const _wJointBd=_calcNetBreakdown(wGrossInc, wa, true, 0, false);
           let wItax=0, wTaxableBase=0, wGrossEst=0;
           if(_wJointBd){

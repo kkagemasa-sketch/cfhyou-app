@@ -191,6 +191,7 @@
             <div>計算上の控除: ${explainFmt(bd.hCalcAmount,'万円')}</div>
             <div style="margin-top:4px;padding-top:4px;border-top:1px dashed #bfdbfe">推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
             <div>課税所得: ${explainFmt(bd.taxableBase,'万円')}</div>
+            ${bd.hMatLeave?'<div style="color:#d97706;font-weight:600">🍼 育休年（給付金主体・所得税0扱い）</div>':''}
             <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
             <div>本来の住民税額: ${explainFmt(bd.jumin,'万円')} <span style="color:#94a3b8">（参考）</span></div>
             <div>住民税上限: ${explainFmt(bd.juminCtrlMax,'万円')}</div>
@@ -203,6 +204,7 @@
             <div>計算上の控除: ${explainFmt(bd.wCalcAmount,'万円')}</div>
             <div style="margin-top:4px;padding-top:4px;border-top:1px dashed #fbcfe8">推定額面年収: ${explainFmt(bd.wGrossEst,'万円')}</div>
             <div>課税所得: ${explainFmt(bd.wTaxableBase,'万円')}</div>
+            ${bd.wMatLeave?'<div style="color:#d97706;font-weight:600">🍼 育休年（給付金主体・所得税0扱い）</div>':''}
             <div>所得税: ${explainFmt(bd.wItax,'万円')}</div>
             <div>本来の住民税額: ${explainFmt(bd.wJumin,'万円')} <span style="color:#94a3b8">（参考）</span></div>
             <div>住民税上限: ${explainFmt(bd.wJuminCtrlMax,'万円')}</div>
@@ -221,6 +223,7 @@
         <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 税額計算（ご主人様）</div>
         <div>推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
         <div>課税所得ベース: ${explainFmt(bd.taxableBase,'万円')}</div>
+        ${bd.hMatLeave?'<div style="color:#d97706;font-weight:600">🍼 育休年（給付金主体・所得税0扱い）</div>':''}
         <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
         <div>本来の住民税額: ${explainFmt(bd.jumin,'万円')} <span style="color:#94a3b8">（参考・所得割10%＋均等割5,000円）</span></div>
         <div>住民税控除上限: ${explainFmt(bd.juminCtrlMax,'万円')} <span style="color:#94a3b8">（課税所得×5%、上限9.75万円）</span></div>
