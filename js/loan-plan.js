@@ -399,27 +399,58 @@ function renderLoanTab(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px">
         <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px">🔄 繰上返済シミュレーション</div>
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <button class="btn-tog on" id="pp-type-term" onclick="setPPType('term')" style="flex:1;font-size:11px;padding:5px">期間短縮型</button>
-          <button class="btn-tog" id="pp-type-reduce" onclick="setPPType('reduce')" style="flex:1;font-size:11px;padding:5px">返済額軽減型</button>
-        </div>
-        <!-- 期間短縮型 -->
-        <div id="pp-term-body">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:6px">短縮したい期間を入力 → その元金分を繰上返済した場合の利息軽減効果</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-            <div class="fg"><label class="lbl">短縮開始</label><div class="suf"><input class="inp age-inp" id="pp-term-from" type="number" value="" placeholder="例:30" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目〜</span></div></div>
-            <div class="fg"><label class="lbl">短縮終了</label><div class="suf"><input class="inp age-inp" id="pp-term-to" type="number" value="" placeholder="例:35" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目</span></div></div>
+        <!-- A側（単独ローン時もこちらを使う） -->
+        <div id="pp-section-a">
+          <div id="pp-section-a-title" style="font-size:11px;font-weight:700;color:#1e5a9a;margin-bottom:4px;display:none">👤 ご本人（A）</div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button class="btn-tog on" id="pp-type-term" onclick="setPPType('term','a')" style="flex:1;font-size:11px;padding:5px">期間短縮型</button>
+            <button class="btn-tog" id="pp-type-reduce" onclick="setPPType('reduce','a')" style="flex:1;font-size:11px;padding:5px">返済額軽減型</button>
           </div>
-          <div id="pp-term-info" style="font-size:11px;color:var(--muted)"></div>
-        </div>
-        <!-- 返済額軽減型 -->
-        <div id="pp-reduce-body" style="display:none">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:6px">繰上返済後の希望月額から逆算して必要な繰上返済額を計算</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-            <div class="fg"><label class="lbl">繰上返済実行年</label><div class="suf"><input class="inp age-inp" id="pp-reduce-yr" type="number" value="" placeholder="例:5" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目</span></div></div>
-            <div class="fg"><label class="lbl">希望月額</label><div class="suf"><input class="inp amt-inp" id="pp-reduce-mp" type="number" value="" placeholder="円" min="0" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">円</span></div></div>
+          <div id="pp-term-body">
+            <div style="font-size:9px;color:var(--muted);margin-bottom:6px">短縮したい期間を入力 → その元金分を繰上返済した場合の利息軽減効果</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+              <div class="fg"><label class="lbl">短縮開始</label><div class="suf"><input class="inp age-inp" id="pp-term-from" type="number" value="" placeholder="例:30" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目〜</span></div></div>
+              <div class="fg"><label class="lbl">短縮終了</label><div class="suf"><input class="inp age-inp" id="pp-term-to" type="number" value="" placeholder="例:35" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目</span></div></div>
+            </div>
+            <div id="pp-term-info" style="font-size:11px;color:var(--muted)"></div>
           </div>
-          <div id="pp-reduce-info" style="font-size:11px;color:var(--muted)"></div>
+          <div id="pp-reduce-body" style="display:none">
+            <div style="font-size:9px;color:var(--muted);margin-bottom:6px">繰上返済後の希望月額から逆算して必要な繰上返済額を計算</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+              <div class="fg"><label class="lbl">繰上返済実行年</label><div class="suf"><input class="inp age-inp" id="pp-reduce-yr" type="number" value="" placeholder="例:5" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目</span></div></div>
+              <div class="fg"><label class="lbl">希望月額</label><div class="suf"><input class="inp amt-inp" id="pp-reduce-mp" type="number" value="" placeholder="円" min="0" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">円</span></div></div>
+            </div>
+            <div id="pp-reduce-info" style="font-size:11px;color:var(--muted)"></div>
+          </div>
+        </div>
+        <!-- B側（ペアローン時のみ表示） -->
+        <div id="pp-section-b" style="display:none;border-top:1px dashed var(--border);margin-top:12px;padding-top:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="font-size:11px;font-weight:700;color:#9a1e5a">👫 配偶者（B）</div>
+            <label style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer">
+              <input type="checkbox" id="pp-sync-b" onchange="onPPSyncBToggle()" style="cursor:pointer"> Aと同じ
+            </label>
+          </div>
+          <div id="pp-section-b-body">
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <button class="btn-tog on" id="pp-type-term-b" onclick="setPPType('term','b')" style="flex:1;font-size:11px;padding:5px">期間短縮型</button>
+              <button class="btn-tog" id="pp-type-reduce-b" onclick="setPPType('reduce','b')" style="flex:1;font-size:11px;padding:5px">返済額軽減型</button>
+            </div>
+            <div id="pp-term-body-b">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+                <div class="fg"><label class="lbl">短縮開始</label><div class="suf"><input class="inp age-inp" id="pp-term-from-b" type="number" value="" placeholder="例:30" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目〜</span></div></div>
+                <div class="fg"><label class="lbl">短縮終了</label><div class="suf"><input class="inp age-inp" id="pp-term-to-b" type="number" value="" placeholder="例:35" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目</span></div></div>
+              </div>
+              <div id="pp-term-info-b" style="font-size:11px;color:var(--muted)"></div>
+            </div>
+            <div id="pp-reduce-body-b" style="display:none">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+                <div class="fg"><label class="lbl">繰上返済実行年</label><div class="suf"><input class="inp age-inp" id="pp-reduce-yr-b" type="number" value="" placeholder="例:5" min="1" max="50" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">年目</span></div></div>
+                <div class="fg"><label class="lbl">希望月額</label><div class="suf"><input class="inp amt-inp" id="pp-reduce-mp-b" type="number" value="" placeholder="円" min="0" onchange="renderLoanCalc()" style="font-size:11px"><span class="sl">円</span></div></div>
+              </div>
+              <div id="pp-reduce-info-b" style="font-size:11px;color:var(--muted)"></div>
+            </div>
+          </div>
         </div>
       </div>
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px">
@@ -446,6 +477,13 @@ function renderLoanTab(){
     if(lp.ppTermTo&&$('pp-term-to'))$('pp-term-to').value=lp.ppTermTo;
     if(lp.ppReduceYr&&$('pp-reduce-yr'))$('pp-reduce-yr').value=lp.ppReduceYr;
     if(lp.ppReduceMP&&$('pp-reduce-mp'))$('pp-reduce-mp').value=lp.ppReduceMP;
+    // ★ B側の繰上返済入力 + sync チェック復元
+    if(lp.ppTermFromB&&$('pp-term-from-b'))$('pp-term-from-b').value=lp.ppTermFromB;
+    if(lp.ppTermToB&&$('pp-term-to-b'))$('pp-term-to-b').value=lp.ppTermToB;
+    if(lp.ppReduceYrB&&$('pp-reduce-yr-b'))$('pp-reduce-yr-b').value=lp.ppReduceYrB;
+    if(lp.ppReduceMPB&&$('pp-reduce-mp-b'))$('pp-reduce-mp-b').value=lp.ppReduceMPB;
+    if($('pp-sync-b'))$('pp-sync-b').checked=!!lp.ppSyncB;
+    if(lp.ppTypeB)setPPType(lp.ppTypeB,'b');
     if(lp.dedYear&&$('lp-ded-year'))$('lp-ded-year').value=lp.dedYear;
     if(lp.dedType&&$('lp-ded-type'))$('lp-ded-type').value=lp.dedType;
     if(lp.dedHH&&$('lp-ded-hh'))$('lp-ded-hh').value=lp.dedHH;
@@ -498,6 +536,9 @@ function togglePairLoan(on){
   if(cb)cb.style.display=on?'block':'none';
   $('lp-label-a').textContent=on?'ローンA（ご本人様）':'ローン設定';
   const taxB=$('lp-ded-tax-b');if(taxB)taxB.style.display=on?'grid':'none';
+  // ★ 繰上返済 B 側セクションの表示制御 + A 側タイトル表示
+  const ppB=$('pp-section-b');if(ppB)ppB.style.display=on?'':'none';
+  const ppATitle=$('pp-section-a-title');if(ppATitle)ppATitle.style.display=on?'':'none';
   // 入力パネル側も同期
   if(typeof setLoanMode==='function'){
     $('loan-single-tab')?.classList.toggle('on',!on);
@@ -569,7 +610,51 @@ function updateLPDedHint(){
     hint.innerHTML=`<span style="color:#1a3a6a">📋 ${yr}年入居 / ${typeNames[tp]} / ${hhName}<br>借入上限：<strong>${lmt.toLocaleString()}万円</strong>　年最大控除：<strong>${maxCtrl}万円</strong>　控除期間：<strong>${yrs}年間</strong></span>`;
   }
 }
-function setPPType(t){
+// ★ A/B 独立タイプ管理
+//   _ppType: A側（旧 _ppType を A側として継続使用）
+//   _ppTypeB: B側
+let _ppTypeB='term';
+function setPPType(t,side){
+  side=side||'a';
+  if(side==='a'){
+    _ppType=t;
+    $('pp-type-term')?.classList.toggle('on',t==='term');
+    $('pp-type-reduce')?.classList.toggle('on',t==='reduce');
+    if($('pp-term-body'))$('pp-term-body').style.display=t==='term'?'':'none';
+    if($('pp-reduce-body'))$('pp-reduce-body').style.display=t==='reduce'?'':'none';
+    // syncがONなら B も同期
+    if($('pp-sync-b')?.checked) setPPType(t,'b');
+  }else{
+    _ppTypeB=t;
+    $('pp-type-term-b')?.classList.toggle('on',t==='term');
+    $('pp-type-reduce-b')?.classList.toggle('on',t==='reduce');
+    if($('pp-term-body-b'))$('pp-term-body-b').style.display=t==='term'?'':'none';
+    if($('pp-reduce-body-b'))$('pp-reduce-body-b').style.display=t==='reduce'?'':'none';
+  }
+  if(typeof renderLoanCalc==='function')renderLoanCalc();
+}
+function onPPSyncBToggle(){
+  const checked=$('pp-sync-b')?.checked;
+  const body=$('pp-section-b-body');
+  if(body){
+    body.style.opacity=checked?'.4':'1';
+    body.style.pointerEvents=checked?'none':'';
+  }
+  if(checked){
+    // A の値を B にコピー
+    _ppTypeB=_ppType;
+    setPPType(_ppType,'b');
+    if($('pp-term-from-b')&&$('pp-term-from'))$('pp-term-from-b').value=$('pp-term-from').value;
+    if($('pp-term-to-b')&&$('pp-term-to'))$('pp-term-to-b').value=$('pp-term-to').value;
+    if($('pp-reduce-yr-b')&&$('pp-reduce-yr'))$('pp-reduce-yr-b').value=$('pp-reduce-yr').value;
+    if($('pp-reduce-mp-b')&&$('pp-reduce-mp'))$('pp-reduce-mp-b').value=$('pp-reduce-mp').value;
+  }
+  if(typeof renderLoanCalc==='function')renderLoanCalc();
+}
+window.onPPSyncBToggle = onPPSyncBToggle;
+
+// ── 旧 setPPType の本体（残置：直接呼ばれた場合のフォールバック） ──
+function _setPPType_old(t){
   _ppType=t;
   $('pp-type-term')?.classList.toggle('on',t==='term');
   $('pp-type-reduce')?.classList.toggle('on',t==='reduce');
@@ -662,108 +747,110 @@ function renderLoanCalc(){
   // 通常償還
   const normalA=amtA>0?calcAmortization(amtA,rateA,yrsA,[],'term',ratesA,optsA):[];
   const normalB=amtB>0?calcAmortization(amtB,rateB,yrsB,[],'term',ratesB,optsB):[];
-  // 繰上返済計算（A+B合算で計算）
+  // 繰上返済計算（A/B独立タイプ・入力）
   let withPPA=null,withPPB=null;
   let ppAmountA=0,ppAmountB=0,ppAmountTotal=0;
   let ppSavedTotal=0;
   const showPP=pairLoanMode&&amtB>0;
-  if(_ppType==='term'){
-    // 期間短縮型：短縮開始年〜終了年の元金分を一括繰上
-    const termFrom=_lpi('pp-term-from');
-    const termTo=_lpi('pp-term-to');
-    const maxLen=Math.max(normalA.length,normalB.length);
-    if(termFrom>0&&termTo>=termFrom&&maxLen>0){
-      // ローンA
-      if(normalA.length>0){
-        const bfA=termFrom<=1?amtA:(termFrom-1<=normalA.length?normalA[termFrom-2]?.balance||0:0);
-        const afA=termTo<=normalA.length?normalA[termTo-1]?.balance||0:0;
-        ppAmountA=Math.max(0,bfA-afA);
-        if(ppAmountA>0){
-          withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:Math.max(1,termFrom-1),amt:ppAmountA}],'term',ratesA,optsA);
+  // B側の sync 状態（チェックON時は A の入力値・タイプを使う）
+  const syncB = showPP && !!$('pp-sync-b')?.checked;
+  // ── A 側計算 ──
+  function _calcSide(type, amt, rate, yrs, ratesArr, opts, normal, mp, fromId, toId, reduceYrId, reduceMpId){
+    if(amt<=0||normal.length===0) return {ppAmt:0, withPP:null, intSaved:0};
+    if(type==='term'){
+      const from=_lpi(fromId), to=_lpi(toId);
+      if(from>0 && to>=from){
+        const bf=from<=1?amt:(from-1<=normal.length?normal[from-2]?.balance||0:0);
+        const af=to<=normal.length?normal[to-1]?.balance||0:0;
+        const ppAmt=Math.max(0,bf-af);
+        if(ppAmt>0){
+          const withPP=calcAmortization(amt,rate,yrs,[{yr:Math.max(1,from-1),amt:ppAmt}],'term',ratesArr,opts);
+          const nInt=normal.reduce((s,r)=>s+r.interest,0);
+          const ppInt=withPP.reduce((s,r)=>s+r.interest,0);
+          return {ppAmt, withPP, intSaved:nInt-ppInt};
         }
       }
-      // ローンB（ペアローン時）
-      if(showPP&&normalB.length>0){
-        const bfB=termFrom<=1?amtB:(termFrom-1<=normalB.length?normalB[termFrom-2]?.balance||0:0);
-        const afB=termTo<=normalB.length?normalB[termTo-1]?.balance||0:0;
-        ppAmountB=Math.max(0,bfB-afB);
-        if(ppAmountB>0){
-          withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:Math.max(1,termFrom-1),amt:ppAmountB}],'term',ratesB,optsB);
+    } else {
+      // reduce
+      const reduceYr=_lpi(reduceYrId), desiredMP=_lpf(reduceMpId);
+      if(reduceYr>0&&desiredMP>0&&desiredMP<mp&&normal.length>=reduceYr){
+        const bal=normal[reduceYr-1]?.balance||0;
+        const remM=(yrs-reduceYr)*12, mr=rate/12;
+        const newBal=mr>0?desiredMP*(Math.pow(1+mr,remM)-1)/(mr*Math.pow(1+mr,remM)):desiredMP*remM;
+        const ppAmt=Math.max(0,bal-newBal);
+        if(ppAmt>0){
+          const withPP=calcAmortization(amt,rate,yrs,[{yr:reduceYr,amt:ppAmt}],'reduce',ratesArr,opts);
+          const nInt=normal.reduce((s,r)=>s+r.interest,0);
+          const ppInt=withPP.reduce((s,r)=>s+r.interest,0);
+          return {ppAmt, withPP, intSaved:nInt-ppInt};
         }
       }
-      ppAmountTotal=ppAmountA+ppAmountB;
-      const nIntA=normalA.reduce((s,r)=>s+r.interest,0);
-      const nIntB=normalB.reduce((s,r)=>s+r.interest,0);
-      const ppIntA=withPPA?withPPA.reduce((s,r)=>s+r.interest,0):nIntA;
-      const ppIntB=withPPB?withPPB.reduce((s,r)=>s+r.interest,0):nIntB;
-      ppSavedTotal=(nIntA-ppIntA)+(nIntB-ppIntB);
-      const info=$('pp-term-info');
-      if(info&&ppAmountTotal>0){
-        let detail='';
-        if(showPP){
-          detail=`<div style="font-size:10px;color:var(--muted);margin-top:4px;border-top:1px solid #d1fae5;padding-top:4px">A: ${Math.round(ppAmountA).toLocaleString()}円 / B: ${Math.round(ppAmountB).toLocaleString()}円</div>`;
-        }
-        info.innerHTML=`<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:var(--rs);padding:8px;margin-top:6px">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${termFrom}年目〜${termTo}年目（${termTo-termFrom+1}年間）を短縮</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <div><span style="color:var(--muted);font-size:10px">繰上返済に必要な元金</span><br><strong style="color:var(--navy);font-size:15px">${Math.round(ppAmountTotal).toLocaleString()}</strong> <span style="font-size:10px">円</span></div>
-            <div><span style="color:var(--muted);font-size:10px">利息軽減額</span><br><strong style="color:#dc2626;font-size:15px">${Math.round(ppSavedTotal).toLocaleString()}</strong> <span style="font-size:10px">円</span></div>
-          </div>${detail}
-        </div>`;
-      }else if(info){info.innerHTML='';}
-    }else{
-      const info=$('pp-term-info');if(info)info.innerHTML='';
     }
-  }else{
-    // 返済額軽減型：希望月額から逆算（A+B合算）
-    const reduceYr=_lpi('pp-reduce-yr');
-    const desiredMP=_lpf('pp-reduce-mp');
-    const totalMP=mpA+mpB;
-    if(reduceYr>0&&desiredMP>0&&desiredMP<totalMP){
-      // A+Bの合計月額を希望月額にするため、按分して繰上返済額を計算
-      const ratioA=mpA/totalMP;
-      const desiredMPA=desiredMP*ratioA;
-      const desiredMPB=showPP?desiredMP*(1-ratioA):0;
-      // ローンA
-      if(normalA.length>=reduceYr){
-        const balA=normalA[reduceYr-1]?.balance||0;
-        const remMA=(yrsA-reduceYr)*12;const mrA=rateA/12;
-        let newBalA=mrA>0?desiredMPA*(Math.pow(1+mrA,remMA)-1)/(mrA*Math.pow(1+mrA,remMA)):desiredMPA*remMA;
-        ppAmountA=Math.max(0,balA-newBalA);
-        if(ppAmountA>0)withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:reduceYr,amt:ppAmountA}],'reduce',ratesA,optsA);
-      }
-      // ローンB
-      if(showPP&&normalB.length>=reduceYr){
-        const balB=normalB[reduceYr-1]?.balance||0;
-        const remMB=(yrsB-reduceYr)*12;const mrB=rateB/12;
-        let newBalB=mrB>0?desiredMPB*(Math.pow(1+mrB,remMB)-1)/(mrB*Math.pow(1+mrB,remMB)):desiredMPB*remMB;
-        ppAmountB=Math.max(0,balB-newBalB);
-        if(ppAmountB>0)withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:reduceYr,amt:ppAmountB}],'reduce',ratesB,optsB);
-      }
-      ppAmountTotal=ppAmountA+ppAmountB;
-      const nIntA=normalA.reduce((s,r)=>s+r.interest,0);
-      const nIntB=normalB.reduce((s,r)=>s+r.interest,0);
-      const ppIntA=withPPA?withPPA.reduce((s,r)=>s+r.interest,0):nIntA;
-      const ppIntB=withPPB?withPPB.reduce((s,r)=>s+r.interest,0):nIntB;
-      ppSavedTotal=(nIntA-ppIntA)+(nIntB-ppIntB);
-      const info=$('pp-reduce-info');
-      if(info&&ppAmountTotal>0){
-        let detail='';
-        if(showPP){
-          detail=`<div style="font-size:10px;color:var(--muted);margin-top:4px;border-top:1px solid #d1fae5;padding-top:4px">A: ${Math.round(ppAmountA).toLocaleString()}円 / B: ${Math.round(ppAmountB).toLocaleString()}円</div>`;
-        }
-        info.innerHTML=`<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:var(--rs);padding:8px;margin-top:6px">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${reduceYr}年目に繰上返済 → 月額合計 ${Math.round(desiredMP).toLocaleString()}円へ（現在 ${Math.round(totalMP).toLocaleString()}円）</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <div><span style="color:var(--muted);font-size:10px">繰上返済に必要な元金</span><br><strong style="color:var(--navy);font-size:15px">${Math.round(ppAmountTotal).toLocaleString()}</strong> <span style="font-size:10px">円</span></div>
-            <div><span style="color:var(--muted);font-size:10px">利息軽減額</span><br><strong style="color:#dc2626;font-size:15px">${Math.round(ppSavedTotal).toLocaleString()}</strong> <span style="font-size:10px">円</span></div>
-          </div>${detail}
-        </div>`;
-      }else if(info){info.innerHTML='';}
-    }else{
-      const info=$('pp-reduce-info');if(info)info.innerHTML='';
+    return {ppAmt:0, withPP:null, intSaved:0};
+  }
+  // A
+  const _resA = _calcSide(_ppType, amtA, rateA, yrsA, ratesA, optsA, normalA, mpA, 'pp-term-from','pp-term-to','pp-reduce-yr','pp-reduce-mp');
+  ppAmountA = _resA.ppAmt; withPPA = _resA.withPP;
+  // B（ペアローン時のみ）
+  if(showPP){
+    if(syncB){
+      // Aと同じタイプ・入力で計算
+      const _resB = _calcSide(_ppType, amtB, rateB, yrsB, ratesB, optsB, normalB, mpB, 'pp-term-from','pp-term-to','pp-reduce-yr','pp-reduce-mp');
+      ppAmountB = _resB.ppAmt; withPPB = _resB.withPP;
+    } else {
+      const _resB = _calcSide(_ppTypeB, amtB, rateB, yrsB, ratesB, optsB, normalB, mpB, 'pp-term-from-b','pp-term-to-b','pp-reduce-yr-b','pp-reduce-mp-b');
+      ppAmountB = _resB.ppAmt; withPPB = _resB.withPP;
     }
   }
+  ppAmountTotal = ppAmountA + ppAmountB;
+  const _nIntA = normalA.reduce((s,r)=>s+r.interest,0);
+  const _nIntB = normalB.reduce((s,r)=>s+r.interest,0);
+  const _ppIntA = withPPA?withPPA.reduce((s,r)=>s+r.interest,0):_nIntA;
+  const _ppIntB = withPPB?withPPB.reduce((s,r)=>s+r.interest,0):_nIntB;
+  ppSavedTotal = (_nIntA - _ppIntA) + (_nIntB - _ppIntB);
+  // 情報表示（A側）
+  function _renderSideInfo(side){
+    const suffix = side==='a'?'':'-b';
+    const type = side==='a' ? _ppType : (syncB?_ppType:_ppTypeB);
+    const ppAmt = side==='a' ? ppAmountA : ppAmountB;
+    const fromId = side==='a' ? 'pp-term-from' : (syncB?'pp-term-from':'pp-term-from-b');
+    const toId   = side==='a' ? 'pp-term-to'   : (syncB?'pp-term-to':'pp-term-to-b');
+    const ryrId  = side==='a' ? 'pp-reduce-yr' : (syncB?'pp-reduce-yr':'pp-reduce-yr-b');
+    const rmpId  = side==='a' ? 'pp-reduce-mp' : (syncB?'pp-reduce-mp':'pp-reduce-mp-b');
+    const termInfoEl=$('pp-term-info'+suffix);
+    const reduceInfoEl=$('pp-reduce-info'+suffix);
+    if(termInfoEl)termInfoEl.innerHTML='';
+    if(reduceInfoEl)reduceInfoEl.innerHTML='';
+    if(ppAmt<=0)return;
+    if(type==='term'){
+      const from=_lpi(fromId), to=_lpi(toId);
+      const intSaved = side==='a' ? (_nIntA-_ppIntA) : (_nIntB-_ppIntB);
+      if(termInfoEl){
+        termInfoEl.innerHTML=`<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:var(--rs);padding:8px;margin-top:6px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${from}年目〜${to}年目（${to-from+1}年間）を短縮</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div><span style="color:var(--muted);font-size:10px">必要な元金</span><br><strong style="color:var(--navy);font-size:14px">${Math.round(ppAmt).toLocaleString()}</strong> <span style="font-size:10px">円</span></div>
+            <div><span style="color:var(--muted);font-size:10px">利息軽減</span><br><strong style="color:#dc2626;font-size:14px">${Math.round(intSaved).toLocaleString()}</strong> <span style="font-size:10px">円</span></div>
+          </div>
+        </div>`;
+      }
+    } else {
+      const reduceYr=_lpi(ryrId), desiredMP=_lpf(rmpId);
+      const intSaved = side==='a' ? (_nIntA-_ppIntA) : (_nIntB-_ppIntB);
+      if(reduceInfoEl){
+        reduceInfoEl.innerHTML=`<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:var(--rs);padding:8px;margin-top:6px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${reduceYr}年目に繰上返済 → 月額${Math.round(desiredMP).toLocaleString()}円へ</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div><span style="color:var(--muted);font-size:10px">必要な元金</span><br><strong style="color:var(--navy);font-size:14px">${Math.round(ppAmt).toLocaleString()}</strong> <span style="font-size:10px">円</span></div>
+            <div><span style="color:var(--muted);font-size:10px">利息軽減</span><br><strong style="color:#dc2626;font-size:14px">${Math.round(intSaved).toLocaleString()}</strong> <span style="font-size:10px">円</span></div>
+          </div>
+        </div>`;
+      }
+    }
+  }
+  _renderSideInfo('a');
+  if(showPP) _renderSideInfo('b');
+  // ── 旧ロジックは新 _calcSide / _renderSideInfo に完全置換済み ──
   // 住宅ローン控除（LCTRL_TABLE連動）
   const dedYr=parseInt($('lp-ded-year')?.value)||2026;
   const dedTp=$('lp-ded-type')?.value||'new_eco';

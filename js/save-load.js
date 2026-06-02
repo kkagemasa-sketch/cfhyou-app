@@ -333,9 +333,13 @@ function _collectDynamic(){
   // 返済計画タブ
   d.loanPlan={
     isPairLoan:pairLoanMode, ppType:_ppType,
+    // ★ B側タイプ・入力（ペアローン時の独立繰上返済）
+    ppTypeB:(typeof _ppTypeB!=='undefined'?_ppTypeB:'term'),
+    ppSyncB:!!$('pp-sync-b')?.checked,
     amtA:$('lp-amt-a')?.value||'',rateA:$('lp-rate-a')?.value||'',yrsA:$('lp-yrs-a')?.value||'',methodA:$('lp-method-a')?.value||'',
     amtB:$('lp-amt-b')?.value||'',rateB:$('lp-rate-b')?.value||'',yrsB:$('lp-yrs-b')?.value||'',methodB:$('lp-method-b')?.value||'',
     ppTermFrom:$('pp-term-from')?.value||'',ppTermTo:$('pp-term-to')?.value||'',ppReduceYr:$('pp-reduce-yr')?.value||'',ppReduceMP:$('pp-reduce-mp')?.value||'',
+    ppTermFromB:$('pp-term-from-b')?.value||'',ppTermToB:$('pp-term-to-b')?.value||'',ppReduceYrB:$('pp-reduce-yr-b')?.value||'',ppReduceMPB:$('pp-reduce-mp-b')?.value||'',
     dedYear:$('lp-ded-year')?.value||'',dedType:$('lp-ded-type')?.value||'',dedHH:$('lp-ded-hh')?.value||'',
     grossH:$('lp-ded-gross-h')?.value||'',grossW:$('lp-ded-gross-w')?.value||'',
     dedMode:_lctrlDedMode,manualDed:_lctrlDedMode==='manual'?getLctrlManualValues():[],
@@ -748,6 +752,10 @@ function _restoreDynamic(d){
     const lp=d.loanPlan;
     // pairLoanModeはsetLoanMode()で設定済み（isPairLoanは後方互換）
     _ppType=lp.ppType||'term';
+    // ★ B側タイプも復元（旧データでは ppTypeB なし → A と同じにフォールバック）
+    if(typeof window._ppTypeB!=='undefined'||true){
+      try{ _ppTypeB=lp.ppTypeB||_ppType||'term'; }catch(e){}
+    }
     // renderLoanTab呼び出し後に値を復元するためにフラグ保持
     window._pendingLoanPlan=lp;
   }
