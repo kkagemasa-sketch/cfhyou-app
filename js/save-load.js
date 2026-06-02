@@ -827,6 +827,19 @@ function _collectSaveData(){
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   return d;
 }
+// ★ 自動保存・更新ボタン用：全シナリオを含む完全な状態を返す
+//    （単一シナリオの _collectSaveData() に scenarios + activeScenarioId を追加）
+//    これがないと更新ボタンで複製CF表が消えるバグになる
+function _collectFullState(){
+  try{
+    if(typeof scenarios!=='undefined'&&Array.isArray(scenarios)&&scenarios.length>0){
+      const _cur=scenarios.find(s=>s.id===activeScenarioId);
+      if(_cur) _cur.data=_collectSaveData();
+      return {..._collectSaveData(),scenarios:JSON.parse(JSON.stringify(scenarios)),activeScenarioId};
+    }
+  }catch(e){console.warn('シナリオ収集失敗、単一シナリオで保存:',e);}
+  return _collectSaveData();
+}
 function _updateUndoRedoBtns(){
   const u=document.getElementById('btn-undo');
   const r=document.getElementById('btn-redo');
@@ -1123,7 +1136,8 @@ function scheduleAutoSave(){
   clearTimeout(_autoSaveTimer);
   _autoSaveTimer=setTimeout(async()=>{
     try{
-      await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:_collectSaveData()});
+      // ★ scenarios含む完全状態で保存（複製CF表が消えないように）
+      await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:_collectFullState()});
     }catch(e){}
   },2000);
 }
@@ -1136,7 +1150,8 @@ function _saveNow(){
     if(document.activeElement && document.activeElement.blur && document.activeElement!==document.body){
       document.activeElement.blur();
     }
-    const data=_collectSaveData();
+    // ★ scenarios含む完全状態で保存（複製CF表が消えないように）
+    const data=_collectFullState();
     // ★ localStorageへ同期保存（IndexedDBが間に合わなくてもこれが残る）
     try{ localStorage.setItem('cf_refresh_backup_v1', JSON.stringify({data, ts:Date.now()})); }catch(e){}
     // IndexedDBへも非同期で保存試行
@@ -1156,7 +1171,8 @@ async function saveAndRefresh(){
   // 少し待ってからデータ収集（blur後のDOM反映を待つ）
   await new Promise(r=>setTimeout(r, 50));
   let data=null;
-  try{ data=_collectSaveData(); }catch(e){ console.error('データ収集エラー:',e); }
+  // ★ scenarios含む完全状態で保存（複製CF表が消えないように）
+  try{ data=_collectFullState(); }catch(e){ console.error('データ収集エラー:',e); }
   // ★ 同期的にlocalStorageへバックアップ（IndexedDBが失敗してもこれが残る）
   if(data){
     try{ localStorage.setItem('cf_refresh_backup_v1', JSON.stringify({data, ts:Date.now()})); }catch(e){console.warn('localStorage保存失敗:',e);}
