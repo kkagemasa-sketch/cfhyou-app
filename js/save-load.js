@@ -392,8 +392,10 @@ function _restoreDynamic(d){
       if(document.getElementById(`${base}-net-from`))document.getElementById(`${base}-net-from`).value=s.netFrom||'';
       if(document.getElementById(`${base}-net-to`))document.getElementById(`${base}-net-to`).value=s.netTo||'';
       if(s.mode==='pct'&&typeof setStepMode==='function'){
-        setStepMode(base,'pct');
+        // ★ 順序重要：pct値を先にセットしないと setStepMode→calcPctIncome が
+        //   デフォルトpct=100%で netFrom/netTo を上書きしてしまう（育休給付金リセットバグ）
         if(document.getElementById(`${base}-pct`))document.getElementById(`${base}-pct`).value=s.pct||'100';
+        setStepMode(base,'pct');
       }
       if(document.getElementById(`${base}-leave`))document.getElementById(`${base}-leave`).value=s.leave||'';
       const mlCb=document.getElementById(`${base}-matleave`);
