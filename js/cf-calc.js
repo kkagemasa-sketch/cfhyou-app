@@ -921,8 +921,10 @@ function render(){
       // 所得税・住民税から上限を推計（ご主人の手取りから額面を逆算）
       // _calcNetBreakdown の二分探索を再利用して TAX 表の線形補間を廃止
       // 育休年は給付金が主体で非課税扱い→所得税0として住宅ローン控除を計算
-      const _hMatLeave = R.mlH && R.mlH[i];
-      const _wMatLeaveForSpouse = R.mlW && R.mlW[i];
+      // ★ R.mlH/mlW.push はループ後半（line 2099/2117）で実行されるため、
+      //   ここでは _hStepLeaves/_wStepLeaves から直接判定する必要がある
+      const _hMatLeave = _hStepLeaves.some(s=>s.isMatLeave&&ha>=s.fromAge&&ha<=s.toAge);
+      const _wMatLeaveForSpouse = _wStepLeaves.some(s=>s.isMatLeave&&wa>=s.fromAge&&wa<=s.toAge);
       const grossInc=(hInc>0 && !_hMatLeave)?hInc:0;
       const spouseIncForCalc = (wInc>0 && !_wMatLeaveForSpouse) ? wInc : 0;
       const _hLctrlBd = _calcNetBreakdown(grossInc, ha, _isSingle, spouseIncForCalc, true);
@@ -952,7 +954,8 @@ function render(){
       if((pairLoanMode||_flatPair)&&!_isSingle){
         // 奥様の手取りから額面を二分探索で逆算（ペアローン共働き想定で配偶者控除なし＝isHSide=false, 単身扱い）
         // 育休年は給付金が主体で非課税扱い→所得税0として住宅ローン控除を計算
-        const _wMatLeave = R.mlW && R.mlW[i];
+        // ★ R.mlW.push はループ後半（line 2117）で実行されるため _wStepLeaves から直接判定
+        const _wMatLeave = _wStepLeaves.some(s=>s.isMatLeave&&wa>=s.fromAge&&wa<=s.toAge);
         const wGrossInc=(wInc>0 && !_wMatLeave)?wInc:0;
         const _wLctrlBd = _calcNetBreakdown(wGrossInc, wa, true, 0, false);
         let wItax=0, wJumin=0, wTaxableBase=0, wGrossEst=0;
@@ -996,7 +999,8 @@ function render(){
           const wShareBal=remainBal*(wShare/totalShare);
           // 奥様の額面・税額を二分探索で逆算
           // 育休年は給付金が主体で非課税扱い→所得税0として住宅ローン控除を計算
-          const _wJointMatLeave = R.mlW && R.mlW[i];
+          // ★ R.mlW.push はループ後半で実行されるため _wStepLeaves から直接判定
+          const _wJointMatLeave = _wStepLeaves.some(s=>s.isMatLeave&&wa>=s.fromAge&&wa<=s.toAge);
           const wGrossInc=(wInc>0 && !_wJointMatLeave)?wInc:0;
           const _wJointBd=_calcNetBreakdown(wGrossInc, wa, true, 0, false);
           let wItax=0, wTaxableBase=0, wGrossEst=0;
