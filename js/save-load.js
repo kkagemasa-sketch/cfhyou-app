@@ -1186,6 +1186,20 @@ async function saveAndRefresh(){
   window.location.href=window.location.pathname+'?v='+Date.now();
 }
 window.saveAndRefresh = saveAndRefresh;
+// ★ シナリオを含む完全な状態の復元処理（restoreAutoSave で複製CF表が消えないように）
+function _restoreScenarios(data){
+  if(!data)return;
+  if(Array.isArray(data.scenarios)&&data.scenarios.length>0){
+    scenarios=JSON.parse(JSON.stringify(data.scenarios));
+    activeScenarioId=data.activeScenarioId||scenarios[0].id;
+    scenarioCnt=Math.max(...scenarios.map(s=>s.id));
+  }else{
+    scenarios=[{id:1,name:'CF表1',data:data}];
+    activeScenarioId=1;scenarioCnt=1;
+  }
+  if(typeof renderScenarioTabs==='function')renderScenarioTabs();
+}
+
 async function restoreAutoSave(){
   // 1. まず更新ボタンのlocalStorageバックアップを確認（最新で確実）
   let restored=false;
@@ -1196,6 +1210,7 @@ async function restoreAutoSave(){
       // 5分以内のバックアップなら採用（古いものは無視）
       if(parsed && parsed.data && parsed.ts && (Date.now()-parsed.ts)<5*60*1000){
         _applyData(parsed.data);
+        _restoreScenarios(parsed.data);  // ★ シナリオも復元
         _autoSaveRestored=true;
         restored=true;
         // 採用したら削除（次回以降はIndexedDBから読む）
@@ -1209,6 +1224,7 @@ async function restoreAutoSave(){
       const entry=await dbGet(AUTOSAVE_KEY);
       if(entry&&entry.data){
         _applyData(entry.data);
+        _restoreScenarios(entry.data);  // ★ シナリオも復元
         _autoSaveRestored=true;
       }
     }catch(e){}
