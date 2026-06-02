@@ -86,7 +86,7 @@ function live(force){
       clearTimeout(indicatorTimer);
       indicatorTimer=setTimeout(()=>{ind.style.display='none';},1200);
     }
-  },600);
+  },800);  // ★ レベル2最適化: 600ms → 800ms（連続入力時の再計算頻度を抑制）
 }
 
 // ===== バリデーション =====

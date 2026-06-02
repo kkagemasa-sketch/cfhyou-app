@@ -350,12 +350,33 @@ function formatAmtInputs(){
     });
   });
 }
-// MutationObserverで動的要素にも適用
-_amtObserver=new MutationObserver(()=>{clearTimeout(_amtObserverTimer);_amtObserverTimer=setTimeout(()=>{formatAmtInputs();setupAmtInputs();},200)});
+// ★ レベル2最適化: MutationObserver の throttle を 200ms → 500ms に緩和
+//   入力欄の動的検知が少し遅れるが、render後の重い再スキャンが減って体感軽くなる
+_amtObserver=new MutationObserver(()=>{clearTimeout(_amtObserverTimer);_amtObserverTimer=setTimeout(()=>{formatAmtInputs();setupAmtInputs();},500)});
 document.addEventListener('DOMContentLoaded',()=>{
   _amtObserver.observe(document.body,{childList:true,subtree:true});
   formatAmtInputs();setupAmtInputs();
 });
+
+// ★ レベル1最適化: CF表スクロール中は hover 効果を CSS で無効化
+//   body.cf-scrolling が付いている間、.cf td:hover のスタイルが無効になる
+(function(){
+  let _scrollTimer=null;
+  let _scrolling=false;
+  function onScroll(){
+    if(!_scrolling){
+      _scrolling=true;
+      document.body.classList.add('cf-scrolling');
+    }
+    clearTimeout(_scrollTimer);
+    _scrollTimer=setTimeout(()=>{
+      document.body.classList.remove('cf-scrolling');
+      _scrolling=false;
+    },150);
+  }
+  // CF表エリアと tbl-wrap のスクロールを監視
+  document.addEventListener('scroll',onScroll,{passive:true,capture:true});
+})();
 
 // ===== Undo/Redo キーボードショートカット =====
 document.addEventListener('keydown',e=>{

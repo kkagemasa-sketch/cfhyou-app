@@ -292,8 +292,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* ============================================================
    CF表：テーブル共通
    ============================================================ */
-.cf{border-collapse:separate;border-spacing:0;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace;contain:layout style;table-layout:fixed}
+.cf{border-collapse:separate;border-spacing:0;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace;contain:layout style;table-layout:fixed;
+  /* ★ スクロール最適化: GPU レイヤー化 + 行ごとの content-visibility */
+  transform:translateZ(0);backface-visibility:hidden}
 .cf th,.cf td{border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;padding:3px 6px;white-space:nowrap;min-width:48px;width:48px;text-align:right}
+/* ★ スクロール最適化: 画面外行の描画スキップ（90歳長期データで効果大）
+   ※ tr に対して content-visibility:auto + contain-intrinsic-size で
+      可視領域外の行を描画コストから除外する。 */
+.cf tbody tr{content-visibility:auto;contain-intrinsic-size:auto 28px}
+/* ★ スクロール中はホバー効果を無効化（body.cf-scrolling クラスで切替） */
+body.cf-scrolling .cf td:hover{background:inherit!important;box-shadow:none!important}
+body.cf-scrolling .cf tbody tr:hover{background:inherit!important}
 
 /* 固定左2列（contain:paintはz-indexを壊すため使用禁止） */
 .cf th:first-child,.cf td:first-child{position:-webkit-sticky;position:sticky;left:0;z-index:8;min-width:86px;max-width:86px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;text-align:left;font-size:10px;border-right:none!important;contain:layout style}
