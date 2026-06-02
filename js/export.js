@@ -1234,9 +1234,13 @@ function _appendDisclaimerSheet(wb, clientName){
   const taxBaseDate = `${_dObj.getFullYear()}年${_dObj.getMonth()+1}月`;
 
   // 行データ: [type, text]  type: title/meta/lead/alert/section/body-bullet/footer/spacer
-  const footerCompanyLine = company;
-  const footerNameLine    = (fpName && fpName!=='—') ? `担当：${fpName}` : '';
-  const footerContactLine = contact || '';
+  // ★ 使用者情報は3行構成（スクショ仕様）：
+  //   1行目: 会社名 ＋ 担当者名（「会社名　担当：氏名」）
+  //   2行目: 住所
+  //   3行目: 電話番号 ＋ メールアドレス
+  const footerLine1 = [company, (fpName && fpName!=='—') ? `担当：${fpName}` : ''].filter(Boolean).join('　');
+  const footerLine2 = pi.address || '';
+  const footerLine3 = [pi.tel, pi.email].filter(Boolean).join('　');
   const L = [
     ['title', 'ライフプラン シミュレーション結果 ― ご確認事項'],
     ['meta', `お客様：${cn}　／　作成日：${dateStr}`],
@@ -1276,7 +1280,9 @@ function _appendDisclaimerSheet(wb, clientName){
     ['body-bullet', '・ご不明点や前提条件の確認事項がありましたら、その都度ご相談ください'],
     ['body-bullet', '・本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません'],
     ['spacer', ''],
-    ['footer', [footerCompanyLine, footerNameLine, footerContactLine].filter(Boolean).join('　／　')]
+    ['footer', footerLine1],
+    ['footer', footerLine2],
+    ['footer', footerLine3]
   ];
 
   // 行データのみの配列（AOA）
