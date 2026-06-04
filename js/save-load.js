@@ -283,6 +283,8 @@ function _collectDynamic(){
       cost:document.getElementById('repair-cost'+id)?.value||'200'
     });
   });
+  // 買い替えイベント
+  d.swapEvents = (typeof getSwapEvents==='function') ? getSwapEvents() : [];
   d.carCnt=carCnt;
   d.cars=[];
   document.querySelectorAll('#car-list>[id^="car-"]').forEach(el=>{
@@ -704,6 +706,12 @@ function _restoreDynamic(d){
   const parkToEl=document.getElementById('park-to-age');
   if(parkToEl&&d.parkToAge)parkToEl.value=d.parkToAge;
   // 動的修繕周期の復元
+  // 買い替えイベント復元
+  if(typeof addSwapEvent==='function'){
+    const cont=document.getElementById('swap-events-cont');
+    if(cont)cont.innerHTML='';
+    (d.swapEvents||[]).forEach(ev=>addSwapEvent(ev));
+  }
   if(d.repairCycles&&d.repairCycles.length>0){
     document.getElementById('repair-cont').innerHTML='';
     repairCnt=0;

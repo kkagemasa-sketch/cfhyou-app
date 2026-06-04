@@ -119,6 +119,148 @@ function toggleLeasehold(){
 }
 window.toggleLeasehold = toggleLeasehold;
 
+// ===== 買い替えイベント（最大2回） =====
+let _swapCnt = 0;
+function addSwapEvent(data){
+  const cont=document.getElementById('swap-events-cont');
+  if(!cont)return;
+  const existing=cont.querySelectorAll('.swap-event').length;
+  if(existing>=2){alert('買い替えは最大2回までです');return;}
+  _swapCnt++;
+  const id=_swapCnt;
+  const d=data||{};
+  const card=document.createElement('div');
+  card.className='swap-event';
+  card.id=`swap-${id}`;
+  card.style.cssText='background:#fef3e2;border:1.5px solid #f59e0b;border-radius:7px;padding:10px;margin-bottom:8px;position:relative';
+  card.innerHTML=`
+    <button class="btn-rm" onclick="removeSwapEvent(${id})" style="position:absolute;top:6px;right:6px;font-size:10px">× 削除</button>
+    <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">🔄 買い替えイベント ${existing+1}</div>
+    <div class="g3" style="margin-bottom:6px">
+      <div class="fg"><label class="lbl" style="font-size:9px">実行年齢（ご主人様）</label>
+        <div class="suf"><input class="inp age-inp" id="sw-${id}-age" type="number" value="${d.age||''}" placeholder="例:60" min="25" max="95" oninput="live()"><span class="sl">歳</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:9px">売却額</label>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-sell" type="number" value="${d.sell||''}" placeholder="例:3500" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:9px">新居 住宅価格</label>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-price" type="number" value="${d.price||''}" placeholder="例:3000" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+    </div>
+    <div class="g3" style="margin-bottom:6px">
+      <div class="fg"><label class="lbl" style="font-size:9px">新居 頭金</label>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-down" type="number" value="${d.down||''}" placeholder="例:1000" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:9px">新居 諸費用</label>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-cost" type="number" value="${d.cost||''}" placeholder="例:100" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:9px">引越・家具家電</label>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-move" type="number" value="${d.move||''}" placeholder="例:100" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <div class="tc on" id="sw-${id}-loan-single" onclick="setSwapLoanMode(${id},'single')" style="flex:1;padding:3px 8px;font-size:10px">単独ローン</div>
+      <div class="tc" id="sw-${id}-loan-pair" onclick="setSwapLoanMode(${id},'pair')" style="flex:1;padding:3px 8px;font-size:10px">ペアローン</div>
+    </div>
+    <div id="sw-${id}-loan-single-body">
+      <div class="g3">
+        <div class="fg"><label class="lbl" style="font-size:9px">借入額</label>
+          <div class="suf"><input class="inp amt-inp" id="sw-${id}-loanAmt" type="number" value="${d.loanAmt||''}" placeholder="例:2000" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">期間</label>
+          <div class="suf"><input class="inp age-inp" id="sw-${id}-loanYrs" type="number" value="${d.loanYrs||'25'}" placeholder="例:25" min="1" max="50" oninput="live()"><span class="sl">年</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">金利</label>
+          <div class="suf"><input class="inp" id="sw-${id}-loanRate" type="number" value="${d.loanRate||'1.2'}" placeholder="例:1.2" min="0" max="10" step="0.01" oninput="live()" style="font-size:11px"><span class="sl">%</span></div></div>
+      </div>
+    </div>
+    <div id="sw-${id}-loan-pair-body" style="display:none">
+      <div class="sub" style="font-size:10px;margin-top:4px">👤 ご主人様</div>
+      <div class="g3">
+        <div class="fg"><label class="lbl" style="font-size:9px">借入額</label>
+          <div class="suf"><input class="inp amt-inp" id="sw-${id}-loanAmtH" type="number" value="${d.loanAmtH||''}" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">期間</label>
+          <div class="suf"><input class="inp age-inp" id="sw-${id}-loanYrsH" type="number" value="${d.loanYrsH||'25'}" min="1" max="50" oninput="live()"><span class="sl">年</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">金利</label>
+          <div class="suf"><input class="inp" id="sw-${id}-loanRateH" type="number" value="${d.loanRateH||'1.2'}" min="0" max="10" step="0.01" oninput="live()" style="font-size:11px"><span class="sl">%</span></div></div>
+      </div>
+      <div class="sub" style="font-size:10px;margin-top:4px">👩 奥様</div>
+      <div class="g3">
+        <div class="fg"><label class="lbl" style="font-size:9px">借入額</label>
+          <div class="suf"><input class="inp amt-inp" id="sw-${id}-loanAmtW" type="number" value="${d.loanAmtW||''}" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">期間</label>
+          <div class="suf"><input class="inp age-inp" id="sw-${id}-loanYrsW" type="number" value="${d.loanYrsW||'25'}" min="1" max="50" oninput="live()"><span class="sl">年</span></div></div>
+        <div class="fg"><label class="lbl" style="font-size:9px">金利</label>
+          <div class="suf"><input class="inp" id="sw-${id}-loanRateW" type="number" value="${d.loanRateW||'1.2'}" min="0" max="10" step="0.01" oninput="live()" style="font-size:11px"><span class="sl">%</span></div></div>
+      </div>
+    </div>
+    <div class="g3" style="margin-top:6px">
+      <div class="fg"><label class="lbl" style="font-size:9px">新居 修繕費（年）任意</label>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-rep" type="number" value="${d.rep||''}" placeholder="空欄=現住継続" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:9px">新居 固定資産税 任意</label>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-ptx" type="number" value="${d.ptx||''}" placeholder="空欄=現住継続" min="0" oninput="live()"><span class="sl">円/年</span></div></div>
+      <div class="fg"><label class="lbl" style="font-size:9px">管理費（マンション）任意</label>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-mgmt" type="number" value="${d.mgmt||''}" placeholder="空欄=現住継続" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
+    </div>
+    <div style="margin-top:6px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px">
+        <input type="checkbox" id="sw-${id}-lctrl" ${d.lctrl?'checked':''} onchange="live()" style="cursor:pointer"> 住宅ローン控除（2回目）を適用する
+      </label>
+    </div>
+  `;
+  cont.appendChild(card);
+  if(d.loanMode==='pair') setSwapLoanMode(id,'pair');
+  if(typeof live==='function')live();
+  return card;
+}
+function removeSwapEvent(id){
+  const el=document.getElementById(`swap-${id}`);
+  if(el){el.remove();}
+  // 再番号付け（表示用）
+  document.querySelectorAll('#swap-events-cont .swap-event').forEach((c,i)=>{
+    const titleEl=c.querySelector('div[style*="font-weight:700"]');
+    if(titleEl)titleEl.textContent=`🔄 買い替えイベント ${i+1}`;
+  });
+  if(typeof live==='function')live();
+}
+function setSwapLoanMode(id,mode){
+  document.getElementById(`sw-${id}-loan-single`)?.classList.toggle('on',mode==='single');
+  document.getElementById(`sw-${id}-loan-pair`)?.classList.toggle('on',mode==='pair');
+  const sb=document.getElementById(`sw-${id}-loan-single-body`);
+  const pb=document.getElementById(`sw-${id}-loan-pair-body`);
+  if(sb)sb.style.display=mode==='single'?'':'none';
+  if(pb)pb.style.display=mode==='pair'?'':'none';
+  if(typeof live==='function')live();
+}
+function getSwapEvents(){
+  const out=[];
+  document.querySelectorAll('#swap-events-cont .swap-event').forEach(card=>{
+    const m=card.id.match(/^swap-(\d+)$/);if(!m)return;
+    const id=m[1];
+    const _v=(suf)=>document.getElementById(`sw-${id}-${suf}`)?.value||'';
+    const _isPair=document.getElementById(`sw-${id}-loan-pair`)?.classList.contains('on');
+    out.push({
+      id, age:parseInt(_v('age'))||0,
+      sell:parseFloat(_v('sell'))||0,
+      price:parseFloat(_v('price'))||0,
+      down:parseFloat(_v('down'))||0,
+      cost:parseFloat(_v('cost'))||0,
+      move:parseFloat(_v('move'))||0,
+      loanMode:_isPair?'pair':'single',
+      loanAmt:parseFloat(_v('loanAmt'))||0,
+      loanYrs:parseInt(_v('loanYrs'))||0,
+      loanRate:parseFloat(_v('loanRate'))||0,
+      loanAmtH:parseFloat(_v('loanAmtH'))||0,
+      loanYrsH:parseInt(_v('loanYrsH'))||0,
+      loanRateH:parseFloat(_v('loanRateH'))||0,
+      loanAmtW:parseFloat(_v('loanAmtW'))||0,
+      loanYrsW:parseInt(_v('loanYrsW'))||0,
+      loanRateW:parseFloat(_v('loanRateW'))||0,
+      rep:parseFloat(_v('rep'))||null,
+      ptx:parseFloat(_v('ptx'))||null,
+      mgmt:parseFloat(_v('mgmt'))||null,
+      lctrl:!!document.getElementById(`sw-${id}-lctrl`)?.checked
+    });
+  });
+  return out.sort((a,b)=>a.age-b.age);
+}
+window.addSwapEvent = addSwapEvent;
+window.removeSwapEvent = removeSwapEvent;
+window.setSwapLoanMode = setSwapLoanMode;
+window.getSwapEvents = getSwapEvents;
+
 // ===== 住宅：頭金の資金区分切替 =====
 function setDownType(t){
   downType=t;

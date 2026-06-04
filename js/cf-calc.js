@@ -83,6 +83,8 @@ function render(){
   const _fwYrs=_flatPair?(iv('flat-loan-w-yrs')||35):0;
   const _fhType=_flatPair?($('flat-loan-h-type')?.value||'equal_payment'):'';
   const _fwType=_flatPair?($('flat-loan-w-type')?.value||'equal_payment'):'';
+  // ★ 買い替えイベント（最大2回）
+  const swapEvents = (typeof getSwapEvents==='function') ? getSwapEvents() : [];
   // 実効ローン変数（フラット35/標準で切替）
   const effLoanAmt=_flatPair?(_fhAmt+_fwAmt):pairLoanMode?(lhAmt+lwAmt):loanAmt;
   const eLoanYrs=_isFlat?(_flatPair?Math.max(_fhYrs,_fwYrs):_flatYrs):loanYrs;
@@ -137,7 +139,10 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,chidai:[],kaitai:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,chidai:[],kaitai:[],
+    // 買い替えイベント
+    swapSell:[],swapTax:[],swapPayoff:[],swapBuy:[],
+    expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
     // 自動資産取崩し: 預貯金マイナス時に有価証券から自動取崩し
     // autoLiq: 当年取崩し総額の配列
     // autoLiqTax: 当年譲渡益課税の配列
@@ -1371,10 +1376,41 @@ function render(){
     R.chidai.push(_chidaiYr);
     R.kaitai.push(_kaitaiYr);
 
+    // ─── 買い替えイベント判定 ───
+    // この年に発生する買い替えと、過去に発生して現在「アクティブ」な買い替えを判定
+    const _swapAtThisYear = swapEvents.find(sw=>sw.age===ha);
+    // 過去に発生した最新の買い替え（現在のローン・新居の状態を決める）
+    let _activeSwap = null;
+    swapEvents.forEach(sw=>{ if(sw.age>0 && sw.age<=ha) _activeSwap=sw; });
+    const _useSwapLoan = !!_activeSwap;
+    const _swapPurchaseInfo = (()=>{
+      // 取得費の決定：前回 swap の購入価格、または初回の house-price
+      if(swapEvents.length===0)return {origPrice:(fv('house-price')||0),acqAge:hAge+delivery-(cYear-1)};
+      // 最新 active swap の前回購入を取得
+      const idx=swapEvents.findIndex(s=>s===_activeSwap);
+      if(idx<=0){ return {origPrice:(fv('house-price')||0),acqAge:hAge+delivery-(cYear-1)}; }
+      const prev=swapEvents[idx-1];
+      return {origPrice:prev.price,acqAge:prev.age};
+    })();
+
     // ─── ローン返済 ───
     const loanType2=_isFlat?eLoanType:(document.getElementById('loan-type')?.value||'equal_payment');
     let lRep=0,_lRepH=0,_lRepW=0;
-    if(_flatPair){
+    if(_useSwapLoan){
+      // ★ 買い替え後のローン（最新 active swap の新ローンで計算）
+      // 買い替え年=ローン開始年とする（翌年から返済でも近似的に同年から計上）
+      const _yrOff = ha - _activeSwap.age;
+      if(_activeSwap.loanMode==='pair'){
+        if(_yrOff<_activeSwap.loanYrsH && _activeSwap.loanAmtH>0)
+          _lRepH=ri(mpay(_activeSwap.loanAmtH,_activeSwap.loanYrsH,_activeSwap.loanRateH)*12);
+        if(_yrOff<_activeSwap.loanYrsW && _activeSwap.loanAmtW>0)
+          _lRepW=ri(mpay(_activeSwap.loanAmtW,_activeSwap.loanYrsW,_activeSwap.loanRateW)*12);
+        lRep=_lRepH+_lRepW;
+      } else {
+        if(_yrOff<_activeSwap.loanYrs && _activeSwap.loanAmt>0)
+          lRep=ri(mpay(_activeSwap.loanAmt,_activeSwap.loanYrs,_activeSwap.loanRate)*12);
+      }
+    } else if(_flatPair){
       if(active){
         if(_fhAmt>0&&lcYr<_fhYrs)_lRepH=ri(_fhType==='equal_payment'?mpay(_fhAmt,_fhYrs,effRate(lcYr,_flatRates))*12:mpay_gankin_year(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr));
         if(_fwAmt>0&&lcYr<_fwYrs)_lRepW=ri(_fwType==='equal_payment'?mpay(_fwAmt,_fwYrs,effRate(lcYr,_flatRates))*12:mpay_gankin_year(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr));
@@ -1394,6 +1430,57 @@ function render(){
       }
     }
     R.lRep.push(lRep);R.lRepH.push(_lRepH);R.lRepW.push(_lRepW);
+
+    // ─── 買い替えイベント：売却・税金・買付・残債一括返済 ───
+    let _swSell=0, _swTax=0, _swPayoff=0, _swBuy=0;
+    if(_swapAtThisYear){
+      const sw=_swapAtThisYear;
+      _swSell=sw.sell;
+      // 旧ローン残債（買い替え年時点の残債）
+      // 簡略：原ローンか前回 swap のローンを使用
+      const prevIdx=swapEvents.findIndex(s=>s===sw);
+      if(prevIdx===0){
+        // 初回 swap：原ローンの残債
+        const _origYrs=loanYrs; const _origAmt=loanAmt;
+        const _yrsLapsed=ha-(hAge+delivery-(cYear-1));
+        const _origRate=effRate(_yrsLapsed,eRates)*100;  // %表記
+        if(_yrsLapsed>0 && _yrsLapsed<_origYrs && _origAmt>0){
+          _swPayoff = lbal(_origAmt,_origYrs,_origRate,_yrsLapsed);
+        }
+      } else {
+        // 2回目 swap：前回 swap のローンの残債
+        const prev=swapEvents[prevIdx-1];
+        const _yrsLapsed=ha-prev.age;
+        if(prev.loanMode==='pair'){
+          let bal=0;
+          if(_yrsLapsed>0 && _yrsLapsed<prev.loanYrsH && prev.loanAmtH>0)
+            bal+=lbal(prev.loanAmtH,prev.loanYrsH,prev.loanRateH,_yrsLapsed);
+          if(_yrsLapsed>0 && _yrsLapsed<prev.loanYrsW && prev.loanAmtW>0)
+            bal+=lbal(prev.loanAmtW,prev.loanYrsW,prev.loanRateW,_yrsLapsed);
+          _swPayoff=bal;
+        } else if(_yrsLapsed>0 && _yrsLapsed<prev.loanYrs && prev.loanAmt>0){
+          _swPayoff=lbal(prev.loanAmt,prev.loanYrs,prev.loanRate,_yrsLapsed);
+        }
+      }
+      // 譲渡所得税（簡易：3000万円特別控除 + 長期/短期判定）
+      const _origPrice=_swapPurchaseInfo.origPrice;
+      const _acqAge=_swapPurchaseInfo.acqAge;
+      const _holdYrs=ha-_acqAge;
+      const _sellCost=Math.round(sw.sell*0.03+6);  // 仲介手数料 3%+6万
+      const _profit=sw.sell-_origPrice-_sellCost;
+      const _taxable=Math.max(0,_profit-3000);  // 3000万円特別控除
+      const _isLongTerm=_holdYrs>5;
+      const _taxRate=_isLongTerm?0.20315:0.3963;
+      _swTax=Math.round(_taxable*_taxRate);
+      // 買付費用（頭金・諸費用・引越家具）
+      _swBuy=sw.down+sw.cost+sw.move;
+    }
+    R.swapSell.push(_swSell);
+    R.swapTax.push(_swTax);
+    R.swapPayoff.push(_swPayoff);
+    R.swapBuy.push(_swBuy);
+    // 売却額を当年 incT に加算（incT.push は line 1242 で実行済み）
+    if(_swSell>0) R.incT[i] = ri((R.incT[i]||0) + _swSell);
 
     // ─── 住宅固有 ───
     const el2=Math.max(1,lcYr+1);
@@ -1667,7 +1754,7 @@ function render(){
     const _idecoH=(dcIdeco.h.idecoMonthly>0&&ha<dcIdeco.h.retAge)?ri(dcIdeco.h.idecoMonthly*12):0;
     const _idecoW=(dcIdeco.w.idecoMonthly>0&&wa<dcIdeco.w.retAge)?ri(dcIdeco.w.idecoMonthly*12):0;
     R.idecoExpH.push(_idecoH);R.idecoExpW.push(_idecoW);
-    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i];
+    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i]+R.swapTax[i]+R.swapPayoff[i]+R.swapBuy[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     // ─ 自動資産取崩し（預貯金マイナス時のみ） ─
@@ -2176,8 +2263,8 @@ function render(){
   if(Object.keys(cfOverrides).length>0||cfCustomRows.length>0){
     // ★ autoLiq (自動資産取崩し) と autoLiqTax (譲渡益課税) を含めないと、
     //   手動編集発生時に年間収支から自動取崩し分が消えて計算ズレが発生
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','zaikeiRedeem','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','zaikeiRedeem','swapSell','autoLiq'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','swapTax','swapPayoff','swapBuy','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{

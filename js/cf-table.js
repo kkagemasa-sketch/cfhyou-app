@@ -159,6 +159,22 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     </div>`;
   }
 
+  // ★ 買い替えイベント一覧（あれば前提条件チップとして表示）
+  if(typeof getSwapEvents==='function'){
+    const _swEv=getSwapEvents();
+    if(_swEv.length>0){
+      let _swChips='';
+      _swEv.forEach((sw,idx)=>{
+        const _label = `${sw.age}歳: ${sw.sell.toLocaleString()}万 → ${sw.price.toLocaleString()}万`;
+        _swChips += chip('🔄',`買替${idx+1}`,_label,'#b45309');
+      });
+      h+=`<div style="border:1.5px solid #f59e0b;border-radius:var(--rs);overflow:hidden;margin-bottom:6px;background:#fff">
+        <div style="background:#fef3e2;padding:3px 12px;font-size:9px;font-weight:700;color:#92400e;letter-spacing:.06em;border-bottom:1px solid #f59e0b">🔄 買い替え・住替え予定</div>
+        <div style="display:flex;flex-wrap:wrap;align-items:stretch">${_swChips}</div>
+      </div>`;
+    }
+  }
+
   // 行2：住宅ローン条件
   const _flatLabel=_isFlat_t?`フラット${flat35Sub==='flat50'?'50':flat35Sub==='flat20'?'20':'35'}`:'';
   const _flatPt=_isFlat_t?calcFlat35Points():0;
@@ -370,6 +386,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 財形解約：終了年齢到達時の全額一括解約金
   if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
   h+=iRow('奨学金',R.scholarship,'scholarship')+iRow('児童手当',R.teate,'teate')+iRow('住宅ローン控除',R.lCtrl,'lCtrl');
+  // 買い替えイベント：旧住宅の売却額
+  if(R.swapSell&&R.swapSell.some(v=>v>0))h+=iRow('🔄 旧住宅売却額',R.swapSell,'swapSell');
   // 自動資産取崩し（預貯金マイナス補填、有価証券からの取崩し額）
   if(R.autoLiq&&R.autoLiq.some(v=>v>0)){
     h+=iRow('📤 自動資産取崩し',R.autoLiq,'autoLiq');
@@ -430,6 +448,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))h+=eRow('地代',R.chidai,'chidai');
   if(R.kaitai&&R.kaitai.some(v=>v>0))h+=eRow('解体準備金',R.kaitai,'kaitai');
+  // 買い替えイベント：旧ローン残債一括返済・譲渡所得税・新居買付費用
+  if(R.swapPayoff&&R.swapPayoff.some(v=>v>0))h+=eRow('🔄 旧ローン一括返済',R.swapPayoff,'swapPayoff');
+  if(R.swapTax&&R.swapTax.some(v=>v>0))h+=eRow('🔄 譲渡所得税',R.swapTax,'swapTax');
+  if(R.swapBuy&&R.swapBuy.some(v=>v>0))h+=eRow('🔄 新居買付費用',R.swapBuy,'swapBuy');
   if(isM)h+=eRow('修繕積立金',R.rep,'rep');
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
   children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`,ci);});
