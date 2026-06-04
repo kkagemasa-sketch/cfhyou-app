@@ -1024,6 +1024,11 @@ function _renderContingencyInner(){
     MR.furn.push(i<normalR.furn.length?normalR.furn[i]:0);
     MR.senyu.push(i<normalR.senyu.length?normalR.senyu[i]:0);
     MR.rent.push(i<normalR.rent.length?normalR.rent[i]:0);
+    // 定期借地権付き物件：地代・解体準備金（通常CFと同じ値を継承）
+    MR.chidai=MR.chidai||[];
+    MR.kaitai=MR.kaitai||[];
+    MR.chidai.push(i<(normalR.chidai?.length||0)?(normalR.chidai[i]||0):0);
+    MR.kaitai.push(i<(normalR.kaitai?.length||0)?(normalR.kaitai[i]||0):0);
     MR.houseCostArr.push(i<normalR.houseCostArr.length?normalR.houseCostArr[i]:0);
     MR.moveInCost.push(i<normalR.moveInCost.length?normalR.moveInCost[i]:0);
 
@@ -1308,7 +1313,7 @@ function _renderContingencyInner(){
     MR.zaikeiExp.push(ri(zaikeiExpVal));
 
     // 支出合計（個別計算）
-    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal);
+    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0);
     children.forEach((c,ci)=>expTotal+=MR.edu[ci][i]);
     MR.expT.push(ri(expTotal));
 
@@ -1419,7 +1424,7 @@ function _renderContingencyInner(){
   // ── mgOverrides後処理 ──
   if(Object.keys(mgOverrides).length>0){
     const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','autoLiqTax'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR[key]&&c2<MR[key].length)MR[key][c2]=val;});
@@ -1740,6 +1745,9 @@ function _renderContingencyInner(){
   h+=mgERow('家賃（引渡前）',MR.rent,null,'rent');
   if(pairLoanMode&&!_isSingle_mg){h+=mgERow('ローン返済(主)',MR.lRepH,N.lRepH,'lRepH');h+=mgERow('ローン返済(奥様)',MR.lRepW,N.lRepW,'lRepW');}
   else{h+=mgERow('住宅ローン返済',MR.lRep,N.lRep,'lRep');}
+  // 定期借地権付き物件：地代・解体準備金
+  if(MR.chidai&&MR.chidai.some(v=>v>0))h+=mgERow('地代',MR.chidai,N.chidai,'chidai');
+  if(MR.kaitai&&MR.kaitai.some(v=>v>0))h+=mgERow('解体準備金',MR.kaitai,N.kaitai,'kaitai');
   if(isM)h+=mgERow('修繕積立金',MR.rep,null,'rep');
   h+=mgERow('固定資産税',MR.ptx,null,'ptx');
   h+=mgERow('家具家電買替',MR.furn,null,'furn');

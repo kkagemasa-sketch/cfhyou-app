@@ -533,6 +533,9 @@ async function exportExcelMG(){
   addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent,null);
   if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(主)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
   else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
+  // 定期借地権付き物件：地代・解体準備金
+  if(MR.chidai&&MR.chidai.some(v=>v>0))addE(_rl('mg-chidai','地代'),MR.chidai);
+  if(MR.kaitai&&MR.kaitai.some(v=>v>0))addE(_rl('mg-kaitai','解体準備金'),MR.kaitai);
   if(isM)addE(_rl('mg-rep','修繕積立金'),MR.rep);
   addE(_rl('mg-ptx','固定資産税'),MR.ptx);
   addESkip(_rl('mg-furn','家具家電買替'),MR.furn,null);
@@ -1635,6 +1638,9 @@ async function exportExcel(){
   addE(_rl('rent','家賃（引渡前）'),R.rent);
   if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(主)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
   else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
+  // 定期借地権付き物件：地代・解体準備金
+  if(R.chidai&&R.chidai.some(v=>v>0))addE(_rl('chidai','地代'),R.chidai);
+  if(R.kaitai&&R.kaitai.some(v=>v>0))addE(_rl('kaitai','解体準備金'),R.kaitai);
   if(isM)addE(_rl('rep','修繕積立金'),R.rep);
   addE(_rl('ptx','固定資産税'),R.ptx);addE(_rl('furn','家具家電買替'),R.furn);
   addE(_rl('senyu',isM?'専有部分修繕費':'修繕費'),R.senyu);

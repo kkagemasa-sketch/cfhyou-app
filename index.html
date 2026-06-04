@@ -1203,6 +1203,31 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <span class="hint">※ 引越費用と家具・家電をまとめて入力</span>
 
+      <!-- 定期借地権付き物件（マンション・戸建て共通） -->
+      <div class="divider"></div>
+      <div class="fg" style="margin-bottom:6px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;font-weight:700;color:#7c5e1a">
+          <input type="checkbox" id="leasehold-on" onchange="toggleLeasehold()" style="cursor:pointer;accent-color:#d97706">
+          🏛️ 定期借地権付き物件
+          <span style="font-weight:400;color:var(--muted);font-size:9px">（土地は借地、地代発生）</span>
+        </label>
+      </div>
+      <div id="leasehold-body" style="display:none;background:#fff8ee;border:1px solid #ffb74d;border-radius:6px;padding:8px 10px;margin-bottom:8px">
+        <div class="g3">
+          <div class="fg"><label class="lbl" style="font-size:9px">月額地代</label>
+            <div class="suf"><input class="inp amt-inp" id="leasehold-chidai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:30000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">月額解体準備金</label>
+            <div class="suf"><input class="inp amt-inp" id="leasehold-kaitai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:5000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">借地期間</label>
+            <div class="suf"><input class="inp age-inp" id="leasehold-years" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:50" min="20" max="100" oninput="live()"><span class="sl">年</span></div></div>
+        </div>
+        <div class="fg" style="margin-top:6px">
+          <label class="lbl" style="font-size:9px">前払い地代（任意）<span style="font-weight:400;color:var(--muted)">— 契約時に一括前払い</span></label>
+          <div class="suf"><input class="inp amt-inp" id="leasehold-maeharai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:300" min="0" oninput="live()"><span class="sl">万円</span></div>
+        </div>
+        <div style="font-size:9px;color:#7c5e1a;margin-top:6px">💡 借地期間終了後は地代・解体準備金がゼロになります。期間終了時の住替えはイベントとして別途追加してください。</div>
+      </div>
+
       <!-- マンション専用 -->
       <div id="m-fields">
         <div class="divider"></div>
@@ -1697,7 +1722,7 @@ window.closeAboutModal=closeAboutModal;
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=16"></script>
-<script src="js/constants.js?v=22"></script>
+<script src="js/constants.js?v=23"></script>
 <script src="js/market-scenarios.js?v=3"></script>
 <script src="js/market-sim.js?v=6"></script>
 <script src="js/utils.js?v=24"></script>
@@ -1705,22 +1730,22 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/income.js?v=21"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=5"></script>
-<script src="js/housing.js?v=28"></script>
+<script src="js/housing.js?v=29"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=15"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=80"></script>
+<script src="js/contingency.js?v=81"></script>
 <script src="js/cf-ui.js?v=24"></script>
-<script src="js/cf-calc.js?v=66"></script>
-<script src="js/cf-table.js?v=52"></script>
+<script src="js/cf-calc.js?v=67"></script>
+<script src="js/cf-table.js?v=53"></script>
 <script src="js/cf-highlight.js?v=2"></script>
 <script src="js/graphs.js?v=5"></script>
-<script src="js/export.js?v=58"></script>
+<script src="js/export.js?v=59"></script>
 <script src="js/loan-plan.js?v=17"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=60"></script>
+<script src="js/save-load.js?v=61"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=8"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

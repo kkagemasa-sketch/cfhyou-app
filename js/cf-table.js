@@ -427,6 +427,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=eRow('生活費',R.lc,'lc')+eRow('家賃（引渡前）',R.rent,'rent');
   if(pairLoanMode&&!_isSingle_t){h+=eRow('ローン返済(主)',R.lRepH,'lRepH')+eRow('ローン返済(奥様)',R.lRepW,'lRepW');}
   else{h+=eRow('住宅ローン返済',R.lRep,'lRep');}
+  // 定期借地権付き物件：地代・解体準備金
+  if(R.chidai&&R.chidai.some(v=>v>0))h+=eRow('地代',R.chidai,'chidai');
+  if(R.kaitai&&R.kaitai.some(v=>v>0))h+=eRow('解体準備金',R.kaitai,'kaitai');
   if(isM)h+=eRow('修繕積立金',R.rep,'rep');
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
   children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`,ci);});

@@ -110,6 +110,15 @@ function toggleCostOpts(){
   if(el)el.style.display=v>0?'flex':'none';
 }
 
+// ===== 定期借地権付き物件 — チェック切替 =====
+function toggleLeasehold(){
+  const cb=document.getElementById('leasehold-on');
+  const body=document.getElementById('leasehold-body');
+  if(body)body.style.display=cb?.checked?'':'none';
+  if(typeof live==='function')live();
+}
+window.toggleLeasehold = toggleLeasehold;
+
 // ===== 住宅：頭金の資金区分切替 =====
 function setDownType(t){
   downType=t;

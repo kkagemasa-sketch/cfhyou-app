@@ -916,6 +916,8 @@ function _applyData(d){
       }
     }
     Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val||_defs[id]||'';}});
+    // 定期借地権チェックの body 表示同期
+    if(typeof toggleLeasehold==='function') toggleLeasehold();
     cfOverrides=d.cfOverrides||{};
     mgOverrides=d.mgOverrides||{};
     _cfStartYear=(d.cfStartYear===undefined||d.cfStartYear===null)?null:parseInt(d.cfStartYear);

@@ -26,7 +26,10 @@ function render(){
   const costDeduct=(costType0==='cash')?(fv('house-cost')||0):0;
   const _moveType0=document.getElementById('move-type')?.value||'own';
   const moveDeduct=(_moveType0==='other')?0:((fv('moving-cost')||0)+(fv('furniture-init')||0));
-  const initSav=cashH+cashW+cashJoint-downDeduct-costDeduct-moveDeduct;
+  // ★ 定期借地権付き物件：契約時の前払い地代を初期残高から差し引き
+  const _leaseholdOn=!!document.getElementById('leasehold-on')?.checked;
+  const _leaseholdMaeharai=_leaseholdOn?(fv('leasehold-maeharai')||0):0;
+  const initSav=cashH+cashW+cashJoint-downDeduct-costDeduct-moveDeduct-_leaseholdMaeharai;
   // ご主人収入設定
   // ※ getIncomeSteps / getIncomeAtAge はグローバル版を使用
   const hSteps=getIncomeSteps('h');
@@ -134,7 +137,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,chidai:[],kaitai:[],expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
     // 自動資産取崩し: 預貯金マイナス時に有価証券から自動取崩し
     // autoLiq: 当年取崩し総額の配列
     // autoLiqTax: 当年譲渡益課税の配列
@@ -1350,6 +1353,24 @@ function render(){
     const rentAmt=(!active&&delivery>0)?ri(rentMonthly*12):0;
     R.rent.push(rentAmt);
 
+    // ─── 定期借地権付き物件：地代・解体準備金（住宅取得後〜借地期間中のみ計上） ───
+    let _chidaiYr=0, _kaitaiYr=0;
+    if(_leaseholdOn && active){
+      // 引き渡し（active）後に計上開始
+      const _leaseYrs=iv('leasehold-years')||0;
+      const _yrsSinceDelivery=lcYr-delivery+1;  // 引き渡し年=1年目
+      const _withinLease = _leaseYrs<=0 || _yrsSinceDelivery<=_leaseYrs;
+      if(_withinLease){
+        // 円/月入力 → 万円/年に換算（CF表は万円単位）
+        const chidaiMon=fv('leasehold-chidai')||0;  // 円/月
+        const kaitaiMon=fv('leasehold-kaitai')||0;  // 円/月
+        _chidaiYr=ri(chidaiMon*12/10000);  // 万円/年
+        _kaitaiYr=ri(kaitaiMon*12/10000);
+      }
+    }
+    R.chidai.push(_chidaiYr);
+    R.kaitai.push(_kaitaiYr);
+
     // ─── ローン返済 ───
     const loanType2=_isFlat?eLoanType:(document.getElementById('loan-type')?.value||'equal_payment');
     let lRep=0,_lRepH=0,_lRepW=0;
@@ -1646,7 +1667,7 @@ function render(){
     const _idecoH=(dcIdeco.h.idecoMonthly>0&&ha<dcIdeco.h.retAge)?ri(dcIdeco.h.idecoMonthly*12):0;
     const _idecoW=(dcIdeco.w.idecoMonthly>0&&wa<dcIdeco.w.retAge)?ri(dcIdeco.w.idecoMonthly*12):0;
     R.idecoExpH.push(_idecoH);R.idecoExpW.push(_idecoW);
-    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i];
+    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     // ─ 自動資産取崩し（預貯金マイナス時のみ） ─
@@ -2156,7 +2177,7 @@ function render(){
     // ★ autoLiq (自動資産取崩し) と autoLiqTax (譲渡益課税) を含めないと、
     //   手動編集発生時に年間収支から自動取崩し分が消えて計算ズレが発生
     const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','zaikeiRedeem','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','autoLiqTax'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{
