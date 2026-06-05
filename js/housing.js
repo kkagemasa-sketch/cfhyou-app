@@ -110,6 +110,60 @@ function toggleCostOpts(){
   if(el)el.style.display=v>0?'flex':'none';
 }
 
+// ===== ペアローン／フラット35ペア：自動按分（半分デフォルト＋もう一方を自動補完） =====
+//   - side: 'h' か 'w'（変更された側）
+//   - isFlat: フラット35用かどうか
+//   ロジック：side が h なら w = 総額 - h、side が w なら h = 総額 - w
+//   総額 = 住宅価格 - 頭金 + (諸費用ローン組込なら諸費用)
+function _pairLoanTotal(isFlat){
+  const price=fv('house-price')||0;
+  const down=fv('down-payment')||0;
+  const costType=document.getElementById('cost-type')?.value||'cash';
+  const cost=(costType==='loan')?(fv('house-cost')||0):0;
+  return Math.max(0,price-down+cost);
+}
+function onPairLoanInput(side,isFlat){
+  const total=_pairLoanTotal(isFlat);
+  const prefix=isFlat?'flat-loan':'loan';
+  const hEl=document.getElementById(`${prefix}-h-amt`);
+  const wEl=document.getElementById(`${prefix}-w-amt`);
+  if(!hEl||!wEl)return;
+  if(side==='h'){
+    const h=parseFloat(String(hEl.value||'').replace(/,/g,''))||0;
+    const w=Math.max(0,total-h);
+    wEl.value=w;
+    if(wEl._rawValue!==undefined) wEl._rawValue=w;  // formatAmtInputs用
+  } else {
+    const w=parseFloat(String(wEl.value||'').replace(/,/g,''))||0;
+    const h=Math.max(0,total-w);
+    hEl.value=h;
+    if(hEl._rawValue!==undefined) hEl._rawValue=h;
+  }
+  if(typeof calcLoanAmt==='function') calcLoanAmt();
+  if(typeof live==='function') live();
+}
+function syncPairLoanHalfHalf(isFlat){
+  // ペアローン切替時：両方空または合計が総額と一致しない場合に半々で初期化
+  const total=_pairLoanTotal(isFlat);
+  if(total<=0)return;
+  const prefix=isFlat?'flat-loan':'loan';
+  const hEl=document.getElementById(`${prefix}-h-amt`);
+  const wEl=document.getElementById(`${prefix}-w-amt`);
+  if(!hEl||!wEl)return;
+  const h=parseFloat(String(hEl.value||'').replace(/,/g,''))||0;
+  const w=parseFloat(String(wEl.value||'').replace(/,/g,''))||0;
+  // 両方0、または既存値の合計が総額と乖離（誤差50万超）なら半々で再分配
+  if((h===0&&w===0)||Math.abs((h+w)-total)>50){
+    const half=Math.round(total/2);
+    hEl.value=half;
+    wEl.value=total-half;
+    if(hEl._rawValue!==undefined) hEl._rawValue=half;
+    if(wEl._rawValue!==undefined) wEl._rawValue=total-half;
+  }
+}
+window.onPairLoanInput = onPairLoanInput;
+window.syncPairLoanHalfHalf = syncPairLoanHalfHalf;
+
 // ===== 定期借地権付き物件 — チェック切替 =====
 function toggleLeasehold(){
   const cb=document.getElementById('leasehold-on');

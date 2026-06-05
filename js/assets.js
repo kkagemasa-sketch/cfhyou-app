@@ -792,6 +792,10 @@ function setLoanMode(mode){
   if(loanCategory==='flat35')updateFlat35Info();
   // 借入金額表示をモードに合わせて再計算
   if(typeof calcLoanAmt==='function')calcLoanAmt();
+  // ★ ペアローンに切替えたら半々で初期化（既に値があれば維持）
+  if(pairLoanMode && typeof syncPairLoanHalfHalf==='function'){
+    syncPairLoanHalfHalf(loanCategory==='flat35');
+  }
   // 連帯債務の場合は持分合計ヒントも初期更新
   if(jointLoanMode&&typeof syncJointShare==='function')syncJointShare(null);
   // モード切替はJS変数変化のため入力ハッシュに反映されない。強制再描画。

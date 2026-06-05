@@ -938,7 +938,7 @@ window.closeAboutModal=closeAboutModal;
           <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">👨 ご主人様ローン</div>
           <div class="g3">
             <div class="fg"><label class="lbl">借入額</label>
-              <div class="suf"><input class="inp amt-inp" id="loan-h-amt" type="number" value="2250" min="0" step="1" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" oninput="calcLoanAmt()"><span class="sl">万円</span></div></div>
+              <div class="suf"><input class="inp amt-inp" id="loan-h-amt" type="number" value="2250" min="0" step="1" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" oninput="onPairLoanInput('h',false)"><span class="sl">万円</span></div></div>
             <div class="fg"><label class="lbl">返済期間</label>
               <div class="suf"><input class="inp age-inp" id="loan-h-yrs" type="number" value="35" min="5" max="50" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
             <div class="fg"><label class="lbl">返済方式</label>
@@ -964,7 +964,7 @@ window.closeAboutModal=closeAboutModal;
           <div style="font-size:11px;font-weight:700;color:#8b1a4a;margin-bottom:8px">👩 奥様ローン</div>
           <div class="g3">
             <div class="fg"><label class="lbl">借入額</label>
-              <div class="suf"><input class="inp amt-inp" id="loan-w-amt" type="number" value="2250" min="0" step="1" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" oninput="calcLoanAmt()"><span class="sl">万円</span></div></div>
+              <div class="suf"><input class="inp amt-inp" id="loan-w-amt" type="number" value="2250" min="0" step="1" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" oninput="onPairLoanInput('w',false)"><span class="sl">万円</span></div></div>
             <div class="fg"><label class="lbl">返済期間</label>
               <div class="suf"><input class="inp age-inp" id="loan-w-yrs" type="number" value="35" min="5" max="50" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
             <div class="fg"><label class="lbl">返済方式</label>
@@ -1029,7 +1029,7 @@ window.closeAboutModal=closeAboutModal;
             <div style="font-size:10px;font-weight:700;color:#1e5a9a;margin-bottom:6px">👔 ご主人</div>
             <div class="g3">
               <div class="fg"><label class="lbl">借入額</label>
-                <div class="suf"><input class="inp amt-inp" id="flat-loan-h-amt" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" placeholder="例:2500" min="0" oninput="calcLoanAmt()"><span class="sl">万円</span></div></div>
+                <div class="suf"><input class="inp amt-inp" id="flat-loan-h-amt" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" placeholder="例:2500" min="0" oninput="onPairLoanInput('h',true)"><span class="sl">万円</span></div></div>
               <div class="fg"><label class="lbl">返済期間</label>
                 <div class="suf"><input class="inp age-inp" id="flat-loan-h-yrs" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="35" min="5" max="35" oninput="live()"><span class="sl">年</span></div></div>
               <div class="fg"><label class="lbl">返済方式</label>
@@ -1043,7 +1043,7 @@ window.closeAboutModal=closeAboutModal;
             <div style="font-size:10px;font-weight:700;color:#9a1e5a;margin-bottom:6px">👩 奥様</div>
             <div class="g3">
               <div class="fg"><label class="lbl">借入額</label>
-                <div class="suf"><input class="inp amt-inp" id="flat-loan-w-amt" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" placeholder="例:1500" min="0" oninput="calcLoanAmt()"><span class="sl">万円</span></div></div>
+                <div class="suf"><input class="inp amt-inp" id="flat-loan-w-amt" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" placeholder="例:1500" min="0" oninput="onPairLoanInput('w',true)"><span class="sl">万円</span></div></div>
               <div class="fg"><label class="lbl">返済期間</label>
                 <div class="suf"><input class="inp age-inp" id="flat-loan-w-yrs" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="35" min="5" max="35" oninput="live()"><span class="sl">年</span></div></div>
               <div class="fg"><label class="lbl">返済方式</label>
@@ -1737,10 +1737,10 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/income.js?v=21"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=5"></script>
-<script src="js/housing.js?v=30"></script>
+<script src="js/housing.js?v=31"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
-<script src="js/assets.js?v=15"></script>
+<script src="js/assets.js?v=16"></script>
 <script src="js/extras.js?v=2"></script>
 <script src="js/contingency.js?v=81"></script>
 <script src="js/cf-ui.js?v=24"></script>
