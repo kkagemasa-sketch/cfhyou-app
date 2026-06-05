@@ -164,6 +164,46 @@ function syncPairLoanHalfHalf(isFlat){
 window.onPairLoanInput = onPairLoanInput;
 window.syncPairLoanHalfHalf = syncPairLoanHalfHalf;
 
+// ===== ⑤住宅セクション：4グループ折りたたみ =====
+function toggleHousingGroup(id){
+  const group=document.getElementById(`hg-${id}`);
+  if(!group)return;
+  const body=group.querySelector('.hg-body');
+  const arrow=group.querySelector('.hg-arrow');
+  if(!body||!arrow)return;
+  const isHidden = body.hasAttribute('hidden');
+  if(isHidden){
+    body.removeAttribute('hidden');
+    arrow.textContent='▼';
+    group.dataset.collapsed='false';
+  } else {
+    body.setAttribute('hidden','');
+    arrow.textContent='▶';
+    group.dataset.collapsed='true';
+  }
+  try{ localStorage.setItem(`hg-state-${id}`, isHidden ? 'open' : 'closed'); }catch(e){}
+}
+window.toggleHousingGroup = toggleHousingGroup;
+// 初期化（localStorage 状態の復元）
+document.addEventListener('DOMContentLoaded', ()=>{
+  // デフォルト初期状態：basic と loan を開く、other と swap を閉じる
+  const _defaults={basic:'open',loan:'open',other:'closed',swap:'closed'};
+  ['basic','loan','other','swap'].forEach(id=>{
+    try{
+      const state = localStorage.getItem(`hg-state-${id}`) || _defaults[id];
+      if(state==='closed'){
+        const group=document.getElementById(`hg-${id}`);
+        if(!group)return;
+        const body=group.querySelector('.hg-body');
+        const arrow=group.querySelector('.hg-arrow');
+        if(body)body.setAttribute('hidden','');
+        if(arrow)arrow.textContent='▶';
+        group.dataset.collapsed='true';
+      }
+    }catch(e){}
+  });
+});
+
 // ===== 定期借地権付き物件 — チェック切替 =====
 function toggleLeasehold(){
   const cb=document.getElementById('leasehold-on');

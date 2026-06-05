@@ -15,7 +15,7 @@
 <!-- Sentry エラー監視（DSN未設定時はローカルログのみ動作） -->
 <script src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js" crossorigin="anonymous"></script>
 <script src="js/error-monitor.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=39">
+<link rel="stylesheet" href="css/style.css?v=40">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -782,6 +782,13 @@ window.closeAboutModal=closeAboutModal;
 
       <div class="divider"></div>
 
+      <!-- ★ Group 1: 物件価格・自己資金 -->
+      <div class="hg-group" id="hg-basic" data-collapsed="false">
+        <div class="hg-header" onclick="toggleHousingGroup('basic')">
+          <span class="hg-arrow">▼</span> 🏠 物件価格・自己資金
+        </div>
+        <div class="hg-body">
+
       <!-- 物件価格・資金計画 -->
       <div class="sub">💴 物件価格・資金計画</div>
       <!-- モード切替: 詳細設定 / 住宅ローン総額 -->
@@ -851,6 +858,15 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <input type="hidden" id="loan-amt" onfocus="scrollToCFRow('lRep')" value="4500">
       <input type="hidden" id="cost-type" value="cash">
+
+        </div></div><!-- ★ /Group 1 -->
+
+      <!-- ★ Group 2: 住宅ローン・控除 -->
+      <div class="hg-group" id="hg-loan" data-collapsed="false">
+        <div class="hg-header" onclick="toggleHousingGroup('loan')">
+          <span class="hg-arrow">▼</span> 🏦 住宅ローン・控除
+        </div>
+        <div class="hg-body">
 
       <!-- ローン設定 -->
       <div class="sub">🏦 住宅ローン設定</div>
@@ -1185,6 +1201,15 @@ window.closeAboutModal=closeAboutModal;
         </div>
       </div>
 
+        </div></div><!-- ★ /Group 2 -->
+
+      <!-- ★ Group 3: その他費用（定借・引越・保有期間中） -->
+      <div class="hg-group" id="hg-other" data-collapsed="true">
+        <div class="hg-header" onclick="toggleHousingGroup('other')">
+          <span class="hg-arrow">▶</span> 🔨 その他費用（定借・引越・保有期間中）
+        </div>
+        <div class="hg-body" hidden>
+
       <!-- 定期借地権付き物件 入力欄（上部チェックボックスON時に表示） -->
       <div id="leasehold-body" style="display:none;background:#fff8ee;border:1px solid #ffb74d;border-radius:6px;padding:8px 10px;margin-bottom:8px">
         <div class="sub" style="color:#7c5e1a;margin-bottom:6px">🏛️ 定期借地権 設定</div>
@@ -1311,11 +1336,19 @@ window.closeAboutModal=closeAboutModal;
       <div id="repair-cont"></div>
       <button class="btn-add" onclick="addRepairCycle()" id="btn-add-repair" style="font-size:11px;margin-bottom:7px">＋ 修繕周期を追加</button>
 
-      <!-- 買い替えイベント（最大2回） -->
-      <div class="divider"></div>
-      <div class="sub">🔄 買い替え・住替え（最大2回）</div>
+        </div></div><!-- ★ /Group 3 -->
+
+      <!-- ★ Group 4: 将来の買い替え -->
+      <div class="hg-group" id="hg-swap" data-collapsed="true">
+        <div class="hg-header" onclick="toggleHousingGroup('swap')">
+          <span class="hg-arrow">▶</span> 🔄 将来の買い替え（最大2回）
+        </div>
+        <div class="hg-body" hidden>
+
       <div id="swap-events-cont"></div>
       <button class="btn-add" onclick="addSwapEvent()" id="btn-add-swap" style="font-size:11px;margin-bottom:7px">＋ 買い替えを追加</button>
+
+        </div></div><!-- ★ /Group 4 -->
 
     </div>
   </div>
@@ -1737,7 +1770,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/income.js?v=21"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=5"></script>
-<script src="js/housing.js?v=31"></script>
+<script src="js/housing.js?v=32"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=16"></script>
