@@ -186,28 +186,13 @@ window.closeAboutModal=closeAboutModal;
         <div><div class="tc-lbl" style="font-size:12px">戸建て</div><div class="tc-desc" style="font-size:9px">修繕費あり</div></div>
       </div>
     </div>
-    <!-- 定期借地権付き物件（物件タイプ選択の直下） -->
+    <!-- 定期借地権付き物件 — チェックボックスのみ（入力欄は⑤住宅セクション内に配置） -->
     <div style="margin-top:6px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;font-weight:700;color:#7c5e1a;background:#fff8ee;border:1px solid #ffb74d;border-radius:6px;padding:5px 8px">
         <input type="checkbox" id="leasehold-on" onchange="toggleLeasehold()" style="cursor:pointer;accent-color:#d97706">
         🏛️ 定期借地権付き物件
         <span style="font-weight:400;color:var(--muted);font-size:9px;margin-left:auto">（土地は借地、地代発生）</span>
       </label>
-      <div id="leasehold-body" style="display:none;background:#fff8ee;border:1px solid #ffb74d;border-radius:6px;padding:8px 10px;margin-top:5px">
-        <div class="g3">
-          <div class="fg"><label class="lbl" style="font-size:9px">月額地代</label>
-            <div class="suf"><input class="inp amt-inp" id="leasehold-chidai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:30000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">月額解体準備金</label>
-            <div class="suf"><input class="inp amt-inp" id="leasehold-kaitai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:5000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">借地期間</label>
-            <div class="suf"><input class="inp age-inp" id="leasehold-years" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:50" min="20" max="100" oninput="live()"><span class="sl">年</span></div></div>
-        </div>
-        <div class="fg" style="margin-top:6px">
-          <label class="lbl" style="font-size:9px">前払い地代（任意）<span style="font-weight:400;color:var(--muted)">— 契約時に一括前払い</span></label>
-          <div class="suf"><input class="inp amt-inp" id="leasehold-maeharai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:300" min="0" oninput="live()"><span class="sl">万円</span></div>
-        </div>
-        <div style="font-size:9px;color:#7c5e1a;margin-top:6px">💡 借地期間終了後は地代・解体準備金がゼロになります。期間終了時の住替えはイベントとして別途追加してください。</div>
-      </div>
     </div>
     <!-- マンション選択（マンション時のみ表示） -->
     <div id="mansion-select-row" style="margin-top:6px">
@@ -1198,6 +1183,24 @@ window.closeAboutModal=closeAboutModal;
           <div style="font-size:9px;color:var(--muted);margin-bottom:4px">各年の控除額を直接入力（万円）</div>
           <div id="lctrl-manual-inputs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4px"></div>
         </div>
+      </div>
+
+      <!-- 定期借地権付き物件 入力欄（上部チェックボックスON時に表示） -->
+      <div id="leasehold-body" style="display:none;background:#fff8ee;border:1px solid #ffb74d;border-radius:6px;padding:8px 10px;margin-bottom:8px">
+        <div class="sub" style="color:#7c5e1a;margin-bottom:6px">🏛️ 定期借地権 設定</div>
+        <div class="g3">
+          <div class="fg"><label class="lbl" style="font-size:9px">月額地代</label>
+            <div class="suf"><input class="inp amt-inp" id="leasehold-chidai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:30000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">月額解体準備金</label>
+            <div class="suf"><input class="inp amt-inp" id="leasehold-kaitai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:5000" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">借地期間</label>
+            <div class="suf"><input class="inp age-inp" id="leasehold-years" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:50" min="20" max="100" oninput="live()"><span class="sl">年</span></div></div>
+        </div>
+        <div class="fg" style="margin-top:6px">
+          <label class="lbl" style="font-size:9px">前払い地代（任意）<span style="font-weight:400;color:var(--muted)">— 契約時に一括前払い</span></label>
+          <div class="suf"><input class="inp amt-inp" id="leasehold-maeharai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:300" min="0" oninput="live()"><span class="sl">万円</span></div>
+        </div>
+        <div style="font-size:9px;color:#7c5e1a;margin-top:6px">💡 借地期間終了後は地代・解体準備金がゼロになります。期間終了時の住替えはイベントとして別途追加してください。</div>
       </div>
 
       <!-- 引っ越し・家具家電 初期費用（統合） -->
