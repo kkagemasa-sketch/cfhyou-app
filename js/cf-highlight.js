@@ -160,7 +160,23 @@ function _clearHighlight(){
 // live()再レンダリング後：ハイライト再付与 + フラグがあればスクロールも実行
 function _reapplyHighlightAfterRender(){
   if(!_cfActive) return;
+  // ★ パネル内にフォーカスがなければハイライト維持の意味がないので消す
+  //   （以前は cfRowBlur のタイミングでしかクリアされず、ページ遷移や別操作で残り続けるバグがあった）
+  if(!document.querySelector('.panel-l:focus-within')){
+    _cfActive = null;
+    _clearHighlight();
+    return;
+  }
   const doScroll = _needsScrollAfterRender;
   _needsScrollAfterRender = false;
   _applyHighlight(doScroll);
 }
+// ★ 何もないところをクリックしたら強制クリア（パネル外クリック対策）
+document.addEventListener('click', function(e){
+  if(!_cfActive) return;
+  // panel-l 内のクリックなら維持
+  if(e.target.closest && e.target.closest('.panel-l')) return;
+  // それ以外（CF表内・余白・ヘッダー等）はクリア
+  _cfActive = null;
+  _clearHighlight();
+}, true);
