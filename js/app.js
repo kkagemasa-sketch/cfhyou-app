@@ -60,13 +60,15 @@ window.onload=()=>{
   document.addEventListener('focus',selectInput,true);
   document.addEventListener('click',selectInput,true);
 
-  // ホイール誤操作防止：type=number にフォーカスがある状態でスクロールしても
-  // 値が±1されないようにする（ブラウザ標準動作の無効化）
-  // 注：フォーカス中はページスクロールも止まる。ページスクロールしたい場合は
-  // 入力欄以外をクリックしてフォーカスを外してからスクロールしてください。
+  // ホイール誤操作防止：数値欄の上でホイールしたとき、値が±1されないようにする
+  // 旧実装は activeElement で判定していたため、数値欄にフォーカスが残ったまま
+  // CF表を指/トラックパッドでスクロールしようとすると、wheel イベントが全て
+  // preventDefault され「指でスクロールできない」現象が起きていた。
+  // → ホイールイベントの "ターゲット要素そのもの" が数値入力欄のときだけ阻止。
+  //   CF表上での指/ホイール操作には影響しない。
   document.addEventListener('wheel',e=>{
-    const ae=document.activeElement;
-    if(ae&&ae.tagName==='INPUT'&&ae.type==='number'){
+    const t=e.target;
+    if(t&&t.tagName==='INPUT'&&t.type==='number'){
       e.preventDefault();
     }
   },{passive:false});
