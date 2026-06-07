@@ -139,8 +139,8 @@ function onPairLoanInput(side,isFlat){
     hEl.value=h;
     if(hEl._rawValue!==undefined) hEl._rawValue=h;
   }
+  // calcLoanAmt 内部で live() を呼ぶため、ここでは live() を呼ばない（重複防止）
   if(typeof calcLoanAmt==='function') calcLoanAmt();
-  if(typeof live==='function') live();
 }
 function syncPairLoanHalfHalf(isFlat){
   // ペアローン切替時：両方空または合計が総額と一致しない場合に半々で初期化

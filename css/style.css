@@ -193,9 +193,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* 値が0のフィールド（JSで付与） */
 .inp.is-zero{color:#bbb;font-style:italic}
 
-/* 年齢入力：上下スピナーを常時表示 */
-.inp.age-inp{background:#f0f4ff;border-color:#b8c8e8;text-align:center;font-weight:700;font-size:14px;color:var(--navy);-moz-appearance:number-input}
-.inp.age-inp::-webkit-inner-spin-button,.inp.age-inp::-webkit-outer-spin-button{opacity:1;height:30px;cursor:pointer}
+/* 年齢入力：スピナー非表示（長押しで爆速増減するため・キーボード入力を推奨） */
+.inp.age-inp{background:#f0f4ff;border-color:#b8c8e8;text-align:center;font-weight:700;font-size:14px;color:var(--navy);-moz-appearance:textfield}
+.inp.age-inp::-webkit-inner-spin-button,.inp.age-inp::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 
 /* 金額入力：スピナー非表示 */
 .inp.amt-inp{-moz-appearance:textfield;text-align:right;background:#fffef8;border-color:#d4ccaa;font-size:15px;font-weight:700}

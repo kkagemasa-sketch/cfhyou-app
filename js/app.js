@@ -71,6 +71,16 @@ window.onload=()=>{
     }
   },{passive:false});
 
+  // ★ 数字入力欄で ↑↓ キーを押下しても値が変わらないようにする（長押しで爆速増減防止）
+  document.addEventListener('keydown',e=>{
+    const ae=document.activeElement;
+    if(ae&&ae.tagName==='INPUT'&&ae.type==='number'){
+      if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+        e.preventDefault();
+      }
+    }
+  });
+
   // 全角数字→半角数字の自動変換（数値入力欄のみ、IME変換中はスキップ）
   document.addEventListener('input',e=>{
     // IME変換中は絶対にvalueを書き換えない（日本語入力が壊れる）
