@@ -218,6 +218,8 @@ function _collectDynamic(){
   });
   // 万が一シミュレーション
   d.mg={target:mgTarget,dansin:mgDansin,dansinH:mgDansinH,dansinW:mgDansinW,survMode:mgSurvMode,
+    // 死亡時の年金区分（厚生年金加入 / 国民年金のみ）
+    pensionType:(typeof getMGPensionType==='function')?getMGPensionType():'kosei',
     deathYear:$('mg-death-year')?.value||'',survAmt:$('mg-surv-amt')?.value||'',lcRatio:$('mg-lc-ratio')?.value||'',
     // 遺族年金の段階入力
     survSteps:(()=>{const arr=[];document.querySelectorAll('#mg-surv-steps-cont>[id^="mss-"]').forEach(el=>{const m=el.id.match(/^mss-(\d+)$/);if(!m)return;const sid=m[1];arr.push({from:$(`mss-from-${sid}`)?.value||'',to:$(`mss-to-${sid}`)?.value||'',amt:$(`mss-amt-${sid}`)?.value||''});});return arr;})(),
@@ -543,6 +545,8 @@ function _restoreDynamic(d){
     if(typeof setMGDansin==='function')setMGDansin(mg.dansin!==false);
     if(typeof setMGDansinPair==='function'){setMGDansinPair('h',mg.dansinH!==false);setMGDansinPair('w',mg.dansinW!==false);}
     if(typeof setMGSurvMode==='function')setMGSurvMode(mg.survMode||'auto');
+    // 死亡時の年金区分（厚生年金 / 国民年金のみ）— 旧データには無いので既定 kosei
+    if(typeof setMGPensionType==='function')setMGPensionType(mg.pensionType==='kokumin'?'kokumin':'kosei');
     if($('mg-death-year'))$('mg-death-year').value=mg.deathYear||'1';
     if($('mg-surv-amt'))$('mg-surv-amt').value=mg.survAmt||'0';
     // 遺族年金の段階入力を復元

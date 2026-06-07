@@ -1488,6 +1488,20 @@ window.closeAboutModal=closeAboutModal;
 
       <div class="divider"></div>
 
+      <!-- 死亡時の被保険者区分（300月みなし／遺族厚生年金の有無に影響） -->
+      <div class="sub">🏛 死亡時の加入年金</div>
+      <div class="g2" style="margin-bottom:6px">
+        <div class="fg"><label class="lbl">亡くなる方の年金区分</label>
+          <div style="display:flex;gap:6px">
+            <button class="btn-tog on" id="mg-pen-kosei" onclick="setMGPensionType('kosei')" title="会社員・公務員（厚生年金加入中の死亡 → 300月みなし適用）">厚生年金</button>
+            <button class="btn-tog" id="mg-pen-kokumin" onclick="setMGPensionType('kokumin')" title="自営業・フリーランス・パート扶養内など（遺族厚生年金は0円）">国民年金のみ</button>
+          </div>
+        </div>
+        <div class="fg">
+          <span class="hint" id="mg-pen-hint" style="font-size:10px;line-height:1.4">✓ 厚生年金加入中の死亡 → 遺族厚生年金あり（300月みなし適用）</span>
+        </div>
+      </div>
+
       <!-- 遺族年金 -->
       <div class="sub">📋 遺族年金</div>
       <div class="g2">
@@ -1775,7 +1789,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=16"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=81"></script>
+<script src="js/contingency.js?v=82"></script>
 <script src="js/cf-ui.js?v=24"></script>
 <script src="js/cf-calc.js?v=68"></script>
 <script src="js/cf-table.js?v=54"></script>
@@ -1785,14 +1799,14 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/loan-plan.js?v=17"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=62"></script>
+<script src="js/save-load.js?v=63"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=8"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>
 <script src="js/explain/explain-income.js?v=1"></script>
 <script src="js/explain/explain-financial.js?v=2"></script>
 <script src="js/explain/explain-edu.js?v=1"></script>
-<script src="js/mg-qa.js?v=12"></script>
+<script src="js/mg-qa.js?v=13"></script>
 <script src="js/ui.js?v=7"></script>
 <script src="js/app.js?v=42"></script>
 <!-- Firebase (マンションマスター共有) -->

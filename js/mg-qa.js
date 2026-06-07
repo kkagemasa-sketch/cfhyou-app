@@ -39,12 +39,44 @@ function mgQA_addTab(target){
   mgQA_switchTab(id);
 }
 
+// 通常CFの mg-insurance-cont DOM から既存保険データを Q&A 形式で取得
+// Q&Aタブ新規作成時に「通常CFで入れた個人年金/死亡保険金が消える」のを防ぐ
+function _mgQA_collectLegacyInsurances(){
+  const out = [];
+  // contingency.js の getMGInsurances を直接使えるならそれを使う
+  if(typeof getMGInsurances === 'function'){
+    try {
+      const list = getMGInsurances() || [];
+      list.forEach(ins=>{
+        if(ins.type==='annuity' && ins.annual>0){
+          out.push({ type:'annuity', annual:ins.annual, endAge:ins.endAge||65, amount:0 });
+        }else if(ins.type==='lump' && ins.amt>0){
+          out.push({ type:'lump', amount:ins.amt, annual:0, endAge:65 });
+        }
+      });
+    } catch(e){ /* fallback to direct DOM */ }
+  }
+  return out;
+}
+
 // --- デフォルト状態（前タブコピー or 初期値） ---
 function mgQA_buildDefaultState(target){
   // 前回の同target優先、なければ最後のタブ、なければ初期値
   const prev = [...mgQA_tabs].reverse().find(t=>t.target===target) ||
                [...mgQA_tabs].reverse()[0];
-  if(prev) return JSON.parse(JSON.stringify(prev.state));
+  if(prev){
+    const cloned = JSON.parse(JSON.stringify(prev.state));
+    // ★ 既存タブから複製した場合でも、insurances がデフォルト（type:none のみ）の場合は
+    //   通常CFセッションの mg-insurance-cont に入力済みの個人年金/死亡保険金を取り込む
+    //   （これをしないと、通常CFで入れた保険が Q&Aタブ作成時に消える）
+    const _isInsEmpty = !Array.isArray(cloned.insurances) ||
+                        cloned.insurances.every(x=>!x||x.type==='none');
+    if(_isInsEmpty){
+      const _legacy = _mgQA_collectLegacyInsurances();
+      if(_legacy.length>0) cloned.insurances = _legacy;
+    }
+    return cloned;
+  }
   // 通常CFから車・駐車場の現在設定を読込
   const firstCar = document.querySelector('#car-list > [id^="car-"]');
   const carD = { type:'new', price:300, cycle:7, insp:10, firstAge:0, endAge:0 };
@@ -68,9 +100,13 @@ function mgQA_buildDefaultState(target){
   // 駐車場の年齢範囲も通常CFから継承（歳単位なので直接）
   const parkFromDef = mgQA_iv('park-from-age') || 0;
   const parkToDef = mgQA_iv('park-to-age') || 0;
+  // 通常CFの mg-insurance-cont に既に入力済みの個人年金/死亡保険金を取り込む
+  // （新規Q&Aタブ作成時に従来データを引き継ぐ）
+  const _legacyIns = _mgQA_collectLegacyInsurances();
+  const _initialIns = _legacyIns.length>0 ? _legacyIns : [{ type:'none', amount:0 }];
   return {
     deathYear: 1,
-    insurances: [{ type:'none', amount:0 }],
+    insurances: _initialIns,
     pensionMode: 'auto',
     pensionManual: 0,
     // 配偶者(生存者)の就労収入: 'same'=通常時と同じ / 'override'=段階設定で上書き
@@ -358,6 +394,16 @@ function mgQA_applyStateToDOM(tab){
   // 保険金：既存をクリアして再構築
   const insCont = document.getElementById('mg-insurance-cont');
   if(insCont && typeof addMGInsurance === 'function'){
+    // ★ 防御: tab.state.insurances が空（type:'none'のみ）の場合に、
+    //   通常CF側 mg-insurance-cont に既に入力されている個人年金/保険金があれば
+    //   それを Q&A state に取り込んでから処理する（データ消失を防ぐ）
+    const _allNone = !Array.isArray(s.insurances) || s.insurances.every(x=>!x||x.type==='none');
+    if(_allNone){
+      const _legacy = _mgQA_collectLegacyInsurances();
+      if(_legacy.length>0){
+        s.insurances = _legacy;
+      }
+    }
     insCont.innerHTML = '';
     // mgInsCnt は contingency.js で `let` 宣言されたグローバル変数（window非経由）
     // addMGInsurance() が ++mgInsCnt して新ID生成するので、カウンタはそのまま使う

@@ -204,6 +204,31 @@ function setMGInsType(id,type){
 }
 function getMGCarOn(){return document.getElementById('mg-car-keep')?.classList.contains('on')!==false;}
 function getMGParkOn(){return document.getElementById('mg-park-keep')?.classList.contains('on')!==false;}
+
+// ===== 死亡時の年金区分（厚生年金 / 国民年金のみ）=====
+// kosei  : 厚生年金加入中の死亡 → 遺族厚生年金あり、300月みなし適用
+// kokumin: 国民年金のみで死亡   → 遺族厚生年金 = 0 円、遺族基礎年金のみ
+function getMGPensionType(){
+  // 'kokumin' ボタンに on クラスがあれば国民年金、なければ既定（厚生年金）
+  return document.getElementById('mg-pen-kokumin')?.classList.contains('on') ? 'kokumin' : 'kosei';
+}
+function setMGPensionType(type){
+  const koseiBtn=document.getElementById('mg-pen-kosei');
+  const kokuminBtn=document.getElementById('mg-pen-kokumin');
+  const hint=document.getElementById('mg-pen-hint');
+  if(koseiBtn) koseiBtn.classList.toggle('on', type==='kosei');
+  if(kokuminBtn) kokuminBtn.classList.toggle('on', type==='kokumin');
+  if(hint){
+    if(type==='kokumin'){
+      hint.innerHTML='⚠ 国民年金のみ → 遺族厚生年金は<b>0円</b>、遺族基礎年金のみ（子18歳未満の間）';
+      hint.style.color='#b45309';
+    }else{
+      hint.innerHTML='✓ 厚生年金加入中の死亡 → 遺族厚生年金あり（300月みなし適用）';
+      hint.style.color='';
+    }
+  }
+  if(typeof live==='function') live();
+}
 function updateMGHints(){
   const ratio=parseInt($('mg-lc-ratio')?.value)||70;
   $('mg-lc-hint').textContent=`✓ 死亡後は現在の${ratio}%で計算`;
@@ -742,8 +767,12 @@ function _renderContingencyInner(){
         // 遺族厚生年金用：死亡時の被保険者期間ベース＋300月みなし
         const hDeathAgeCalc=targetIsH?deathAge:(hAge+deathYearOffset-1);
         const wDeathAgeCalc=targetIsH?(wAge+deathYearOffset-1):deathAge;
-        const kH=calcKoseiForSurvP('h', pHStart_mg, hDeathAgeCalc, pSelf, kisoH_mg);
-        const kW=calcKoseiForSurvP('w', pWStart_mg, wDeathAgeCalc, pWife, kisoW_mg);
+        // ★ 死亡者の年金区分が「国民年金のみ」なら遺族厚生年金は 0 円
+        //   （ kH/kW を 0 にすれば後段の Math.max(kH*0.75 - kosei, 0) で 0 になる）
+        const _mgPenType = (typeof getMGPensionType==='function') ? getMGPensionType() : 'kosei';
+        const _isKokumin = _mgPenType==='kokumin';
+        const kH=_isKokumin ? 0 : calcKoseiForSurvP('h', pHStart_mg, hDeathAgeCalc, pSelf, kisoH_mg);
+        const kW=_isKokumin ? 0 : calcKoseiForSurvP('w', pWStart_mg, wDeathAgeCalc, pWife, kisoW_mg);
         if(targetIsH){
           // ── ご主人死亡 → 奥様が受給 ──
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
@@ -758,7 +787,8 @@ function _renderContingencyInner(){
             survP=0; // 5年経過で遺族厚生年金失権
           }else{
             const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
-            const chukorei=(kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
+            // ★ 中高齢寡婦加算も遺族厚生年金制度の一部 → 国民年金のみの死亡では 0
+            const chukorei=(!_isKokumin && kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
             if(wa>=pWReceive){survP=Math.max(ri(kH*0.75)-koseiW_mg,0)+kiso+chukorei;}
             else{survP=ri(kH*0.75)+kiso+chukorei;}
           }
