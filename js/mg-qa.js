@@ -415,7 +415,10 @@ function mgQA_applyStateToDOM(tab){
     const stepsCont = document.getElementById('mg-lc-steps-container');
     if(stepsCont && typeof addMGLCStep === 'function'){
       stepsCont.innerHTML='';  // 既存の段階をクリア
-      if(typeof window._mgLCStepCount !== 'undefined') window._mgLCStepCount = 0;
+      // ★ 重要: addMGLCStep が使う _mgLCStepCount を必ず 0 に戻す
+      //   （state.js で var 宣言したため window._mgLCStepCount として確実にアクセス可能）
+      window._mgLCStepCount = 0;
+      try { _mgLCStepCount = 0; } catch(e){ /* レキシカル変数の安全リセット */ }
       s.lcSteps.forEach((st, i) => {
         addMGLCStep();
         const n = i + 1;
