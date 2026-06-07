@@ -1367,7 +1367,10 @@ function render(){
     if(_leaseholdOn && active){
       // 引き渡し（active）後に計上開始
       const _leaseYrs=iv('leasehold-years')||0;
-      const _yrsSinceDelivery=lcYr-delivery+1;  // 引き渡し年=1年目
+      // ★ B1修正: lcYr は既に (i-delivery) なので、さらに -delivery を引くと
+      //   i - 2*delivery + 1 という意味不明な値になり、借地期間判定が誤動作していた。
+      //   正しくは lcYr+1（引き渡し年=1年目）。
+      const _yrsSinceDelivery=lcYr+1;
       const _withinLease = _leaseYrs<=0 || _yrsSinceDelivery<=_leaseYrs;
       if(_withinLease){
         // 円/月入力 → 万円/年に換算（CF表は万円単位）
@@ -1389,10 +1392,16 @@ function render(){
     const _useSwapLoan = !!_activeSwap;
     const _swapPurchaseInfo = (()=>{
       // 取得費の決定：前回 swap の購入価格、または初回の house-price
-      if(swapEvents.length===0)return {origPrice:(fv('house-price')||0),acqAge:hAge+delivery-(cYear-1)};
+      // ★ A1修正: 旧コードの `hAge+delivery-(cYear-1)` は -1990 等の非現実値になり、
+      //   結果として _yrsLapsed = ha-_acqAge が常に巨大値となり _yrsLapsed<_origYrs が
+      //   永遠に偽 → 旧ローン残債の一括返済 _swPayoff が常に0になっていた。
+      //   譲渡所得税の長短判定 _holdYrs=ha-_acqAge も常に長期（20.315%）扱いになる
+      //   副作用もあり、買い替えシミュレーションが実態より大幅に楽観的に出ていた。
+      //   正しくは「初回購入時の主の年齢」= hAge + delivery（引き渡し年の年齢）。
+      if(swapEvents.length===0)return {origPrice:(fv('house-price')||0),acqAge:hAge+delivery};
       // 最新 active swap の前回購入を取得
       const idx=swapEvents.findIndex(s=>s===_activeSwap);
-      if(idx<=0){ return {origPrice:(fv('house-price')||0),acqAge:hAge+delivery-(cYear-1)}; }
+      if(idx<=0){ return {origPrice:(fv('house-price')||0),acqAge:hAge+delivery}; }
       const prev=swapEvents[idx-1];
       return {origPrice:prev.price,acqAge:prev.age};
     })();
@@ -1446,7 +1455,7 @@ function render(){
       if(prevIdx===0){
         // 初回 swap：原ローンの残債
         const _origYrs=loanYrs; const _origAmt=loanAmt;
-        const _yrsLapsed=ha-(hAge+delivery-(cYear-1));
+        const _yrsLapsed=ha-(hAge+delivery); // ★ A1修正: 同上、cYear-1 は不要
         const _origRate=effRate(_yrsLapsed,eRates)*100;  // %表記
         if(_yrsLapsed>0 && _yrsLapsed<_origYrs && _origAmt>0){
           _swPayoff = lbal(_origAmt,_origYrs,_origRate,_yrsLapsed);

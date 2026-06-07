@@ -19,11 +19,16 @@ function calcKosei(person, startAge, retAge, fallbackPension, kisoAmt){
 
 // 遺族厚生年金計算用の厚生年金相当額
 // 被保険者期間は「就労開始→死亡年齢」で計算し、300月未満なら300月みなし（短期要件）
-function calcKoseiForSurvP(person, startAge, deathAge, fallbackPension, kisoAmt){
+function calcKoseiForSurvP(person, startAge, deathAge, fallbackPension, kisoAmt, isInsuredAtDeath){
   const CAREER_FACTOR=0.75;
   const avg=calcAvgHyojun(person, startAge, deathAge);
-  // 遺族厚生年金：死亡時の被保険者期間ベース、300月未満なら300月みなし、上限480月
-  const joinM=Math.min(480, Math.max((deathAge-startAge)*12, 300));
+  // ★ B7修正: 「300月みなし」は短期要件（在職中の死亡など）で適用される特例。
+  //   退職後の死亡（厚生年金被保険者ではない期間の死亡）では長期要件で計算され、
+  //   実加入月数のみが使われる。デフォルト true で後方互換性を維持。
+  const _shortTerm = (isInsuredAtDeath !== false);
+  const joinM = _shortTerm
+    ? Math.min(480, Math.max((deathAge-startAge)*12, 300))   // 短期要件: 300月みなしあり
+    : Math.min(480, Math.max((deathAge-startAge)*12, 0));     // 長期要件: 実加入月数のみ
   if(avg!==null) return avg*5.481/1000*joinM;
   const gM=fv(`${person}-gross-monthly`)||0, gB=fv(`${person}-gross-bonus`)||0;
   if(gM>0){const hyojun=(Math.min(gM,65)*12+Math.min(gB,300))/12*CAREER_FACTOR;return hyojun*5.481/1000*joinM;}

@@ -1068,7 +1068,9 @@ function _resetSheetState(){
   if($('children-cont'))$('children-cont').innerHTML='';
   cCnt=0;
   // その他家族
-  if($('other-member-cont'))$('other-member-cont').innerHTML='';
+  // ★ B2修正: 旧コードは ID 'other-member-cont'（s抜け）。正しくは 'other-members-cont'。
+  //   typo のため「新規作成」ボタンで前のお客様の祖父母等の入力が DOM に残っていた。
+  if($('other-members-cont'))$('other-members-cont').innerHTML='';
   otherMemberCnt=0;
   // 収入ステップ
   ['h','w'].forEach(p=>{if($(`${p}-income-cont`))$(`${p}-income-cont`).innerHTML='';});

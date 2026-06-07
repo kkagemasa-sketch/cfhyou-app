@@ -537,9 +537,13 @@ function _renderContingencyInner(){
   }
   _deadFinTotal=ri(_deadFinTotal);
 
-  // ── 生存者のDC/iDeCo設定 ──
+  // ── DC/iDeCo設定（h/w 両方収集）──
+  // ★ A3修正: 旧コードは生存者(_aliveP)分しか dcIdeco_mg を作っていなかったため、
+  //   死亡前年（=死亡前の存命中）に死亡者がDC/iDeCo を受け取っていた場合、その受取が
+  //   1円も計上されないバグがあった。例:ご主人が60歳でDC一括受取→65歳で死亡 だと
+  //   60歳の受取金が完全に消えていた。両方収集して、_alivePers ベースで処理する。
   const dcIdeco_mg={};
-  [_aliveP].forEach(p=>{
+  ['h','w'].forEach(p=>{
     const pRetAge=p==='h'?retAge_mg:wRetAge_mg;
     dcIdeco_mg[p]={
       employer:fv(`dc-${p}-employer`)||0, matching:fv(`dc-${p}-matching`)||0,
@@ -713,13 +717,39 @@ function _renderContingencyInner(){
 
     // ── 収入 ──
     let hInc=0, wInc=0;
+    // ★ A4修正: Q&Aパネルで「生存者の就労収入を変更する」を設定した場合、
+    //   window._mgIncomeOverride に [{ageFrom, ageTo, netFrom, netTo}] が入る。
+    //   旧コードは contingency.js でこれを一切参照しておらず、UIが完全に dead code 化していた。
+    //   生存者側（targetIsH なら 'w'、!targetIsH なら 'h'）のみ、isDead の年に上書きする。
+    const _mgIncOv = (typeof window!=='undefined' && window._mgIncomeOverride) ? window._mgIncomeOverride : null;
+    const _getMgIncomeOverride = (side, age)=>{
+      if(!_mgIncOv) return null;
+      const steps = _mgIncOv[side];
+      if(!Array.isArray(steps) || steps.length===0) return null;
+      // 該当年齢のステップを線形補間で取得
+      for(const st of steps){
+        if(!st) continue;
+        const a1=Number(st.ageFrom), a2=Number(st.ageTo);
+        if(!(age>=a1 && age<=a2)) continue;
+        const n1=Number(st.netFrom)||0, n2=Number(st.netTo)||n1;
+        if(a2===a1) return ri(n1);
+        return ri(n1 + (n2-n1) * (age-a1) / (a2-a1));
+      }
+      return null;
+    };
     if(targetIsH){
       hInc=isDead?0:getIncomeAtAge(hSteps,ha);
       // 奥様の産休・育休考慮
       const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);
-      wInc=leave?ri(leave.income):getIncomeAtAge(wSteps,wa);
+      const _baseW = leave?ri(leave.income):getIncomeAtAge(wSteps,wa);
+      // 生存者=奥様：死亡後の年は Q&A 上書きが効く
+      const _ov = isDead ? _getMgIncomeOverride('w', wa) : null;
+      wInc = (_ov!==null) ? _ov : _baseW;
     }else{
-      hInc=getIncomeAtAge(hSteps,ha);
+      const _baseH = getIncomeAtAge(hSteps,ha);
+      // 生存者=ご主人：死亡後の年は Q&A 上書きが効く
+      const _ov = isDead ? _getMgIncomeOverride('h', ha) : null;
+      hInc = (_ov!==null) ? _ov : _baseH;
       wInc=isDead?0:(()=>{const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);return leave?ri(leave.income):getIncomeAtAge(wSteps,wa);})();
     }
     // 生存者のDC/iDeCo節税効果（通常CFと同じく独立した収入行として表示）
@@ -774,8 +804,12 @@ function _renderContingencyInner(){
         //   （ kH/kW を 0 にすれば後段の Math.max(kH*0.75 - kosei, 0) で 0 になる）
         const _mgPenType = (typeof getMGPensionType==='function') ? getMGPensionType() : 'kosei';
         const _isKokumin = _mgPenType==='kokumin';
-        const kH=_isKokumin ? 0 : calcKoseiForSurvP('h', pHStart_mg, hDeathAgeCalc, pSelf, kisoH_mg);
-        const kW=_isKokumin ? 0 : calcKoseiForSurvP('w', pWStart_mg, wDeathAgeCalc, pWife, kisoW_mg);
+        // ★ B7修正: 死亡時に厚生年金被保険者だったか（=退職年齢以前の死亡か）で
+        //   短期要件（300月みなし）/ 長期要件（実加入月数）を切り替える。
+        const _hInsuredAtDeath = hDeathAgeCalc < retAge_mg;
+        const _wInsuredAtDeath = wDeathAgeCalc < wRetAge_mg;
+        const kH=_isKokumin ? 0 : calcKoseiForSurvP('h', pHStart_mg, hDeathAgeCalc, pSelf, kisoH_mg, _hInsuredAtDeath);
+        const kW=_isKokumin ? 0 : calcKoseiForSurvP('w', pWStart_mg, wDeathAgeCalc, pWife, kisoW_mg, _wInsuredAtDeath);
         if(targetIsH){
           // ── ご主人死亡 → 奥様が受給 ──
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
@@ -784,7 +818,12 @@ function _renderContingencyInner(){
           const hadChildren=children.some(c=>c.age+(deathYearOffset-1)<=18);
 
           // 30歳未満・子なし妻の5年有期ルール（H19年改正）
-          const noChildAtDeath=!children.length&&!hadChildren;
+          // ★ A6修正: 旧コードは `!children.length && !hadChildren` だったため、
+          //   登録された成人子（既に18歳超）がいる場合に noChildAtDeath=false となり
+          //   28歳妻の5年失権が永久に発動しないバグがあった。
+          //   `hadChildren` は「死亡時に18歳以下の子がいたか」を見ているので、
+          //   これが false なら成人子しかいない＝失権ルールの対象。`!children.length` は冗長。
+          const noChildAtDeath = !hadChildren;
           const yearsSinceDeath=i-(deathYearOffset-1);
           if(noChildAtDeath&&wAgeAtDeath<30&&yearsSinceDeath>=5){
             survP=0; // 5年経過で遺族厚生年金失権
@@ -799,9 +838,13 @@ function _renderContingencyInner(){
           // ── 奥様死亡 → ご主人が受給 ──
           let childUnder18=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});
           const kiso=calcKiso(childUnder18);
-          const hIncome=getIncomeAtAge(getIncomeSteps('h'),ha);
           const hAgeAtDeath=hAge+deathYearOffset-1;
           const hadChildAtDeath=children.some(c=>c.age+(deathYearOffset-1)<=18);
+          // ★ B6修正: 「850万要件」は生計維持要件＝死亡時1回の判定。旧コードは ha と
+          //   hIncome を現在年で見て毎年再判定していたため、収入の年次変動で支給がON/OFF
+          //   を繰り返してしまっていた。本来は死亡時の年収で判定し、それ以降は固定。
+          const _hIncomeAtDeath = getIncomeAtAge(getIncomeSteps('h'), hAgeAtDeath);
+          const _meetsLivelihood = _hIncomeAtDeath < 850;
           // 夫の遺族厚生年金要件: 死亡時に(子ありOR55歳以上)が必須
           // 死亡時55歳未満・子なし→受給権自体が発生しない（永久に）
           if(childUnder18>0){
@@ -810,7 +853,7 @@ function _renderContingencyInner(){
           }else if(hadChildAtDeath||hAgeAtDeath>=55){
             // 死亡時に子ありだった→子が18歳超後も厚生年金部分は残る
             // 死亡時55歳以上→受給権あり、支給開始は60歳から
-            if(ha>=60&&hIncome<850){
+            if(ha>=60&&_meetsLivelihood){
               if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0);}
               else{survP=ri(kW*0.75);}
             }else{survP=0;} // 60歳未満 or 高収入は支給停止
@@ -959,12 +1002,33 @@ function _renderContingencyInner(){
         const yrs=i+1;let fv2=0;
         if(endAge===0||pAge<=endAge){const cpd=Math.pow(1+rate,yrs);const mr2=rate>0?Math.pow(1+rate,1/12)-1:0;fv2=Math.round(bal*cpd+(mr2>0?monthly*(cpd-1)/mr2:monthly*12*yrs));}
         else{const mr2=rate>0?Math.pow(1+rate,1/12)-1:0;const yrsA=endAge-pBaseAge;const cpdA=Math.pow(1+rate,yrsA);const bAE=bal*cpdA+(mr2>0?monthly*(cpdA-1)/mr2:monthly*12*yrsA);fv2=Math.round(bAE*Math.pow(1+rate,Math.max(0,yrs-yrsA)));}
+        // ★ A5修正: 旧コードは fv2（生のFV）をそのまま解約収入にしていたため、
+        //   過去年に自動取崩しで減らした分を考慮せず、二重計上になっていた。
+        //   _mgSecurityState から該当銘柄を引き、過去取崩し相当分を差し引いた
+        //   有効FVを使う。
+        const _stKey = `accum-${p}-${sid}`;
+        const _stMatched = _mgSecurityState.find(s=>s.p===p && s.sid===sid && s.type==='accum');
+        if(_stMatched){
+          // _mgEffFV は raw FV から過去取崩しを差し引いた値を返す
+          fv2 = Math.round(_mgEffFV(_stMatched, i, true));
+        }
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
-        let net=fv2;if(!isNisa){const cost=bal+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs);net=Math.round(fv2-Math.max(0,fv2-cost)*0.20315);}
+        let net=fv2;
+        if(!isNisa){
+          // 取得費も同じく取崩しで減っているはずなので _mgEffCost を使う
+          const cost = _stMatched ? _mgEffCost(_stMatched, i) : (bal+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs));
+          net=Math.round(fv2-Math.max(0,fv2-cost)*0.20315);
+        }
+        // 解約後は以降の自動取崩し対象から外す（残高ゼロ扱い）
+        if(_stMatched){
+          _stMatched.liquidations = _stMatched.liquidations || [];
+          // 解約 = 全額取崩しとして liquidations に積む（cost は減算済み扱い）
+          _stMatched.liquidations.push({ year:i, gross:fv2, costReduced:0, redeemed:true });
+        }
         const _pLblA=p==='h'?'ご主人様':'奥様';
         const lbl=customLabel||`${isNisa?'積立NISA':'課税積立'}解約(${_pLblA})`;
-        secRedeemMap_mg[`accum-${p}-${sid}`]={lbl,val:net};secRedeemTotal+=net;
+        secRedeemMap_mg[_stKey]={lbl,val:net};secRedeemTotal+=net;
       });
       document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
@@ -985,8 +1049,11 @@ function _renderContingencyInner(){
     MR.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap_mg[row.key]?.val||0));});
     MR.secRedeem.push(ri(secRedeemTotal));
 
-    // 生存者のDC/iDeCo受取
-    [_aliveP].forEach(p=>{
+    // DC/iDeCo受取
+    // ★ A3修正: 旧コードは [_aliveP] のみで死亡者の生存中受取が消えていた。
+    //   存命中（!isDead）は両者対象、死亡後は生存者のみ。
+    const _dcIdecoTargets = isDead ? [_aliveP] : ['h','w'];
+    _dcIdecoTargets.forEach(p=>{
       const d=dcIdeco_mg[p];if(!d)return;
       const pAge=p==='h'?ha:wa;const pBaseAge=p==='h'?hAge:wAge;
       const totalMonthly=d.employer+d.matching;
@@ -1038,6 +1105,11 @@ function _renderContingencyInner(){
         const yr2=MR.yr[i];let found=false;
         for(const st of mgLCSteps){const from=st.fromYr||0,to=st.toYr||9999;if(yr2>=from&&yr2<=to){lcVal=ri(st.base*Math.pow(1+st.rate/100,yr2-from));found=true;break;}}
         if(!found){const last=mgLCSteps[mgLCSteps.length-1];lcVal=ri(last.base*Math.pow(1+last.rate/100,Math.max(0,yr2-(last.fromYr||0))));}
+      }else if(mgLCMode==='step'){
+        // ★ B8修正: 段階モードを選んだが段階0件のとき、旧コードは lcRatio に
+        //   フォールバックしていたため「段階を消したら割合70%が掛かる」誤動作があった。
+        //   段階を意図的に消した場合は「通常生活費そのまま」と扱う方が利用者の期待に近い。
+        lcVal=normalLC;
       }else{lcVal=ri(normalLC*lcRatio);}
     }
     MR.lc.push(lcVal);

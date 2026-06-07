@@ -260,10 +260,23 @@ async function exportExcelMG(){
   const deliveryYrV=iv('delivery-year')||0;
 
   // ── タイトル行（通常CFと同形式 + E列に万が一ラベル） ──
-  const mgLabel=`${targetLabel} 万が一`;
+  // ★ C6修正(軽微): タイトル E列に死亡時の年齢を含める（画面の「○○歳で死亡した場合」と整合）
+  const _deathAgeForTitle = targetIsH
+    ? (hAge + (iv('mg-death-year')||1) - 1)
+    : (wAge + (iv('mg-death-year')||1) - 1);
+  const mgLabel = `${targetLabel} 万が一（${_deathAgeForTitle}歳逝去）`;
   const titleRow=[`${clientName} 様`,'',isM?'マンション':'戸建て','',mgLabel];
   while(titleRow.length<disp+3)titleRow.push('');
   push(titleRow,'title');
+
+  // ★ B3修正: アプリ画面の万一CFサマリーで最大の売りである「必要保障額」を
+  //   Excel にも 1行 info として出力する。営業資料での印象が大きく変わる。
+  const _needCov = MR.needCoverage || 0;
+  if(_needCov > 0){
+    const needRow = ['⚠️ 必要保障額','',`${_needCov.toLocaleString()}万円`];
+    while(needRow.length < disp+3) needRow.push('');
+    push(needRow, 'info');
+  }
 
   // ── 頭金の内訳（通常CFと同じ個別セル形式） ──
   // info行：ラベル:値を1セルに統合しinfoSpan列分統合（隠れ防止）
@@ -501,9 +514,11 @@ async function exportExcelMG(){
   addISkip('副業・その他収入',MR.otherInc,N.otherInc);
   addISkip('退職金（ご主人）',MR.rPay,N.rPay);
   addISkip('退職金（奥様）',MR.wRPay,N.wRPay);
-  addISkip('本人年金',MR.pS,N.pS);
-  addISkip('配偶者年金',MR.pW,N.pW);
-  addI('遺族年金',MR.survPension);
+  // ★ B4修正: 万一CFも 2行構造（ご主人年金受給額 / 奥様年金受給額）に統一
+  //   旧コードは 本人/配偶者/遺族 の3行構造で、画面（contingency.js renderContingency）と
+  //   行単位で食い違っていた。MR.pTotalH/pTotalW は contingency.js で合算済み（pS+survPH等）。
+  addISkip('ご主人年金受給額', MR.pTotalH, N.pTotalH);
+  addISkip('奥様年金受給額', MR.pTotalW, N.pTotalW);
   addISkip('死亡保険金',MR.insPayArr);
   // 年金型保険（個別行：実額がある契約のみ）
   if(MR.insAnnuityRows&&MR.insAnnuityRows.length>0){
@@ -1621,19 +1636,29 @@ async function exportExcel(){
   addI(_rl('otherInc','副業・その他収入'),R.otherInc);
   addI(_rl('rPay',_isSingle_e?'退職金':'退職金（ご主人）'),R.rPay);
   if(!_isSingle_e)addI(_rl('wRPay','退職金（奥様）'),R.wRPay);
-  addI(_rl('pS',_isSingle_e?'老齢年金':'本人年金'),R.pS);
-  if(!_isSingle_e){addI(_rl('pW','配偶者年金'),R.pW);addI(_rl('survPension','遺族年金'),R.survPension);}
+  // ★ B4修正: アプリ画面と同じ「ご主人年金受給額 / 奥様年金受給額」の2行構造に統一
+  //   旧コードは 本人年金/配偶者年金/遺族年金 の3行で出していたため、ご主人逝去後の年で
+  //   行単位で見るとアプリと食い違って見えていた。合計値は元から一致。
+  if(_isSingle_e){
+    addI(_rl('pS','老齢年金'),R.pS);
+  } else {
+    addI(_rl('pTotalH','ご主人年金受給額'), R.pTotalH);
+    addI(_rl('pTotalW','奥様年金受給額'), R.pTotalW);
+  }
   addI(_rl('dcReceiptH',_isSingle_e?'DC受取':'DC受取(主)'),R.dcReceiptH);
   if(!_isSingle_e)addI(_rl('dcReceiptW','DC受取(奥様)'),R.dcReceiptW);
   addI(_rl('idecoReceiptH',_isSingle_e?'iDeCo受取':'iDeCo受取(主)'),R.idecoReceiptH);
   if(!_isSingle_e)addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW);
   addI(_rl('insMat','保険満期金'),R.insMat);
-  if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(row.lbl,row.vals);});
+  // ★ B5修正: 個別行も _rl で行ラベル編集を反映
+  if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals);});
   // 財形解約（個別行：実額がある人のみ）
-  if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addI(row.lbl,row.vals);});}
+  if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addI(_rl(row.key||row.lbl,row.lbl),row.vals);});}
   addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
   // 自動資産取崩し（預貯金マイナス補填）
   if(R.autoLiq&&R.autoLiq.some(v=>v>0)) addI('📤 自動資産取崩し',R.autoLiq);
+  // ★ A2修正: 買い替えイベントの収入行（旧住宅売却額）— アプリ画面と同じ
+  if(R.swapSell&&R.swapSell.some(v=>v>0)) addI('🔄 旧住宅売却額',R.swapSell);
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -1652,6 +1677,10 @@ async function exportExcel(){
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))addE(_rl('chidai','地代'),R.chidai);
   if(R.kaitai&&R.kaitai.some(v=>v>0))addE(_rl('kaitai','解体準備金'),R.kaitai);
+  // ★ A2修正: 買い替えイベントの支出行（旧ローン一括返済・譲渡所得税・新居買付）
+  if(R.swapPayoff&&R.swapPayoff.some(v=>v>0)) addE('🔄 旧ローン一括返済',R.swapPayoff);
+  if(R.swapTax&&R.swapTax.some(v=>v>0)) addE('🔄 譲渡所得税',R.swapTax);
+  if(R.swapBuy&&R.swapBuy.some(v=>v>0)) addE('🔄 新居買付費用',R.swapBuy);
   if(isM)addE(_rl('rep','修繕積立金'),R.rep);
   addE(_rl('ptx','固定資産税'),R.ptx);addE(_rl('furn','家具家電買替'),R.furn);
   addE(_rl('senyu',isM?'専有部分修繕費':'修繕費'),R.senyu);
@@ -1664,18 +1693,20 @@ async function exportExcel(){
   // 全車両費(現有・将来)を1行に集約
   addE('車両費・車検',R.carTotal);
   addE(_rl('prk','駐車場代'),R.prk);
-  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
+  // ★ B5修正: 個別行も _rl で行ラベル編集を反映
+  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
   addE(_rl('secBuy','一括投資額'),R.secBuy);
-  if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
-  if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('一時払い保険',R.insLumpExp);}
+  if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
+  if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('一時払い保険',R.insLumpExp);}
   addE('結婚のお祝い',R.wedding);
   addE(_isSingle_e?'DC拠出':'DC拠出(主)',R.dcMatchExpH);
   if(!_isSingle_e)addE('DC拠出(奥様)',R.dcMatchExpW);
   addE(_isSingle_e?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH);
   if(!_isSingle_e)addE('iDeCo拠出(奥様)',R.idecoExpW);
   // 財形積立（個別行：実額がある人のみ）
-  if(R.zaikeiRows&&R.zaikeiRows.length>0){R.zaikeiRows.forEach(row=>{if(row.vals.some(v=>v>0))addE(row.lbl,row.vals);});}
-  if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(row.lbl,row.vals);});}else{addE('特別支出',R.ext);}
+  // ★ B5修正: 個別行も _rl で行ラベル編集を反映
+  if(R.zaikeiRows&&R.zaikeiRows.length>0){R.zaikeiRows.forEach(row=>{if(row.vals.some(v=>v>0))addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}
+  if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('特別支出',R.ext);}
   // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
   if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)) addE('💰 譲渡益課税(自動取崩し)',R.autoLiqTax);
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
