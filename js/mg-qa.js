@@ -124,8 +124,44 @@ function mgQA_renderTabs(){
     const btn = document.createElement('button');
     btn.className = 'rtab mgqa-tab' + (t.target==='w'?' pink':'');
     btn.id = `rt-${t.id}`;
-    btn.onclick = () => mgQA_switchTab(t.id);
-    btn.innerHTML = `🛡️ ${mgQA_escHtml(t.name)} <span class="stab-rm" style="margin-left:4px" onclick="event.stopPropagation();mgQA_deleteTab('${t.id}')" title="閉じる">×</span>`;
+    // 🛡️ アイコン
+    const icon = document.createElement('span');
+    icon.textContent = '🛡️ ';
+    icon.style.cssText = 'pointer-events:none';
+    btn.appendChild(icon);
+    // ★ 名前入力（CF表タブと同じ：ダブルクリックで編集可能）
+    const inp = document.createElement('input');
+    inp.className = 'stab-name';
+    inp.value = t.name;
+    inp.title = 'ダブルクリックで名前変更';
+    inp.readOnly = true;
+    inp.style.width = (Math.max(40, (t.name||'').length*14))+'px';
+    inp.addEventListener('dblclick', e=>{ e.stopPropagation(); inp.readOnly=false; inp.select(); });
+    inp.addEventListener('blur', ()=>{
+      inp.readOnly = true;
+      t.name = inp.value || t.name;
+      inp.value = t.name;
+      inp.style.width = (Math.max(40, t.name.length*14))+'px';
+      // 保存トリガ（mgQA_tabs の状態を永続化）
+      if(typeof scheduleAutoSave==='function') scheduleAutoSave();
+    });
+    inp.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){ inp.blur(); }
+      if(e.key==='Escape'){ inp.value = t.name; inp.blur(); }
+    });
+    inp.addEventListener('click', e=>{
+      if(inp.readOnly){ e.stopPropagation(); mgQA_switchTab(t.id); }
+    });
+    btn.appendChild(inp);
+    // ×（削除）ボタン
+    const rm = document.createElement('span');
+    rm.className = 'stab-rm';
+    rm.textContent = '×';
+    rm.style.marginLeft = '4px';
+    rm.title = '閉じる';
+    rm.addEventListener('click', e=>{ e.stopPropagation(); mgQA_deleteTab(t.id); });
+    btn.appendChild(rm);
+    btn.onclick = () => { if(inp.readOnly) mgQA_switchTab(t.id); };
     container.appendChild(btn);
   });
 }
