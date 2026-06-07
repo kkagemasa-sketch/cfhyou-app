@@ -1579,13 +1579,14 @@ async function exportExcel(){
   // 年齢
   const _isSingle_e=householdType==='single';
   // 退職・逝去列インデックス計算（CF表と同じ色分け）
+  // ★ M4修正: cf-table.js と同様、奥様欄未入力時に列が誤ハイライトされる問題を防ぐ
   const _hAgeX=iv('husband-age')||30, _wAgeX=iv('wife-age')||0;
-  const _retAgeX=iv('retire-age')||60, _wRetAgeX=iv('w-retire-age')||0;
+  const _retAgeX=iv('retire-age')||60, _wRetAgeX=iv('w-retire-age')||60;
   const _hDthX=iv('h-death-age')||83, _wDthX=_isSingle_e?0:(iv('w-death-age')||88);
   const hDeathColE=_hDthX>_hAgeX?_hDthX-_hAgeX:-1;
-  const wDeathColE=_wDthX>_wAgeX?_wDthX-_wAgeX:-1;
+  const wDeathColE=(!_isSingle_e&&_wAgeX>0&&_wDthX>_wAgeX)?(_wDthX-_wAgeX):-1;
   const hRetireColE=_retAgeX>_hAgeX?_retAgeX-_hAgeX:-1;
-  const wRetireColE=_wRetAgeX>_wAgeX?_wRetAgeX-_wAgeX:-1;
+  const wRetireColE=(!_isSingle_e&&_wAgeX>0&&_wRetAgeX>_wAgeX)?(_wRetAgeX-_wAgeX):-1;
   push(['年齢',_isSingle_e?'ご本人':'ご主人様',...R.hA.slice(0,disp),''],'age');
   if(!_isSingle_e)push(['','奥様',...R.wA.slice(0,disp),''],'age');
   // 子ども年齢

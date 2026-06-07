@@ -585,7 +585,8 @@ function addCar(defaults){
 }
 // ===== 現有車（既保有）セクション =====
 function addExistingCar(defaults){
-  if(typeof existingCarCnt==='undefined')window.existingCarCnt=0;
+  // ★ L1修正: state.js で `let existingCarCnt=0` 既宣言済みのため
+  //   `typeof existingCarCnt==='undefined'` は常に false。dead code を削除。
   existingCarCnt++;
   const id=existingCarCnt;
   const d=defaults||{};

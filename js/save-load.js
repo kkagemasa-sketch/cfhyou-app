@@ -573,13 +573,11 @@ function _restoreDynamic(d){
       if($('mg-lc-ratio-fields'))$('mg-lc-ratio-fields').style.display='';
       if($('mg-lc-step-fields'))$('mg-lc-step-fields').style.display='none';
     }
-    // 段階1（静的HTML）
-    if(mg.lcStep1){
-      if($('mg-lsb-1'))$('mg-lsb-1').value=mg.lcStep1.base;
-      if($('mg-lsr-1'))$('mg-lsr-1').value=mg.lcStep1.rate;
-      if($('mg-lsf-1'))$('mg-lsf-1').value=mg.lcStep1.from;
-      if($('mg-lst-1'))$('mg-lst-1').value=mg.lcStep1.to;
-    }
+    // ★ L2修正: 旧コードの「段階1（静的HTML）」復元ブロックは dead code。
+    //   _collectSaveData 側に mg.lcStep1 を書き込む処理が無く、保存データに lcStep1 が
+    //   登場することがない。静的step1の値は mg.lcSteps[0] として下記ループで復元される。
+    //   （HTMLの静的step1は line 585 の forEach(.mg-lc-step).remove() で消され、
+    //    その後 addMGLCStep() が新しい mg-lsb-1 等を生成、ループで値設定される）
     // 追加段階
     if($('mg-lc-steps-container')){
       $('mg-lc-steps-container').querySelectorAll('.mg-lc-step').forEach(el=>el.remove());

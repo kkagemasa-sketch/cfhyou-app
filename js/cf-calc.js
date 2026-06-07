@@ -1542,7 +1542,9 @@ function render(){
         const carLoanYrs=iv('car-'+cIdx+'-loan-yrs')||5;
         const carLoanRate=fvd('car-'+cIdx+'-loan-rate',2.5)/100/12;
         const carEndAge=iv('car-'+cIdx+'-end-age')||0;
-        const carActive=carEndAge<30||ha<carEndAge; // 30未満は無効値→常にアクティブ
+        // ★ M3修正: 旧コードは「30歳未満は無効値」と扱っていたため、27〜29歳のお客様で
+        //   carEndAge を有効値として設定しても効かない問題があった。0/空欄のみ無効値とする。
+        const carActive=carEndAge<=0||ha<carEndAge;
         // 台ごとの行を初期化
         const rowKey='car-'+cIdx;
         if(!R.carRows.find(r=>r.key===rowKey)){

@@ -20,14 +20,17 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   };
 
   // 逝去・退職列インデックス計算
+  // ★ M4修正: wAge0=0（奥様欄未入力）の場合に wDeathCol=88, wRetireCol=60 が
+  //   有効な列インデックスとして残り、CF表に誤ハイライトが出る問題を防ぐ。
+  //   wAge0 が正の値のときだけ列計算する（単身世帯は元から -1）。
   const _isSingle_t=householdType==='single';
   const wAge0=iv('wife-age');
   const hDeathAge=iv('h-death-age')||83,wDeathAge=_isSingle_t?0:(iv('w-death-age')||88);
-  const wRetireAge=iv('w-retire-age');
+  const wRetireAge=iv('w-retire-age')||60; // M4: 列計算用に同じく fallback
   const hDeathCol=hDeathAge>hAge?hDeathAge-hAge:-1;
-  const wDeathCol=wDeathAge>wAge0?wDeathAge-wAge0:-1;
+  const wDeathCol=(!_isSingle_t&&wAge0>0&&wDeathAge>wAge0)?(wDeathAge-wAge0):-1;
   const hRetireCol=retAge>hAge?retAge-hAge:-1;
-  const wRetireCol=wRetireAge>wAge0?wRetireAge-wAge0:-1;
+  const wRetireCol=(!_isSingle_t&&wAge0>0&&wRetireAge>wAge0)?(wRetireAge-wAge0):-1;
   const getColCls=i=>{let c='';if(i===hDeathCol||i===wDeathCol)c+=' col-death';if(i===hRetireCol||i===wRetireCol)c+=' col-retire';return c;};
 
   // 詳細ボックス（自己資金の内訳＋住宅ローン条件）の折りたたみ状態

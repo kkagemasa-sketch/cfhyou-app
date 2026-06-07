@@ -104,18 +104,21 @@ function syncMGCarFromNormal(){
   const endAge=iv(`car-${firstId}-end-age`)||70;
   const carType=cars[0].dataset.type||'new';
   // 両方のフィールドに反映（h=ご主人死亡時→奥様基準、w=奥様死亡時→ご主人基準）
+  // ★ L5修正: 旧コードは「デフォルト値（300/7/10/15000）と一致 or 0 or 空」を
+  //   「未設定」とみなして通常CFから上書きしていた。これだと「ユーザーが意図的に0や300を
+  //    入れた」値も上書きされてしまう。空欄のときだけ通常CFを反映に変更。
   ['h','w'].forEach(p=>{
-    const ep=$(`mg-car-${p}-price`);if(ep&&(ep.value==='300'||ep.value==='0'||ep.value===''))ep.value=price;
-    const ec=$(`mg-car-${p}-cycle`);if(ec&&(ec.value==='7'||ec.value==='0'||ec.value===''))ec.value=cycle;
-    const ei=$(`mg-car-${p}-insp`);if(ei&&(ei.value==='10'||ei.value==='0'||ei.value===''))ei.value=insp;
-    const ee=$(`mg-car-${p}-end-age`);if(ee&&!ee.value)ee.value=endAge;
+    const ep=$(`mg-car-${p}-price`); if(ep&&ep.value==='') ep.value=price;
+    const ec=$(`mg-car-${p}-cycle`); if(ec&&ec.value==='') ec.value=cycle;
+    const ei=$(`mg-car-${p}-insp`);  if(ei&&ei.value==='') ei.value=insp;
+    const ee=$(`mg-car-${p}-end-age`);if(ee&&!ee.value) ee.value=endAge;
     // 新車/中古も連動
     if(typeof setMGCarType==='function')setMGCarType(p,carType);
   });
   // 駐車場も連動
   const parkEl=$('mg-parking');
   const normPark=$('parking');
-  if(parkEl&&normPark&&(parkEl.value==='15000'||parkEl.value==='0'||parkEl.value===''))parkEl.value=normPark.value||'15000';
+  if(parkEl&&normPark&&parkEl.value==='') parkEl.value=normPark.value||'15000';
 }
 function setMGCarType(p,type){
   $(`mg-car-${p}-new`)?.classList.toggle('on',type==='new');
@@ -1513,7 +1516,7 @@ function _renderContingencyInner(){
   // 万が一CF表では、シミュレーション対象者の逝去列は入力パネルの死亡時期(mg-death-year)に合わせる
   const wAge0_mg=wAge;
   const hDeathAge_mg=iv('h-death-age')||83,wDeathAge_mg=iv('w-death-age')||88;
-  const wRetireAge_mg=iv('w-retire-age');
+  const wRetireAge_mg=iv('w-retire-age')||60; // ★ M1: 空欄時 fallback 追加（旧は -wAge0 で列マッチせず奥様の「定年」ハイライトが消えていた）
   const _mgDeathCol=deathYearOffset-1;
   const hDeathCol_mg=targetIsH?_mgDeathCol:(hDeathAge_mg>hAge?hDeathAge_mg-hAge:-1);
   const wDeathCol_mg=!targetIsH?_mgDeathCol:(wDeathAge_mg>wAge0_mg?wDeathAge_mg-wAge0_mg:-1);

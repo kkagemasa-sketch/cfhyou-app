@@ -639,6 +639,17 @@ function mgQA_hideLeftPanel(){
     if(btn) btn.classList.remove('on');
   });
   window._mgQA_activeTabId = null;
+  // ★ M5修正: Q&A タブを離れたら、その時の Q&A 専用グローバル状態を初期化する
+  //   これをしないと「前タブで設定した車多台/駐車場/収入オーバーライド/奨学金/住居ステージ」
+  //   が通常CFセッションの計算（renderContingency）に紛れ込む可能性があった。
+  //   既定値（継承ON / 上書きなし / 空配列）に戻す。
+  window._mgQA_existingCars = null;
+  window._mgQA_futureCars = null;
+  window._mgQA_carInherit = true;
+  window._mgQA_parkInherit = true;
+  window._mgIncomeOverride = {};
+  window._mgScholarshipItems = [];
+  window._mgHousingStages = null;
 }
 
 // --- 既存 setRTab をラップ：通常タブに切替えられたら左Q&Aを隠す ---
@@ -1639,12 +1650,16 @@ function mgQA_updateState(tab, el){
   } else {
     tab.state[key] = val;
     // 条件表示の更新
+    // ★ L3修正: 旧コードは classList.toggle('hidden', ...) を使っていたが、
+    //   mgQA_buildPanel は条件付き要素を style="display:none" インラインで生成しており、
+    //   .hidden クラスは CSS で定義されていないため切替が効かない場合があった。
+    //   style.display を直接いじるように変更。
     document.querySelectorAll('[data-cond]').forEach(cond=>{
       const [k, v] = cond.dataset.cond.split(':');
       if(k===key){
         // 値を文字列比較（'true' と true を同一視）
         const cur = String(tab.state[k]);
-        cond.classList.toggle('hidden', cur!==v);
+        cond.style.display = (cur===v) ? '' : 'none';
       }
     });
     // 奨学金enabledの切替でタブ再描画（子リスト表示切替）

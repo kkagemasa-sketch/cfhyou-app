@@ -538,16 +538,12 @@ function updateHints(){
   const fc=ivd('furn-cycle',10), fco=ivd('furn-cost',80);
   const fh=document.getElementById('furn-hint');
   if(fh)fh.textContent=`✓ ${fc}年ごとに${fco}万円`;
-  // 車手放す年齢ヒント
-  const carEA=iv('car-end-age');
-  const carEH=document.getElementById('car-end-hint');
-  if(carEH)carEH.textContent=carEA>0?`✓ ${carEA}歳で車を手放す`:'空欄＝ずっと乗り続ける';
-  const rc=iv('repair-cycle')||15, rco=iv('repair-cost')||100;
-  const rh=document.getElementById('repair-hint');
-  if(rh)rh.textContent=`✓ ${rc}年ごとに${rco}万円`;
-  const rc2=iv('repair-cycle2')||30, rco2=iv('repair-cost2')||0;
-  const rh2=document.getElementById('repair-hint2');
-  if(rh2)rh2.textContent=rco2>0?`✓ ${rc2}年ごとに${rco2}万円`:'（未設定）';
+  // ★ M2修正: 旧コードは存在しないID（car-end-age / repair-cycle / repair-cycle2 等）
+  //   を読んで「車を○歳で手放す」「N年ごとに○万円」のヒントを表示しようとしていた
+  //   が、対応する DOM 要素（car-end-hint / repair-hint / repair-hint2）も
+  //   index.html に存在せず完全に dead code 化していた（実害なし、誤情報も出ない）。
+  //   現状の修繕周期は housing.js の動的UI（repair-cont 内 rep-${id}）で
+  //   入力欄ごとに個別表示しているため、ここでの集約ヒントは不要。
   // 修繕積立金 自動表示更新
   if(ST.type==='mansion'&&typeof _renderRepAutoDisplay==='function')_renderRepAutoDisplay();
   const loanType=document.getElementById('loan-type')?.value||'equal_payment';
