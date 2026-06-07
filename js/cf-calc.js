@@ -261,9 +261,13 @@ function render(){
   const _idecoSeriesCache = {};
   const _lumpInsSeriesCache = {};
   if(_shocksActive){
+    // ★ C2修正(2026-06): _secBalByP/_secStkByP/_insLumpByP は line 403-405 で宣言されるため
+    //   このブロック時点では TDZ。`_secBalByP && ...` でガードしても const TDZ は
+    //   ReferenceError を投げるため、ここでは直接 document.querySelectorAll を使う
+    //   （シナリオ事前計算ブロックは1回しか走らないので perf 影響は無視できる）。
     ['h','w'].forEach(p=>{
       const pBaseAge = p==='h'?hAge:wAge;
-      (_secBalByP&&_secBalByP[p]||document.querySelectorAll(`[id^="sec-bal-${p}-"]`)).forEach(el=>{
+      document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
         const sid = el.id.split('-').pop();
         const isAccum = document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
         if(!isAccum) return;
@@ -275,7 +279,7 @@ function render(){
         const series = _computeAccumSeries(secKey, bal, monthly, rate, endAge, pBaseAge, pBaseAge);
         if(series) _accumSeriesCache[secKey] = series;
       });
-      (_secStkByP&&_secStkByP[p]||document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`)).forEach(el=>{
+      document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
         const sid = el.id.split('-').pop();
         const isStock = document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
         if(!isStock) return;
@@ -287,7 +291,7 @@ function render(){
         if(series) _stkSeriesCache[secKey] = series;
       });
       // 一時払い保険シリーズ
-      (_insLumpByP&&_insLumpByP[p]||document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`)).forEach(el=>{
+      document.querySelectorAll(`[id^="ins-lump-enroll-${p}-"]`).forEach(el=>{
         const iid = el.id.split('-').pop();
         const enrollAge = iv(`ins-lump-enroll-${p}-${iid}`)||pBaseAge;
         const amt = fv(`ins-lump-amt-${p}-${iid}`)||0;

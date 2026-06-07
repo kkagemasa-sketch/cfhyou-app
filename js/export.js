@@ -209,11 +209,15 @@ async function exportExcelMG(){
   const targetLabel=targetIsH?'ご主人様':'奥様';
   // ★ 修正: 旧コードは存在しないID 'ha'/'wa' を読んでおり、常にfallback値（30/28）が使われていた
   //   結果として Excel の「定年」マークが入力退職年齢と乖離していた
-  const hAge=iv('husband-age')||30, wAge=iv('wife-age')||28;
+  // ★ C6修正: wife-age fallback を contingency.js / mg-qa.js と揃えて 29 に（旧 28 で1歳ずれ）
+  const hAge=iv('husband-age')||30, wAge=iv('wife-age')||29;
   // ★ 退職年齢もアプリ側と同じく入力値を使う（旧コードは「定年」を60歳ハードコード）
   //   フォールバックは contingency.js (retAge_mg/wRetAge_mg) と完全一致させる
   const hRetireAge_e=iv('retire-age')||60;
   const wRetireAge_e=iv('w-retire-age')||60;
+  // ★ C5修正: 年金開始年齢もアプリ側と同じく入力値を使う（旧コードは 65 ハードコード）
+  const hPenRecv_e=iv('pension-h-receive')||65;
+  const wPenRecv_e=iv('pension-w-receive')||65;
 
   const wb=XLSX.utils.book_new();
   const rows=[], types=[];
@@ -431,7 +435,7 @@ async function exportExcelMG(){
     const ha=hAge+i;
     if(targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return 'ご逝去';
     if(ha===hRetireAge_e)return '定年'; // ★ 入力された退職年齢に追従
-    if(ha===65)return '年金開始';
+    if(ha===hPenRecv_e)return '年金開始'; // ★ C5: 入力された年金開始年齢に追従（旧:65固定）
     return '';
   }),''],'event');
   // 奥様イベント
@@ -439,7 +443,7 @@ async function exportExcelMG(){
     const wa=wAge+i;
     if(!targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return 'ご逝去';
     if(wa===wRetireAge_e)return '定年'; // ★ 入力された退職年齢に追従
-    if(wa===65)return '年金開始';
+    if(wa===wPenRecv_e)return '年金開始'; // ★ C5: 入力された年金開始年齢に追従（旧:65固定）
     return '';
   }),''],'event');
 

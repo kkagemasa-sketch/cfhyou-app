@@ -260,6 +260,8 @@ function _collectDynamic(){
   d.marketShocks=typeof marketShocks!=='undefined'?JSON.parse(JSON.stringify(marketShocks)):[];
   d.secIndexMap=typeof secIndexMap==='object'?{...secIndexMap}:{};
   d.marketShockCompareOn=typeof marketShockCompareOn!=='undefined'?!!marketShockCompareOn:true;
+  // ★ C3修正: 下落シミュ「適用ON/OFF」も永続化
+  d.marketShockEnabled=typeof marketShockEnabled!=='undefined'?!!marketShockEnabled:true;
   // 通常CF表 遺族年金上書き金額
   d.survHAmt=$('surv-h-amt')?.value||'';
   d.survWAmt=$('surv-w-amt')?.value||'';
@@ -936,12 +938,26 @@ function _applyData(d){
     cfCustomRows=d.cfCustomRows||[];
     mgCustomRows=d.mgCustomRows||[];
     _cfCustomId=d._cfCustomId||0;
-    _lcBikou=d.lcBikou||{};
-    _cfRowLabels=d.cfRowLabels||{};
+    // ★ バグ修正(2026-06): これらは _collectDynamic() 内で d に書かれ data.dynamic.* に格納される。
+    //   以前は d.lcBikou を直読みしていたため undefined → 常に初期化されてしまっていた。
+    //   data.dynamic.* を優先し、旧形式の data.* もフォールバックとして許容（後方互換）。
+    const _dyn = d.dynamic || {};
+    _lcBikou=(typeof _dyn.lcBikou==='object'&&_dyn.lcBikou)?_dyn.lcBikou:(d.lcBikou||{});
+    _cfRowLabels=(typeof _dyn.cfRowLabels==='object'&&_dyn.cfRowLabels)?_dyn.cfRowLabels:(d.cfRowLabels||{});
     // 下落シミュレーション
-    marketShocks=Array.isArray(d.marketShocks)?d.marketShocks:[];
-    secIndexMap=(d.secIndexMap&&typeof d.secIndexMap==='object')?d.secIndexMap:{};
-    marketShockCompareOn=(d.marketShockCompareOn===undefined)?true:!!d.marketShockCompareOn;
+    const _dynShocks = Array.isArray(_dyn.marketShocks) ? _dyn.marketShocks : (Array.isArray(d.marketShocks) ? d.marketShocks : []);
+    marketShocks = _dynShocks;
+    const _dynIdxMap = (_dyn.secIndexMap && typeof _dyn.secIndexMap==='object') ? _dyn.secIndexMap : ((d.secIndexMap && typeof d.secIndexMap==='object') ? d.secIndexMap : {});
+    secIndexMap = _dynIdxMap;
+    const _dynCmpOn = (_dyn.marketShockCompareOn===undefined) ? d.marketShockCompareOn : _dyn.marketShockCompareOn;
+    marketShockCompareOn = (_dynCmpOn===undefined) ? true : !!_dynCmpOn;
+    // ★ C3修正: 下落シミュ「適用ON/OFF」 (marketShockEnabled) も復元
+    const _dynEnabled = (_dyn.marketShockEnabled===undefined) ? d.marketShockEnabled : _dyn.marketShockEnabled;
+    if(typeof marketShockEnabled!=='undefined'){
+      marketShockEnabled = (_dynEnabled===undefined) ? true : !!_dynEnabled;
+      // UI ボタンの表示も同期
+      if(typeof _mspSyncEnabledUi==='function') _mspSyncEnabledUi();
+    }
     // IDカウンタを再同期
     if(marketShocks.length>0){_marketShockId=Math.max(...marketShocks.map(s=>parseInt(s.id)||0));}
     // フラット35復元

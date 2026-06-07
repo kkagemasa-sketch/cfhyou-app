@@ -890,7 +890,21 @@ function _renderContingencyInner(){
 
     // 奨学金
     let scholarVal=i<normalR.scholarship.length?(normalR.scholarship[i]||0):0;
-    if(isDead&&mgScholarAmt>0&&children.length>0){
+    // ★ C4修正: Q&Aパネル新形式（window._mgScholarshipItems）が設定されていれば優先採用。
+    //   旧の単一入力（mg-scholarship-amt）は新形式が無い場合のみ使う。
+    const _mgQAItems = (typeof window!=='undefined' && Array.isArray(window._mgScholarshipItems))
+                       ? window._mgScholarshipItems : null;
+    if(isDead && _mgQAItems && _mgQAItems.length>0){
+      _mgQAItems.forEach(it=>{
+        if(!it || !(it.amount>0)) return;
+        const cIdx = it.childIdx;
+        const c = children[cIdx];
+        if(!c) return;
+        const ageNow = c.age + i;
+        const targetAge = it.phase==='hs' ? 16 : 19; // 高校入学=16歳 / 大学入学=19歳
+        if(ageNow === targetAge) scholarVal += it.amount;
+      });
+    } else if(isDead && mgScholarAmt>0 && children.length>0){
       const firstChildAge=children[0].age+i;
       if(firstChildAge===mgScholarAge)scholarVal+=mgScholarAmt;
     }
