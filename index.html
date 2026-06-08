@@ -342,10 +342,13 @@ window.closeAboutModal=closeAboutModal;
           <span id="calc-arrow" style="font-size:10px;color:#94a3b8">▼</span>
         </button>
 
-        <!-- 計算機ポップアップ本体（ボタンの直下にフロート表示） -->
-        <div id="calc-popup" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;box-shadow:0 8px 24px rgba(45,125,210,.18),0 2px 8px rgba(0,0,0,.08)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-size:11px;font-weight:700;color:#2d7dd2">🧮 手取り計算機（参考用）</div>
+        <!-- 計算機ポップアップ本体（ボタンの直下にフロート表示、ヘッダードラッグで移動可） -->
+        <div id="calc-popup" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;box-shadow:0 8px 24px rgba(45,125,210,.18),0 2px 8px rgba(0,0,0,.08);user-select:none">
+          <div id="calc-popup-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:move;touch-action:none" title="ドラッグで移動">
+            <div style="font-size:11px;font-weight:700;color:#2d7dd2;display:flex;align-items:center;gap:4px">
+              <span style="font-size:9px;color:#94a3b8;letter-spacing:.5px">⋮⋮</span>
+              <span>🧮 手取り計算機（参考用）</span>
+            </div>
             <button type="button" onclick="toggleCalcPopup()" title="閉じる" style="font-size:14px;line-height:1;color:#94a3b8;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px">×</button>
           </div>
           <div id="calc-body">
@@ -389,6 +392,140 @@ window.closeAboutModal=closeAboutModal;
             setTimeout(()=>{document.getElementById('calc-gross')?.focus();},50);
           }
         }
+
+        // ─── ポップアップのドラッグ移動 ───
+        // ヘッダー部をドラッグ → position:fixed に切替えて自由配置
+        // localStorage に位置を保存し次回開いた時も同じ場所
+        (function(){
+          let _dragging=false, _startX=0, _startY=0, _origLeft=0, _origTop=0;
+          const POS_KEY='cf_calc_popup_pos';
+
+          function _initFloatingPos(pop){
+            // 既に fixed に切替済みなら何もしない
+            if(pop.dataset.floating==='1') return;
+            const rect=pop.getBoundingClientRect();
+            pop.style.position='fixed';
+            pop.style.top=rect.top+'px';
+            pop.style.left=rect.left+'px';
+            pop.style.right='auto';
+            pop.style.width=rect.width+'px';
+            pop.dataset.floating='1';
+          }
+
+          function _restoreSavedPos(){
+            const pop=document.getElementById('calc-popup');
+            if(!pop) return;
+            try{
+              const saved=localStorage.getItem(POS_KEY);
+              if(!saved) return;
+              const p=JSON.parse(saved);
+              if(typeof p.left==='number' && typeof p.top==='number'){
+                pop.style.position='fixed';
+                pop.style.top=p.top+'px';
+                pop.style.left=p.left+'px';
+                pop.style.right='auto';
+                if(p.width) pop.style.width=p.width+'px';
+                pop.dataset.floating='1';
+              }
+            }catch(e){}
+          }
+
+          function _onMouseDown(e){
+            // × ボタンクリックはドラッグ開始しない
+            if(e.target.tagName==='BUTTON') return;
+            const pop=document.getElementById('calc-popup');
+            if(!pop) return;
+            _initFloatingPos(pop);
+            _dragging=true;
+            _startX=e.clientX;
+            _startY=e.clientY;
+            const rect=pop.getBoundingClientRect();
+            _origLeft=rect.left;
+            _origTop=rect.top;
+            e.preventDefault();
+          }
+          function _onTouchStart(e){
+            if(e.target.tagName==='BUTTON') return;
+            const pop=document.getElementById('calc-popup');
+            if(!pop || !e.touches[0]) return;
+            _initFloatingPos(pop);
+            _dragging=true;
+            _startX=e.touches[0].clientX;
+            _startY=e.touches[0].clientY;
+            const rect=pop.getBoundingClientRect();
+            _origLeft=rect.left;
+            _origTop=rect.top;
+            e.preventDefault();
+          }
+          function _onMove(clientX, clientY){
+            if(!_dragging) return;
+            const pop=document.getElementById('calc-popup');
+            if(!pop) return;
+            const dx=clientX-_startX, dy=clientY-_startY;
+            // 画面外に出すぎないようクランプ
+            const popW=pop.offsetWidth, popH=pop.offsetHeight;
+            const maxLeft=Math.max(0,window.innerWidth-50);
+            const maxTop=Math.max(0,window.innerHeight-30);
+            let newLeft=_origLeft+dx;
+            let newTop=_origTop+dy;
+            newLeft=Math.min(Math.max(-popW+80, newLeft), maxLeft);
+            newTop=Math.min(Math.max(0, newTop), maxTop);
+            pop.style.left=newLeft+'px';
+            pop.style.top=newTop+'px';
+          }
+          function _onMouseMove(e){ _onMove(e.clientX, e.clientY); }
+          function _onTouchMove(e){
+            if(!e.touches[0]) return;
+            _onMove(e.touches[0].clientX, e.touches[0].clientY);
+            if(_dragging) e.preventDefault();
+          }
+          function _onEnd(){
+            if(!_dragging) return;
+            _dragging=false;
+            // 位置を保存
+            const pop=document.getElementById('calc-popup');
+            if(!pop) return;
+            try{
+              localStorage.setItem(POS_KEY, JSON.stringify({
+                left:parseInt(pop.style.left)||0,
+                top:parseInt(pop.style.top)||0,
+                width:pop.offsetWidth
+              }));
+            }catch(e){}
+          }
+
+          document.addEventListener('DOMContentLoaded', ()=>{
+            const header=document.getElementById('calc-popup-header');
+            if(header){
+              header.addEventListener('mousedown', _onMouseDown);
+              header.addEventListener('touchstart', _onTouchStart, {passive:false});
+            }
+            document.addEventListener('mousemove', _onMouseMove);
+            document.addEventListener('touchmove', _onTouchMove, {passive:false});
+            document.addEventListener('mouseup', _onEnd);
+            document.addEventListener('touchend', _onEnd);
+            // 初回ロード時に保存された位置を復元
+            _restoreSavedPos();
+          });
+
+          // 位置リセット用（ダブルクリックで元の位置に戻る）
+          document.addEventListener('DOMContentLoaded', ()=>{
+            const header=document.getElementById('calc-popup-header');
+            if(!header) return;
+            header.addEventListener('dblclick', (e)=>{
+              if(e.target.tagName==='BUTTON') return;
+              const pop=document.getElementById('calc-popup');
+              if(!pop) return;
+              pop.style.position='absolute';
+              pop.style.top='calc(100% + 6px)';
+              pop.style.left='0';
+              pop.style.right='0';
+              pop.style.width='';
+              pop.dataset.floating='0';
+              try{ localStorage.removeItem(POS_KEY); }catch(e){}
+            });
+          });
+        })();
       </script>
 
       <!-- 👔 ご主人様カード -->
