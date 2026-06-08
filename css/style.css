@@ -301,8 +301,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
   /* ★ スクロール最適化: GPU レイヤー化（translate3d で X/Y/Z 明示）+ 行ごとの content-visibility */
   transform:translate3d(0,0,0);backface-visibility:hidden}
 .cf th,.cf td{border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;padding:3px 6px;white-space:nowrap;min-width:48px;width:48px;text-align:right}
-/* ★ 段階1: tbody に contain:paint を追加してスクロール時の塗り直し範囲を限定 */
-.cf tbody{contain:paint}
+/* ★ 段階1: tbody への contain:paint は sticky 左2列と干渉して
+   下スクロール時にテーブルが斜めにずれる問題が出るため撤去。
+   .cf 自体には layout style のみ適用済みで、tr 単位の content-visibility:auto と
+   下記 will-change:scroll-position の方が安全に効く。 */
 /* ★ スクロール最適化: 画面外行の描画スキップ（90歳長期データで効果大）
    ※ tr に対して content-visibility:auto + contain-intrinsic-size で
       可視領域外の行を描画コストから除外する。 */
