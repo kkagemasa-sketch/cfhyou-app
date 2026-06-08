@@ -291,20 +291,25 @@ function addIncomeStep(person){
   const el=document.createElement('div');
   el.id=id;
   el.style.cssText='background:var(--gray-bg);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;margin-bottom:6px';
+  el.dataset.collapsed='false'; // 初期は展開（新規追加時に入力できるよう）
   el.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <span style="font-size:11px;font-weight:700;color:var(--navy)">段階${cnt}</span>
-      <button class="btn-rm" onclick="document.getElementById('${id}').remove();if(typeof calcPension==='function')calcPension('${id.startsWith('h-')?'h':'w'}');live()">×</button>
+    <!-- 折りたたみ時の要約行（クリックで開閉） -->
+    <div id="${id}-header" onclick="toggleIncomeStep('${id}')" style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;user-select:none">
+      <span id="${id}-chev" style="font-size:10px;color:#64748b;width:10px;flex-shrink:0">▼</span>
+      <span style="font-size:11px;font-weight:700;color:var(--navy);flex-shrink:0">段階${cnt}</span>
+      <span id="${id}-summary" style="font-size:11px;color:#475569;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <button class="btn-rm" onclick="event.stopPropagation();document.getElementById('${id}').remove();if(typeof calcPension==='function')calcPension('${id.startsWith('h-')?'h':'w'}');live()" style="flex-shrink:0">×</button>
     </div>
+    <div id="${id}-body">
     <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:6px">
       <div class="fg">
         <label class="lbl">開始年齢</label>
-        <div class="suf"><input class="inp age-inp" id="${id}-from" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defFrom}" min="18" max="80" oninput="calcStepHint('${id}')"><span class="sl">歳</span></div>
+        <div class="suf"><input class="inp age-inp" id="${id}-from" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur();updateIncomeStepSummary('${id}')" value="${defFrom}" min="18" max="80" oninput="calcStepHint('${id}')"><span class="sl">歳</span></div>
       </div>
       <div style="font-size:13px;color:var(--muted);text-align:center;padding-top:18px">→</div>
       <div class="fg">
         <label class="lbl">終了年齢</label>
-        <div class="suf"><input class="inp age-inp" id="${id}-to" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="${defTo}" min="18" max="80" oninput="calcStepHint('${id}');syncNextStepFrom('${id}')"><span class="sl">歳</span></div>
+        <div class="suf"><input class="inp age-inp" id="${id}-to" type="number" onfocus="scrollToCFRowRange(this.id.includes('h-is')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur();updateIncomeStepSummary('${id}')" value="${defTo}" min="18" max="80" oninput="calcStepHint('${id}');syncNextStepFrom('${id}')"><span class="sl">歳</span></div>
       </div>
     </div>
     <div style="display:flex;gap:4px;margin-bottom:6px">
@@ -315,12 +320,12 @@ function addIncomeStep(person){
       <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center">
         <div class="fg">
           <label class="lbl">開始時の手取り年収</label>
-          <div class="suf"><input class="inp amt-inp" id="${id}-net-from" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:500" min="0" oninput="calcStepHint('${id}')"><span class="sl">万円</span></div>
+          <div class="suf"><input class="inp amt-inp" id="${id}-net-from" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur();updateIncomeStepSummary('${id}')" value="" placeholder="例:500" min="0" oninput="calcStepHint('${id}')"><span class="sl">万円</span></div>
         </div>
         <div style="font-size:13px;color:var(--muted);text-align:center;padding-top:18px">→</div>
         <div class="fg">
           <label class="lbl">終了時の手取り年収</label>
-          <div class="suf"><input class="inp amt-inp" id="${id}-net-to" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur()" value="" placeholder="例:1000" min="0" oninput="calcStepHint('${id}')"><span class="sl">万円</span></div>
+          <div class="suf"><input class="inp amt-inp" id="${id}-net-to" type="number" onfocus="scrollToCFRowRange(this.id.startsWith('h')?'hInc':'wInc','${id}-from','${id}-to')" onblur="cfRowBlur();updateIncomeStepSummary('${id}')" value="" placeholder="例:1000" min="0" oninput="calcStepHint('${id}')"><span class="sl">万円</span></div>
         </div>
       </div>
     </div>
@@ -334,17 +339,99 @@ function addIncomeStep(person){
     <div id="${id}-hint" style="font-size:11px;color:#3a8a3a;margin-top:6px;font-weight:600">手取り：― 万円 → ― 万円</div>
     <div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border);flex-wrap:wrap">
       <label title="この段階は育休期間" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#d97706;cursor:pointer;white-space:nowrap;background:#fff3e0;border:1px solid #ffb74d;border-radius:4px;padding:3px 6px;user-select:none">
-        <input type="checkbox" id="${id}-matleave" onchange="onMatLeaveToggle('${id}')" style="margin:0;cursor:pointer;accent-color:#d97706">
+        <input type="checkbox" id="${id}-matleave" onchange="onMatLeaveToggle('${id}');updateIncomeStepSummary('${id}')" style="margin:0;cursor:pointer;accent-color:#d97706">
         🍼 育休
       </label>
       <button type="button" id="${id}-ml-recalc" title="給付金を再計算（前段階の手取りから）" onclick="applyMatLeaveBenefit('${id}');live()" style="display:none;font-size:10px;background:#fff;border:1px solid #ffb74d;color:#d97706;border-radius:4px;padding:3px 6px;cursor:pointer;white-space:nowrap">♻ 給付金再計算</button>
       <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap">イベント</span>
-      <input id="${id}-leave" class="inp" oninput="live()" style="font-size:11px;padding:4px 8px;border-radius:5px;flex:1;min-width:120px" placeholder="例:産休・育休、時短、転職 等" value="">
+      <input id="${id}-leave" class="inp" oninput="live()" onblur="updateIncomeStepSummary('${id}')" style="font-size:11px;padding:4px 8px;border-radius:5px;flex:1;min-width:120px" placeholder="例:産休・育休、時短、転職 等" value="">
       <span style="font-size:10px;color:var(--muted);white-space:nowrap">← CF表のイベント行に表示</span>
-    </div>`;
+    </div>
+    </div><!-- /body -->`;
   document.getElementById(`${person}-income-cont`).appendChild(el);
+  // 初期サマリーを描画（空の状態）
+  if(typeof updateIncomeStepSummary==='function') updateIncomeStepSummary(id);
   live();
 }
+
+// ===== 収入段階の折りたたみ／要約表示 =====
+// 入力済みの段階を1行に圧縮表示することで「追加済み」を明示し、誤って
+// 追加ボタンを連打して同じ段階を二重作成するのを防ぐ。
+function updateIncomeStepSummary(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const summaryEl=document.getElementById(`${id}-summary`);
+  if(!summaryEl)return;
+  const _v=(suf)=>{const e=document.getElementById(`${id}-${suf}`);if(!e)return'';return (e._rawValue!==undefined?e._rawValue:e.value)||'';};
+  const from=_v('from'), to=_v('to');
+  const isPct=document.getElementById(`${id}-mode-pct`)?.classList.contains('on');
+  let amtPart='';
+  if(isPct){
+    const pct=_v('pct');
+    amtPart=pct?`${pct}%`:'';
+  }else{
+    const nf=_v('net-from'), nt=_v('net-to');
+    if(nf && nt) amtPart=`${nf}→${nt}万`;
+    else if(nf) amtPart=`${nf}万`;
+  }
+  const ageRange = (from||to) ? `${from||'?'}〜${to||'?'}歳` : '';
+  const mlOn=document.getElementById(`${id}-matleave`)?.checked;
+  const evName=(document.getElementById(`${id}-leave`)?.value||'').trim();
+  const tags=[];
+  if(mlOn) tags.push('🍼育休');
+  if(evName) tags.push(evName.length>10 ? evName.slice(0,10)+'…' : evName);
+  const parts=[ageRange, amtPart, ...tags].filter(Boolean);
+  summaryEl.textContent = parts.length ? parts.join(' / ') : '（未入力）';
+  // 入力完了判定（年齢2つ+金額が入っていれば「入力済」とみなして緑のチェックを出す）
+  const complete = from && to && (isPct ? _v('pct') : (_v('net-from') && _v('net-to')));
+  if(complete){
+    summaryEl.style.color='#15803d';
+    summaryEl.style.fontWeight='600';
+  }else{
+    summaryEl.style.color='#94a3b8';
+    summaryEl.style.fontWeight='400';
+  }
+}
+function toggleIncomeStep(id){
+  const el=document.getElementById(id);
+  const body=document.getElementById(`${id}-body`);
+  const chev=document.getElementById(`${id}-chev`);
+  if(!el||!body)return;
+  const isCollapsed = el.dataset.collapsed==='true';
+  if(isCollapsed){
+    body.style.display='';
+    el.dataset.collapsed='false';
+    if(chev) chev.textContent='▼';
+  }else{
+    body.style.display='none';
+    el.dataset.collapsed='true';
+    if(chev) chev.textContent='▶';
+  }
+}
+// 全段階を一括で折りたたみ／展開
+function collapseAllIncomeSteps(person, doCollapse){
+  const cont=document.getElementById(`${person}-income-cont`);
+  if(!cont)return;
+  cont.querySelectorAll('[id^="'+person+'-is-"]').forEach(el=>{
+    const id=el.id;
+    const body=document.getElementById(`${id}-body`);
+    const chev=document.getElementById(`${id}-chev`);
+    if(!body)return;
+    if(doCollapse){
+      body.style.display='none';
+      el.dataset.collapsed='true';
+      if(chev) chev.textContent='▶';
+    }else{
+      body.style.display='';
+      el.dataset.collapsed='false';
+      if(chev) chev.textContent='▼';
+    }
+    if(typeof updateIncomeStepSummary==='function') updateIncomeStepSummary(id);
+  });
+}
+window.updateIncomeStepSummary=updateIncomeStepSummary;
+window.toggleIncomeStep=toggleIncomeStep;
+window.collapseAllIncomeSteps=collapseAllIncomeSteps;
 // カンマ付きamt-inp対応：_rawValueがあればそちらを使う
 function _amtVal(el){
   if(!el)return 0;

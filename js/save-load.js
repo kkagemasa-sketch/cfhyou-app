@@ -413,7 +413,11 @@ function _restoreDynamic(d){
         mlCb.checked=!!s.matLeave;
         if(typeof onMatLeaveToggle==='function'&&s.matLeave) onMatLeaveToggle(base);
       }
+      // ★ 復元したら要約を更新して、入力済みなら折りたたむ
+      if(typeof updateIncomeStepSummary==='function') updateIncomeStepSummary(base);
     });
+    // ★ 復元完了後、全段階を一括で折りたたむ（入力済みであることを明示）
+    if(typeof collapseAllIncomeSteps==='function') collapseAllIncomeSteps(p, true);
   });
   // 金利ステップ
   if($('rate-cont'))$('rate-cont').innerHTML=''; rCnt=0; if($('btn-add-rate'))$('btn-add-rate').style.display='';

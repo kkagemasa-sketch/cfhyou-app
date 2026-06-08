@@ -537,7 +537,11 @@ window.closeAboutModal=closeAboutModal;
         <div style="padding:12px">
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">手取り年収の段階を入力（上の計算機で確認できます）</div>
           <div id="h-income-cont"></div>
-          <button class="btn-add" onclick="addIncomeStep('h')">＋ 収入段階を追加</button>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <button class="btn-add" onclick="addIncomeStep('h')">＋ 収入段階を追加</button>
+            <button type="button" onclick="collapseAllIncomeSteps('h',true)" title="全段階を要約表示にする" style="font-size:10px;color:#64748b;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:inherit">▶ 全て要約</button>
+            <button type="button" onclick="collapseAllIncomeSteps('h',false)" title="全段階を展開して編集" style="font-size:10px;color:#64748b;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:inherit">▼ 全て展開</button>
+          </div>
 
           <div class="divider"></div>
 
@@ -720,7 +724,11 @@ window.closeAboutModal=closeAboutModal;
 
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">手取り年収の段階を入力してください</div>
           <div id="w-income-cont"></div>
-          <button class="btn-add" onclick="addIncomeStep('w')">＋ 収入段階を追加</button>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <button class="btn-add" onclick="addIncomeStep('w')">＋ 収入段階を追加</button>
+            <button type="button" onclick="collapseAllIncomeSteps('w',true)" title="全段階を要約表示にする" style="font-size:10px;color:#64748b;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:inherit">▶ 全て要約</button>
+            <button type="button" onclick="collapseAllIncomeSteps('w',false)" title="全段階を展開して編集" style="font-size:10px;color:#64748b;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:inherit">▼ 全て展開</button>
+          </div>
 
           <div class="divider"></div>
 
@@ -1949,7 +1957,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/market-sim.js?v=6"></script>
 <script src="js/utils.js?v=25"></script>
 <script src="js/family.js?v=5"></script>
-<script src="js/income.js?v=21"></script>
+<script src="js/income.js?v=22"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=5"></script>
 <script src="js/housing.js?v=34"></script>
@@ -1967,7 +1975,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/loan-plan.js?v=17"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=66"></script>
+<script src="js/save-load.js?v=67"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=8"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>
