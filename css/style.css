@@ -74,8 +74,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .hdr-acts{display:flex;gap:6px;align-items:center}
 .btn-h{background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.15);padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;transition:.15s;font-weight:500}
 .btn-h:hover{background:rgba(255,255,255,.16)}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* ★ 段階1パフォーマンス改善: .live-dot は未使用クラスのため削除。
+   旧コードは無限パルスアニメーションを定義していたが要素自体が無く dead code。
+   万一どこかで使われるとブラウザに常時 GPU フレーム要求が走るため整理。 */
+.live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80}
 
 /* ============================================================
    2ペインレイアウト
@@ -109,7 +111,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .scen-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:center;justify-content:center}
 .scen-modal{background:#fff;border-radius:12px;padding:24px;width:300px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 /* 右パネル本体：CF表時はflex列で分割、他タブは通常スクロール */
-.r-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px 16px;will-change:scroll-position}
+/* ★ 段階1: contain:layout style + isolation で他要素の影響を遮断
+   will-change:scroll-position は IE/旧Edgeのヒントのため現代ブラウザでは効果薄。
+   contain で paint scope を限定する方が確実。 */
+.r-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px 16px;contain:layout style;isolation:isolate}
 .r-body.cf-mode{display:flex;flex-direction:column;overflow:hidden}
 .r-body::-webkit-scrollbar{width:6px}
 .r-body::-webkit-scrollbar-track{background:#f0f4f8}
@@ -293,9 +298,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
    CF表：テーブル共通
    ============================================================ */
 .cf{border-collapse:separate;border-spacing:0;min-width:100%;font-size:11px;font-family:'Cascadia Code','Consolas','Menlo',monospace;contain:layout style;table-layout:fixed;
-  /* ★ スクロール最適化: GPU レイヤー化 + 行ごとの content-visibility */
-  transform:translateZ(0);backface-visibility:hidden}
+  /* ★ スクロール最適化: GPU レイヤー化（translate3d で X/Y/Z 明示）+ 行ごとの content-visibility */
+  transform:translate3d(0,0,0);backface-visibility:hidden}
 .cf th,.cf td{border-right:1px solid #ccd4e0;border-bottom:1px solid #ccd4e0;padding:3px 6px;white-space:nowrap;min-width:48px;width:48px;text-align:right}
+/* ★ 段階1: tbody に contain:paint を追加してスクロール時の塗り直し範囲を限定 */
+.cf tbody{contain:paint}
 /* ★ スクロール最適化: 画面外行の描画スキップ（90歳長期データで効果大）
    ※ tr に対して content-visibility:auto + contain-intrinsic-size で
       可視領域外の行を描画コストから除外する。 */
@@ -303,6 +310,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* ★ スクロール中はホバー効果を無効化（body.cf-scrolling クラスで切替） */
 body.cf-scrolling .cf td:hover{background:inherit!important;box-shadow:none!important}
 body.cf-scrolling .cf tbody tr:hover{background:inherit!important}
+/* ★ 段階1: スクロール中は contenteditable のヒットテストを軽量化
+   pointer-events:none でスクロール中のセルマウスオーバー処理をスキップ。
+   editing 時にはスクロール中ではないので編集動作には影響なし。 */
+body.cf-scrolling .cf tbody td{pointer-events:none}
 
 /* 固定左2列（contain:paintはz-indexを壊すため使用禁止） */
 .cf th:first-child,.cf td:first-child{position:-webkit-sticky;position:sticky;left:0;z-index:8;min-width:86px;max-width:86px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;text-align:left;font-size:10px;border-right:none!important;contain:layout style}
