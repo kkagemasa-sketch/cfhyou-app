@@ -1614,6 +1614,9 @@ function render(){
         const ecIdx=ecEl.id.replace('ecar-','');
         const ecType=ecEl.dataset.type||'new';
         const ecPay=ecEl.dataset.pay||'cash';
+        // ★ 当初借入時期 (bought-ago) は「当初借入条件」モード内に移動したが、
+        //   input 自体は DOM 上に残っているため display:none でも fvd で読み出せる。
+        //   現金払い・逆算モード時は車検タイミングの基準としてだけ使われる。
         const boughtAgo=fvd('ecar-'+ecIdx+'-bought-ago',3);
         const ecPrice=fvd('ecar-'+ecIdx+'-price',300);
         const ecInsp=fvd('ecar-'+ecIdx+'-insp',10);

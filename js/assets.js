@@ -615,19 +615,20 @@ function addExistingCar(defaults){
       <div class="tc ${d.pay!=='loan'?'on':''}" id="ecar-${id}-pay-cash" onclick="setExistingCarPay(${id},'cash')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">💴 現金一括</div></div>
       <div class="tc ${d.pay==='loan'?'on':''}" id="ecar-${id}-pay-loan" onclick="setExistingCarPay(${id},'loan')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">🏦 ローン中</div></div>
     </div>
-    <div class="g3" style="margin-bottom:8px">
-      <div class="fg"><label class="lbl" style="font-size:10px">購入時期</label>
-        <div class="suf"><input class="inp age-inp" id="ecar-${id}-bought-ago" type="number" value="${d.boughtAgo||3}" min="0" max="20" oninput="live()"><span class="sl">年前</span></div></div>
-      <div class="fg"><label class="lbl" style="font-size:10px">購入価格</label>
-        <div class="suf"><input class="inp amt-inp" id="ecar-${id}-price" type="number" value="${d.price||300}" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+    <!-- 共通の最低限入力（pay/mode に依存しない） -->
+    <div class="g2" style="margin-bottom:8px">
       <div class="fg"><label class="lbl" style="font-size:10px">手放す時期</label>
         <div class="suf"><input class="inp age-inp" id="ecar-${id}-end-yrs" type="number" value="${d.endYrs||5}" min="0" max="30" oninput="live()"><span class="sl">年後</span></div></div>
-    </div>
-    <div class="g2" style="margin-bottom:8px">
       <div class="fg"><label class="lbl" style="font-size:10px">車検費用（1回）</label>
         <div class="suf"><input class="inp amt-inp" id="ecar-${id}-insp" type="number" value="${d.insp||10}" min="0" oninput="live()"><span class="sl">万円</span></div>
         <span class="hint" id="ecar-${id}-insp-hint" style="font-size:9px">${(d.type||'new')==='new'?'新車：購入から3年後・以降2年ごと':'中古：購入から2年ごと'}</span></div>
     </div>
+    <!--
+      ※ 購入時期/購入価格 は当初借入条件モードでのみ表示する。
+        cash払い・逆算モード時は input が display:none で隠れるが、
+        DOM 上に存在し続けるので fvd で値を読める。
+        車検タイミングは購入時期（既定3年前）を基準に計算され続ける。
+    -->
     <div id="ecar-${id}-loan-fields" style="display:${d.pay==='loan'?'':'none'};background:#fff3d0;border:1px solid #ffc000;border-radius:var(--rs);padding:8px">
       <div style="display:flex;gap:4px;margin-bottom:6px">
         <div class="tc ${(d.loanInputMode||'original')==='original'?'on':''}" id="ecar-${id}-loan-mode-original" onclick="setExistingCarLoanMode(${id},'original')" style="flex:1;padding:4px 6px"><div class="tc-lbl" style="font-size:10px">📋 当初借入条件から</div></div>
@@ -638,9 +639,15 @@ function addExistingCar(defaults){
       <!-- モード①: 当初借入条件 -->
       <div id="ecar-${id}-loan-original-fields" style="display:${(d.loanInputMode||'original')==='original'?'':'none'}">
         <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🏦 当初ローン条件（自動で残債計算）</div>
-        <div class="g3">
+        <div class="g3" style="margin-bottom:6px">
+          <div class="fg"><label class="lbl" style="font-size:9px">当初借入時期</label>
+            <div class="suf"><input class="inp age-inp" id="ecar-${id}-bought-ago" type="number" value="${d.boughtAgo||3}" min="0" max="20" oninput="setExistingCarPay(${id},'loan')"><span class="sl">年前</span></div></div>
+          <div class="fg"><label class="lbl" style="font-size:9px">購入価格</label>
+            <div class="suf"><input class="inp amt-inp" id="ecar-${id}-price" type="number" value="${d.price||300}" min="0" oninput="setExistingCarPay(${id},'loan')"><span class="sl">万円</span></div></div>
           <div class="fg"><label class="lbl" style="font-size:9px">当初頭金</label>
             <div class="suf"><input class="inp amt-inp" id="ecar-${id}-down" type="number" value="${d.down||50}" min="0" oninput="setExistingCarPay(${id},'loan')"><span class="sl">万円</span></div></div>
+        </div>
+        <div class="g2">
           <div class="fg"><label class="lbl" style="font-size:9px">当初借入年数</label>
             <div class="suf"><input class="inp age-inp" id="ecar-${id}-loan-yrs" type="number" value="${d.loanYrs||5}" min="1" max="10" oninput="setExistingCarPay(${id},'loan')"><span class="sl">年</span></div></div>
           <div class="fg"><label class="lbl" style="font-size:9px">当初金利</label>
