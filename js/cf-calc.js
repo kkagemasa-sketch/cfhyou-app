@@ -458,6 +458,11 @@ function render(){
       });
     });
   });
+  // ★ パフォーマンス改善: securityState を Map 化（O(1) 検索）
+  //   年ループ内で多用される `securityState.find(...)` を高速化（O(N²) → O(N)）。
+  //   キー: `${type}|${p}|${sid}` の文字列。
+  const _secStateMap = new Map();
+  securityState.forEach(s=>_secStateMap.set(`${s.type}|${s.p}|${s.sid}`, s));
   // 取崩し優先順位（デフォルト: 課税口座 → NISA口座）
   // 将来のUI拡張用にlocalStorageから優先順位を読み込み（priorityKey: sid-p）
   // この実装では未使用、defaultはfilter()で課税/NISA分け
@@ -628,6 +633,18 @@ function render(){
     }
     return {gross:totalGross, tax:totalTax, byLbl};
   }
+
+  // ★ パフォーマンス改善: Rows 配列を年ループで毎年 find する代わりに
+  //   ローカル Map で O(1) 検索する。push と同時に Map にも set する。
+  //   keyMap_xxx: row.key → row オブジェクトへの参照
+  const _secRedeemKeyMap = new Map();
+  const _secInvestKeyMap = new Map();
+  const _zaikeiKeyMap = new Map();
+  const _zaikeiRedeemKeyMap = new Map();
+  const _carKeyMap = new Map();
+  const _insMonthlyKeyMap = new Map();
+  const _insLumpExpKeyMap = new Map();
+  const _finAssetLblMap = new Map();
 
   for(let i=0;i<totalYrs;i++){
     const yr=cYear+i, ha=hAge+i, wa=wAge+i;
@@ -1071,16 +1088,18 @@ function render(){
       const pAge=p==='h'?ha:wa;
       const pBaseAge=p==='h'?hAge:wAge;
       // 積立型の解約
+      // ★ パフォーマンス改善 #1: securityState から事前キャッシュした値を使い、
+      //   年ループ内での fv/iv/document.getElementById の呼び出しを大幅削減
       (_secBalByP&&_secBalByP[p]||document.querySelectorAll(`[id^="sec-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
-        const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
-        if(!isAccum)return;
-        const redeemAge=iv(`sec-redeem-${p}-${sid}`)||0;
+        const _s = _secStateMap.get(`accum|${p}|${sid}`);
+        if(!_s) return; // 積立OFF or bal+monthly=0 のレコードはスキップ
+        const redeemAge=_s.redeemAge;
         if(redeemAge<=0||pAge!==redeemAge)return;
-        const bal=fv(`sec-bal-${p}-${sid}`)||0;
-        const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
-        const endAge=iv(`sec-end-${p}-${sid}`)||0;
-        const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
+        const bal=_s.bal;
+        const monthly=_s.monthly;
+        const endAge=_s.endAge;
+        const rate=_s.rate;
         const yrs=i+1;
         // シナリオ適用時はシリーズキャッシュの解約年の値を使う
         const _redeemSecKey=`sec-accum-${p}-${sid}`;
@@ -1105,11 +1124,13 @@ function render(){
           const accumAtEnd=mr>0?monthly*(cpdA-1)/mr:monthly*12*yrsAccum;
           fv2=Math.round((balAtEnd+accumAtEnd)*Math.pow(1+mr,12*Math.max(0,yrsAfter)));
         }
+        // ★ #1: customLabel と isNisa は securityState に cache 済みでないため
+        //   引き続き DOM 読みするが、isNisa はキャッシュ可能
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-        const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        const isNisa=_s.isNisa;
         // ── 自動取崩しによる減額（過去の取崩しを複利成長分も含めて差し引き） ──
         // securityStateの該当エントリーから過去の取崩し履歴を取得
-        const _redeemMatchAcc = securityState.find(ss=>ss.sid===sid && ss.p===p && ss.type==='accum');
+        const _redeemMatchAcc = _s;
         let _redeemLiqReductionAcc = 0;
         let _redeemCostReductionAcc = 0;
         if(_redeemMatchAcc){
@@ -1123,7 +1144,7 @@ function render(){
         }
         // 課税口座：譲渡益課税 20.315%（所得税15%+住民税5%+復興特別所得税0.315%）
         // 取得原価は「取得価格累計(basis)」が入力されていればそれを使用、なければ現在評価額(bal)で近似
-        const basis=fv(`sec-basis-${p}-${sid}`)||0;
+        const basis=_s.basisInput;
         const initialCost=basis>0?basis:bal;
         const costAccumRaw=initialCost+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge+1):yrs);
         // 自動取崩しで減少した取得原価を反映
@@ -1150,24 +1171,25 @@ function render(){
         };
       });
       // 一括投資の解約
+      // ★ パフォーマンス改善 #1: securityState から事前キャッシュした値を使う
       (_secStkByP&&_secStkByP[p]||document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
-        const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
-        if(!isStock)return;
-        const redeemAge=iv(`sec-stk-redeem-${p}-${sid}`)||0;
+        const _s = _secStateMap.get(`stock|${p}|${sid}`);
+        if(!_s) return; // 一括投資OFF or bal=0
+        const redeemAge=_s.redeemAge;
         if(redeemAge<=0||pAge!==redeemAge)return;
-        const bal=fv(`sec-stk-bal-${p}-${sid}`)||0;
-        const investAge=iv(`sec-stk-age-${p}-${sid}`)||0;
+        const bal=_s.bal;
+        const investAge=_s.investAge||0;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
-        const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
+        const rate=_s.rate;
         // シナリオ適用時はシリーズキャッシュの解約年の値を使う
         const _redeemStkKey=`sec-stk-${p}-${sid}`;
         const _redeemStkSeries=_stkSeriesCache[_redeemStkKey];
         let redeemVal = _redeemStkSeries ? (_redeemStkSeries[i]||0) : Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-        const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        const isNisa=_s.isNisa;
         // ── 自動取崩しによる減額（過去の取崩しを複利成長分も含めて差し引き） ──
-        const _redeemMatchStk = securityState.find(ss=>ss.sid===sid && ss.p===p && ss.type==='stock');
+        const _redeemMatchStk = _s;
         let _redeemCostReductionStk = 0;
         if(_redeemMatchStk){
           let _redeemLiqReductionStk = 0;
@@ -1180,7 +1202,8 @@ function render(){
           redeemVal = Math.max(0, redeemVal - Math.round(_redeemLiqReductionStk));
         }
         // 取得原価: basisが入力されていればそれを、なければ初期評価額bal
-        const _stkBasis = fv(`sec-basis-${p}-${sid}`)||0;
+        // ★ #1: basis も securityState にキャッシュ済み
+        const _stkBasis = _s.basisInput;
         const _stkCostBase = _stkBasis>0 ? _stkBasis : bal;
         // 自動取崩しで減少した取得原価を反映
         const _stkCostAdjusted = Math.max(0, _stkCostBase - _redeemCostReductionStk);
@@ -1237,8 +1260,10 @@ function render(){
     });
     // per-security 行を追跡（finAssetRows と同パターン）
     Object.keys(secRedeemMap).forEach(k=>{
-      if(!R.secRedeemRows.find(r=>r.key===k)){
-        R.secRedeemRows.push({key:k,lbl:secRedeemMap[k].lbl,vals:new Array(i).fill(0)});
+      if(!_secRedeemKeyMap.has(k)){
+        const row={key:k,lbl:secRedeemMap[k].lbl,vals:new Array(i).fill(0)};
+        R.secRedeemRows.push(row);
+        _secRedeemKeyMap.set(k,row);
       }
     });
     R.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap[row.key]?.val||0));});
@@ -1275,22 +1300,23 @@ function render(){
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
       const pLabel=p==='h'?'ご主人様':'奥様';
+      // ★ パフォーマンス改善 #1: securityState のキャッシュ値を使う
       (_secBalByP&&_secBalByP[p]||document.querySelectorAll(`[id^="sec-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
-        const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
-        if(!isAccum)return;
-        const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
+        const _s = _secStateMap.get(`accum|${p}|${sid}`);
+        if(!_s) return; // 積立OFF or bal+monthly=0
+        const monthly=_s.monthly;
         if(monthly<=0)return;
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const rowKey=`secInv-${p}-${sid}`;
-        const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+        const isNisa=_s.isNisa;
         const lbl=customLabel||`${isNisa?'積立NISA':'積立投資'}(${pLabel})`;
-        const endAge=iv(`sec-end-${p}-${sid}`)||0;
-        const redeemAge=iv(`sec-redeem-${p}-${sid}`)||0;
+        const endAge=_s.endAge;
+        const redeemAge=_s.redeemAge;
         const isActive=(endAge===0||pAge<endAge)&&(redeemAge===0||pAge<redeemAge);
         const v=isActive?ri(monthly*12):0;
-        let row=R.secInvestRows.find(r=>r.key===rowKey);
-        if(!row){row={lbl,vals:[],key:rowKey};R.secInvestRows.push(row);}
+        let row=_secInvestKeyMap.get(rowKey);
+        if(!row){row={lbl,vals:[],key:rowKey};R.secInvestRows.push(row);_secInvestKeyMap.set(rowKey,row);}
         row.vals.push(v);
         secInvestTotal+=v;
       });
@@ -1322,14 +1348,14 @@ function render(){
       const vZ=isActiveZ?ri(zm*12):0;
       // 支出行（積立）
       const rowKeyZ=`zaikei-${p}`;
-      let rowZ=R.zaikeiRows.find(r=>r.key===rowKeyZ);
-      if(!rowZ){rowZ={lbl:`財形積立(${pLabel})`,vals:[],key:rowKeyZ};R.zaikeiRows.push(rowZ);}
+      let rowZ=_zaikeiKeyMap.get(rowKeyZ);
+      if(!rowZ){rowZ={lbl:`財形積立(${pLabel})`,vals:[],key:rowKeyZ};R.zaikeiRows.push(rowZ);_zaikeiKeyMap.set(rowKeyZ,rowZ);}
       rowZ.vals.push(vZ);
       zaikeiExpTotal+=vZ;
       // 解約処理：解約年齢に到達した年に累計残高を全額収入計上
       const rowKeyZR=`zaikeiRedeem-${p}`;
-      let rowZR=R.zaikeiRedeemRows.find(r=>r.key===rowKeyZR);
-      if(!rowZR){rowZR={lbl:`財形解約(${pLabel})`,vals:[],key:rowKeyZR};R.zaikeiRedeemRows.push(rowZR);}
+      let rowZR=_zaikeiRedeemKeyMap.get(rowKeyZR);
+      if(!rowZR){rowZR={lbl:`財形解約(${pLabel})`,vals:[],key:rowKeyZR};R.zaikeiRedeemRows.push(rowZR);_zaikeiRedeemKeyMap.set(rowKeyZR,rowZR);}
       let vZR=0;
       if(pAge===_zRedeemAge){
         // 解約時点までの拠出年数（解約年齢が積立終了より前なら短くなる）
@@ -1345,15 +1371,16 @@ function render(){
     if(zaikeiRedeemTotal>0)R.incT[i]=ri((R.incT[i]||0)+zaikeiRedeemTotal);
     // ─── 一括投資購入額（投資開始年齢に支出計上）───
     let secBuyTotal=0;
+    // ★ パフォーマンス改善 #1: securityState のキャッシュ値を使う
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
       (_secStkByP&&_secStkByP[p]||document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
-        const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
-        if(!isStock)return;
-        const investAge=iv(`sec-stk-age-${p}-${sid}`)||0;
+        const _s = _secStateMap.get(`stock|${p}|${sid}`);
+        if(!_s) return;
+        const investAge=_s.investAge||0;
         if(investAge<=0||pAge!==investAge)return;
-        secBuyTotal+=fv(`sec-stk-bal-${p}-${sid}`)||0;
+        secBuyTotal+=_s.bal;
       });
     });
     R.secBuy.push(ri(secBuyTotal));
@@ -1556,12 +1583,14 @@ function render(){
         const carActive=carEndAge<=0||ha<carEndAge;
         // 台ごとの行を初期化
         const rowKey='car-'+cIdx;
-        if(!R.carRows.find(r=>r.key===rowKey)){
+        if(!_carKeyMap.has(rowKey)){
           const carLblEl=document.getElementById('car-'+cIdx+'-label');
           const carLblTxt=carLblEl?.value?.trim()||`${R.carRows.length+1}台目`;
-          R.carRows.push({key:rowKey,lbl:'🚗 '+carLblTxt,vals:new Array(i).fill(0)});
+          const newRow={key:rowKey,lbl:'🚗 '+carLblTxt,vals:new Array(i).fill(0)};
+          R.carRows.push(newRow);
+          _carKeyMap.set(rowKey,newRow);
         }
-        const carRow=R.carRows.find(r=>r.key===rowKey);
+        const carRow=_carKeyMap.get(rowKey);
         let lastBuy=-1;
         if(i>=carFirst){
           const elapsed=i-carFirst;
@@ -1735,8 +1764,8 @@ function render(){
         const rowKey=`insM-${p}-${iid}`;
         const lbl=customLabel||`積立保険(${pLabel2})`;
         const v=(monthly2>0&&matAge2>0&&pAge2>=enrollAge2&&pAge2<endAge2)?ri(monthly2*12):0;
-        let row=R.insMonthlyRows.find(r=>r.key===rowKey);
-        if(!row){row={lbl,vals:[],key:rowKey};R.insMonthlyRows.push(row);}
+        let row=_insMonthlyKeyMap.get(rowKey);
+        if(!row){row={lbl,vals:[],key:rowKey};R.insMonthlyRows.push(row);_insMonthlyKeyMap.set(rowKey,row);}
         row.vals.push(v);
         insMonthlyTotal+=v;
       });
@@ -1757,8 +1786,8 @@ function render(){
         const rowKey=`insL-${p}-${iid}`;
         const lbl=customLabel||`一時払保険(${pLabel2})`;
         const v=(amt2>0&&pAge2===enrollAge2)?ri(amt2):0;
-        let row=R.insLumpExpRows.find(r=>r.key===rowKey);
-        if(!row){row={lbl,vals:[],key:rowKey};R.insLumpExpRows.push(row);}
+        let row=_insLumpExpKeyMap.get(rowKey);
+        if(!row){row={lbl,vals:[],key:rowKey};R.insLumpExpRows.push(row);_insLumpExpKeyMap.set(rowKey,row);}
         row.vals.push(v);
         insLumpExpTotal+=v;
       });
@@ -1857,7 +1886,7 @@ function render(){
         }
         // 自動取崩しによる減額（過去の取崩しは複利成長分も含めて差し引き）
         let _liqReduction = 0;
-        const _matchSec = securityState.find(ss=>ss.sid===sid && ss.p===p && ss.type==='accum');
+        const _matchSec = _secStateMap.get(`accum|${p}|${sid}`);
         if(_matchSec){
           for(const liq of _matchSec.liquidations){
             if(liq.year<=i) _liqReduction += liq.gross*Math.pow(1+_matchSec.rate, i-liq.year);
@@ -1922,7 +1951,7 @@ function render(){
         let _evalBase=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
         let _eval=_stkSeries?(_stkSeries[i]||0):_evalBase;
         // 自動取崩しによる減額（過去の取崩しは複利成長分も含めて差し引き）
-        const _matchSecStk = securityState.find(ss=>ss.sid===sid && ss.p===p && ss.type==='stock');
+        const _matchSecStk = _secStateMap.get(`stock|${p}|${sid}`);
         if(_matchSecStk){
           let _liqReductionStk = 0;
           for(const liq of _matchSecStk.liquidations){
@@ -2176,9 +2205,11 @@ function render(){
     // 【積立保険】はその他金融資産行から除外（推計精度が低いため）
     // finAssetRowsに追記（毎年動的にキーを管理）
     Object.keys(finRowMap).forEach(k=>{
-      if(!R.finAssetRows.find(r=>r.lbl===k)){
+      if(!_finAssetLblMap.has(k)){
         // 新しいキーが出てきたら過去分を0で埋めて追加
-        R.finAssetRows.push({lbl:k,vals:new Array(i).fill(0),baseVals:new Array(i).fill(0),person:finRowPerson[k]||'both'});
+        const newFinRow={lbl:k,vals:new Array(i).fill(0),baseVals:new Array(i).fill(0),person:finRowPerson[k]||'both'};
+        R.finAssetRows.push(newFinRow);
+        _finAssetLblMap.set(k,newFinRow);
       }
     });
     R.finAssetRows.forEach(row=>{
