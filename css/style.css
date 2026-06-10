@@ -137,7 +137,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .sh-tab{display:none}
 /* 固定ジャンプナビ（パネル下部） */
 .panel-l{display:flex;flex-direction:column}
-.panel-l>.fi{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.panel-l>.fi{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;contain:layout style;will-change:scroll-position;overscroll-behavior:contain}
+/* ★ 入力パネル スクロール最適化:
+   スクロール中は input/btn/.tc などのホバー効果・transition を全て無効化して
+   再描画コストを抑える（body.panel-scrolling クラスを JS で付与） */
+body.panel-scrolling .panel-l .inp,
+body.panel-scrolling .panel-l .sel,
+body.panel-scrolling .panel-l .tc,
+body.panel-scrolling .panel-l .btn-tog,
+body.panel-scrolling .panel-l .btn-h,
+body.panel-scrolling .panel-l .btn-add,
+body.panel-scrolling .panel-l .sec-jump-btn{
+  transition:none !important;
+  pointer-events:none !important;
+}
+/* セクション切替アニメ・hover ハイライトもスクロール中は無効化 */
+body.panel-scrolling .panel-l *:hover{
+  background:inherit !important;
+  border-color:inherit !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
 .panel-l>.fi::-webkit-scrollbar{width:3px}
 .panel-l>.fi::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
 .sec-jump{flex-shrink:0;z-index:50;background:var(--navy);display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:5px;border-top:1px solid rgba(255,255,255,.15)}
@@ -158,7 +178,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 
 /* 物件タイプカード */
 .type-row{display:flex;gap:8px;margin-bottom:9px}
-.tc{flex:1;background:var(--card);border:2px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:all .25s ease;display:flex;align-items:center;gap:8px;opacity:.6;transform:scale(.97)}
+/* ★ パフォーマンス改善: transition:all を必要なプロパティに絞る（border-color/background/opacity/transform/box-shadow） */
+.tc{flex:1;background:var(--card);border:2px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s,opacity .15s,transform .15s,box-shadow .15s;display:flex;align-items:center;gap:8px;opacity:.6;transform:scale(.97)}
 .tc:hover{border-color:var(--navy-l);background:#f0f4f8;opacity:.85;transform:scale(.99)}
 .tc.on{border-color:var(--teal);background:linear-gradient(135deg,#e0f7fa,#eef6ff);opacity:1;transform:scale(1);box-shadow:0 0 0 2px rgba(8,145,178,.25),0 2px 8px rgba(8,145,178,.12)}
 .tc-icon{font-size:22px}

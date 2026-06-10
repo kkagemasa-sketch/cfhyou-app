@@ -358,23 +358,39 @@ document.addEventListener('DOMContentLoaded',()=>{
   formatAmtInputs();setupAmtInputs();
 });
 
-// ★ レベル1最適化: CF表スクロール中は hover 効果を CSS で無効化
-//   body.cf-scrolling が付いている間、.cf td:hover のスタイルが無効になる
+// ★ レベル1最適化: スクロール中は hover 効果・transition を CSS で無効化
+//   body.cf-scrolling   → CF表セルの hover を無効化
+//   body.panel-scrolling → 入力パネルの transition / hover / pointer-events を無効化
+//   両方を1つのスクロールリスナーで判定して付与する。
 (function(){
   let _scrollTimer=null;
   let _scrolling=false;
-  function onScroll(){
+  let _scrollTargetIsPanel=false;
+  function onScroll(e){
+    // ターゲットが入力パネルの fi 配下か判定
+    const t=e.target;
+    const isPanel = t && t.classList && (t.classList.contains('fi') ||
+                    (t.closest && t.closest('.panel-l>.fi')));
     if(!_scrolling){
       _scrolling=true;
       document.body.classList.add('cf-scrolling');
+      if(isPanel){
+        document.body.classList.add('panel-scrolling');
+        _scrollTargetIsPanel=true;
+      }
+    } else if(isPanel && !_scrollTargetIsPanel){
+      document.body.classList.add('panel-scrolling');
+      _scrollTargetIsPanel=true;
     }
     clearTimeout(_scrollTimer);
     _scrollTimer=setTimeout(()=>{
       document.body.classList.remove('cf-scrolling');
+      document.body.classList.remove('panel-scrolling');
       _scrolling=false;
+      _scrollTargetIsPanel=false;
     },150);
   }
-  // CF表エリアと tbl-wrap のスクロールを監視
+  // 文書全体のスクロールを監視（CF表・入力パネル両方）
   document.addEventListener('scroll',onScroll,{passive:true,capture:true});
 })();
 
