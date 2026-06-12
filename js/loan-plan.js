@@ -53,13 +53,21 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
       const payBonus=Math.min(mpBonus*2,balB);
       balM=Math.max(0,balM-payMonthly);
       balB=Math.max(0,balB-payBonus);
-      // 繰上返済を全体に按分（簡易：月払い分を優先）
+      // ★ M2修正(v522): 繰上返済を月払い分・ボーナス分の残高比で按分
+      //   （旧: 月払い優先消費 → ボーナス分が満期まで残り完済年が縮まらないバグ）
       if(pp>0){
         const totalBal=balM+balB;
         if(totalBal>0){
-          const reduceM=Math.min(pp, balM);
+          const _ratioM=balM/totalBal;
+          let reduceM=Math.min(balM, pp*_ratioM);
+          let reduceB=Math.min(balB, pp-reduceM);
+          const _leftover=pp-reduceM-reduceB;
+          if(_leftover>0){
+            const moreM=Math.min(balM-reduceM,_leftover);
+            reduceM+=moreM;
+            reduceB+=Math.min(balB-reduceB,_leftover-moreM);
+          }
           balM-=reduceM;
-          const reduceB=Math.min(pp-reduceM, balB);
           balB-=reduceB;
         }
       }
@@ -131,8 +139,18 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
           newMpMonthly = Math.min(newMpMonthly, lastBoundaryPayMonthly*1.25);
           newMpBonus = Math.min(newMpBonus, lastBoundaryPayBonus*1.25);
         }
-        mpMonthly = newMpMonthly;
-        mpBonus = newMpBonus;
+        // ★ M1修正(v522): 通常経路(v521)と同じく、期間短縮型で過去に繰上返済があれば
+        //   月額は「下げないが上げることはある」(Math.max)。
+        //   これがないと 5年ルールON時、5年境界の再計算で月額が引き下げられて
+        //   繰上返済の期間短縮効果が消えてしまう（35年完済に戻る）。
+        const _hadPrepayBefore5 = ppType==='term' && prepays.some(p=>p.yr<y && p.amt>0);
+        if(_hadPrepayBefore5){
+          mpMonthly = Math.max(mpMonthly, newMpMonthly);
+          mpBonus = Math.max(mpBonus, newMpBonus);
+        } else {
+          mpMonthly = newMpMonthly;
+          mpBonus = newMpBonus;
+        }
         lastBoundaryPayMonthly = mpMonthly;
         lastBoundaryPayBonus = mpBonus;
       } else if(isBoundary){
@@ -198,8 +216,24 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
       let remain = pp;
       const dM=Math.min(remain,unpaidIntM); unpaidIntM-=dM; remain-=dM;
       const dB=Math.min(remain,unpaidIntB); unpaidIntB-=dB; remain-=dB;
-      const reduceM=Math.min(remain, balM); balM-=reduceM; remain-=reduceM;
-      const reduceB=Math.min(remain, balB); balB-=reduceB;
+      // ★ M2修正(v522): 元金充当は月払い分・ボーナス分の残高比で按分する。
+      //   旧コードは月払い分を優先消費していたため、ボーナス併用＋期間短縮型のとき
+      //   ボーナス分の残高が満期まで残り続け、完済年が縮まらないバグがあった。
+      const _balTotal = balM + balB;
+      if(_balTotal > 0 && remain > 0){
+        const _ratioM = balM / _balTotal;
+        let reduceM = Math.min(balM, remain * _ratioM);
+        let reduceB = Math.min(balB, remain - reduceM);
+        // 端数で片方が先に尽きたら、もう片方に余りを回す
+        const _leftover = remain - reduceM - reduceB;
+        if(_leftover > 0){
+          const moreM = Math.min(balM - reduceM, _leftover);
+          reduceM += moreM;
+          reduceB += Math.min(balB - reduceB, _leftover - moreM);
+        }
+        balM -= reduceM;
+        balB -= reduceB;
+      }
       if(ppType==='reduce'&&(balM+balB)>0){
         const remM=Math.max(1,(years-y)*12);
         mpMonthly = mr>0 ? balM*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1) : balM/remM;
@@ -1214,66 +1248,87 @@ function exportLoanExcel(){
   const yrsB=pairLoanMode?_lpi('lp-yrs-b')||35:0;
   if(amtA<=0&&amtB<=0){alert('ローン設定を入力してください');return;}
   const ratesAx=getLPRates('a'),ratesBx=getLPRates('b');
-  const normalA=amtA>0?calcAmortization(amtA,rateA,yrsA,[],'term',ratesAx):[];
-  const normalB=amtB>0?calcAmortization(amtB,rateB,yrsB,[],'term',ratesBx):[];
+  // ★ E2修正(v522): 画面側(renderLoanCalc)と同じ options（ボーナス払い・5年ルール・125%ルール）
+  //   を構築して全 calcAmortization に渡す。旧コードは options を渡しておらず、
+  //   これらの機能使用時に Excel の全数値（月額・利息・完済年）が画面と食い違っていた。
+  const _xBonusRatio=(amount,totalPrincipal,rate,years)=>{
+    if(amount<=0||totalPrincipal<=0||years<=0)return 0;
+    const hr=rate/2,n=years*2;
+    const bp=hr>0?amount*(Math.pow(1+hr,n)-1)/(hr*Math.pow(1+hr,n)):amount*n;
+    return Math.min(0.5,Math.max(0,bp/totalPrincipal));
+  };
+  const optsA={
+    bonusRatio: document.getElementById('lp-bonus-on-a')?.checked ? _xBonusRatio(_lpf('lp-bonus-amt-a')||0,amtA,rateA,yrsA) : 0,
+    fiveYearRule: !!document.getElementById('lp-5yr-rule-a')?.checked,
+    cap125Rule: !!document.getElementById('lp-125-rule-a')?.checked
+  };
+  const optsB={
+    bonusRatio: document.getElementById('lp-bonus-on-b')?.checked ? _xBonusRatio(_lpf('lp-bonus-amt-b')||0,amtB,rateB,yrsB) : 0,
+    fiveYearRule: !!document.getElementById('lp-5yr-rule-b')?.checked,
+    cap125Rule: !!document.getElementById('lp-125-rule-b')?.checked
+  };
+  const normalA=amtA>0?calcAmortization(amtA,rateA,yrsA,[],'term',ratesAx,optsA):[];
+  const normalB=amtB>0?calcAmortization(amtB,rateB,yrsB,[],'term',ratesBx,optsB):[];
   const showPair=pairLoanMode&&amtB>0;
   const clientName=_v('client-name')||'CF表';
   const rows=[];const types=[];
   const push=(r,t)=>{rows.push(r);types.push(t)};
 
   // ── 繰上返済シミュレーション結果を取得 ──
+  // ★ E1/E3修正(v522): 画面側 _calcSide と同一ロジックに統一。
+  //   旧コードの問題:
+  //   - 返済額軽減型が存在しないID 'pp-reduce-amt' を参照しており Excel に一切反映されず
+  //     （現UIは pp-reduce-yr / pp-reduce-mp で「○年目に月額○円へ」方式）
+  //   - ペアローンB側の独立設定（pp-term-from-b 等・「Aと同じ」チェック）を無視していた
   let hasPP=false,ppTypeLabel='',ppTermFrom=0,ppTermTo=0;
   let ppAmtA=0,ppAmtB=0,ppAmtTotal=0,ppSaved=0;
   let withPPA=null,withPPB=null;
-  let ppReduceAmt=0,ppReduceNewMP=0;
 
-  if(_ppType==='term'){
-    ppTermFrom=_lpi('pp-term-from');
-    ppTermTo=_lpi('pp-term-to');
-    if(ppTermFrom>0&&ppTermTo>=ppTermFrom){
-      ppTypeLabel='期間短縮型';
-      if(normalA.length>0){
-        const bfA=ppTermFrom<=1?amtA:(ppTermFrom-1<=normalA.length?normalA[ppTermFrom-2]?.balance||0:0);
-        const afA=ppTermTo<=normalA.length?normalA[ppTermTo-1]?.balance||0:0;
-        ppAmtA=Math.max(0,bfA-afA);
-        if(ppAmtA>0)withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:Math.max(1,ppTermFrom-1),amt:ppAmtA}],'term',ratesAx);
+  const _xCalcMP=(amt,rate,yrs)=>{const mr=rate/12;const n=yrs*12;return mr>0?amt*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1):amt/n};
+  function _xCalcSide(type,amt,rate,yrs,ratesArr,opts,normal,fromId,toId,reduceYrId,reduceMpId){
+    if(amt<=0||normal.length===0)return {ppAmt:0,withPP:null};
+    if(type==='term'){
+      const from=_lpi(fromId),to=_lpi(toId);
+      if(from>0&&to>=from){
+        const bf=from<=1?amt:(from-1<=normal.length?normal[from-2]?.balance||0:0);
+        const af=to<=normal.length?normal[to-1]?.balance||0:0;
+        const ppAmt=Math.max(0,bf-af);
+        if(ppAmt>0)return {ppAmt,withPP:calcAmortization(amt,rate,yrs,[{yr:Math.max(1,from-1),amt:ppAmt}],'term',ratesArr,opts)};
       }
-      if(showPair&&normalB.length>0){
-        const bfB=ppTermFrom<=1?amtB:(ppTermFrom-1<=normalB.length?normalB[ppTermFrom-2]?.balance||0:0);
-        const afB=ppTermTo<=normalB.length?normalB[ppTermTo-1]?.balance||0:0;
-        ppAmtB=Math.max(0,bfB-afB);
-        if(ppAmtB>0)withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:Math.max(1,ppTermFrom-1),amt:ppAmtB}],'term',ratesBx);
+    } else {
+      // 返済額軽減型: 「reduceYr年目に月額 desiredMP 円へ」から必要元金を逆算（画面側と同じ式）
+      const reduceYr=_lpi(reduceYrId),desiredMP=_lpf(reduceMpId);
+      const mp=_xCalcMP(amt*(1-(opts.bonusRatio||0)),rate,yrs);
+      if(reduceYr>0&&desiredMP>0&&desiredMP<mp&&normal.length>=reduceYr){
+        const bal=normal[reduceYr-1]?.balance||0;
+        const remM=(yrs-reduceYr)*12,mr=rate/12;
+        const newBal=mr>0?desiredMP*(Math.pow(1+mr,remM)-1)/(mr*Math.pow(1+mr,remM)):desiredMP*remM;
+        const ppAmt=Math.max(0,bal-newBal);
+        if(ppAmt>0)return {ppAmt,withPP:calcAmortization(amt,rate,yrs,[{yr:reduceYr,amt:ppAmt}],'reduce',ratesArr,opts)};
       }
-      ppAmtTotal=ppAmtA+ppAmtB;
-      const nIntA=normalA.reduce((s,r)=>s+r.interest,0);
-      const nIntB=normalB.reduce((s,r)=>s+r.interest,0);
-      const ppIntA=withPPA?withPPA.reduce((s,r)=>s+r.interest,0):nIntA;
-      const ppIntB=withPPB?withPPB.reduce((s,r)=>s+r.interest,0):nIntB;
-      ppSaved=(nIntA-ppIntA)+(nIntB-ppIntB);
-      hasPP=ppAmtTotal>0;
     }
-  }else if(_ppType==='reduce'){
-    ppReduceAmt=_lpf('pp-reduce-amt')*10000;
-    if(ppReduceAmt>0){
-      ppTypeLabel='返済額軽減型';
-      ppAmtTotal=ppReduceAmt;
-      if(normalA.length>0){
-        const ratio=showPair?(amtA/(amtA+amtB)):1;
-        ppAmtA=Math.round(ppReduceAmt*ratio);
-        withPPA=calcAmortization(amtA,rateA,yrsA,[{yr:1,amt:ppAmtA}],'reduce',ratesAx);
-      }
-      if(showPair&&normalB.length>0){
-        ppAmtB=ppReduceAmt-ppAmtA;
-        withPPB=calcAmortization(amtB,rateB,yrsB,[{yr:1,amt:ppAmtB}],'reduce',ratesBx);
-      }
-      const nIntA=normalA.reduce((s,r)=>s+r.interest,0);
-      const nIntB=normalB.reduce((s,r)=>s+r.interest,0);
-      const ppIntA=withPPA?withPPA.reduce((s,r)=>s+r.interest,0):nIntA;
-      const ppIntB=withPPB?withPPB.reduce((s,r)=>s+r.interest,0):nIntB;
-      ppSaved=(nIntA-ppIntA)+(nIntB-ppIntB);
-      hasPP=true;
-    }
+    return {ppAmt:0,withPP:null};
   }
+  const _syncBx = showPair && !!$('pp-sync-b')?.checked;
+  const _resXA=_xCalcSide(_ppType,amtA,rateA,yrsA,ratesAx,optsA,normalA,'pp-term-from','pp-term-to','pp-reduce-yr','pp-reduce-mp');
+  ppAmtA=_resXA.ppAmt; withPPA=_resXA.withPP;
+  if(showPair){
+    const _resXB = _syncBx
+      ? _xCalcSide(_ppType,amtB,rateB,yrsB,ratesBx,optsB,normalB,'pp-term-from','pp-term-to','pp-reduce-yr','pp-reduce-mp')
+      : _xCalcSide(_ppTypeB,amtB,rateB,yrsB,ratesBx,optsB,normalB,'pp-term-from-b','pp-term-to-b','pp-reduce-yr-b','pp-reduce-mp-b');
+    ppAmtB=_resXB.ppAmt; withPPB=_resXB.withPP;
+  }
+  ppAmtTotal=ppAmtA+ppAmtB;
+  {
+    const nIntA=normalA.reduce((s,r)=>s+r.interest,0);
+    const nIntB=normalB.reduce((s,r)=>s+r.interest,0);
+    const ppIntA=withPPA?withPPA.reduce((s,r)=>s+r.interest,0):nIntA;
+    const ppIntB=withPPB?withPPB.reduce((s,r)=>s+r.interest,0):nIntB;
+    ppSaved=(nIntA-ppIntA)+(nIntB-ppIntB);
+  }
+  hasPP=ppAmtTotal>0;
+  if(hasPP)ppTypeLabel=_ppType==='term'?'期間短縮型':'返済額軽減型';
+  if(_ppType==='term'){ppTermFrom=_lpi('pp-term-from');ppTermTo=_lpi('pp-term-to');}
 
   // ── タイトル ──
   push([`${clientName} 様 返済計画シミュレーション`,''],'title');
