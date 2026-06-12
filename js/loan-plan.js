@@ -146,16 +146,24 @@ function calcAmortization(principal,rateAnnual,years,prepays,ppType,rateSchedule
       if(curMR!==mr){
         mr=curMR;
         halfRate=curHalfRate;
-        // ★ 期間短縮型で過去に繰上返済があれば、月額は据え置き（残高ゼロまで支払い続ける）
-        //   これがないと「期間短縮型なのに金利変動で月額が下がる」バグになる（年35年完済を強制してしまう）
+        // 月額を「もし通常通り元の期間で再計算したらいくらか」を計算
+        const remM=Math.max(1,(years-(y-1))*12);
+        const newMpMonthly = mr>0 ? balM*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1) : balM/remM;
+        const remH=Math.max(1,(years-(y-1))*2);
+        const newMpBonus = halfRate>0 ? balB*halfRate*Math.pow(1+halfRate,remH)/(Math.pow(1+halfRate,remH)-1) : balB/remH;
+        // ★ 期間短縮型で過去に繰上返済があれば、月額を「下げないが上げることはある」方針:
+        //   - 金利低下: 新月額 < 現月額 → 据え置き（短縮効果を維持）
+        //   - 金利上昇: 新月額 > 現月額 → 新月額に上げる（月額不足で期間が延びるバグを防止）
+        //   この方針により「期間短縮型なのに金利上昇で期間が延びる」「金利低下で短縮効果が消える」
+        //   どちらの逆効果も防げる。
         const _hadPrepayBefore = ppType==='term' && prepays.some(p=>p.yr<y && p.amt>0);
-        if(!_hadPrepayBefore){
-          const remM=Math.max(1,(years-(y-1))*12);
-          mpMonthly = mr>0 ? balM*mr*Math.pow(1+mr,remM)/(Math.pow(1+mr,remM)-1) : balM/remM;
-          const remH=Math.max(1,(years-(y-1))*2);
-          mpBonus = halfRate>0 ? balB*halfRate*Math.pow(1+halfRate,remH)/(Math.pow(1+halfRate,remH)-1) : balB/remH;
+        if(_hadPrepayBefore){
+          mpMonthly = Math.max(mpMonthly, newMpMonthly);
+          mpBonus = Math.max(mpBonus, newMpBonus);
+        } else {
+          mpMonthly = newMpMonthly;
+          mpBonus = newMpBonus;
         }
-        // 利息計算用の金利(mr/halfRate)は更新するが、月額(mpMonthly/mpBonus)は据え置き
       }
     }
     // 5年ルール時は実利率(curMR/curHalfRate)で利息計算、返済額は据置
