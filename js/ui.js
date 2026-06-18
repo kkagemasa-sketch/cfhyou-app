@@ -365,32 +365,23 @@ document.addEventListener('DOMContentLoaded',()=>{
 (function(){
   let _scrollTimer=null;
   let _scrolling=false;
-  let _scrollTargetIsPanel=false;
   function onScroll(e){
-    // ターゲットが入力パネルの fi 配下か判定
+    // ★ 入力パネルの panel-scrolling 付与は撤去（ちらつきの原因だったため）。
+    //   CF表セルの hover 無効化用 cf-scrolling のみ付与する。
+    //   入力パネル(.fi)のスクロールでは何もしない。
     const t=e.target;
-    const isPanel = t && t.classList && (t.classList.contains('fi') ||
-                    (t.closest && t.closest('.panel-l>.fi')));
+    if(t && t.classList && (t.classList.contains('fi') || (t.closest && t.closest('.panel-l')))) return;
     if(!_scrolling){
       _scrolling=true;
       document.body.classList.add('cf-scrolling');
-      if(isPanel){
-        document.body.classList.add('panel-scrolling');
-        _scrollTargetIsPanel=true;
-      }
-    } else if(isPanel && !_scrollTargetIsPanel){
-      document.body.classList.add('panel-scrolling');
-      _scrollTargetIsPanel=true;
     }
     clearTimeout(_scrollTimer);
     _scrollTimer=setTimeout(()=>{
       document.body.classList.remove('cf-scrolling');
-      document.body.classList.remove('panel-scrolling');
       _scrolling=false;
-      _scrollTargetIsPanel=false;
     },150);
   }
-  // 文書全体のスクロールを監視（CF表・入力パネル両方）
+  // CF表のスクロールを監視（入力パネルは除外）
   document.addEventListener('scroll',onScroll,{passive:true,capture:true});
 })();
 
