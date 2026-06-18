@@ -121,8 +121,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .r-body::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
 .r-summary{margin-bottom:8px;flex-shrink:0}
 /* テーブル：CF表時は縦横両スクロール（theadのsticky基準） */
-.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border:1px solid var(--border);will-change:transform}
-.cf-mode .tbl-wrap{flex:1;overflow:auto;will-change:transform}
+/* ★ overflow-anchor:none — content-visibility:auto の行が画面外で再計測される際に
+   ブラウザがスクロール位置を勝手に補正して「下スクロールで上に戻る」現象を防ぐ。
+   万一CF表で特に発生していた。 */
+.tbl-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border:1px solid var(--border);will-change:transform;overflow-anchor:none}
+.cf-mode .tbl-wrap{flex:1;overflow:auto;will-change:transform;overflow-anchor:none}
 .tbl-wrap::-webkit-scrollbar{height:10px}
 .tbl-wrap::-webkit-scrollbar-track{background:#e8ecf0}
 .tbl-wrap::-webkit-scrollbar-thumb{background:#7b8fa3;border-radius:5px}
