@@ -965,7 +965,11 @@ function render(){
         taxableBase=_hLctrlBd.taxableBase;
       }
       // 住民税控除上限＝課税総所得金額等×5%（上限JUMIN_CTRL_MAX）
-      const juminCtrlMax=Math.min(Math.round(taxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
+      // ★ バグ修正(v525): 基準は「所得税の課税総所得金額等」＝配偶者控除を引いた後の taxable。
+      //   旧コードは配偶者控除前の taxableBase を使っており、住民税控除上限が過大になり
+      //   「住民税控除＞所得税」という制度上ありえない結果が出ていた（所得税 ≧ 住民税控除上限 が法令上常に成立）。
+      const _capBaseH = _hLctrlBd ? _hLctrlBd.taxable : 0;
+      const juminCtrlMax=Math.min(Math.round(_capBaseH*0.05*10)/10, JUMIN_CTRL_MAX);
       const taxCapTotal=Math.round((itax+juminCtrlMax)*10)/10;
       lc2=Math.round(Math.min(calcCtrl, taxCapTotal)*10)/10;
       lc2=Math.max(0,lc2);
@@ -994,7 +998,9 @@ function render(){
           wJumin=_wLctrlBd.jumin;
           wTaxableBase=_wLctrlBd.taxableBase;
         }
-        const wJuminCtrlMax=Math.min(Math.round(wTaxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
+        // ★ バグ修正(v525): 住民税控除上限の基準は配偶者控除後の taxable
+        const _wCapBase = _wLctrlBd ? _wLctrlBd.taxable : 0;
+        const wJuminCtrlMax=Math.min(Math.round(_wCapBase*0.05*10)/10, JUMIN_CTRL_MAX);
         const wTaxCapTotal=Math.round((wItax+wJuminCtrlMax)*10)/10;
         _lctrlBd.wGrossEst=wGrossEst;
         _lctrlBd.wTaxableBase=wTaxableBase;
@@ -1038,7 +1044,9 @@ function render(){
             wItax=_wJointBd.itax;
             wTaxableBase=_wJointBd.taxableBase;
           }
-          const wJuminCtrlMax=Math.min(Math.round(wTaxableBase*0.05*10)/10, JUMIN_CTRL_MAX);
+          // ★ バグ修正(v525): 住民税控除上限の基準は配偶者控除後の taxable
+          const _wjCapBase = _wJointBd ? _wJointBd.taxable : 0;
+          const wJuminCtrlMax=Math.min(Math.round(_wjCapBase*0.05*10)/10, JUMIN_CTRL_MAX);
           const wTaxCapTotal=Math.round((wItax+wJuminCtrlMax)*10)/10;
           // 各自の計算上の控除額（持分残高 × 0.7%、単独ローン上限で頭打ち）
           const hCalcAmt=Math.round(Math.min(hShareBal, lctrlLimit)*0.007*10)/10;

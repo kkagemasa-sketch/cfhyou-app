@@ -598,10 +598,14 @@ function estimateTaxFromGross(grossEst, age){
   const kyuyo=calcKyuyoDed(grossEst);
   const grossSyotoku=Math.max(0,grossEst-kyuyo);
   const [kisoIt,kisoJu]=calcKisoDed(grossSyotoku);
+  // ★ バグ修正(v525): 旧コードは無条件に配偶者控除38万(所得税)/33万(住民税)を引いていたため、
+  //   ①共働き・単身では過小な所得税になり、②住民税控除上限は配偶者控除前の taxableBase で
+  //   計算していたため「住民税控除＞所得税」という制度上ありえない結果が出ていた。
+  //   返済計画タブは個人ごとの年収入力なので、扶養（配偶者控除）は仮定せず本人の収入ベースで統一する。
+  //   これにより所得税と住民税控除上限が同じ課税所得を基準にし、常に 住民税控除 ≦ 所得税 が成立する。
   const taxableBase=Math.max(0,grossSyotoku-shakai-kisoIt);
-  const taxable=Math.max(0,taxableBase-38);
-  const itax=calcIncomeTax(taxable);
-  const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-33);
+  const itax=calcIncomeTax(taxableBase);
+  const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu);
   const jumin=calcJuminTax(juminTaxable);
   return{itax:Math.max(0,itax),jumin:Math.max(0,jumin),taxableBase};
 }
