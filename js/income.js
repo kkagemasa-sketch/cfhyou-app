@@ -253,7 +253,7 @@ function getStepsForPension(person){
   const nets=[];
   const ids=new Set();
   document.querySelectorAll(`[id^="${person}-is-"]`).forEach(el=>{
-    const m=el.id.match(new RegExp(`^${person}-is-(\d+)-`));
+    const m=el.id.match(new RegExp(`^${person}-is-(\\d+)-`));
     if(m)ids.add(`${person}-is-${m[1]}`);
   });
   ids.forEach(base=>{
