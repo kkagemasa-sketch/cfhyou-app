@@ -244,7 +244,7 @@ async function exportExcelMG(){
   const _flatPair_e=_isFlat_e&&pairLoanMode;
   // フラット35の場合は flat-loan-amt から、ペア時は h+w 合算
   const loanAmtV=_isFlat_e
-    ? (_flatPair_e ? ((fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)) : (fv('flat-loan-amt')||0))
+    ? (_flatPair_e ? ((fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)) : (fv('loan-amt')||0))
     : (pairLoanMode ? ((fv('loan-h-amt')||0)+(fv('loan-w-amt')||0)) : (fv('loan-amt')||0));
   const loanYrsV=_isFlat_e?(_flatPair_e?Math.max(iv('flat-loan-h-yrs')||35,iv('flat-loan-w-yrs')||35):(iv('flat-loan-yrs')||35)):(iv('loan-yrs')||35);
   const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);
@@ -1456,7 +1456,7 @@ async function exportExcel(){
   const _flatPair_e=_isFlat_e&&pairLoanMode;
   // フラット35の場合は flat-loan-amt から、ペア時は h+w 合算
   const loanAmtV=_isFlat_e
-    ? (_flatPair_e ? ((fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)) : (fv('flat-loan-amt')||0))
+    ? (_flatPair_e ? ((fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)) : (fv('loan-amt')||0))
     : (pairLoanMode ? ((fv('loan-h-amt')||0)+(fv('loan-w-amt')||0)) : (fv('loan-amt')||0));
   const loanYrsV=_isFlat_e?(_flatPair_e?Math.max(iv('flat-loan-h-yrs')||35,iv('flat-loan-w-yrs')||35):(iv('flat-loan-yrs')||35)):(iv('loan-yrs')||35);
   const rateBaseV=_isFlat_e?(fv('flat-rate-base')||1.94):(fv('rate-base')||0.5);

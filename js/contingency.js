@@ -1502,8 +1502,8 @@ function _renderContingencyInner(){
       normalR.finAssetRows.forEach(row=>{
         const v=row.vals[i]||0;if(v<=0)return;
         if(row.person===deadP)return;
-        if(row.person==='both')mgFinAsset+=Math.round(v/2);
-        else mgFinAsset+=v;
+        // ★ 共有(both)概念を撤廃: 各自の行に分けたので半額化しない（死亡者分は別途現金化済み）
+        mgFinAsset+=v;
       });
       // base側は normalR.finAssetBase が集約値のみなので、全体をperson割合で按分（簡略）
       mgFinAssetBase = mgFinAsset; // 死亡時は個別行からのみ算出、baseも同じ値
@@ -2012,7 +2012,7 @@ function _renderContingencyInner(){
     normalR.finAssetRows.forEach(row=>{
       if(row.person===deadP2)return;if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
       h+=`<tr class="rfin fin-asset-row"><td></td><td>${row.lbl}</td>`;
-      for(let i2=0;i2<mgDisp;i2++){let v=row.vals[i2]||0;if(i2>=deathYearOffset-1&&row.person==='both')v=Math.round(v/2);h+=`<td>${v>0?ri(v).toLocaleString():'-'}</td>`;}
+      for(let i2=0;i2<mgDisp;i2++){let v=row.vals[i2]||0;h+=`<td>${v>0?ri(v).toLocaleString():'-'}</td>`;}
       h+=`<td>${ri(row.vals[mgDisp-1]||0).toLocaleString()}<br><span style="font-size:9px;color:#2d7dd2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${row.lbl}</span></td></tr>`;
     });
     h+=`<tr class="rfin rfin-total fin-asset-row" style="font-weight:700"><td>その他金融資産<br>合計</td><td></td>`;

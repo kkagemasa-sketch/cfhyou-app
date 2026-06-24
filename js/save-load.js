@@ -1105,6 +1105,9 @@ function _resetSheetState(){
   // 現有車（既保有）
   if($('existing-car-list'))$('existing-car-list').innerHTML='';
   if(typeof existingCarCnt!=='undefined')existingCarCnt=0;
+  // ★ バグ修正: 買い替え(住み替え)イベントのクリア漏れ → 新規作成で前のお客様のデータが残留していた
+  if($('swap-events-cont'))$('swap-events-cont').innerHTML='';
+  if(typeof _swapCnt!=='undefined')_swapCnt=0;
   // 一時払い保険
   ['h','w'].forEach(p=>{if($(`ins-lump-cont-${p}`))$(`ins-lump-cont-${p}`).innerHTML='';});
   insLumpCnt=0;

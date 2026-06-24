@@ -1864,7 +1864,9 @@ function render(){
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const _pLbl=p==='h'?'ご主人様':'奥様';
-        const lbl=customLabel||((isNisa?'NISA':'課税')+'積み立て('+_pLbl+')');
+        // ★ 共有(both)概念を撤廃: カスタム名でも所有者を付けて必ず各自の行に分ける
+        //   （同名でも合算せず別行。万一CFで死亡後に半額化される共有扱いをなくす）
+        const lbl=customLabel?`${customLabel}(${_pLbl})`:((isNisa?'NISA':'課税')+'積み立て('+_pLbl+')');
         const bal=fv(`sec-bal-${p}-${sid}`)||0;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         if(bal<=0&&monthly<=0)return; // 残高も積立額もなければスキップ
@@ -1949,7 +1951,8 @@ function render(){
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const _pLbl=p==='h'?'ご主人様':'奥様';
-        const lbl=customLabel||((isNisa?'NISA':'課税')+'一括投資('+_pLbl+')');
+        // ★ 共有(both)概念を撤廃: カスタム名でも所有者を付けて必ず各自の行に分ける
+        const lbl=customLabel?`${customLabel}(${_pLbl})`:((isNisa?'NISA':'課税')+'一括投資('+_pLbl+')');
         const bal=fv(`sec-stk-bal-${p}-${sid}`)||0;
         if(bal<=0)return; // 残高なければスキップ
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
