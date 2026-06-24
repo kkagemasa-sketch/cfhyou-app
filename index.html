@@ -2120,14 +2120,48 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/mansion-files.js?v=1"></script>
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').then(reg=>{
-    // ページ読込のたびに新しいSWがないかチェック
-    reg.update();
-  });
-  // 新しいSWが有効になったら自動リロード（1回だけ）
-  let refreshing=false;
+  let _swRefreshing=false;
+  // 新SWが有効化されたらリロード（バナーのボタン押下時のみ skipWaiting → controllerchange 発火）
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(refreshing)return;refreshing=true;location.reload();
+    if(_swRefreshing)return; _swRefreshing=true; location.reload();
+  });
+
+  // 「🔄 新しいバージョンがあります」バナーを表示
+  function _showUpdateBanner(waitingWorker){
+    if(document.getElementById('cf-update-banner'))return; // 二重表示防止
+    const bar=document.createElement('div');
+    bar.id='cf-update-banner';
+    bar.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#1e3a5f;color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.3);display:flex;align-items:center;gap:14px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic UI","Meiryo",sans-serif;font-size:14px;max-width:92vw';
+    bar.innerHTML='<span>🔄 新しいバージョンがあります</span>'+
+      '<button id="cf-update-btn" style="background:#22c55e;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">今すぐ更新</button>'+
+      '<button id="cf-update-later" style="background:transparent;color:#cbd5e1;border:none;font-size:13px;cursor:pointer;font-family:inherit">後で</button>';
+    document.body.appendChild(bar);
+    document.getElementById('cf-update-btn').onclick=()=>{
+      // 念のため現在の状態を保存してから更新（autosave）
+      try{ if(typeof _saveNow==='function') _saveNow(); }catch(e){}
+      if(waitingWorker) waitingWorker.postMessage({type:'SKIP_WAITING'});
+      bar.querySelector('span').textContent='更新中…';
+      document.getElementById('cf-update-btn').disabled=true;
+    };
+    document.getElementById('cf-update-later').onclick=()=>bar.remove();
+  }
+
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    // 既に待機中の新SWがあればバナー表示
+    if(reg.waiting && navigator.serviceWorker.controller) _showUpdateBanner(reg.waiting);
+    // 新SW検出 → インストール完了（待機状態）になったらバナー表示
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      if(!nw)return;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='installed' && navigator.serviceWorker.controller){
+          _showUpdateBanner(reg.waiting||nw);
+        }
+      });
+    });
+    // 起動時＋定期的に新版チェック（開きっぱなしでも検知できるよう60秒ごと）
+    reg.update();
+    setInterval(()=>{ reg.update(); }, 60000);
   });
 }
 </script>

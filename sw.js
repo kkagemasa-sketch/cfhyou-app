@@ -1,5 +1,5 @@
 // Service Worker — PWAインストール用
-const CACHE_NAME = 'cf-app-v531';
+const CACHE_NAME = 'cf-app-v532';
 const ASSETS = [
   './',
   './index.html',
@@ -68,9 +68,15 @@ function stripQuery(url){
 }
 
 // インストール時にキャッシュ
+// ★ skipWaiting() は install では呼ばない（新SWは「待機」させ、作業中に勝手に切替えない）。
+//   ユーザーが更新バナーのボタンを押したら下の message ハンドラで skipWaiting する。
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
+});
+
+// 更新バナーの「更新」ボタンから呼ばれる：待機中の新SWを即時有効化
+self.addEventListener('message', e => {
+  if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // 古いキャッシュを削除
