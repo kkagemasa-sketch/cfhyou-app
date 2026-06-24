@@ -526,9 +526,11 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   for(let i=0;i<disp;i++){
     const v=ri(R.sav[i]);
     // ★ 預貯金残高は背景は常に緑のまま。プラス＝白字／マイナス＝赤字(▲)。
-    //   vnクラス（赤背景）は付けず、文字色だけ切替えて緑背景を維持。
-    const _savColor = v<0 ? '#ff4d4d' : '#fff';
-    h+=`<td style="color:${_savColor}!important;font-weight:700">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+    //   緑背景に赤が振動して見にくいため、黒い縁取り(text-shadow)で赤をくっきり分離させる。
+    const _savStyle = v<0
+      ? 'color:#ff2b2b!important;text-shadow:0 0 3px rgba(0,0,0,.85),0 1px 1px rgba(0,0,0,.7);font-weight:800'
+      : 'color:#fff!important;font-weight:700';
+    h+=`<td style="${_savStyle}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
   const savLast=ri(R.sav[disp-1]);
   h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
