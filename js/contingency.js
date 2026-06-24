@@ -1560,6 +1560,10 @@ function _renderContingencyInner(){
       MR.carRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});
       for(let ci=0;ci<MR.carTotal.length;ci++){let sum=0;MR.carRows.forEach(row=>sum+=ri(row.vals[ci]||0));MR.carTotal[ci]=sum;}
     }
+    // ★ バグ修正(v530): 車両費アグリゲート(carTotal)の直接上書きを carRows 再集計の後に再適用（直接編集を優先）
+    if(mgOverrides['carTotal']){
+      Object.entries(mgOverrides['carTotal']).forEach(([col,val])=>{const c2=parseInt(col);if(MR.carTotal&&c2<MR.carTotal.length)MR.carTotal[c2]=val;});
+    }
     let newSav=initSav;
     for(let i=0;i<MR.incT.length;i++){
       if(mgOverrides['incT']?.[i]!==undefined){MR.incT[i]=mgOverrides['incT'][i];}

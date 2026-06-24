@@ -2357,6 +2357,36 @@ function render(){
         }
       }
     }
+    // ★ バグ修正(v530): 車両費アグリゲート行(carTotal)を直接編集した場合、上の carRows 再集計で
+    //   上書きが消えてしまうため、直接上書きを最後に再適用して優先させる。
+    if(cfOverrides['carTotal']){
+      Object.entries(cfOverrides['carTotal']).forEach(([col,val])=>{
+        const c2=parseInt(col); if(R.carTotal&&c2<R.carTotal.length)R.carTotal[c2]=val;
+      });
+    }
+    // ★ バグ修正(v530): 積立投資/保険料/一時払い保険/財形 などの「個別行」を直接編集しても
+    //   合計(支出合計・収入合計)に反映されなかった。各個別行の上書きを vals に反映し、
+    //   対応するアグリゲート(R.secInvest 等)を再集計して incT/expT に確実に効かせる。
+    const _aggRowFix=(rowsArr, aggArr)=>{
+      if(!rowsArr||!rowsArr.length||!aggArr)return;
+      let hasOvr=false;
+      rowsArr.forEach(row=>{
+        if(cfOverrides[row.key]){
+          Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
+          hasOvr=true;
+        }
+      });
+      if(hasOvr){
+        for(let i=0;i<aggArr.length;i++){
+          let s=0; rowsArr.forEach(row=>s+=ri(row.vals[i]||0)); aggArr[i]=s;
+        }
+      }
+    };
+    _aggRowFix(R.secInvestRows, R.secInvest);     // 積立投資/NISA
+    _aggRowFix(R.insMonthlyRows, R.insMonthly);   // 保険料（積立）
+    _aggRowFix(R.insLumpExpRows, R.insLumpExp);   // 一時払い保険
+    _aggRowFix(R.zaikeiRows, R.zaikeiExp);        // 財形積立（支出）
+    _aggRowFix(R.zaikeiRedeemRows, R.zaikeiRedeem); // 財形解約（収入）
     let newSav=initSav;
     for(let i=0;i<R.incT.length;i++){
       if(cfOverrides['incT']?.[i]!==undefined){R.incT[i]=cfOverrides['incT'][i];}
