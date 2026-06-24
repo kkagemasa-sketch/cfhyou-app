@@ -1991,9 +1991,10 @@ function _renderContingencyInner(){
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_mgInitSavStyle}">${_mgInitSavTxt}万円</span></td>`;
   for(let i2=0;i2<mgDisp;i2++){
     const v=ri(MR.sav[i2]);
-    // ★ 預貯金残高は常に緑背景＋白字に統一（万一CFはマイナスになる年が多く、赤背景＋赤文字で
-    //   読めなくなる問題があった）。マイナスは ▲ で表す。vnクラスは付けない＝緑背景を維持。
-    h+=`<td style="color:#fff!important">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+    // ★ 預貯金残高は背景は常に緑のまま。プラス＝白字／マイナス＝赤字(▲)。
+    //   vnクラス（赤背景）は付けず、文字色だけ切替えて緑背景を維持。
+    const _savColor = v<0 ? '#ff4d4d' : '#fff';
+    h+=`<td style="color:${_savColor}!important;font-weight:700">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
   const _mgSavLast=ri(MR.sav[mgDisp-1]);h+=`<td>${_mgSavLast>=0?_mgSavLast.toLocaleString():'▲'+Math.abs(_mgSavLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
   // 警告サマリ行は廃止（旧デザインに統一）— 取り崩し計算ロジックは引き続き有効

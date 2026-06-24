@@ -525,9 +525,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;
   for(let i=0;i<disp;i++){
     const v=ri(R.sav[i]);
-    // ★ 預貯金残高は常に白字（プラス＝緑背景／マイナス＝赤背景。どちらも白字で読みやすく）。
-    //   マイナスは ▲ で表す。
-    h+=`<td class="${v<0?'vn':''}" style="color:#fff!important">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+    // ★ 預貯金残高は背景は常に緑のまま。プラス＝白字／マイナス＝赤字(▲)。
+    //   vnクラス（赤背景）は付けず、文字色だけ切替えて緑背景を維持。
+    const _savColor = v<0 ? '#ff4d4d' : '#fff';
+    h+=`<td style="color:${_savColor}!important;font-weight:700">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
   const savLast=ri(R.sav[disp-1]);
   h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
