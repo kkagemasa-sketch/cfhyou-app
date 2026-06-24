@@ -507,17 +507,17 @@ async function exportExcelMG(){
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
   // 収入行順序：万が一CF表(contingency.js)と同じ順序で出力
-  addI('ご主人手取年収',MR.hInc);
+  addI('ご主人様手取年収',MR.hInc);
   addI('奥様手取年収',MR.wInc);
-  addISkip('iDeCo/DC節税(主)',MR.dcTaxSavingH,N.dcTaxSavingH);
+  addISkip('iDeCo/DC節税(ご主人様)',MR.dcTaxSavingH,N.dcTaxSavingH);
   addISkip('iDeCo/DC節税(奥様)',MR.dcTaxSavingW,N.dcTaxSavingW);
   addISkip('副業・その他収入',MR.otherInc,N.otherInc);
-  addISkip('退職金（ご主人）',MR.rPay,N.rPay);
+  addISkip('退職金（ご主人様）',MR.rPay,N.rPay);
   addISkip('退職金（奥様）',MR.wRPay,N.wRPay);
-  // ★ B4修正: 万一CFも 2行構造（ご主人年金受給額 / 奥様年金受給額）に統一
+  // ★ B4修正: 万一CFも 2行構造（ご主人様年金受給額 / 奥様年金受給額）に統一
   //   旧コードは 本人/配偶者/遺族 の3行構造で、画面（contingency.js renderContingency）と
   //   行単位で食い違っていた。MR.pTotalH/pTotalW は contingency.js で合算済み（pS+survPH等）。
-  addISkip('ご主人年金受給額', MR.pTotalH, N.pTotalH);
+  addISkip('ご主人様年金受給額', MR.pTotalH, N.pTotalH);
   addISkip('奥様年金受給額', MR.pTotalW, N.pTotalW);
   addISkip('死亡保険金',MR.insPayArr);
   // 年金型保険（個別行：実額がある契約のみ）
@@ -525,9 +525,9 @@ async function exportExcelMG(){
     MR.insAnnuityRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.name||'年金型保険',row.vals);});
   }
   addISkip('金融資産現金化',MR.finLiquid);
-  addISkip('DC受取(主)',MR.dcReceiptH,N.dcReceiptH);
+  addISkip('DC受取(ご主人様)',MR.dcReceiptH,N.dcReceiptH);
   addISkip('DC受取(奥様)',MR.dcReceiptW,N.dcReceiptW);
-  addISkip('iDeCo受取(主)',MR.idecoReceiptH,N.idecoReceiptH);
+  addISkip('iDeCo受取(ご主人様)',MR.idecoReceiptH,N.idecoReceiptH);
   addISkip('iDeCo受取(奥様)',MR.idecoReceiptW,N.idecoReceiptW);
   addISkip('保険満期金',MR.insMat,N.insMat);
   if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.lbl,row.vals);});
@@ -556,7 +556,7 @@ async function exportExcelMG(){
   };
   addE(_rl('mg-lc','生活費'),MR.lc);
   addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent,null);
-  if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(主)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
+  if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(ご主人様)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
   else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
   // 定期借地権付き物件：地代・解体準備金
   if(MR.chidai&&MR.chidai.some(v=>v>0))addE(_rl('mg-chidai','地代'),MR.chidai);
@@ -608,9 +608,9 @@ async function exportExcelMG(){
     });
   }else{addESkip(_rl('mg-insLumpExp','一時払い保険'),MR.insLumpExp,N.insLumpExp);}
   addESkip(_rl('mg-wedding','結婚のお祝い'),MR.wedding,null);
-  addESkip(_rl('mg-dcMatchExpH','DC拠出(主)'),MR.dcMatchExpH,N.dcMatchExpH);
+  addESkip(_rl('mg-dcMatchExpH','DC拠出(ご主人様)'),MR.dcMatchExpH,N.dcMatchExpH);
   addESkip(_rl('mg-dcMatchExpW','DC拠出(奥様)'),MR.dcMatchExpW,N.dcMatchExpW);
-  addESkip(_rl('mg-idecoExpH','iDeCo拠出(主)'),MR.idecoExpH,N.idecoExpH);
+  addESkip(_rl('mg-idecoExpH','iDeCo拠出(ご主人様)'),MR.idecoExpH,N.idecoExpH);
   addESkip(_rl('mg-idecoExpW','iDeCo拠出(奥様)'),MR.idecoExpW,N.idecoExpW);
   // 財形積立（個別行：実額がある人のみ）
   if(N.zaikeiRows&&N.zaikeiRows.length>0){N.zaikeiRows.forEach(row=>{if(row.vals.some(v=>v>0))addESkip(row.lbl,row.vals,row.vals);});}
@@ -673,7 +673,7 @@ async function exportExcelMG(){
   if(MR.totalAsset)push(['総金融資産','',...MR.totalAsset.slice(0,disp).map(v=>ri(v)),ri(MR.totalAsset[disp-1])],'totalAsset');
   // ローン残高
   if(pairLoanMode){
-    if(MR.lBalH&&MR.lBalH.some(v=>v>0))push(['ローン残高(主)','',...MR.lBalH.slice(0,disp).map(v=>ri(v)),ri(MR.lBalH[disp-1]||0)],'balance');
+    if(MR.lBalH&&MR.lBalH.some(v=>v>0))push(['ローン残高(ご主人様)','',...MR.lBalH.slice(0,disp).map(v=>ri(v)),ri(MR.lBalH[disp-1]||0)],'balance');
     if(MR.lBalW&&MR.lBalW.some(v=>v>0))push(['ローン残高(奥様)','',...MR.lBalW.slice(0,disp).map(v=>ri(v)),ri(MR.lBalW[disp-1]||0)],'balance');
   } else {
     if(MR.lBal&&MR.lBal.some(v=>v>0))push(['ローン残高','',...MR.lBal.slice(0,disp).map(v=>ri(v)),ri(MR.lBal[disp-1]||0)],'balance');
@@ -1048,7 +1048,7 @@ async function exportExcelMG(){
         const colIdx=c-2;
         let normalVal=null;
         const label=row[1]||row[0]||'';
-        if(label==='ご主人手取年収'&&N.hInc)normalVal=N.hInc[colIdx];
+        if(label==='ご主人様手取年収'&&N.hInc)normalVal=N.hInc[colIdx];
         else if(label==='奥様手取年収'&&N.wInc)normalVal=N.wInc[colIdx];
         else if(label==='住宅ローン返済'&&N.lRep)normalVal=N.lRep[colIdx];
         else if(label==='生活費'&&N.lc)normalVal=N.lc[colIdx];
@@ -1629,25 +1629,25 @@ async function exportExcel(){
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
   };
   // 収入行順序：CF表(cf-table.js)と同じ順序で出力
-  addI(_rl('hInc',_isSingle_e?'手取年収':'ご主人手取年収'),R.hInc);
+  addI(_rl('hInc',_isSingle_e?'手取年収':'ご主人様手取年収'),R.hInc);
   if(!_isSingle_e)addI(_rl('wInc','奥様手取年収'),R.wInc);
-  addI(_rl('dcTaxSavingH',_isSingle_e?'iDeCo/DC節税':'iDeCo/DC節税(主)'),R.dcTaxSavingH);
+  addI(_rl('dcTaxSavingH',_isSingle_e?'iDeCo/DC節税':'iDeCo/DC節税(ご主人様)'),R.dcTaxSavingH);
   if(!_isSingle_e)addI(_rl('dcTaxSavingW','iDeCo/DC節税(奥様)'),R.dcTaxSavingW);
   addI(_rl('otherInc','副業・その他収入'),R.otherInc);
-  addI(_rl('rPay',_isSingle_e?'退職金':'退職金（ご主人）'),R.rPay);
+  addI(_rl('rPay',_isSingle_e?'退職金':'退職金（ご主人様）'),R.rPay);
   if(!_isSingle_e)addI(_rl('wRPay','退職金（奥様）'),R.wRPay);
-  // ★ B4修正: アプリ画面と同じ「ご主人年金受給額 / 奥様年金受給額」の2行構造に統一
+  // ★ B4修正: アプリ画面と同じ「ご主人様年金受給額 / 奥様年金受給額」の2行構造に統一
   //   旧コードは 本人年金/配偶者年金/遺族年金 の3行で出していたため、ご主人逝去後の年で
   //   行単位で見るとアプリと食い違って見えていた。合計値は元から一致。
   if(_isSingle_e){
     addI(_rl('pS','老齢年金'),R.pS);
   } else {
-    addI(_rl('pTotalH','ご主人年金受給額'), R.pTotalH);
+    addI(_rl('pTotalH','ご主人様年金受給額'), R.pTotalH);
     addI(_rl('pTotalW','奥様年金受給額'), R.pTotalW);
   }
-  addI(_rl('dcReceiptH',_isSingle_e?'DC受取':'DC受取(主)'),R.dcReceiptH);
+  addI(_rl('dcReceiptH',_isSingle_e?'DC受取':'DC受取(ご主人様)'),R.dcReceiptH);
   if(!_isSingle_e)addI(_rl('dcReceiptW','DC受取(奥様)'),R.dcReceiptW);
-  addI(_rl('idecoReceiptH',_isSingle_e?'iDeCo受取':'iDeCo受取(主)'),R.idecoReceiptH);
+  addI(_rl('idecoReceiptH',_isSingle_e?'iDeCo受取':'iDeCo受取(ご主人様)'),R.idecoReceiptH);
   if(!_isSingle_e)addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW);
   addI(_rl('insMat','保険満期金'),R.insMat);
   // ★ B5修正: 個別行も _rl で行ラベル編集を反映
@@ -1672,7 +1672,7 @@ async function exportExcel(){
   // 支出行順序：CF表(cf-table.js)と同じ順序で出力
   addE(_rl('lc','生活費'),R.lc);
   addE(_rl('rent','家賃（引渡前）'),R.rent);
-  if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(主)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
+  if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(ご主人様)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
   else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))addE(_rl('chidai','地代'),R.chidai);
@@ -1699,9 +1699,9 @@ async function exportExcel(){
   if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
   if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('一時払い保険',R.insLumpExp);}
   addE('結婚のお祝い',R.wedding);
-  addE(_isSingle_e?'DC拠出':'DC拠出(主)',R.dcMatchExpH);
+  addE(_isSingle_e?'DC拠出':'DC拠出(ご主人様)',R.dcMatchExpH);
   if(!_isSingle_e)addE('DC拠出(奥様)',R.dcMatchExpW);
-  addE(_isSingle_e?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH);
+  addE(_isSingle_e?'iDeCo拠出':'iDeCo拠出(ご主人様)',R.idecoExpH);
   if(!_isSingle_e)addE('iDeCo拠出(奥様)',R.idecoExpW);
   // 財形積立（個別行：実額がある人のみ）
   // ★ B5修正: 個別行も _rl で行ラベル編集を反映
@@ -1761,7 +1761,7 @@ async function exportExcel(){
     }
   }
   if(pairLoanMode&&!_isSingle_e){
-    if(R.lBalH&&R.lBalH.some(v=>v>0))push(['ローン残高(主)','',...R.lBalH.slice(0,disp).map(v=>ri(v)),''],'loan');
+    if(R.lBalH&&R.lBalH.some(v=>v>0))push(['ローン残高(ご主人様)','',...R.lBalH.slice(0,disp).map(v=>ri(v)),''],'loan');
     if(R.lBalW&&R.lBalW.some(v=>v>0))push(['ローン残高(奥様)','',...R.lBalW.slice(0,disp).map(v=>ri(v)),''],'loan');
   } else if(loanAmtV>0){
     // フラット35単独/連帯債務にも対応（loanAmtVは _isFlat_e/pairLoanMode を加味して取得済）

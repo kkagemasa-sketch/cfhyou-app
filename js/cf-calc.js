@@ -733,7 +733,7 @@ function render(){
     ['h','w'].forEach(p=>{
       const pAge=p==='h'?ha:wa;
       const pBaseAge=p==='h'?hAge:wAge;
-      const pLabel=p==='h'?'ご主人':'奥様';
+      const pLabel=p==='h'?'ご主人様':'奥様';
       // 積み立て保険：満期受取（早期解約がない場合のみ）
       (_insMByP&&_insMByP[p]||document.querySelectorAll(`[id^="ins-m-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
@@ -1260,7 +1260,7 @@ function render(){
         if(insRedeemVal<=0)return;
         secRedeemTotal+=insRedeemVal;
         const customLbl=document.getElementById(`ins-label-${p}-${iid}`)?.value?.trim()||'';
-        const pLabel=p==='h'?'ご主人':'奥様';
+        const pLabel=p==='h'?'ご主人様':'奥様';
         const lbl=customLbl||`積立保険 解約(${pLabel})`;
         const _insKey=`ins-${p}-${iid}`;
         secRedeemMap[_insKey]={lbl,val:insRedeemVal};

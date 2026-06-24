@@ -48,7 +48,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <span style="background:var(--navy);color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${nm} 様</span>
       <span style="background:${isM?'var(--teal)':'var(--green)'};color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${isM?'🏢 マンション':'🏡 戸建て'}</span>
-      <span style="font-size:11px;color:var(--muted)">全${total}年間 / ご主人${hAge}〜${hAge+total-1}歳</span>
+      <span style="font-size:11px;color:var(--muted)">全${total}年間 / ご主人様 ${hAge}〜${hAge+total-1}歳</span>
     </div>
     <div style="display:flex;gap:6px;align-items:center">
       <button onclick="toggleAutoLiq()" title="預貯金マイナス時に有価証券を自動取崩して補填する機能のON/OFF" style="${_liqBtnStyle};padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_liqBtnLabel}</button>
@@ -367,21 +367,21 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const _explainIcon=(typeof explainIconHtml==='function')?explainIconHtml:(()=>'');
   const iRow=(lbl,arr,rowKey,mlFlags,forceShow)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(!forceShow&&tot===0&&vals.every(v=>v===0||v===undefined))return'';const _exp=_hasExplain(rowKey);let r=`<tr class="rinc"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;const _hasValue=dv>0;const _showIcon=_exp&&_hasValue;const _icon=_showIcon?_explainIcon(rowKey,i,'cf'):'';const _isML=mlFlags&&mlFlags[i];const _mlAttr=_isML?` title="🍼 育休期間（給付金・非課税）" data-matleave="1"`:'';const _mlIcon=_isML?'<span style="color:#d97706;font-size:10px;margin-right:2px" aria-hidden="true">🍼</span>':'';const _mlCls=_isML?' cell-matleave':'';r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${_showIcon?' has-explain':''}${_mlCls}${getColCls(i)}"${_mlAttr} contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_mlIcon}${dv>0?ri(dv).toLocaleString():'-'}${_icon}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
   // 収入行：年収 → 退職金 → 年金系 → 金融商品解約系 → 奨学金 → 児童手当 → 控除
-  const _hLbl=_isSingle_t?'手取年収':'ご主人手取年収';
+  const _hLbl=_isSingle_t?'手取年収':'ご主人様手取年収';
   h+=iRow(_hLbl,R.hInc,'hInc',R.mlH,true);
-  h+=iRow(_isSingle_t?'iDeCo/DC節税':'iDeCo/DC節税(主)',R.dcTaxSavingH,'dcTaxSavingH');
+  h+=iRow(_isSingle_t?'iDeCo/DC節税':'iDeCo/DC節税(ご主人様)',R.dcTaxSavingH,'dcTaxSavingH');
   if(!_isSingle_t){
     h+=iRow('奥様手取年収',R.wInc,'wInc',R.mlW,true);
     h+=iRow('iDeCo/DC節税(奥様)',R.dcTaxSavingW,'dcTaxSavingW');
   }
   h+=iRow('副業・その他収入',R.otherInc,'otherInc');
-  h+=iRow(_isSingle_t?'退職金':'退職金（ご主人）',R.rPay,'rPay');
+  h+=iRow(_isSingle_t?'退職金':'退職金（ご主人様）',R.rPay,'rPay');
   if(!_isSingle_t)h+=iRow('退職金（奥様）',R.wRPay,'wRPay');
-  h+=iRow(_isSingle_t?'年金受給額':'ご主人年金受給額',R.pTotalH,'pTotalH');
+  h+=iRow(_isSingle_t?'年金受給額':'ご主人様年金受給額',R.pTotalH,'pTotalH');
   if(!_isSingle_t)h+=iRow('奥様年金受給額',R.pTotalW,'pTotalW');
-  h+=iRow(_isSingle_t?'DC受取':'DC受取(主)',R.dcReceiptH,'dcReceiptH');
+  h+=iRow(_isSingle_t?'DC受取':'DC受取(ご主人様)',R.dcReceiptH,'dcReceiptH');
   if(!_isSingle_t)h+=iRow('DC受取(奥様)',R.dcReceiptW,'dcReceiptW');
-  h+=iRow(_isSingle_t?'iDeCo受取':'iDeCo受取(主)',R.idecoReceiptH,'idecoReceiptH');
+  h+=iRow(_isSingle_t?'iDeCo受取':'iDeCo受取(ご主人様)',R.idecoReceiptH,'idecoReceiptH');
   if(!_isSingle_t)h+=iRow('iDeCo受取(奥様)',R.idecoReceiptW,'idecoReceiptW');
   h+=iRow('保険満期金',R.insMat,'insMat');
   // 有価証券解約：銘柄ごとに個別行で表示
@@ -446,7 +446,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   };
   // 支出行：生活費 → 住宅系 → 教育費 → 車 → 駐車場 → 積立投資 → その他
   h+=eRow('生活費',R.lc,'lc')+eRow('家賃（引渡前）',R.rent,'rent');
-  if(pairLoanMode&&!_isSingle_t){h+=eRow('ローン返済(主)',R.lRepH,'lRepH')+eRow('ローン返済(奥様)',R.lRepW,'lRepW');}
+  if(pairLoanMode&&!_isSingle_t){h+=eRow('ローン返済(ご主人様)',R.lRepH,'lRepH')+eRow('ローン返済(奥様)',R.lRepW,'lRepW');}
   else{h+=eRow('住宅ローン返済',R.lRep,'lRep');}
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))h+=eRow('地代',R.chidai,'chidai');
@@ -493,9 +493,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(R.insMonthlyRows&&R.insMonthlyRows.length>1){R.insMonthlyRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.insMonthlyRows&&R.insMonthlyRows.length===1){h+=eRow(R.insMonthlyRows[0].lbl,R.insMonthlyRows[0].vals,R.insMonthlyRows[0].key);}else{h+=eRow('保険料（積立）',R.insMonthly,'insMonthly');}
   if(R.insLumpExpRows&&R.insLumpExpRows.length>1){R.insLumpExpRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.insLumpExpRows&&R.insLumpExpRows.length===1){h+=eRow(R.insLumpExpRows[0].lbl,R.insLumpExpRows[0].vals,R.insLumpExpRows[0].key);}else{h+=eRow('一時払い保険',R.insLumpExp,'insLumpExp');}
   h+=eRow('結婚のお祝い',R.wedding,'wedding');
-  h+=eRow(_isSingle_t?'DC拠出':'DC拠出(主)',R.dcMatchExpH,'dcMatchExpH');
+  h+=eRow(_isSingle_t?'DC拠出':'DC拠出(ご主人様)',R.dcMatchExpH,'dcMatchExpH');
   if(!_isSingle_t)h+=eRow('DC拠出(奥様)',R.dcMatchExpW,'dcMatchExpW');
-  h+=eRow(_isSingle_t?'iDeCo拠出':'iDeCo拠出(主)',R.idecoExpH,'idecoExpH');
+  h+=eRow(_isSingle_t?'iDeCo拠出':'iDeCo拠出(ご主人様)',R.idecoExpH,'idecoExpH');
   if(!_isSingle_t)h+=eRow('iDeCo拠出(奥様)',R.idecoExpW,'idecoExpW');
   // 財形積立（個別行：実額がある人のみ表示）
   if(R.zaikeiRows&&R.zaikeiRows.length>0){R.zaikeiRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}
@@ -525,8 +525,9 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;
   for(let i=0;i<disp;i++){
     const v=ri(R.sav[i]);
-    // 預貯金マイナス：シンプルな赤背景のみ（旧デザイン）
-    h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+    // ★ プラス＝白字／マイナス＝赤字 を明示固定（万一CFと統一）
+    const _savStyle = v<0 ? 'color:#ff5a4d!important' : 'color:#fff!important';
+    h+=`<td class="${v<0?'vn':''}" style="${_savStyle}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
   const savLast=ri(R.sav[disp-1]);
   h+=`<td>${savLast>=0?savLast.toLocaleString():'▲'+Math.abs(savLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
@@ -613,7 +614,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // ローン残高（一番下）
   if(!_isSingle_t&&(pairLoanMode||_isFlat_t&&pairLoanMode)){
     if(loanAmt>0||(_isFlat_t&&(fv('flat-loan-h-amt')||0)+(fv('flat-loan-w-amt')||0)>0)){
-      h+=`<tr class="rloan"><td>ローン残高(主)</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBalH[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;
+      h+=`<tr class="rloan"><td>ローン残高(ご主人様)</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBalH[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;
       h+=`<tr class="rloan"><td>ローン残高(奥様)</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBalW[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;
     }
   } else if(loanAmt>0){h+=`<tr class="rloan"><td>ローン残高</td><td></td>`;for(let i=0;i<disp;i++){const v=ri(R.lBal[i]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`}h+=`<td></td></tr>`;}

@@ -335,7 +335,7 @@ body.cf-scrolling .cf tbody td{pointer-events:none}
 .rinc  td:last-child,.rinct td:last-child{background:var(--blue)!important;color:#fff!important}
 .rexp  td:last-child,.rexpt td:last-child{background:var(--red-l)!important;color:#fff!important}
 .rbal  td:last-child,.rsav  td:last-child{background:var(--green)!important;color:#fff!important}
-.relapsed td:last-child{background:var(--navy-d)!important;color:#8aa4bc!important}
+.relapsed td:last-child{background:#fff!important;color:#1e3a5f!important}
 .rage  td:last-child{background:#d8e2f0!important;color:#1a2a3a!important}
 .rev-h td:last-child,.rev-w td:last-child,.rev-c td:last-child{background:#ffe8cc!important;color:#7a3a00!important}
 
@@ -352,15 +352,15 @@ body.cf-scrolling .cf tbody td{pointer-events:none}
 .cf thead .rage td.col-retire{background:#e8efc8!important}
 .cf thead .rev-h td.col-death,.cf thead .rev-w td.col-death,.cf thead .rev-c td.col-death{background:#e8e4df!important}
 .cf thead .rev-h td.col-retire,.cf thead .rev-w td.col-retire,.cf thead .rev-c td.col-retire{background:#fff8e0!important}
-.cf thead .relapsed td.col-death,.cf thead .relapsed td.col-retire{background:var(--navy-d)!important}
+.cf thead .relapsed td.col-death,.cf thead .relapsed td.col-retire{background:#fff!important;color:#1e3a5f!important}
 
 /* 年ヘッダー */
 .ryr th{background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:3px 6px;border-right:1px solid #2d5282;border-bottom:2px solid var(--navy)}
 .ryr th:first-child,.ryr th:nth-child(2){text-align:left;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;background:var(--navy)!important}
 
-/* 経過年数：ネイビー地で年ヘッダーと連続 */
-.relapsed td{background:var(--navy-d)!important;color:#a0b4c8;font-size:10px;text-align:center;border-bottom:1px solid #2d5282;padding:2px 6px}
-.relapsed td:first-child,.relapsed td:nth-child(2){text-align:left;color:#8aa4bc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-size:10px;max-width:86px;overflow:hidden;text-overflow:ellipsis;background:var(--navy-d)!important}
+/* 経過年数：白地＋濃紺文字（印刷でもくっきり・インク節約） */
+.relapsed td{background:#fff!important;color:#1e3a5f!important;font-size:10px;text-align:center;border-bottom:1px solid #cfd8e3;padding:2px 6px}
+.relapsed td:first-child,.relapsed td:nth-child(2){text-align:left;color:#1e3a5f!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-size:10px;max-width:86px;overflow:hidden;text-overflow:ellipsis;background:#fff!important}
 
 /* 年齢行：薄い水色 */
 /* tr自体にも背景色を敷く（sticky+border-collapse:separateでセル間に1px透過が出る対策） */
@@ -385,7 +385,7 @@ body.cf-scrolling .cf tbody td{pointer-events:none}
 }
 /* 各行ごとのボーダー色を box-shadow で再現 */
 .cf thead .ryr th{box-shadow:inset -1px 0 0 #2d5282,inset 0 -2px 0 var(--navy)}
-.cf thead .relapsed td{box-shadow:inset -1px 0 0 #2d5282,inset 0 -1px 0 #2d5282}
+.cf thead .relapsed td{box-shadow:inset -1px 0 0 #cfd8e3,inset 0 -1px 0 #cfd8e3}
 /* 年齢行・イベント行を完全な一枚帯に見せる。
    - 縦方向のセル間線 → inset で行背景色と同色
    - 横方向の行間線  → 外側へ 2px 延ばした box-shadow で隙間を塗りつぶす
@@ -647,7 +647,7 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
    各行の背景色を固定列にも確実に適用する
    ============================================================ */
 .ryr         th:first-child,.ryr         th:nth-child(2){background:var(--navy)!important;color:#fff!important}
-.relapsed    td:first-child,.relapsed    td:nth-child(2){background:var(--navy-d)!important;color:#8aa4bc!important}
+.relapsed    td:first-child,.relapsed    td:nth-child(2){background:#fff!important;color:#1e3a5f!important}
 .rage        td:first-child,.rage        td:nth-child(2){background:#cce8f8!important;color:#1a4a6a!important}
 .rev-h       td:first-child,.rev-h       td:nth-child(2){background:#ffe8cc!important;color:#7a3a00!important}
 .rev-w       td:first-child,.rev-w       td:nth-child(2){background:#ffe8cc!important;color:#7a3a00!important}

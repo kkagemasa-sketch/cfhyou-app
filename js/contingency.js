@@ -1801,24 +1801,24 @@ function _renderContingencyInner(){
   };
 
   // 収入行
-  h+=mgRow(_isSingle_mg?'手取年収':'ご主人手取年収',MR.hInc,N.hInc,'hInc');
-  h+=mgRow(_isSingle_mg?'iDeCo/DC節税':'iDeCo/DC節税(主)',MR.dcTaxSavingH,N.dcTaxSavingH,'dcTaxSavingH');
+  h+=mgRow(_isSingle_mg?'手取年収':'ご主人様手取年収',MR.hInc,N.hInc,'hInc');
+  h+=mgRow(_isSingle_mg?'iDeCo/DC節税':'iDeCo/DC節税(ご主人様)',MR.dcTaxSavingH,N.dcTaxSavingH,'dcTaxSavingH');
   if(!_isSingle_mg){
     h+=mgRow('奥様手取年収',MR.wInc,N.wInc,'wInc');
     h+=mgRow('iDeCo/DC節税(奥様)',MR.dcTaxSavingW,N.dcTaxSavingW,'dcTaxSavingW');
   }
   h+=mgRow('副業・その他収入',MR.otherInc,N.otherInc,'otherInc');
-  h+=mgRow(_isSingle_mg?'退職金':'退職金（ご主人）',MR.rPay,N.rPay,'rPay');
+  h+=mgRow(_isSingle_mg?'退職金':'退職金（ご主人様）',MR.rPay,N.rPay,'rPay');
   if(!_isSingle_mg)h+=mgRow('退職金（奥様）',MR.wRPay,N.wRPay,'wRPay');
-  h+=mgRow(_isSingle_mg?'年金受給額':'ご主人年金受給額',MR.pTotalH,N.pTotalH,'pTotalH');
+  h+=mgRow(_isSingle_mg?'年金受給額':'ご主人様年金受給額',MR.pTotalH,N.pTotalH,'pTotalH');
   if(!_isSingle_mg)h+=mgRow('奥様年金受給額',MR.pTotalW,N.pTotalW,'pTotalW');
   const _hasAnnuity=MR.insAnnuityRows&&MR.insAnnuityRows.length>0;
   h+=mgRow(_hasAnnuity?'死亡保険金(一時金)':'死亡保険金',MR.insPayArr,null,'insPayArr');
   if(_hasAnnuity)MR.insAnnuityRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgRow(row.name,row.vals,null,row.key);});
   h+=mgRow('金融資産現金化',MR.finLiquid,null,'finLiquid');
-  h+=mgRow(_isSingle_mg?'DC受取':'DC受取(主)',MR.dcReceiptH,N.dcReceiptH,'dcReceiptH');
+  h+=mgRow(_isSingle_mg?'DC受取':'DC受取(ご主人様)',MR.dcReceiptH,N.dcReceiptH,'dcReceiptH');
   if(!_isSingle_mg)h+=mgRow('DC受取(奥様)',MR.dcReceiptW,N.dcReceiptW,'dcReceiptW');
-  h+=mgRow(_isSingle_mg?'iDeCo受取':'iDeCo受取(主)',MR.idecoReceiptH,N.idecoReceiptH,'idecoReceiptH');
+  h+=mgRow(_isSingle_mg?'iDeCo受取':'iDeCo受取(ご主人様)',MR.idecoReceiptH,N.idecoReceiptH,'idecoReceiptH');
   if(!_isSingle_mg)h+=mgRow('iDeCo受取(奥様)',MR.idecoReceiptW,N.idecoReceiptW,'idecoReceiptW');
   h+=mgRow('保険満期金',MR.insMat,N.insMat,'insMat');
   if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgRow(row.lbl,row.vals,null,row.key);});
@@ -1862,7 +1862,7 @@ function _renderContingencyInner(){
 
   h+=mgERow('生活費',MR.lc,N.lc,'lc');
   h+=mgERow('家賃（引渡前）',MR.rent,null,'rent');
-  if(pairLoanMode&&!_isSingle_mg){h+=mgERow('ローン返済(主)',MR.lRepH,N.lRepH,'lRepH');h+=mgERow('ローン返済(奥様)',MR.lRepW,N.lRepW,'lRepW');}
+  if(pairLoanMode&&!_isSingle_mg){h+=mgERow('ローン返済(ご主人様)',MR.lRepH,N.lRepH,'lRepH');h+=mgERow('ローン返済(奥様)',MR.lRepW,N.lRepW,'lRepW');}
   else{h+=mgERow('住宅ローン返済',MR.lRep,N.lRep,'lRep');}
   // 定期借地権付き物件：地代・解体準備金
   if(MR.chidai&&MR.chidai.some(v=>v>0))h+=mgERow('地代',MR.chidai,N.chidai,'chidai');
@@ -1948,9 +1948,9 @@ function _renderContingencyInner(){
     });
   }else{h+=mgERow('一時払い保険',MR.insLumpExp,N.insLumpExp,'insLumpExp');}
   h+=mgERow('結婚のお祝い',MR.wedding,null,'wedding');
-  h+=mgERow(_isSingle_mg?'DC拠出':'DC拠出(主)',MR.dcMatchExpH,N.dcMatchExpH,'dcMatchExpH');
+  h+=mgERow(_isSingle_mg?'DC拠出':'DC拠出(ご主人様)',MR.dcMatchExpH,N.dcMatchExpH,'dcMatchExpH');
   if(!_isSingle_mg)h+=mgERow('DC拠出(奥様)',MR.dcMatchExpW,N.dcMatchExpW,'dcMatchExpW');
-  h+=mgERow(_isSingle_mg?'iDeCo拠出':'iDeCo拠出(主)',MR.idecoExpH,N.idecoExpH,'idecoExpH');
+  h+=mgERow(_isSingle_mg?'iDeCo拠出':'iDeCo拠出(ご主人様)',MR.idecoExpH,N.idecoExpH,'idecoExpH');
   if(!_isSingle_mg)h+=mgERow('iDeCo拠出(奥様)',MR.idecoExpW,N.idecoExpW,'idecoExpW');
   // 財形積立（個別行：通常CFと同じく実額がある人のみ表示）
   if(N.zaikeiRows&&N.zaikeiRows.length>0){N.zaikeiRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgERow(row.lbl,row.vals,row.vals,row.key);});}
@@ -1991,8 +1991,9 @@ function _renderContingencyInner(){
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_mgInitSavStyle}">${_mgInitSavTxt}万円</span></td>`;
   for(let i2=0;i2<mgDisp;i2++){
     const v=ri(MR.sav[i2]);
-    // 預貯金マイナス：シンプルな赤背景のみ（旧デザイン）
-    h+=`<td class="${v<0?'vn':''}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
+    // ★ プラス＝白字／マイナス＝赤字 を明示的に固定（CSSの上書きに左右されないようインライン指定）
+    const _savStyle = v<0 ? 'color:#ff5a4d!important' : 'color:#fff!important';
+    h+=`<td class="${v<0?'vn':''}" style="${_savStyle}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
   const _mgSavLast=ri(MR.sav[mgDisp-1]);h+=`<td>${_mgSavLast>=0?_mgSavLast.toLocaleString():'▲'+Math.abs(_mgSavLast).toLocaleString()}<br><span style="font-size:11px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">預貯金残高</span></td></tr>`;
   // 警告サマリ行は廃止（旧デザインに統一）— 取り崩し計算ロジックは引き続き有効
@@ -2018,7 +2019,7 @@ function _renderContingencyInner(){
   // ローン残高
   if(loanAmt>0||lhAmt>0||lwAmt>0){
     if(!_isSingle_mg&&(pairLoanMode||_mgFlatPair)){
-      h+=`<tr class="rloan"><td>ローン残高(主)</td><td></td>`;
+      h+=`<tr class="rloan"><td>ローン残高(ご主人様)</td><td></td>`;
       for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.lBalH[i2]);h+=`<td>${v>0?v.toLocaleString():'-'}</td>`;}
       h+=`<td></td></tr>`;
       h+=`<tr class="rloan"><td>ローン残高(奥様)</td><td></td>`;
