@@ -79,23 +79,10 @@
 
   // ===== エラーバッジ表示 =====
   function _updateBadge(){
-    const logs = _loadLocalLog();
-    const recent = logs.filter(l => {
-      const ts = new Date(l.timestamp).getTime();
-      return (Date.now() - ts) < 24*60*60*1000; // 直近24時間
-    });
-    const btn = document.querySelector('button[onclick="openAboutModal()"]');
-    if(!btn) return;
-    // 既存のバッジを削除
-    btn.querySelectorAll('.err-badge').forEach(el=>el.remove());
-    if(recent.length > 0){
-      const badge = document.createElement('span');
-      badge.className = 'err-badge';
-      badge.textContent = recent.length > 9 ? '9+' : String(recent.length);
-      badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;pointer-events:none';
-      btn.style.position = 'relative';
-      btn.appendChild(badge);
-    }
+    // 右上の赤い数字バッジは表示しない（ユーザーから「うっとおしい」との要望）。
+    // エラー記録自体は裏で継続し、必要時は「エラーログをダウンロード」で取得できる。
+    // 既に表示済みのバッジがあれば消す。
+    document.querySelectorAll('.err-badge').forEach(el=>el.remove());
   }
 
   // ===== Sentry 初期化（DSN設定時のみ） =====
@@ -137,8 +124,21 @@
     }
   }
 
+  // 既知・無害で記録しないエラー（ログとバッジのノイズ防止）
+  // 例: PWA更新確認の一時的な通信失敗（計算・表示に影響なし）
+  const _IGNORE_MESSAGES = [
+    /Failed to update a ServiceWorker/i,
+    /ServiceWorker[^]*fetching the script/i,
+    /ResizeObserver loop/i
+  ];
+  function _isIgnorable(info){
+    const msg = info && info.message ? String(info.message) : '';
+    return _IGNORE_MESSAGES.some(re => re.test(msg));
+  }
+
   // ===== グローバルエラーハンドラ =====
   function _captureError(type, info){
+    if(_isIgnorable(info)) return; // 無害な既知エラーは記録しない
     const entry = {
       type: type,
       timestamp: new Date().toISOString(),
