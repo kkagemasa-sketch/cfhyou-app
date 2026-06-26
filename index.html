@@ -2139,9 +2139,12 @@ if('serviceWorker' in navigator){
     document.getElementById('cf-update-btn').onclick=()=>{
       // 念のため現在の状態を保存してから更新（autosave）
       try{ if(typeof _saveNow==='function') _saveNow(); }catch(e){}
-      if(waitingWorker) waitingWorker.postMessage({type:'SKIP_WAITING'});
+      try{ if(waitingWorker) waitingWorker.postMessage({type:'SKIP_WAITING'}); }catch(e){}
       bar.querySelector('span').textContent='更新中…';
       document.getElementById('cf-update-btn').disabled=true;
+      // ★ フォールバック: controllerchange が発火しない環境でも必ず更新できるよう、
+      //   2秒待っても切替が来なければ強制的に再読込する（「更新中…」のまま固まるのを防止）。
+      setTimeout(()=>{ if(!_swRefreshing){ _swRefreshing=true; location.reload(); } }, 2000);
     };
     document.getElementById('cf-update-later').onclick=()=>bar.remove();
   }
