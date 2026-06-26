@@ -526,10 +526,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   for(let i=0;i<disp;i++){
     const v=ri(R.sav[i]);
     // ★ 預貯金残高は背景は常に緑のまま。プラス＝白字／マイナス＝深紅字(▲)。
-    //   明るい赤(#ff2b2b)は緑に溶けて見にくいため、影は使わず濃い深紅(#7a0010)で
+    //   明るい赤(#ff2b2b)は緑に溶けて見にくいため、影は使わず赤(#9e0010)で
     //   緑とのコントラストを確保（太字）。プラスの白字は従来どおり。
     const _savStyle = v<0
-      ? 'color:#7a0010!important;font-weight:800'
+      ? 'color:#9e0010!important;font-weight:800'
       : 'color:#fff!important;font-weight:700';
     h+=`<td style="${_savStyle}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
