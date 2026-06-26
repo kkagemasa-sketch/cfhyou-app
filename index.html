@@ -374,6 +374,24 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <script>
         // 手取り計算機ポップアップの開閉
+        // ★ 開くたびに必ずボタン直下(その場)に表示。ドラッグ時のみ body 直下へ移して
+        //   CF表(右パネル)の上にも自由に動かせるようにする。位置の保存はしない。
+        let _hCalcOrigParent=null, _hCalcAnchor=null;
+        function _hCalcInPlace(){
+          const pop=document.getElementById('calc-popup');
+          if(!pop) return;
+          // body へ移していたら元の場所(ボタン直下)へ戻す
+          if(_hCalcAnchor && _hCalcOrigParent && _hCalcAnchor.parentNode===_hCalcOrigParent){
+            _hCalcOrigParent.insertBefore(pop, _hCalcAnchor);
+          }
+          pop.style.position='absolute';
+          pop.style.top='calc(100% + 6px)';
+          pop.style.left='0';
+          pop.style.right='0';
+          pop.style.width='';
+          pop.style.zIndex='';
+          pop.dataset.floating='0';
+        }
         function toggleCalcPopup(){
           const pop=document.getElementById('calc-popup');
           const arrow=document.getElementById('calc-arrow');
@@ -382,9 +400,11 @@ window.closeAboutModal=closeAboutModal;
           const isOpen=pop.style.display!=='none' && pop.style.display!=='';
           if(isOpen){
             pop.style.display='none';
+            _hCalcInPlace(); // 閉じたら元の場所へ戻しておく
             if(arrow) arrow.textContent='▼';
             if(btn) btn.querySelector('span:nth-child(2)').textContent='手取り計算機を開く';
           }else{
+            _hCalcInPlace(); // ★ 常にその場(ボタン直下)に出す
             pop.style.display='block';
             if(arrow) arrow.textContent='▲';
             if(btn) btn.querySelector('span:nth-child(2)').textContent='手取り計算機を閉じる';
@@ -393,137 +413,65 @@ window.closeAboutModal=closeAboutModal;
           }
         }
 
-        // ─── ポップアップのドラッグ移動 ───
-        // ヘッダー部をドラッグ → position:fixed に切替えて自由配置
-        // localStorage に位置を保存し次回開いた時も同じ場所
+        // ─── ポップアップのドラッグ移動（CF表の上にも出せる）───
         (function(){
           let _dragging=false, _startX=0, _startY=0, _origLeft=0, _origTop=0;
-          const POS_KEY='cf_calc_popup_pos';
 
-          function _initFloatingPos(pop){
-            // 既に fixed に切替済みなら何もしない
+          function _goFloating(pop){
             if(pop.dataset.floating==='1') return;
             const rect=pop.getBoundingClientRect();
+            // 入力パネルの contain:layout / overflow に閉じ込められないよう body 直下へ移動
+            if(!_hCalcAnchor){
+              _hCalcOrigParent=pop.parentNode;
+              _hCalcAnchor=document.createComment('calc-popup-anchor');
+              _hCalcOrigParent.insertBefore(_hCalcAnchor, pop);
+            }
+            document.body.appendChild(pop);
             pop.style.position='fixed';
             pop.style.top=rect.top+'px';
             pop.style.left=rect.left+'px';
             pop.style.right='auto';
             pop.style.width=rect.width+'px';
+            pop.style.zIndex='100001';
             pop.dataset.floating='1';
           }
-
-          function _restoreSavedPos(){
+          function _onDown(cx, cy, e){
+            if(e.target.tagName==='BUTTON') return; // ×ボタンはドラッグ開始しない
             const pop=document.getElementById('calc-popup');
             if(!pop) return;
-            try{
-              const saved=localStorage.getItem(POS_KEY);
-              if(!saved) return;
-              const p=JSON.parse(saved);
-              if(typeof p.left==='number' && typeof p.top==='number'){
-                pop.style.position='fixed';
-                pop.style.top=p.top+'px';
-                pop.style.left=p.left+'px';
-                pop.style.right='auto';
-                if(p.width) pop.style.width=p.width+'px';
-                pop.dataset.floating='1';
-              }
-            }catch(e){}
-          }
-
-          function _onMouseDown(e){
-            // × ボタンクリックはドラッグ開始しない
-            if(e.target.tagName==='BUTTON') return;
-            const pop=document.getElementById('calc-popup');
-            if(!pop) return;
-            _initFloatingPos(pop);
-            _dragging=true;
-            _startX=e.clientX;
-            _startY=e.clientY;
+            _goFloating(pop);
+            _dragging=true; _startX=cx; _startY=cy;
             const rect=pop.getBoundingClientRect();
-            _origLeft=rect.left;
-            _origTop=rect.top;
+            _origLeft=rect.left; _origTop=rect.top;
             e.preventDefault();
           }
-          function _onTouchStart(e){
-            if(e.target.tagName==='BUTTON') return;
-            const pop=document.getElementById('calc-popup');
-            if(!pop || !e.touches[0]) return;
-            _initFloatingPos(pop);
-            _dragging=true;
-            _startX=e.touches[0].clientX;
-            _startY=e.touches[0].clientY;
-            const rect=pop.getBoundingClientRect();
-            _origLeft=rect.left;
-            _origTop=rect.top;
-            e.preventDefault();
-          }
-          function _onMove(clientX, clientY){
+          function _onMove(cx, cy){
             if(!_dragging) return;
             const pop=document.getElementById('calc-popup');
             if(!pop) return;
-            const dx=clientX-_startX, dy=clientY-_startY;
-            // 画面外に出すぎないようクランプ
-            const popW=pop.offsetWidth, popH=pop.offsetHeight;
+            const dx=cx-_startX, dy=cy-_startY;
+            const popW=pop.offsetWidth;
             const maxLeft=Math.max(0,window.innerWidth-50);
             const maxTop=Math.max(0,window.innerHeight-30);
-            let newLeft=_origLeft+dx;
-            let newTop=_origTop+dy;
-            newLeft=Math.min(Math.max(-popW+80, newLeft), maxLeft);
-            newTop=Math.min(Math.max(0, newTop), maxTop);
-            pop.style.left=newLeft+'px';
-            pop.style.top=newTop+'px';
+            let nL=Math.min(Math.max(-popW+80, _origLeft+dx), maxLeft);
+            let nT=Math.min(Math.max(0, _origTop+dy), maxTop);
+            pop.style.left=nL+'px';
+            pop.style.top=nT+'px';
           }
-          function _onMouseMove(e){ _onMove(e.clientX, e.clientY); }
-          function _onTouchMove(e){
-            if(!e.touches[0]) return;
-            _onMove(e.touches[0].clientX, e.touches[0].clientY);
-            if(_dragging) e.preventDefault();
-          }
-          function _onEnd(){
-            if(!_dragging) return;
-            _dragging=false;
-            // 位置を保存
-            const pop=document.getElementById('calc-popup');
-            if(!pop) return;
-            try{
-              localStorage.setItem(POS_KEY, JSON.stringify({
-                left:parseInt(pop.style.left)||0,
-                top:parseInt(pop.style.top)||0,
-                width:pop.offsetWidth
-              }));
-            }catch(e){}
-          }
+          function _onEnd(){ _dragging=false; }
 
           document.addEventListener('DOMContentLoaded', ()=>{
             const header=document.getElementById('calc-popup-header');
             if(header){
-              header.addEventListener('mousedown', _onMouseDown);
-              header.addEventListener('touchstart', _onTouchStart, {passive:false});
+              header.addEventListener('mousedown', (e)=>_onDown(e.clientX, e.clientY, e));
+              header.addEventListener('touchstart', (e)=>{ if(e.touches[0]) _onDown(e.touches[0].clientX, e.touches[0].clientY, e); }, {passive:false});
+              // ダブルクリックで元の位置(ボタン直下)へ戻す
+              header.addEventListener('dblclick', (e)=>{ if(e.target.tagName==='BUTTON') return; _hCalcInPlace(); });
             }
-            document.addEventListener('mousemove', _onMouseMove);
-            document.addEventListener('touchmove', _onTouchMove, {passive:false});
+            document.addEventListener('mousemove', (e)=>_onMove(e.clientX, e.clientY));
+            document.addEventListener('touchmove', (e)=>{ if(!e.touches[0]) return; _onMove(e.touches[0].clientX, e.touches[0].clientY); if(_dragging) e.preventDefault(); }, {passive:false});
             document.addEventListener('mouseup', _onEnd);
             document.addEventListener('touchend', _onEnd);
-            // 初回ロード時に保存された位置を復元
-            _restoreSavedPos();
-          });
-
-          // 位置リセット用（ダブルクリックで元の位置に戻る）
-          document.addEventListener('DOMContentLoaded', ()=>{
-            const header=document.getElementById('calc-popup-header');
-            if(!header) return;
-            header.addEventListener('dblclick', (e)=>{
-              if(e.target.tagName==='BUTTON') return;
-              const pop=document.getElementById('calc-popup');
-              if(!pop) return;
-              pop.style.position='absolute';
-              pop.style.top='calc(100% + 6px)';
-              pop.style.left='0';
-              pop.style.right='0';
-              pop.style.width='';
-              pop.dataset.floating='0';
-              try{ localStorage.removeItem(POS_KEY); }catch(e){}
-            });
           });
         })();
       </script>
@@ -736,6 +684,22 @@ window.closeAboutModal=closeAboutModal;
           </div>
           <script>
             // 手取り計算機（奥様）ポップアップの開閉
+            // ★ ご主人側と同方式: 開くたびにその場(ボタン直下)、ドラッグ時のみ body 直下へ移動
+            let _wCalcOrigParent=null, _wCalcAnchor=null;
+            function _wCalcInPlace(){
+              const pop=document.getElementById('w-calc-popup');
+              if(!pop) return;
+              if(_wCalcAnchor && _wCalcOrigParent && _wCalcAnchor.parentNode===_wCalcOrigParent){
+                _wCalcOrigParent.insertBefore(pop, _wCalcAnchor);
+              }
+              pop.style.position='absolute';
+              pop.style.top='calc(100% + 6px)';
+              pop.style.left='0';
+              pop.style.right='0';
+              pop.style.width='';
+              pop.style.zIndex='';
+              pop.dataset.floating='0';
+            }
             function toggleWCalcPopup(){
               const pop=document.getElementById('w-calc-popup');
               const arrow=document.getElementById('w-calc-arrow');
@@ -744,60 +708,42 @@ window.closeAboutModal=closeAboutModal;
               const isOpen=pop.style.display!=='none' && pop.style.display!=='';
               if(isOpen){
                 pop.style.display='none';
+                _wCalcInPlace();
                 if(arrow) arrow.textContent='▼';
                 if(btn) btn.querySelector('span:nth-child(2)').textContent='手取り計算機を開く';
               }else{
+                _wCalcInPlace(); // ★ 常にその場に出す
                 pop.style.display='block';
                 if(arrow) arrow.textContent='▲';
                 if(btn) btn.querySelector('span:nth-child(2)').textContent='手取り計算機を閉じる';
                 setTimeout(()=>{document.getElementById('w-calc-gross')?.focus();},50);
               }
             }
-            // 奥様計算機もドラッグ移動可能に
+            // 奥様計算機もドラッグ移動可能に（CF表の上にも出せる）
             (function(){
               let _dragging=false, _startX=0, _startY=0, _origLeft=0, _origTop=0;
-              const POS_KEY='cf_w_calc_popup_pos';
-              function _initFloating(pop){
+              function _goFloating(pop){
                 if(pop.dataset.floating==='1') return;
                 const rect=pop.getBoundingClientRect();
+                if(!_wCalcAnchor){
+                  _wCalcOrigParent=pop.parentNode;
+                  _wCalcAnchor=document.createComment('w-calc-popup-anchor');
+                  _wCalcOrigParent.insertBefore(_wCalcAnchor, pop);
+                }
+                document.body.appendChild(pop);
                 pop.style.position='fixed';
                 pop.style.top=rect.top+'px';
                 pop.style.left=rect.left+'px';
                 pop.style.right='auto';
                 pop.style.width=rect.width+'px';
+                pop.style.zIndex='100001';
                 pop.dataset.floating='1';
               }
-              function _restore(){
-                const pop=document.getElementById('w-calc-popup');
-                if(!pop) return;
-                try{
-                  const saved=localStorage.getItem(POS_KEY);
-                  if(!saved) return;
-                  const p=JSON.parse(saved);
-                  if(typeof p.left==='number' && typeof p.top==='number'){
-                    pop.style.position='fixed';
-                    pop.style.top=p.top+'px';
-                    pop.style.left=p.left+'px';
-                    pop.style.right='auto';
-                    if(p.width) pop.style.width=p.width+'px';
-                    pop.dataset.floating='1';
-                  }
-                }catch(e){}
-              }
-              function _onMouseDown(e){
+              function _onDown(cx,cy,e){
                 if(e.target.tagName==='BUTTON') return;
                 const pop=document.getElementById('w-calc-popup'); if(!pop) return;
-                _initFloating(pop);
-                _dragging=true; _startX=e.clientX; _startY=e.clientY;
-                const r=pop.getBoundingClientRect(); _origLeft=r.left; _origTop=r.top;
-                e.preventDefault();
-              }
-              function _onTouchStart(e){
-                if(e.target.tagName==='BUTTON') return;
-                const pop=document.getElementById('w-calc-popup');
-                if(!pop || !e.touches[0]) return;
-                _initFloating(pop);
-                _dragging=true; _startX=e.touches[0].clientX; _startY=e.touches[0].clientY;
+                _goFloating(pop);
+                _dragging=true; _startX=cx; _startY=cy;
                 const r=pop.getBoundingClientRect(); _origLeft=r.left; _origTop=r.top;
                 e.preventDefault();
               }
@@ -812,32 +758,13 @@ window.closeAboutModal=closeAboutModal;
                 let nT=Math.min(Math.max(0,_origTop+dy),maxTop);
                 pop.style.left=nL+'px'; pop.style.top=nT+'px';
               }
-              function _onEnd(){
-                if(!_dragging) return; _dragging=false;
-                const pop=document.getElementById('w-calc-popup'); if(!pop) return;
-                try{
-                  localStorage.setItem(POS_KEY,JSON.stringify({
-                    left:parseInt(pop.style.left)||0,
-                    top:parseInt(pop.style.top)||0,
-                    width:pop.offsetWidth
-                  }));
-                }catch(e){}
-              }
+              function _onEnd(){ _dragging=false; }
               document.addEventListener('DOMContentLoaded',()=>{
                 const h=document.getElementById('w-calc-popup-header');
                 if(h){
-                  h.addEventListener('mousedown',_onMouseDown);
-                  h.addEventListener('touchstart',_onTouchStart,{passive:false});
-                  h.addEventListener('dblclick',(e)=>{
-                    if(e.target.tagName==='BUTTON') return;
-                    const pop=document.getElementById('w-calc-popup'); if(!pop) return;
-                    pop.style.position='absolute';
-                    pop.style.top='calc(100% + 6px)';
-                    pop.style.left='0'; pop.style.right='0';
-                    pop.style.width='';
-                    pop.dataset.floating='0';
-                    try{ localStorage.removeItem(POS_KEY); }catch(e){}
-                  });
+                  h.addEventListener('mousedown',(e)=>_onDown(e.clientX,e.clientY,e));
+                  h.addEventListener('touchstart',(e)=>{ if(e.touches[0]) _onDown(e.touches[0].clientX,e.touches[0].clientY,e); },{passive:false});
+                  h.addEventListener('dblclick',(e)=>{ if(e.target.tagName==='BUTTON') return; _wCalcInPlace(); });
                 }
                 document.addEventListener('mousemove',(e)=>_onMove(e.clientX,e.clientY));
                 document.addEventListener('touchmove',(e)=>{
@@ -847,7 +774,6 @@ window.closeAboutModal=closeAboutModal;
                 },{passive:false});
                 document.addEventListener('mouseup',_onEnd);
                 document.addEventListener('touchend',_onEnd);
-                _restore();
               });
             })();
           </script>
