@@ -1108,6 +1108,22 @@ function _resetSheetState(){
   // ★ バグ修正: 買い替え(住み替え)イベントのクリア漏れ → 新規作成で前のお客様のデータが残留していた
   if($('swap-events-cont'))$('swap-events-cont').innerHTML='';
   if(typeof _swapCnt!=='undefined')_swapCnt=0;
+  // ★ 自動チェックで発見: 以下の手入力欄も「復元」では消すが「新規作成」では消えず、
+  //    前のお客様のデータが残留していた（swap-events-cont と同じ型）。
+  // 繰上返済（手入力ステップ）
+  if($('rep-steps-cont'))$('rep-steps-cont').innerHTML='';
+  if(typeof repStepCnt!=='undefined')repStepCnt=0;
+  // 万一の保険
+  if($('mg-insurance-cont'))$('mg-insurance-cont').innerHTML='';
+  if(typeof mgInsCnt!=='undefined')mgInsCnt=0;
+  // 万一の遺族年金（手入力ステップ）
+  if($('mg-surv-steps-cont'))$('mg-surv-steps-cont').innerHTML='';
+  if(typeof _mgSurvStepCnt!=='undefined')_mgSurvStepCnt=0;
+  // 万一の生活費（手入力ステップ）
+  if($('mg-lc-steps-container'))$('mg-lc-steps-container').innerHTML='';
+  // 市場シミュ表示（裏データ marketShocks は既にリセット済。表示だけ作り直し）
+  if($('msp-index-list'))$('msp-index-list').innerHTML='';
+  if($('msp-shock-list'))$('msp-shock-list').innerHTML='';
   // 一時払い保険
   ['h','w'].forEach(p=>{if($(`ins-lump-cont-${p}`))$(`ins-lump-cont-${p}`).innerHTML='';});
   insLumpCnt=0;

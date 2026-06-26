@@ -2105,7 +2105,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/loan-plan.js?v=20"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=70"></script>
+<script src="js/save-load.js?v=71"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=8"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>
@@ -2159,9 +2159,11 @@ if('serviceWorker' in navigator){
         }
       });
     });
-    // 起動時＋定期的に新版チェック（開きっぱなしでも検知できるよう60秒ごと）
-    reg.update();
-    setInterval(()=>{ reg.update(); }, 60000);
+    // 起動時＋定期的に新版チェック（開きっぱなしでも検知できるよう30分ごと）
+    // ※一時的な通信失敗(.catch)はエラーログに残さない。60秒ごとだとログが埋まるため30分に緩和。
+    const _swUpdate=()=>{ try{ reg.update().catch(()=>{}); }catch(_){} };
+    _swUpdate();
+    setInterval(_swUpdate, 1800000);
   });
 }
 </script>

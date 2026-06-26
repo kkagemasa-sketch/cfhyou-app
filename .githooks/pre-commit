@@ -1,0 +1,21 @@
+#!/bin/sh
+# CF表アプリ 自動チェック（コミット前に自動実行）
+# 過去に繰り返したバグの観点を機械が点検する。
+#   - 確実なエラー（存在しないID参照／JS構文エラー）→ コミットを止める
+#   - 疑わしい点（新規作成クリア漏れ等）          → 警告のみ・止めない
+# 一時的に飛ばしたいときは:  git commit --no-verify
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "⚠️ node が見つからないため自動チェックをスキップしました。"
+  exit 0
+fi
+
+node "$(dirname "$0")/../tools/check.js"
+status=$?
+if [ "$status" -ne 0 ]; then
+  echo ""
+  echo "🛑 自動チェックでエラーが見つかったため、コミットを中止しました。"
+  echo "   （どうしても今すぐコミットしたい場合のみ: git commit --no-verify）"
+  exit 1
+fi
+exit 0
