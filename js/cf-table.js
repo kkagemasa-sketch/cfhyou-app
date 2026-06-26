@@ -525,10 +525,11 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rsav"><td>預貯金残高</td><td><span style="font-size:11px;font-weight:400;opacity:.8">購入直後</span><br><span style="font-size:12px;font-weight:700;${_initSavStyle}">${_initSavTxt}万円</span></td>`;
   for(let i=0;i<disp;i++){
     const v=ri(R.sav[i]);
-    // ★ 預貯金残高は背景は常に緑のまま。プラス＝白字／マイナス＝赤字(▲)。
-    //   緑背景に赤が振動して見にくいため、黒い縁取り(text-shadow)で赤をくっきり分離させる。
+    // ★ 預貯金残高は背景は常に緑のまま。プラス＝白字／マイナス＝深紅字(▲)。
+    //   明るい赤(#ff2b2b)は緑に溶けて見にくいため、影は使わず濃い深紅(#7a0010)で
+    //   緑とのコントラストを確保（太字）。プラスの白字は従来どおり。
     const _savStyle = v<0
-      ? 'color:#ff2b2b!important;text-shadow:0 0 3px rgba(0,0,0,.85),0 1px 1px rgba(0,0,0,.7);font-weight:800'
+      ? 'color:#7a0010!important;font-weight:800'
       : 'color:#fff!important;font-weight:700';
     h+=`<td style="${_savStyle}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
