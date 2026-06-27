@@ -1014,6 +1014,49 @@ window.closeAboutModal=closeAboutModal;
 
       <div class="divider"></div>
 
+      <!-- 住宅ローン控除設定（引き渡しの次に配置） -->
+      <div class="sub" title="入居年・住宅種別・世帯属性により借入限度額が変わります。&#10;控除額＝年末残高（上限以内）×0.7%　所得税＋住民税の上限内で計算&#10;※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。" style="cursor:help">🏦 住宅ローン控除設定 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
+      <div style="background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;margin-bottom:10px">
+        <div class="g3" style="margin-bottom:8px">
+          <div class="fg"><label class="lbl">引渡予定</label>
+            <select class="sel" id="lctrl-year" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
+              <option value="2024">2024年入居</option>
+              <option value="2025" selected>2025年入居</option>
+              <option value="2026">2026年入居</option>
+              <option value="2027">2027年入居</option>
+              <option value="2028">2028年入居</option>
+              <option value="2029">2029年入居</option>
+              <option value="2030">2030年入居</option>
+            </select></div>
+          <div class="fg"><label class="lbl">住宅の種別</label>
+            <select class="sel" id="lctrl-type" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
+              <option value="new_long">新築（長期優良・低炭素）</option>
+              <option value="new_zeh">新築（ZEH水準省エネ）</option>
+              <option value="new_eco" selected>新築（省エネ基準適合）</option>
+              <option value="new_general">新築（その他・一般）</option>
+              <option value="used_eco">中古（省エネ基準適合以上）</option>
+              <option value="used_other">中古（その他）</option>
+            </select></div>
+          <div class="fg"><label class="lbl" title="子育て・若者夫婦世帯：19歳未満の子 or 夫婦どちらか40歳未満" style="cursor:help">世帯属性 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></label>
+            <select class="sel" id="lctrl-household" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
+              <option value="general">一般世帯</option>
+              <option value="kosodate">子育て・若者夫婦世帯</option>
+            </select></div>
+        </div>
+        <div id="lctrl-hint" style="font-size:10px;font-weight:600;padding:6px 10px;background:#e8f2fc;border-radius:5px;line-height:1.8"></div>
+        <!-- 自動計算/自由入力切替 -->
+        <div style="display:flex;gap:6px;margin-top:8px;margin-bottom:6px">
+          <button class="btn-tog on" id="lctrl-mode-auto" onclick="setLctrlDedMode('auto')" style="flex:1;font-size:10px;padding:4px">自動計算</button>
+          <button class="btn-tog" id="lctrl-mode-manual" onclick="setLctrlDedMode('manual')" style="flex:1;font-size:10px;padding:4px">自由入力</button>
+        </div>
+        <div id="lctrl-manual-body" style="display:none">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">各年の控除額を直接入力（万円）</div>
+          <div id="lctrl-manual-inputs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4px"></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
       <!-- ★ Group 1: 物件価格・自己資金 -->
       <div class="hg-group" id="hg-basic" data-collapsed="false">
         <div class="hg-header" onclick="toggleHousingGroup('basic')">
@@ -1034,25 +1077,6 @@ window.closeAboutModal=closeAboutModal;
         <!-- 住宅価格 -->
         <div class="fg"><label class="lbl">住宅価格<span class="req">*</span></label>
           <div class="suf"><input class="inp amt-inp" id="house-price" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="5000" min="0" oninput="calcLoanAmt()"><span class="sl">万円</span></div></div>
-        <!-- 頭金 -->
-        <div class="fg"><label class="lbl">頭金</label>
-          <div class="suf"><input class="inp amt-inp" id="down-payment" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="500" min="0" oninput="calcLoanAmt();toggleDownOpts()"><span class="sl">万円</span></div>
-          <div id="down-opts" style="display:flex;gap:4px;margin-top:4px">
-            <div class="tc on" id="down-own" onclick="setDownType('own')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
-              <div class="tc-lbl" style="font-size:10px">💰 自己資金</div>
-            </div>
-            <div class="tc" id="down-gift" onclick="setDownType('gift')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
-              <div class="tc-lbl" style="font-size:10px">🎁 住宅資金贈与</div>
-            </div>
-            <div class="tc" id="down-other" onclick="setDownType('other')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
-              <div class="tc-lbl" style="font-size:10px">📝 その他</div>
-            </div>
-          </div>
-          <div id="down-other-wrap" style="display:none;margin-top:4px">
-            <input class="inp" id="down-other-text" type="text" placeholder="例：株式売却、親からの援助、退職金など" oninput="onDownOtherTextChange()" style="font-size:11px;padding:4px 8px;width:100%">
-            <span class="hint" style="font-size:9px;color:var(--muted)">※ 入力した内容が「自己資金の内訳」に反映されます</span>
-          </div>
-          <span class="hint" id="down-type-hint" style="font-size:9px;color:var(--muted)"></span></div>
         <!-- 諸費用 -->
         <div class="fg"><label class="lbl">諸費用</label>
           <div class="suf"><input class="inp amt-inp" id="house-cost" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="200" min="0" oninput="calcLoanAmt();toggleCostOpts()"><span class="sl">万円</span></div>
@@ -1072,6 +1096,25 @@ window.closeAboutModal=closeAboutModal;
             <span class="hint" style="font-size:9px;color:var(--muted)">※ 入力した内容が「自己資金の内訳」に反映されます</span>
           </div>
           </div>
+        <!-- 頭金 -->
+        <div class="fg"><label class="lbl">頭金</label>
+          <div class="suf"><input class="inp amt-inp" id="down-payment" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="500" min="0" oninput="calcLoanAmt();toggleDownOpts()"><span class="sl">万円</span></div>
+          <div id="down-opts" style="display:flex;gap:4px;margin-top:4px">
+            <div class="tc on" id="down-own" onclick="setDownType('own')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
+              <div class="tc-lbl" style="font-size:10px">💰 自己資金</div>
+            </div>
+            <div class="tc" id="down-gift" onclick="setDownType('gift')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
+              <div class="tc-lbl" style="font-size:10px">🎁 住宅資金贈与</div>
+            </div>
+            <div class="tc" id="down-other" onclick="setDownType('other')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
+              <div class="tc-lbl" style="font-size:10px">📝 その他</div>
+            </div>
+          </div>
+          <div id="down-other-wrap" style="display:none;margin-top:4px">
+            <input class="inp" id="down-other-text" type="text" placeholder="例：株式売却、親からの援助、退職金など" oninput="onDownOtherTextChange()" style="font-size:11px;padding:4px 8px;width:100%">
+            <span class="hint" style="font-size:9px;color:var(--muted)">※ 入力した内容が「自己資金の内訳」に反映されます</span>
+          </div>
+          <span class="hint" id="down-type-hint" style="font-size:9px;color:var(--muted)"></span></div>
       </div>
       <!-- 住宅ローン総額モード（簡易シミュレーション用） -->
       <div id="funding-loan-only-fields" style="display:none;margin-bottom:8px">
@@ -1096,22 +1139,13 @@ window.closeAboutModal=closeAboutModal;
       <!-- ★ Group 2: 住宅ローン・控除 -->
       <div class="hg-group" id="hg-loan" data-collapsed="false">
         <div class="hg-header" onclick="toggleHousingGroup('loan')">
-          <span class="hg-arrow">▼</span> 🏦 住宅ローン・控除
+          <span class="hg-arrow">▼</span> 🏦 住宅ローン
         </div>
         <div class="hg-body">
 
       <!-- ローン設定 -->
       <div class="sub">🏦 住宅ローン設定</div>
-      <!-- ローンカテゴリ切替 -->
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <div class="tc on" id="lcat-std" onclick="setLoanCategory('standard')" style="flex:1;padding:7px 10px">
-          <div class="tc-lbl" style="font-size:11px">固定/変動金利</div>
-        </div>
-        <div class="tc" id="lcat-flat" onclick="setLoanCategory('flat35')" style="flex:1;padding:7px 10px">
-          <div class="tc-lbl" style="font-size:11px">フラット35/20</div>
-        </div>
-      </div>
-      <!-- ローン種別トグル -->
+      <!-- ローン種別トグル（先に種別を選ぶ） -->
       <div id="loan-mode-toggle" style="display:flex;gap:8px;margin-bottom:10px">
         <div class="tc on" id="loan-single-tab" onclick="setLoanMode('single')" style="flex:1;padding:7px 10px">
           <span style="font-size:15px">👤</span>
@@ -1124,6 +1158,15 @@ window.closeAboutModal=closeAboutModal;
         <div class="tc" id="loan-joint-tab" onclick="setLoanMode('joint')" style="flex:1;padding:7px 10px">
           <span style="font-size:15px">🤝</span>
           <div><div class="tc-lbl" style="font-size:11px">連帯債務</div></div>
+        </div>
+      </div>
+      <!-- ローンカテゴリ切替（固定/変動・フラット） -->
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="tc on" id="lcat-std" onclick="setLoanCategory('standard')" style="flex:1;padding:7px 10px">
+          <div class="tc-lbl" style="font-size:11px">固定/変動金利</div>
+        </div>
+        <div class="tc" id="lcat-flat" onclick="setLoanCategory('flat35')" style="flex:1;padding:7px 10px">
+          <div class="tc-lbl" style="font-size:11px">フラット35/20</div>
         </div>
       </div>
       <!-- 連帯債務 追加設定（単独ローンbody内に表示・joint時のみ） -->
@@ -1389,49 +1432,6 @@ window.closeAboutModal=closeAboutModal;
           </div>
         </div>
       </div><!-- /flat35-body -->
-
-      <div class="divider"></div>
-
-      <!-- 住宅ローン控除設定 -->
-      <div class="sub" title="入居年・住宅種別・世帯属性により借入限度額が変わります。&#10;控除額＝年末残高（上限以内）×0.7%　所得税＋住民税の上限内で計算&#10;※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。" style="cursor:help">🏦 住宅ローン控除設定 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
-      <div style="background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;margin-bottom:10px">
-        <div class="g3" style="margin-bottom:8px">
-          <div class="fg"><label class="lbl">引渡予定</label>
-            <select class="sel" id="lctrl-year" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
-              <option value="2024">2024年入居</option>
-              <option value="2025" selected>2025年入居</option>
-              <option value="2026">2026年入居</option>
-              <option value="2027">2027年入居</option>
-              <option value="2028">2028年入居</option>
-              <option value="2029">2029年入居</option>
-              <option value="2030">2030年入居</option>
-            </select></div>
-          <div class="fg"><label class="lbl">住宅の種別</label>
-            <select class="sel" id="lctrl-type" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
-              <option value="new_long">新築（長期優良・低炭素）</option>
-              <option value="new_zeh">新築（ZEH水準省エネ）</option>
-              <option value="new_eco" selected>新築（省エネ基準適合）</option>
-              <option value="new_general">新築（その他・一般）</option>
-              <option value="used_eco">中古（省エネ基準適合以上）</option>
-              <option value="used_other">中古（その他）</option>
-            </select></div>
-          <div class="fg"><label class="lbl" title="子育て・若者夫婦世帯：19歳未満の子 or 夫婦どちらか40歳未満" style="cursor:help">世帯属性 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></label>
-            <select class="sel" id="lctrl-household" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
-              <option value="general">一般世帯</option>
-              <option value="kosodate">子育て・若者夫婦世帯</option>
-            </select></div>
-        </div>
-        <div id="lctrl-hint" style="font-size:10px;font-weight:600;padding:6px 10px;background:#e8f2fc;border-radius:5px;line-height:1.8"></div>
-        <!-- 自動計算/自由入力切替 -->
-        <div style="display:flex;gap:6px;margin-top:8px;margin-bottom:6px">
-          <button class="btn-tog on" id="lctrl-mode-auto" onclick="setLctrlDedMode('auto')" style="flex:1;font-size:10px;padding:4px">自動計算</button>
-          <button class="btn-tog" id="lctrl-mode-manual" onclick="setLctrlDedMode('manual')" style="flex:1;font-size:10px;padding:4px">自由入力</button>
-        </div>
-        <div id="lctrl-manual-body" style="display:none">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">各年の控除額を直接入力（万円）</div>
-          <div id="lctrl-manual-inputs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4px"></div>
-        </div>
-      </div>
 
         </div></div><!-- ★ /Group 2 -->
 
