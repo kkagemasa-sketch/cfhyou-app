@@ -1076,10 +1076,10 @@ window.closeAboutModal=closeAboutModal;
       <div id="funding-detail-fields" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
         <!-- 住宅価格 -->
         <div class="fg"><label class="lbl">住宅価格<span class="req">*</span></label>
-          <div class="suf"><input class="inp amt-inp" id="house-price" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="5000" min="0" oninput="calcLoanAmt()"><span class="sl">万円</span></div></div>
+          <div class="suf"><input class="inp amt-inp" id="house-price" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="5000" min="0" oninput="onFundingChange()"><span class="sl">万円</span></div></div>
         <!-- 諸費用 -->
         <div class="fg"><label class="lbl">諸費用</label>
-          <div class="suf"><input class="inp amt-inp" id="house-cost" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="200" min="0" oninput="calcLoanAmt();toggleCostOpts()"><span class="sl">万円</span></div>
+          <div class="suf"><input class="inp amt-inp" id="house-cost" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="200" min="0" oninput="onFundingChange();toggleCostOpts()"><span class="sl">万円</span></div>
           <div id="cost-opts" style="display:flex;gap:4px;margin-top:4px">
             <div class="tc on" id="cost-cash" onclick="setCostType('cash')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
               <div class="tc-lbl" style="font-size:10px">💴 現金払い</div>
@@ -1098,7 +1098,7 @@ window.closeAboutModal=closeAboutModal;
           </div>
         <!-- 頭金 -->
         <div class="fg"><label class="lbl">頭金</label>
-          <div class="suf"><input class="inp amt-inp" id="down-payment" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="500" min="0" oninput="calcLoanAmt();toggleDownOpts()"><span class="sl">万円</span></div>
+          <div class="suf"><input class="inp amt-inp" id="down-payment" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="500" min="0" oninput="onFundingChange();toggleDownOpts()"><span class="sl">万円</span></div>
           <div id="down-opts" style="display:flex;gap:4px;margin-top:4px">
             <div class="tc on" id="down-own" onclick="setDownType('own')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
               <div class="tc-lbl" style="font-size:10px">💰 自己資金</div>
@@ -1435,12 +1435,12 @@ window.closeAboutModal=closeAboutModal;
 
         </div></div><!-- ★ /Group 2 -->
 
-      <!-- ★ Group 3: その他費用（定借・引越・保有期間中） -->
-      <div class="hg-group" id="hg-other" data-collapsed="true">
+      <!-- ★ Group 3: その他費用（定借・引越・保有期間中） — 既定で開いて常に表示 -->
+      <div class="hg-group" id="hg-other" data-collapsed="false">
         <div class="hg-header" onclick="toggleHousingGroup('other')">
-          <span class="hg-arrow">▶</span> 🔨 その他費用（定借・引越・保有期間中）
+          <span class="hg-arrow">▼</span> 🔨 その他費用（定借・引越・保有期間中）
         </div>
-        <div class="hg-body" hidden>
+        <div class="hg-body">
 
       <!-- 定期借地権付き物件 入力欄（上部チェックボックスON時に表示） -->
       <div id="leasehold-body" style="display:none;background:#fff8ee;border:1px solid #ffb74d;border-radius:6px;padding:8px 10px;margin-bottom:8px">
@@ -2016,7 +2016,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/income.js?v=23"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=5"></script>
-<script src="js/housing.js?v=34"></script>
+<script src="js/housing.js?v=35"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=18"></script>

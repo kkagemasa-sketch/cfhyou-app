@@ -162,6 +162,37 @@ function syncPairLoanHalfHalf(isFlat){
   }
 }
 window.onPairLoanInput = onPairLoanInput;
+
+// ★ 諸費用の現金/ローン切替や、物件価格・頭金・諸費用の変更で「借入総額」が変わったとき、
+//   ペアローンの各自借入額を現在の比率を保ったまま新しい総額に再配分する。
+//   例: 2250/2250 で総額4500→(諸費用500をローン組込で)5000 なら 2500/2500。比率0なら半々。
+//   ※復元(_restoreDynamic等)は calcLoanAmt を直接呼ぶため本関数は走らず、保存値はそのまま。
+function _resyncPairFromTotal(isFlat){
+  if(typeof pairLoanMode==='undefined' || !pairLoanMode) return;
+  const want=_pairLoanTotal(isFlat);
+  if(want<=0) return;
+  const prefix=isFlat?'flat-loan':'loan';
+  const hEl=document.getElementById(`${prefix}-h-amt`);
+  const wEl=document.getElementById(`${prefix}-w-amt`);
+  if(!hEl||!wEl)return;
+  const h=parseFloat(String(hEl.value||'').replace(/,/g,''))||0;
+  const w=parseFloat(String(wEl.value||'').replace(/,/g,''))||0;
+  const cur=h+w;
+  if(Math.abs(cur-want)<=0.5) return; // 既に総額と一致なら何もしない
+  let nh,nw;
+  if(cur>0){ nh=Math.round(want*h/cur); nw=want-nh; } // 比率を維持
+  else { nh=Math.round(want/2); nw=want-nh; }         // 未入力なら半々
+  hEl.value=nh; if(hEl._rawValue!==undefined)hEl._rawValue=nh;
+  wEl.value=nw; if(wEl._rawValue!==undefined)wEl._rawValue=nw;
+}
+// 物件価格・頭金・諸費用の変更時の共通処理（ペア時は総額に合わせて各自へ再配分してから再計算）
+function onFundingChange(){
+  if(typeof pairLoanMode!=='undefined' && pairLoanMode){
+    _resyncPairFromTotal(typeof loanCategory!=='undefined' && loanCategory==='flat35');
+  }
+  calcLoanAmt();
+}
+window.onFundingChange = onFundingChange;
 window.syncPairLoanHalfHalf = syncPairLoanHalfHalf;
 
 // ===== ⑤住宅セクション：4グループ折りたたみ =====
@@ -406,7 +437,7 @@ function setCostType(t){
   // その他選択時のみ自由記述欄を表示
   const otherWrap=document.getElementById('cost-other-wrap');
   if(otherWrap) otherWrap.style.display = (t==='other')?'':'none';
-  calcLoanAmt();
+  onFundingChange(); // ペア時は諸費用の現金/ローン切替で総額が変わるため各自へ再配分
   live(true);
 }
 // 諸費用「その他」の自由記述変更時
