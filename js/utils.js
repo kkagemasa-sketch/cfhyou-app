@@ -1,5 +1,16 @@
 // utils.js — ユーティリティ関数
 
+// ★ 数値入力欄(type=number)で、マウスホイール/トラックパッドのスクロールにより
+//   値が勝手に大きく変わるのを防ぐ。年齢欄などにカーソルを置いたままスクロールすると
+//   一気に数字が動く問題への対策（矢印クリック・キーボード↑↓での増減は従来どおり可）。
+document.addEventListener('wheel', function(e){
+  const a=document.activeElement;
+  if(a && a.tagName==='INPUT' && a.type==='number' && a===e.target){
+    e.preventDefault(); // この欄の値が変わるのを止める（ページのスクロールには影響しない）
+    a.blur();           // フォーカスを外し、以降のスクロールは通常どおりページに効く
+  }
+}, {passive:false});
+
 function $(id){return document.getElementById(id)}
 function _v(id){return $(id)?.value||''}
 function iv(id){return parseInt(String($(id)?.value||'').replace(/,/g,''))||0}
