@@ -1,6 +1,14 @@
 // housing.js — 住宅設定・修繕積立金・ローン控除
 
 function calcLoanAmt(){
+  // ★ 現金一括購入モード: 借入は常に0（物件価格は引き渡し年に一括支出計上）
+  if(document.getElementById('funding-mode')?.value==='cash'){
+    const loanEl=document.getElementById('loan-amt'); if(loanEl)loanEl.value=0;
+    const disp=document.getElementById('loan-amt-disp'); if(disp)disp.textContent='0';
+    const hint=document.getElementById('loan-breakdown-hint'); if(hint)hint.textContent='現金一括購入（ローンなし）';
+    if(typeof live==='function') live();
+    return;
+  }
   // ペアローン優先：ペアの合算（ご主人様＋奥様）を借入金額表示に反映
   if(typeof pairLoanMode!=='undefined' && pairLoanMode){
     const isFlat=(typeof loanCategory!=='undefined' && loanCategory==='flat35');
@@ -70,23 +78,43 @@ function calcLoanAmt(){
   live();
 }
 
-// モード切替
+// モード切替（詳細設定 / 住宅ローン総額 / 現金一括購入）
 function setFundingMode(mode){
   const fm=document.getElementById('funding-mode');
   if(fm)fm.value=mode;
+  const isCash = mode==='cash';
   document.getElementById('funding-mode-detail')?.classList.toggle('on', mode==='detail');
   document.getElementById('funding-mode-loan')?.classList.toggle('on', mode==='loanOnly');
+  document.getElementById('funding-mode-cash')?.classList.toggle('on', isCash);
   const detailEl=document.getElementById('funding-detail-fields');
   const loanEl=document.getElementById('funding-loan-only-fields');
-  if(detailEl) detailEl.style.display = mode==='detail' ? '' : 'none';
+  // 物件価格・諸費用の入力は「詳細設定」と「現金一括購入」で表示
+  if(detailEl) detailEl.style.display = (mode==='detail'||isCash) ? '' : 'none';
   if(loanEl) loanEl.style.display = mode==='loanOnly' ? '' : 'none';
-  if(mode==='loanOnly'){
+  // ── 現金一括購入モードの表示切替 ──
+  const note=document.getElementById('funding-cash-note'); if(note)note.style.display=isCash?'':'none';
+  const dpfg=document.getElementById('down-payment-fg'); if(dpfg)dpfg.style.display=isCash?'none':''; // 頭金は不要
+  const loanGrp=document.getElementById('hg-loan'); if(loanGrp)loanGrp.style.display=isCash?'none':''; // ローン設定
+  const lctrlSub=document.getElementById('lctrl-sub'); if(lctrlSub)lctrlSub.style.display=isCash?'none':''; // 控除
+  const lctrlBox=document.getElementById('lctrl-box'); if(lctrlBox)lctrlBox.style.display=isCash?'none':'';
+  if(isCash){
+    // 諸費用は現金扱い（種別トグルは隠す）／借入は0
+    const ct=document.getElementById('cost-type'); if(ct)ct.value='cash';
+    const costOpts=document.getElementById('cost-opts'); if(costOpts)costOpts.style.display='none';
+    const dp=document.getElementById('down-payment'); if(dp)dp.value=0; // 全額現金→頭金概念なし
+    const loanAmtEl=document.getElementById('loan-amt'); if(loanAmtEl)loanAmtEl.value=0;
+    const disp=document.getElementById('loan-amt-disp'); if(disp)disp.textContent='0';
+    const hint=document.getElementById('loan-breakdown-hint'); if(hint)hint.textContent='現金一括購入（ローンなし）';
+    if(typeof live==='function') live(true);
+  } else if(mode==='loanOnly'){
     // 初回切替時: 現在の loan-amt を簡易入力に引き継ぐ
     const currentLoan=fv('loan-amt')||0;
     const simpleEl=document.getElementById('loan-total-simple');
     if(simpleEl && (!simpleEl.value || simpleEl.value==='4500')) simpleEl.value=currentLoan;
     onLoanTotalSimpleChange();
   } else {
+    // 詳細設定に戻したとき、諸費用の種別トグル表示を戻す
+    if(typeof toggleCostOpts==='function') toggleCostOpts();
     calcLoanAmt();
   }
 }

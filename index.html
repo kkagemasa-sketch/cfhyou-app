@@ -1015,8 +1015,8 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- 住宅ローン控除設定（引き渡しの次に配置） -->
-      <div class="sub" title="入居年・住宅種別・世帯属性により借入限度額が変わります。&#10;控除額＝年末残高（上限以内）×0.7%　所得税＋住民税の上限内で計算&#10;※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。" style="cursor:help">🏦 住宅ローン控除設定 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
-      <div style="background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;margin-bottom:10px">
+      <div class="sub" id="lctrl-sub" title="入居年・住宅種別・世帯属性により借入限度額が変わります。&#10;控除額＝年末残高（上限以内）×0.7%　所得税＋住民税の上限内で計算&#10;※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。" style="cursor:help">🏦 住宅ローン控除設定 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
+      <div id="lctrl-box" style="background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;margin-bottom:10px">
         <div class="g3" style="margin-bottom:8px">
           <div class="fg"><label class="lbl">引渡予定</label>
             <select class="sel" id="lctrl-year" onfocus="scrollToCFRow('lCtrl')" onblur="cfRowBlur()" onchange="updateLctrlHint();live()" style="font-size:11px">
@@ -1066,10 +1066,15 @@ window.closeAboutModal=closeAboutModal;
 
       <!-- 物件価格・資金計画 -->
       <div class="sub">💴 物件価格・資金計画</div>
-      <!-- モード切替: 詳細設定 / 住宅ローン総額 -->
-      <div style="display:flex;gap:6px;margin-bottom:8px">
+      <!-- モード切替: 詳細設定 / 住宅ローン総額 / 現金一括購入 -->
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
         <button type="button" class="btn-tog on" id="funding-mode-detail" onclick="setFundingMode('detail')">📋 詳細設定</button>
         <button type="button" class="btn-tog" id="funding-mode-loan" onclick="setFundingMode('loanOnly')">💰 住宅ローン総額</button>
+        <button type="button" class="btn-tog" id="funding-mode-cash" onclick="setFundingMode('cash')">💵 現金一括購入</button>
+      </div>
+      <!-- 現金一括購入モードの案内（cashモード時のみ表示） -->
+      <div id="funding-cash-note" style="display:none;font-size:10px;color:#0a6b3a;background:#eafaf0;border:1px solid #b8e8c8;border-radius:var(--rs);padding:6px 8px;margin-bottom:8px">
+        💵 ローンを組まず、引き渡し年に「物件価格＋諸費用」を現金で支払う想定です。預貯金で足りない分は自動で資産（有価証券）を取り崩して充当します。相続・贈与は「収入」の一時金でその年に受け取ってください。
       </div>
       <input type="hidden" id="funding-mode" value="detail">
       <!-- 詳細設定モード（従来通り） -->
@@ -1097,7 +1102,7 @@ window.closeAboutModal=closeAboutModal;
           </div>
           </div>
         <!-- 頭金 -->
-        <div class="fg"><label class="lbl">頭金</label>
+        <div class="fg" id="down-payment-fg"><label class="lbl">頭金</label>
           <div class="suf"><input class="inp amt-inp" id="down-payment" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="500" min="0" oninput="onFundingChange();toggleDownOpts()"><span class="sl">万円</span></div>
           <div id="down-opts" style="display:flex;gap:4px;margin-top:4px">
             <div class="tc on" id="down-own" onclick="setDownType('own')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
@@ -2016,22 +2021,22 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/income.js?v=23"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=5"></script>
-<script src="js/housing.js?v=35"></script>
+<script src="js/housing.js?v=37"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=18"></script>
 <script src="js/extras.js?v=2"></script>
 <script src="js/contingency.js?v=93"></script>
 <script src="js/cf-ui.js?v=24"></script>
-<script src="js/cf-calc.js?v=77"></script>
-<script src="js/cf-table.js?v=63"></script>
+<script src="js/cf-calc.js?v=78"></script>
+<script src="js/cf-table.js?v=64"></script>
 <script src="js/cf-highlight.js?v=3"></script>
 <script src="js/graphs.js?v=5"></script>
 <script src="js/export.js?v=65"></script>
 <script src="js/loan-plan.js?v=20"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=4"></script>
-<script src="js/save-load.js?v=71"></script>
+<script src="js/save-load.js?v=73"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=8"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

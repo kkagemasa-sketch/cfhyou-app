@@ -448,6 +448,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=eRow('生活費',R.lc,'lc')+eRow('家賃（引渡前）',R.rent,'rent');
   if(pairLoanMode&&!_isSingle_t){h+=eRow('ローン返済(ご主人様)',R.lRepH,'lRepH')+eRow('ローン返済(奥様)',R.lRepW,'lRepW');}
   else{h+=eRow('住宅ローン返済',R.lRep,'lRep');}
+  if(R.housePurchase&&R.housePurchase.some(v=>v>0))h+=eRow('💵 住宅購入（一括）',R.housePurchase,'housePurchase');
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))h+=eRow('地代',R.chidai,'chidai');
   if(R.kaitai&&R.kaitai.some(v=>v>0))h+=eRow('解体準備金',R.kaitai,'kaitai');

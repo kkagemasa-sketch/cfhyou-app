@@ -334,6 +334,7 @@ function _collectDynamic(){
   });
   d.pairLoanMode=pairLoanMode;
   d.jointLoanMode=jointLoanMode;
+  d.fundingMode=document.getElementById('funding-mode')?.value||'detail'; // 資金計画モード（詳細/住宅ローン総額/現金一括購入）
   d.lctrlDedMode=_lctrlDedMode;
   d.lctrlManualDed=_lctrlDedMode==='manual'?getLctrlManualValues():[];
   // 返済計画タブ
@@ -706,6 +707,8 @@ function _restoreDynamic(d){
   // ローンモード復元: joint > pair > single の優先順
   if(typeof d.jointLoanMode!=='undefined'&&d.jointLoanMode) setLoanMode('joint');
   else if(typeof d.pairLoanMode!=='undefined') setLoanMode(d.pairLoanMode?'pair':'single');
+  // 資金計画モード（現金一括購入など）のUIを再適用（ローンモードの後）
+  if(typeof setFundingMode==='function'&&d.fundingMode) setFundingMode(d.fundingMode);
   if(typeof d.carOwn!=='undefined')setCarOwn(d.carOwn);
   if(typeof d.parkOwn!=='undefined')setParkOwn(d.parkOwn);
   const parkFromEl=document.getElementById('park-from-age');
@@ -1160,6 +1163,7 @@ function _resetSheetState(){
   if(typeof setParkOwn==='function')setParkOwn(true);
   if(typeof setRetirePay==='function')setRetirePay(true);
   if(typeof setWRetirePay==='function')setWRetirePay(true);
+  if(typeof setFundingMode==='function')setFundingMode('detail'); // 資金計画モードを既定に戻す
   window.live=_origLive;
 
   // デフォルト要素は追加しない（完全白紙状態）
