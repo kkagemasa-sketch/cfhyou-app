@@ -1996,9 +1996,9 @@ function _renderContingencyInner(){
   for(let i2=0;i2<mgDisp;i2++){
     const v=ri(MR.sav[i2]);
     // ★ 預貯金残高は背景は常に緑のまま。プラス＝白字／マイナス＝赤字(▲)。
-    //   緑背景に赤が振動して見にくいため、黒い縁取り(text-shadow)で赤をくっきり分離させる。
+    //   マイナスは「購入直後」欄と同じ明るい赤(#ffaaaa)に統一（影なし・見やすさ優先）。
     const _savStyle = v<0
-      ? 'color:#ff2b2b!important;text-shadow:0 0 3px rgba(0,0,0,.85),0 1px 1px rgba(0,0,0,.7);font-weight:800'
+      ? 'color:#ffaaaa!important;font-weight:800'
       : 'color:#fff!important;font-weight:700';
     h+=`<td style="${_savStyle}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
