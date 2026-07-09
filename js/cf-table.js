@@ -514,7 +514,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   for(let i=0;i<disp;i++){const v=ri(R.bal[i]);h+=`<td class="${v<0?'vn':v>0?'vp':'vz'}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`}
   const bt=R.bal.slice(0,disp).reduce((a,b)=>a+ri(b),0);
   h+=`<td class="${bt<0?'vn':'vp'}">${bt>=0?bt.toLocaleString():'▲'+Math.abs(bt).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">年間収支</span></td></tr>`;
-  const _initSavV=ri(window._purchaseInitSav||0);const _initSavTxt=_initSavV>=0?_initSavV.toLocaleString():'▲'+Math.abs(_initSavV).toLocaleString();const _initSavStyle=_initSavV<0?'color:#ffaaaa':'';
+  const _initSavV=ri(window._purchaseInitSav||0);const _initSavTxt=_initSavV>=0?_initSavV.toLocaleString():'▲'+Math.abs(_initSavV).toLocaleString();const _initSavStyle=_initSavV<0?'color:#ff8585':'';
   // 預貯金マイナスの年を検出（警告用）
   const _negYears=[];
   let _minSav=0;
@@ -529,7 +529,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     //   明るい赤(#ff2b2b)は緑に溶けて見にくいため、影は使わず赤(#9e0010)で
     //   緑とのコントラストを確保（太字）。プラスの白字は従来どおり。
     const _savStyle = v<0
-      ? 'color:#ffaaaa!important;font-weight:800'
+      ? 'color:#ff8585!important;font-weight:800'
       : 'color:#fff!important;font-weight:700';
     h+=`<td style="${_savStyle}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }
