@@ -1984,7 +1984,7 @@ function _renderContingencyInner(){
   const bt_mg=MR.bal.slice(0,mgDisp).reduce((a,b)=>a+ri(b),0);
   h+=`<td class="${bt_mg<0?'vn':'vp'}">${bt_mg>=0?bt_mg.toLocaleString():'▲'+Math.abs(bt_mg).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">年間収支</span></td></tr>`;
 
-  const _mgInitSavV=ri(window._purchaseInitSav||0);const _mgInitSavTxt=_mgInitSavV>=0?_mgInitSavV.toLocaleString():'▲'+Math.abs(_mgInitSavV).toLocaleString();const _mgInitSavStyle=_mgInitSavV<0?'color:#ff8585':'';
+  const _mgInitSavV=ri(window._purchaseInitSav||0);const _mgInitSavTxt=_mgInitSavV>=0?_mgInitSavV.toLocaleString():'▲'+Math.abs(_mgInitSavV).toLocaleString();const _mgInitSavStyle=_mgInitSavV<0?'background:#ffe3e3;color:#a3000c;padding:0 5px;border-radius:3px':'';
   // 預貯金マイナスの年を検出（警告用）
   const _mgNegYears=[];
   let _mgMinSav=0;
@@ -1998,7 +1998,7 @@ function _renderContingencyInner(){
     // ★ 預貯金残高は背景は常に緑のまま。プラス＝白字／マイナス＝赤字(▲)。
     //   マイナスは「購入直後」欄と同じ明るい赤(#ff8585)に統一（影なし・見やすさ優先）。
     const _savStyle = v<0
-      ? 'color:#ff8585!important;font-weight:800'
+      ? 'background:#ffe3e3!important;color:#a3000c!important;font-weight:800'
       : 'color:#fff!important;font-weight:700';
     h+=`<td style="${_savStyle}">${v>=0?v.toLocaleString():'▲'+Math.abs(v).toLocaleString()}</td>`;
   }

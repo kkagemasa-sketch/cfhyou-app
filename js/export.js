@@ -1674,6 +1674,7 @@ async function exportExcel(){
   addE(_rl('rent','家賃（引渡前）'),R.rent);
   if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(ご主人様)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
   else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
+  if(R.housePurchase&&R.housePurchase.some(v=>v>0)) addE('💵 住宅購入（一括）',R.housePurchase);
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))addE(_rl('chidai','地代'),R.chidai);
   if(R.kaitai&&R.kaitai.some(v=>v>0))addE(_rl('kaitai','解体準備金'),R.kaitai);
