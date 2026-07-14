@@ -1,0 +1,8 @@
+{
+  "name": "cfhyou-app-devtools",
+  "private": true,
+  "description": "CF表アプリの開発用ツール（計算回帰テスト等）。アプリ本体はビルド不要の静的ファイル。",
+  "devDependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}

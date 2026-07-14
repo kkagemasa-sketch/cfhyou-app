@@ -18,4 +18,21 @@ if [ "$status" -ne 0 ]; then
   echo "   （どうしても今すぐコミットしたい場合のみ: git commit --no-verify）"
   exit 1
 fi
+
+# ── 計算回帰テスト ──
+# 計算に関わるファイル(js/ or index.html)を変更したときだけ、代表シナリオの
+# 全計算結果を正解表(test/golden.json)と照合する。1円でもズレたら止める。
+# 意図した計算変更のときは: node tools/calc-test.js --update で正解表を更新してからコミット。
+if git diff --cached --name-only | grep -qE '^(js/|index\.html)'; then
+  echo "🧮 計算回帰テスト実行中…（約20秒）"
+  node "$(dirname "$0")/../tools/calc-test.js"
+  calc_status=$?
+  if [ "$calc_status" -ne 0 ]; then
+    echo ""
+    echo "🛑 計算結果が正解表とズレたため、コミットを中止しました。"
+    echo "   意図した計算変更なら: node tools/calc-test.js --update → 再コミット"
+    echo "   （緊急時のみ: git commit --no-verify）"
+    exit 1
+  fi
+fi
 exit 0
