@@ -335,6 +335,7 @@ function _collectDynamic(){
   d.pairLoanMode=pairLoanMode;
   d.jointLoanMode=jointLoanMode;
   d.fundingMode=document.getElementById('funding-mode')?.value||'detail'; // 資金計画モード（詳細/住宅ローン総額/現金一括購入）
+  d.fundingBk=window._fundingBk||null; // 詳細設定の退避値（総額/現金モード中も元の住宅価格・頭金・諸費用を保持）
   d.lctrlDedMode=_lctrlDedMode;
   d.lctrlManualDed=_lctrlDedMode==='manual'?getLctrlManualValues():[];
   // 返済計画タブ
@@ -708,6 +709,8 @@ function _restoreDynamic(d){
   if(typeof d.jointLoanMode!=='undefined'&&d.jointLoanMode) setLoanMode('joint');
   else if(typeof d.pairLoanMode!=='undefined') setLoanMode(d.pairLoanMode?'pair':'single');
   // 資金計画モード（現金一括購入など）のUIを再適用（ローンモードの後）
+  // バックアップを先に復元してから適用（setFundingMode内の退避ガードが正しく効くように）
+  window._fundingBk = d.fundingBk || null;
   if(typeof setFundingMode==='function'&&d.fundingMode) setFundingMode(d.fundingMode);
   if(typeof d.carOwn!=='undefined')setCarOwn(d.carOwn);
   if(typeof d.parkOwn!=='undefined')setParkOwn(d.parkOwn);
@@ -1163,6 +1166,7 @@ function _resetSheetState(){
   if(typeof setParkOwn==='function')setParkOwn(true);
   if(typeof setRetirePay==='function')setRetirePay(true);
   if(typeof setWRetirePay==='function')setWRetirePay(true);
+  window._fundingBk=null; // 前のお客様の資金計画バックアップを破棄（復元混入防止）
   if(typeof setFundingMode==='function')setFundingMode('detail'); // 資金計画モードを既定に戻す
   window.live=_origLive;
 

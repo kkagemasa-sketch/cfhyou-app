@@ -9,7 +9,42 @@ function calcLoanAmt(){
     if(typeof live==='function') live();
     return;
   }
-  // ペアローン優先：ペアの合算（ご主人様＋奥様）を借入金額表示に反映
+  // ★ 住宅ローン総額モード（バグ修正: ペアローンより先に判定する）
+  //   旧コードはペアローン分岐が先にあり、ペア選択時は総額入力(loan-total-simple)が
+  //   完全に無視されて古い個別額の合算が使われていた（例: 総額6000入力でも4500+2250=6750）。
+  const fundingMode=document.getElementById('funding-mode')?.value||'detail';
+  if(fundingMode==='loanOnly'){
+    const simpleLoan=fv('loan-total-simple')||0;
+    const loanEl=document.getElementById('loan-amt');
+    if(loanEl)loanEl.value=simpleLoan;
+    // 内部的に house-price/down/cost を同期（計算エンジンが参照するため）
+    // ※元の値は setFundingMode がバックアップ済み。詳細設定へ戻すと復元される。
+    const hp=document.getElementById('house-price');if(hp)hp.value=simpleLoan;
+    const dp=document.getElementById('down-payment');if(dp)dp.value=0;
+    const hc=document.getElementById('house-cost');if(hc)hc.value=0;
+    const ct=document.getElementById('cost-type');if(ct)ct.value='cash';
+    // ペアローンなら総額を正として夫婦へ比率配分し、内訳を表示
+    const isFlatLO=(typeof loanCategory!=='undefined' && loanCategory==='flat35');
+    let hintTxt=`ローン総額 ${simpleLoan.toLocaleString()}万円 （簡易モード）`;
+    if(typeof pairLoanMode!=='undefined' && pairLoanMode){
+      if(typeof _resyncPairFromTotal==='function') _resyncPairFromTotal(isFlatLO);
+      const lh=fv(isFlatLO?'flat-loan-h-amt':'loan-h-amt')||0;
+      const lw=fv(isFlatLO?'flat-loan-w-amt':'loan-w-amt')||0;
+      hintTxt=`ご主人様 ${lh.toLocaleString()}万円 ＋ 奥様 ${lw.toLocaleString()}万円（ペアローン・総額 ${simpleLoan.toLocaleString()}万円）`;
+    }
+    // 表示
+    const disp=document.getElementById('loan-amt-disp');
+    if(disp)disp.textContent=simpleLoan.toLocaleString();
+    const hint=document.getElementById('loan-breakdown-hint');
+    if(hint)hint.textContent=hintTxt;
+    // rate-base-dummy同期
+    const rateDummy=document.getElementById('rate-base-dummy');
+    const rateBase=document.getElementById('rate-base');
+    if(rateDummy&&rateBase)rateDummy.value=rateBase.value;
+    live();
+    return;
+  }
+  // ペアローン（詳細設定モード）：ペアの合算（ご主人様＋奥様）を借入金額表示に反映
   if(typeof pairLoanMode!=='undefined' && pairLoanMode){
     const isFlat=(typeof loanCategory!=='undefined' && loanCategory==='flat35');
     const lh=fv(isFlat?'flat-loan-h-amt':'loan-h-amt')||0;
@@ -21,29 +56,6 @@ function calcLoanAmt(){
     if(disp)disp.textContent=total>0?total.toLocaleString():'―';
     const hint=document.getElementById('loan-breakdown-hint');
     if(hint)hint.textContent=`ご主人様 ${lh.toLocaleString()}万円 ＋ 奥様 ${lw.toLocaleString()}万円（ペアローン${isFlat?'・フラット35':''}）`;
-    const rateDummy=document.getElementById('rate-base-dummy');
-    const rateBase=document.getElementById('rate-base');
-    if(rateDummy&&rateBase)rateDummy.value=rateBase.value;
-    live();
-    return;
-  }
-  // 住宅ローン総額モード: 簡易入力値をそのまま loan-amt に
-  const fundingMode=document.getElementById('funding-mode')?.value||'detail';
-  if(fundingMode==='loanOnly'){
-    const simpleLoan=fv('loan-total-simple')||0;
-    const loanEl=document.getElementById('loan-amt');
-    if(loanEl)loanEl.value=simpleLoan;
-    // 内部的に house-price/down/cost を同期（計算エンジンが参照するため）
-    const hp=document.getElementById('house-price');if(hp)hp.value=simpleLoan;
-    const dp=document.getElementById('down-payment');if(dp)dp.value=0;
-    const hc=document.getElementById('house-cost');if(hc)hc.value=0;
-    const ct=document.getElementById('cost-type');if(ct)ct.value='cash';
-    // 表示
-    const disp=document.getElementById('loan-amt-disp');
-    if(disp)disp.textContent=simpleLoan.toLocaleString();
-    const hint=document.getElementById('loan-breakdown-hint');
-    if(hint)hint.textContent=`ローン総額 ${simpleLoan.toLocaleString()}万円 （簡易モード）`;
-    // rate-base-dummy同期
     const rateDummy=document.getElementById('rate-base-dummy');
     const rateBase=document.getElementById('rate-base');
     if(rateDummy&&rateBase)rateDummy.value=rateBase.value;
@@ -79,10 +91,32 @@ function calcLoanAmt(){
 }
 
 // モード切替（詳細設定 / 住宅ローン総額 / 現金一括購入）
+// ★ データ保護: 総額/現金モードは計算の都合で 住宅価格・頭金・諸費用 欄を上書きするため、
+//   詳細設定から離れるときに元の値をバックアップし、詳細設定へ戻ったら復元する。
+//   バックアップは保存データ(dynamic.fundingBk)にも含まれ、読み込み後も維持される。
 function setFundingMode(mode){
   const fm=document.getElementById('funding-mode');
+  const prevMode=fm?(fm.value||'detail'):'detail';
   if(fm)fm.value=mode;
   const isCash = mode==='cash';
+  // 詳細設定 → 他モード: 元の値を退避（既にバックアップがあれば上書きしない）
+  if(prevMode==='detail' && mode!=='detail' && !window._fundingBk){
+    window._fundingBk={
+      price:fv('house-price')||0,
+      down:fv('down-payment')||0,
+      cost:fv('house-cost')||0,
+      costType:document.getElementById('cost-type')?.value||'cash'
+    };
+  }
+  // 他モード → 詳細設定: 退避した値を復元
+  if(mode==='detail' && window._fundingBk){
+    const bk=window._fundingBk;
+    const hp=document.getElementById('house-price'); if(hp)hp.value=bk.price;
+    const dp=document.getElementById('down-payment'); if(dp)dp.value=bk.down;
+    const hc=document.getElementById('house-cost'); if(hc)hc.value=bk.cost;
+    if(typeof setCostType==='function' && bk.costType) setCostType(bk.costType);
+    window._fundingBk=null;
+  }
   document.getElementById('funding-mode-detail')?.classList.toggle('on', mode==='detail');
   document.getElementById('funding-mode-loan')?.classList.toggle('on', mode==='loanOnly');
   document.getElementById('funding-mode-cash')?.classList.toggle('on', isCash);
@@ -144,6 +178,11 @@ function toggleCostOpts(){
 //   ロジック：side が h なら w = 総額 - h、side が w なら h = 総額 - w
 //   総額 = 住宅価格 - 頭金 + (諸費用ローン組込なら諸費用)
 function _pairLoanTotal(isFlat){
+  // ★ 資金計画モードに応じた「借入総額」を返す（バグ修正: 旧コードは常に詳細設定の
+  //   住宅価格-頭金+諸費用 を使い、住宅ローン総額モードの入力が無視されていた）
+  const fm=document.getElementById('funding-mode')?.value||'detail';
+  if(fm==='cash') return 0;                              // 現金一括購入: 借入なし
+  if(fm==='loanOnly') return fv('loan-total-simple')||0; // 住宅ローン総額: 入力値が正
   const price=fv('house-price')||0;
   const down=fv('down-payment')||0;
   const costType=document.getElementById('cost-type')?.value||'cash';
