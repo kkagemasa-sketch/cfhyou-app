@@ -236,12 +236,38 @@ function checkResetClears(){
   });
 }
 
+/* ---------------------------------------------------------------------------
+ * ④ 更新内容(version.json)の書き忘れ（ERROR）
+ *   sw.js の CACHE_NAME を上げたら、更新バナーに表示する version.json の
+ *   cache と notes(何を更新したか) も必ず更新する。不一致ならコミットを止める。
+ * --------------------------------------------------------------------------- */
+function checkVersionNotes(){
+  const sw = read('sw.js');
+  const m = sw.match(/CACHE_NAME\s*=\s*'([^']+)'/);
+  if(!m){ W('④ sw.js の CACHE_NAME が読めず、更新内容チェックをスキップしました'); return; }
+  const cache = m[1];
+  let v=null;
+  try{ v = JSON.parse(read('version.json')); }catch(e){}
+  if(!v){
+    E(`更新内容ファイル(version.json)が読めません。バージョン ${cache} の更新内容を記載してください`);
+    return;
+  }
+  if(v.cache !== cache){
+    E(`更新内容の書き忘れ: sw.js は ${cache} ですが version.json は ${v.cache||'(無し)'} のままです`
+      + `\n      → version.json の cache を '${cache}' にし、notes に「何を更新したか」を書いてください（更新バナーに表示されます）`);
+  }
+  if(!Array.isArray(v.notes) || v.notes.length===0 || v.notes.every(n=>!String(n).trim())){
+    E('version.json の notes が空です。更新バナーに表示する「何を更新したか」を1行以上書いてください');
+  }
+}
+
 /* ------------------------------ 実行 ------------------------------ */
 console.log('🔍 自動チェック開始 …\n');
 const defined = collectDefinedIds();
 checkSyntax();
 checkMissingIds(defined);
 checkResetClears();
+checkVersionNotes();
 
 if(warns.length){
   console.log(`⚠️  警告 ${warns.length}件（コミットは止めません）:`);
