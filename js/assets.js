@@ -539,6 +539,12 @@ function addCar(defaults){
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
       <span style="font-size:14px">🚗</span>
       <input class="inp" id="car-${id}-label" value="${d.label||''}" placeholder="${id}台目（例:ご主人様車）" style="flex:1;font-size:11px;font-weight:700;padding:4px 8px" oninput="live()">
+      <select class="sel" id="car-${id}-owner" onchange="live()" title="CF表で所有者ごとの行に分けて表示します" style="width:92px;font-size:10px;padding:4px 4px">
+        <option value=""${!d.owner?' selected':''}>所有者:未設定</option>
+        <option value="h"${d.owner==='h'?' selected':''}>ご主人様</option>
+        <option value="w"${d.owner==='w'?' selected':''}>奥様</option>
+        <option value="share"${d.owner==='share'?' selected':''}>共用</option>
+      </select>
       <button class="btn-rm" onclick="rmCar(${id})" style="font-size:11px;padding:2px 8px">× 削除</button>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
@@ -601,6 +607,12 @@ function addExistingCar(defaults){
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
       <span style="font-size:14px">🚙</span>
       <input class="inp" id="ecar-${id}-label" value="${d.label||''}" placeholder="現有車${id}台目（例:ご主人様車）" style="flex:1;font-size:11px;font-weight:700;padding:4px 8px" oninput="live()">
+      <select class="sel" id="ecar-${id}-owner" onchange="live()" title="CF表で所有者ごとの行に分けて表示します" style="width:92px;font-size:10px;padding:4px 4px">
+        <option value=""${!d.owner?' selected':''}>所有者:未設定</option>
+        <option value="h"${d.owner==='h'?' selected':''}>ご主人様</option>
+        <option value="w"${d.owner==='w'?' selected':''}>奥様</option>
+        <option value="share"${d.owner==='share'?' selected':''}>共用</option>
+      </select>
       <button class="btn-rm" onclick="rmExistingCar(${id})" style="font-size:11px;padding:2px 8px">× 削除</button>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px">

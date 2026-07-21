@@ -59,6 +59,20 @@ const SCENARIOS = {
     $('loan-total-simple').value=6000;
     onLoanTotalSimpleChange();
   },
+  'S6_車所有者別': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    // 現有車=ご主人様(ローン中) / 将来車=奥様(7年周期買替) / 共用の将来車1台
+    setCarOwn(true);
+    addExistingCar({label:'ご主人様車',owner:'h',type:'new',pay:'loan',boughtAgo:'2',price:'350',endYrs:'10',insp:'12',down:'50',loanYrs:'5',loanRate:'2.0'});
+    addCar({label:'奥様車',owner:'w',type:'new',pay:'cash',price:'250',first:'3',cycle:'7',insp:'10'});
+    addCar({label:'家族車',owner:'share',type:'used',pay:'cash',price:'150',first:'5',cycle:'9',insp:'8'});
+    calcLoanAmt();
+  },
   'S5_現金一括購入': function(){
     const $=id=>document.getElementById(id);
     setLoanCategory('standard'); setLoanMode('single');

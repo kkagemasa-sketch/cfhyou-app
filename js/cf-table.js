@@ -459,34 +459,44 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(isM)h+=eRow('修繕積立金',R.rep,'rep');
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
   children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`,ci);});
-  // 全車両費（現有車・将来購入車）を1行に集約表示 + hover内訳ツールチップ
+  // 車両費（現有車・将来購入車）: 所有者(ご主人様/奥様/共用)を設定した車は所有者ごとの行、
+  // 未設定の車は従来どおり「車両費・車検」行に表示 + hover内訳ツールチップ
   (()=>{
-    const lbl='車両費・車検';
-    const rowKey='carTotal';
-    const dl=_rl(rowKey,lbl);
-    const arr=R.carTotal;
-    let tot=0;
-    const vals=arr.slice(0,disp);
-    for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}
-    if(tot===0&&vals.every(v=>v===0||v===undefined))return;
-    let r=`<tr class="rexp"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;
-    for(let i=0;i<disp;i++){
-      const v=arr[i];
-      const ov=cfOverrides[rowKey]?.[i];
-      const dv=ov!==undefined?ov:v;
-      const isOvr=ov!==undefined;
-      // 内訳ツールチップ
-      const bdItems=(R.carBd&&R.carBd[i])||[];
-      let title='';
-      if(bdItems.length>0&&dv>0){
-        const typeLbl={buy:'購入',loan:'ローン返済',insp:'車検'};
-        const lines=bdItems.map(it=>`${it.label} ${typeLbl[it.type]||it.type}: ${it.amount}万円${it.note?'('+it.note+')':''}`);
-        title=`内訳（${i+1}年目）:\n`+lines.join('\n');
+    const _anyOwner=['carTotalH','carTotalW','carTotalS'].some(k=>R[k]&&R[k].slice(0,disp).some(v=>v>0));
+    // [rowKey, ラベル, 値配列, 内訳フィルタ(owner)]
+    const _carRowDefs=[
+      ['carTotal', '車両費・車検', _anyOwner?R.carTotalNone:R.carTotal, _anyOwner?'none':null],
+      ['carTotalH','車両費・車検（ご主人様）', R.carTotalH, 'h'],
+      ['carTotalW','車両費・車検（奥様）', R.carTotalW, 'w'],
+      ['carTotalS','車両費・車検（共用）', R.carTotalS, 'share'],
+    ];
+    _carRowDefs.forEach(([rowKey,lbl,arr,ownerFilter])=>{
+      if(!arr)return;
+      const dl=_rl(rowKey,lbl);
+      let tot=0;
+      const vals=arr.slice(0,disp);
+      for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}
+      if(tot===0&&vals.every(v=>v===0||v===undefined))return;
+      let r=`<tr class="rexp"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;
+      for(let i=0;i<disp;i++){
+        const v=arr[i];
+        const ov=cfOverrides[rowKey]?.[i];
+        const dv=ov!==undefined?ov:v;
+        const isOvr=ov!==undefined;
+        // 内訳ツールチップ（この行の所有者の車だけ表示）
+        const bdAll=(R.carBd&&R.carBd[i])||[];
+        const bdItems=ownerFilter===null?bdAll:bdAll.filter(it=>(it.owner||'none')===ownerFilter);
+        let title='';
+        if(bdItems.length>0&&dv>0){
+          const typeLbl={buy:'購入',loan:'ローン返済',insp:'車検'};
+          const lines=bdItems.map(it=>`${it.label} ${typeLbl[it.type]||it.type}: ${it.amount}万円${it.note?'('+it.note+')':''}`);
+          title=`内訳（${i+1}年目）:\n`+lines.join('\n');
+        }
+        const titleAttr=title?` title="${title.replace(/"/g,'&quot;')}"`:'';
+        r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"${titleAttr}>${dv>0?ri(dv).toLocaleString():'-'}</td>`;
       }
-      const titleAttr=title?` title="${title.replace(/"/g,'&quot;')}"`:'';
-      r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"${titleAttr}>${dv>0?ri(dv).toLocaleString():'-'}</td>`;
-    }
-    h+=r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
+      h+=r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
+    });
   })();
   h+=eRow('駐車場代',R.prk,'prk');
   if(R.secInvestRows&&R.secInvestRows.length>1){R.secInvestRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.secInvestRows&&R.secInvestRows.length===1){h+=eRow(R.secInvestRows[0].lbl,R.secInvestRows[0].vals,R.secInvestRows[0].key);}else{h+=eRow('積立投資額',R.secInvest,'secInvest');}

@@ -143,7 +143,7 @@ function render(){
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
-    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,chidai:[],kaitai:[],
+    rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carTotalH:[],carTotalW:[],carTotalS:[],carTotalNone:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,chidai:[],kaitai:[],
     // 買い替えイベント
     swapSell:[],swapTax:[],swapPayoff:[],swapBuy:[],
     // 現金一括購入（引き渡し年に物件価格＋諸費用を一括支出）
@@ -1578,7 +1578,10 @@ function render(){
     // 車両購入・車検（複数台対応）
     if(!R.carRows)R.carRows=[];
     let carBuyAmt=0, carInspAmt=0;
-    const _carBdItems=[]; // 内訳記録: {label, type:'buy'|'loan'|'insp', amount}
+    const _carBdItems=[]; // 内訳記録: {label, type:'buy'|'loan'|'insp', amount, owner}
+    // 所有者(h/w/share/未設定)別の当年合計 — CF表で所有者ごとの行に分けるため
+    const _carOwnBk={h:0,w:0,share:0,none:0};
+    const _ownKey=v=>(v==='h'||v==='w'||v==='share')?v:'none';
     if(carOwn){
       (_carEls||document.querySelectorAll('#car-list>[id^="car-"]')).forEach(carEl=>{
         const cIdx=carEl.id.replace('car-','');
@@ -1615,13 +1618,14 @@ function render(){
         // 内訳ラベル: ユーザーカスタム or 1台目/2台目...
         const _cLblEl=document.getElementById('car-'+cIdx+'-label');
         const _carLbl=_cLblEl?.value?.trim()||`${cIdx}台目`;
+        const _carOwner=_ownKey(document.getElementById('car-'+cIdx+'-owner')?.value);
         if(isBuyYear){
           if(carPay==='cash'){
             thisCarAmt+=carPrice;
-            _carBdItems.push({label:_carLbl,type:'buy',amount:carPrice});
+            _carBdItems.push({label:_carLbl,type:'buy',amount:carPrice,owner:_carOwner});
           }else{
             thisCarAmt+=carDown;
-            _carBdItems.push({label:_carLbl,type:'buy',amount:carDown,note:'頭金'});
+            _carBdItems.push({label:_carLbl,type:'buy',amount:carDown,note:'頭金',owner:_carOwner});
           }
         }
         if(carPay==='loan'&&carLoanYrs>0&&lastBuy>=0&&!isBuyYear&&carActive){
@@ -1631,7 +1635,7 @@ function render(){
           if(yrsAfterBuy>0&&yrsAfterBuy<=carLoanYrs){
             const _loanAmt=Math.round(monthly*12/10000);
             thisCarAmt+=_loanAmt;
-            _carBdItems.push({label:_carLbl,type:'loan',amount:_loanAmt});
+            _carBdItems.push({label:_carLbl,type:'loan',amount:_loanAmt,owner:_carOwner});
           }
         }
         if(lastBuy>=0&&!isBuyYear&&carActive){
@@ -1644,12 +1648,13 @@ function render(){
           }
           if(inspThisCar>0){
             thisInspAmt+=inspThisCar;
-            _carBdItems.push({label:_carLbl,type:'insp',amount:inspThisCar});
+            _carBdItems.push({label:_carLbl,type:'insp',amount:inspThisCar,owner:_carOwner});
           }
         }
         const thisTotal=ri(thisCarAmt)+ri(thisInspAmt);
         if(carRow)carRow.vals.push(thisTotal);
         carBuyAmt+=thisCarAmt; carInspAmt+=thisInspAmt;
+        _carOwnBk[_carOwner]+=thisTotal;
       });
       // 現有車（既保有）の計算: ローン残債継続 + 車検 + 手放し
       // 全現有車を「🚗 車両費」1行に集約するため、carRows ではなく carBuyAmt/carInspAmt に加算
@@ -1667,6 +1672,7 @@ function render(){
         // 内訳ラベル
         const _ecLblEl=document.getElementById('ecar-'+ecIdx+'-label');
         const _ecLbl=_ecLblEl?.value?.trim()||`現有車${ecIdx}`;
+        const _ecOwner=_ownKey(document.getElementById('ecar-'+ecIdx+'-owner')?.value);
         // 経過年i が手放し年に到達したら以降0
         if(i>=ecEndYrs)return;
         // ローン残債継続（経過年0以降、当初借入年数 - 経過年数 が残月数）
@@ -1686,7 +1692,8 @@ function render(){
               const bonusThisYear=fracYear>=0.5?2:(fracYear>=0.25?1:0); // 半年以上残→2回、四半期以上→1回
               const _ecLoanAmt=Math.round(ecMonthly*monthsThisYear+ecBonus*bonusThisYear);
               carBuyAmt+=_ecLoanAmt;
-              if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt});
+              _carOwnBk[_ecOwner]+=_ecLoanAmt;
+              if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt,owner:_ecOwner});
             }
           } else {
             // 当初借入モード（既存ロジック）
@@ -1704,7 +1711,8 @@ function render(){
               const monthsThisYear=Math.min(12,remainAtThisYear);
               const _ecLoanAmt=Math.round(monthly*monthsThisYear/10000);
               carBuyAmt+=_ecLoanAmt;
-              if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt});
+              _carOwnBk[_ecOwner]+=_ecLoanAmt;
+              if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt,owner:_ecOwner});
             }
           }
         }
@@ -1719,7 +1727,8 @@ function render(){
           }
           if(inspThisCar>0){
             carInspAmt+=inspThisCar;
-            _carBdItems.push({label:_ecLbl,type:'insp',amount:inspThisCar});
+            _carOwnBk[_ecOwner]+=inspThisCar;
+            _carBdItems.push({label:_ecLbl,type:'insp',amount:inspThisCar,owner:_ecOwner});
           }
         }
       });
@@ -1731,6 +1740,11 @@ function render(){
     R.carBuy.push(ri(carBuyAmt));
     R.carInsp.push(ri(carInspAmt));
     R.carTotal.push(ri(carBuyAmt)+ri(carInspAmt));
+    // 所有者別の内訳配列（CF表で行を分けるため。未設定のみなら carTotalNone==carTotal）
+    R.carTotalH.push(ri(_carOwnBk.h));
+    R.carTotalW.push(ri(_carOwnBk.w));
+    R.carTotalS.push(ri(_carOwnBk.share));
+    R.carTotalNone.push(ri(_carOwnBk.none));
     // 内訳を保存（hover ツールチップ用）
     R.carBd.push(_carBdItems);
     // 特別支出（複数対応・期間対応・個別行）
@@ -2355,16 +2369,25 @@ function render(){
         Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
       });
     }
-    // 車両費の個別行（複数台）への上書きを反映 → R.carTotal を再計算してexpTに反映
+    // 車両費の個別行（複数台）への上書きを反映（表示用。carRowsは将来車のみのため
+    // ここからcarTotalを再集計しない ★旧コードは carRows のみで再集計→現有車の費用が
+    // 合算から抜け落ちる潜在バグだったため撤去）
     if(R.carRows&&R.carRows.length>0){
       R.carRows.forEach(row=>{
         if(!cfOverrides[row.key])return;
         Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
       });
-      if(R.carRows&&R.carRows.length>0){
+    }
+    // 所有者別の車両費行（ご主人様/奥様/共用/未設定）への上書き → carTotal を4行の合計で再構成
+    {
+      const _cbKeys=['carTotalH','carTotalW','carTotalS','carTotalNone'];
+      if(_cbKeys.some(k=>cfOverrides[k])){
         for(let i=0;i<R.carTotal.length;i++){
           let sum=0;
-          R.carRows.forEach(row=>sum+=ri(row.vals[i]||0));
+          _cbKeys.forEach(k=>{
+            const ov=cfOverrides[k]?.[i];
+            sum+=ri(ov!==undefined?ov:(R[k]?.[i]||0));
+          });
           R.carTotal[i]=sum;
         }
       }

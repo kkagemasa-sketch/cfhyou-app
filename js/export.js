@@ -1691,8 +1691,14 @@ async function exportExcel(){
     const ages=arr.slice(0,disp).map((_,i)=>c.age+i);
     push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages,ci:ci+1});
   });
-  // 全車両費(現有・将来)を1行に集約
-  addE('車両費・車検',R.carTotal);
+  // 車両費: 所有者(ご主人様/奥様/共用)設定車は所有者別の行、未設定は従来の1行（画面と同一構成）
+  {
+    const _anyOwnerX=['carTotalH','carTotalW','carTotalS'].some(k=>R[k]&&R[k].some(v=>v>0));
+    addE(_rl('carTotal','車両費・車検'), _anyOwnerX?R.carTotalNone:R.carTotal);
+    if(R.carTotalH&&R.carTotalH.some(v=>v>0)) addE(_rl('carTotalH','車両費・車検（ご主人様）'),R.carTotalH);
+    if(R.carTotalW&&R.carTotalW.some(v=>v>0)) addE(_rl('carTotalW','車両費・車検（奥様）'),R.carTotalW);
+    if(R.carTotalS&&R.carTotalS.some(v=>v>0)) addE(_rl('carTotalS','車両費・車検（共用）'),R.carTotalS);
+  }
   addE(_rl('prk','駐車場代'),R.prk);
   // ★ B5修正: 個別行も _rl で行ラベル編集を反映
   if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}

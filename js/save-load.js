@@ -298,6 +298,7 @@ function _collectDynamic(){
       type:el.dataset.type||'new',
       pay:el.dataset.pay||'cash',
       label:document.getElementById('car-'+c+'-label')?.value||'',
+      owner:document.getElementById('car-'+c+'-owner')?.value||'',
       price:document.getElementById('car-'+c+'-price')?.value||'300',
       first:document.getElementById('car-'+c+'-first')?.value||'1',
       cycle:document.getElementById('car-'+c+'-cycle')?.value||'7',
@@ -318,6 +319,7 @@ function _collectDynamic(){
       type:el.dataset.type||'new',
       pay:el.dataset.pay||'cash',
       label:document.getElementById('ecar-'+c+'-label')?.value||'',
+      owner:document.getElementById('ecar-'+c+'-owner')?.value||'',
       boughtAgo:document.getElementById('ecar-'+c+'-bought-ago')?.value||'3',
       price:document.getElementById('ecar-'+c+'-price')?.value||'300',
       endYrs:document.getElementById('ecar-'+c+'-end-yrs')?.value||'5',
@@ -735,7 +737,7 @@ function _restoreDynamic(d){
     document.getElementById('car-list').innerHTML='';
     carCnt=0;
     d.cars.forEach(c=>{
-      addCar({label:c.label||'',type:c.type,pay:c.pay,price:c.price,first:c.first,cycle:c.cycle,endAge:c.endAge,insp:c.insp,down:c.down,loanYrs:c.loanYrs,loanRate:c.loanRate});
+      addCar({label:c.label||'',owner:c.owner||'',type:c.type,pay:c.pay,price:c.price,first:c.first,cycle:c.cycle,endAge:c.endAge,insp:c.insp,down:c.down,loanYrs:c.loanYrs,loanRate:c.loanRate});
     });
   }
   // 現有車の復元
@@ -746,7 +748,7 @@ function _restoreDynamic(d){
     d.existingCars.forEach(c=>{
       if(typeof addExistingCar==='function')
         addExistingCar({
-          label:c.label||'',type:c.type,pay:c.pay,boughtAgo:c.boughtAgo,
+          label:c.label||'',owner:c.owner||'',type:c.type,pay:c.pay,boughtAgo:c.boughtAgo,
           price:c.price,endYrs:c.endYrs,insp:c.insp,down:c.down,
           loanYrs:c.loanYrs,loanRate:c.loanRate,
           // 逆算モード関連
