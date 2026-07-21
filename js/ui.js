@@ -390,3 +390,44 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'){e.preventDefault();undoState();}
   if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){e.preventDefault();redoState();}
 });
+
+// ===== CF表: マウスドラッグでスクロール（パン） =====
+// .tbl-wrap（通常CF・万一CF共通）を左ボタンで掴んで動かすとスクロールする。
+// - 6px 動くまではパン開始しない → 普通のクリックでのセル編集はそのまま可能
+// - パン開始時は編集セルの blur と選択解除、直後の click を1回だけ吸収して誤編集を防ぐ
+// - スクロールバー上のドラッグはネイティブ動作を優先（パンしない）
+(function(){
+  let wrap=null,sx=0,sy=0,sl=0,st=0,down=false,moved=false;
+  document.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;
+    const w=e.target.closest&&e.target.closest('.tbl-wrap');
+    if(!w)return;
+    const r=w.getBoundingClientRect();
+    if(e.clientX>r.left+w.clientWidth||e.clientY>r.top+w.clientHeight)return; // スクロールバー上
+    wrap=w;sx=e.clientX;sy=e.clientY;sl=w.scrollLeft;st=w.scrollTop;down=true;moved=false;
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!down||!wrap)return;
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    if(!moved&&Math.abs(dx)<6&&Math.abs(dy)<6)return;
+    if(!moved){
+      moved=true;
+      document.body.classList.add('cf-panning');
+      try{const a=document.activeElement;if(a&&(a.isContentEditable||a.tagName==='INPUT'))a.blur();}catch(_){}
+      try{window.getSelection().removeAllRanges();}catch(_){}
+    }
+    wrap.scrollLeft=sl-dx;
+    wrap.scrollTop=st-dy;
+    e.preventDefault();
+  },{passive:false});
+  document.addEventListener('mouseup',()=>{
+    if(moved){
+      // ドラッグ終了直後の click でセル編集が始まらないよう1回だけ吸収
+      const swallow=ev=>{ev.stopPropagation();ev.preventDefault();};
+      document.addEventListener('click',swallow,true);
+      setTimeout(()=>{document.removeEventListener('click',swallow,true);},0);
+      document.body.classList.remove('cf-panning');
+    }
+    down=false;wrap=null;moved=false;
+  });
+})();

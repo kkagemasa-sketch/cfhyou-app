@@ -1334,3 +1334,7 @@ body.market-sim-on #btn-market-sim{
   border-radius:0 0 10px 10px;
 }
 .explain-popup-toggle:hover{background:#e2e8f0}
+
+/* CF表ドラッグスクロール中: テキスト選択を止め、掴んでいるカーソル表示 */
+body.cf-panning{user-select:none!important}
+body.cf-panning .tbl-wrap, body.cf-panning .tbl-wrap *{cursor:grabbing!important}

@@ -260,7 +260,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   }
 
   // 自由記入欄（自己資金・住宅ローン条件についての注釈／Excel出力にも反映）
-  const _cfNote = (()=>{try{return localStorage.getItem('cf_summary_note')||''}catch(e){return ''}})();
+  const _cfNote = window._cfSummaryNote||''; // ★各CF表(シナリオ)ごとに独立（保存データに含まれる）
   h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
     <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">📝 注釈・補足メモ（Excel出力にも反映）</div>
     <textarea id="cf-summary-note" oninput="saveCfSummaryNote(this.value)" placeholder="自己資金や住宅ローン条件についての補足・前提条件などを自由に記入できます" style="width:100%;min-height:48px;padding:6px 10px;border:none;outline:none;font-family:inherit;font-size:11px;line-height:1.5;color:#1a3a6a;resize:vertical;box-sizing:border-box;background:#fff">${_cfNote.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>

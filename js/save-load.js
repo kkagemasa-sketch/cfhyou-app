@@ -856,6 +856,7 @@ async function dbEstimateSize(){
 function _collectSaveData(){
   const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],mgQACounter:(typeof mgQA_counter!=='undefined')?{h:(mgQA_counter.h||0),w:(mgQA_counter.w||0)}:null,cfStartYear:_cfStartYear,version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
+  d.cfSummaryNote=window._cfSummaryNote||''; // 注釈・補足メモ（各CF表=シナリオごとに独立）
   return d;
 }
 // ★ 自動保存・更新ボタン用：全シナリオを含む完全な状態を返す
@@ -952,6 +953,8 @@ function _applyData(d){
     if(typeof toggleLeasehold==='function') toggleLeasehold();
     cfOverrides=d.cfOverrides||{};
     mgOverrides=d.mgOverrides||{};
+    // 注釈・補足メモ（各CF表=シナリオごとに独立。旧データは項目が無いため現在値=移行値を維持）
+    if(d.cfSummaryNote!==undefined)window._cfSummaryNote=d.cfSummaryNote||'';
     _cfStartYear=(d.cfStartYear===undefined||d.cfStartYear===null)?null:parseInt(d.cfStartYear);
     cfCustomRows=d.cfCustomRows||[];
     mgCustomRows=d.mgCustomRows||[];
@@ -1169,6 +1172,7 @@ function _resetSheetState(){
   if(typeof setRetirePay==='function')setRetirePay(true);
   if(typeof setWRetirePay==='function')setWRetirePay(true);
   window._fundingBk=null; // 前のお客様の資金計画バックアップを破棄（復元混入防止）
+  window._cfSummaryNote=''; // 注釈・補足メモも白紙に（前のお客様のメモ残留防止）
   if(typeof setFundingMode==='function')setFundingMode('detail'); // 資金計画モードを既定に戻す
   window.live=_origLive;
 

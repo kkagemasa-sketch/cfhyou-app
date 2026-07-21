@@ -266,9 +266,14 @@ function rowLabelEdit(td){
 }
 
 // CF表の詳細ボックス（自己資金内訳・住宅ローン条件）の折りたたみトグル
-// 自由記入欄の保存（localStorageに永続化、Excel出力時に参照）
+// 注釈・補足メモ（★各CF表＝シナリオごとに独立。保存データ d.cfSummaryNote に含める）
+// 旧版は localStorage 1本でブラウザ共有だったため、初回のみ移行読み込みする。
+if(window._cfSummaryNote===undefined){
+  try{window._cfSummaryNote=localStorage.getItem('cf_summary_note')||''}catch(e){window._cfSummaryNote=''}
+}
 function saveCfSummaryNote(text){
-  try{localStorage.setItem('cf_summary_note', text||'')}catch(e){}
+  window._cfSummaryNote=text||'';
+  if(typeof scheduleAutoSave==='function')scheduleAutoSave(); // 再描画はしない（入力中のフォーカス維持）
 }
 window.saveCfSummaryNote = saveCfSummaryNote;
 // 自動資産取崩しのON/OFF切替

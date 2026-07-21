@@ -403,7 +403,7 @@ async function exportExcelMG(){
   }
 
   // 注釈・補足メモ（自由記入欄、localStorage保存）
-  const _cfNote_mg = (()=>{try{return localStorage.getItem('cf_summary_note')||''}catch(e){return ''}})();
+  const _cfNote_mg = window._cfSummaryNote||''; // ★各CF表(シナリオ)ごとに独立
   let _noteRowIdx_mg = -1;
   if(_cfNote_mg && _cfNote_mg.trim()){
     const noteRow = ['📝 注釈・補足','',_cfNote_mg];
@@ -1573,7 +1573,7 @@ async function exportExcel(){
   }
 
   // 注釈・補足メモ（自由記入欄、localStorage保存）
-  const _cfNote_e = (()=>{try{return localStorage.getItem('cf_summary_note')||''}catch(e){return ''}})();
+  const _cfNote_e = window._cfSummaryNote||''; // ★各CF表(シナリオ)ごとに独立
   let _noteRowIdx_n = -1;
   if(_cfNote_e && _cfNote_e.trim()){
     const noteRow = ['📝 注釈・補足','',_cfNote_e];
