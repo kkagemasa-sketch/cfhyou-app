@@ -712,8 +712,10 @@ function _restoreDynamic(d){
   else if(typeof d.pairLoanMode!=='undefined') setLoanMode(d.pairLoanMode?'pair':'single');
   // 資金計画モード（現金一括購入など）のUIを再適用（ローンモードの後）
   // バックアップを先に復元してから適用（setFundingMode内の退避ガードが正しく効くように）
+  // ★ モード未記録の古いデータは「詳細設定」扱いで必ず適用する
+  //   （適用しないと前のCF表のモードが画面に残り、CF表間の干渉バグになる）
   window._fundingBk = d.fundingBk || null;
-  if(typeof setFundingMode==='function'&&d.fundingMode) setFundingMode(d.fundingMode);
+  if(typeof setFundingMode==='function') setFundingMode(d.fundingMode||'detail');
   if(typeof d.carOwn!=='undefined')setCarOwn(d.carOwn);
   if(typeof d.parkOwn!=='undefined')setParkOwn(d.parkOwn);
   const parkFromEl=document.getElementById('park-from-age');
@@ -989,7 +991,12 @@ function _applyData(d){
     // マンション選択復元
     _selectedMansionId=d._selectedMansionId||'';
     if(_selectedMansionId){const msel=$('mansion-select');if(msel)msel.value=_selectedMansionId;}
-    _restoreDynamic(d.dynamic);
+    // ★ 復元中フラグ: ペア自動配分・半々初期化・総額モードの裏書き換え等の
+    //   「編集時ヘルパー」を全停止する（復元途中は前のCF表のモードが残っており、
+    //   復元済みの値を書き換えてCF表間の干渉バグを起こしていた）
+    window._restoringData=true;
+    try{ _restoreDynamic(d.dynamic); }
+    finally{ window._restoringData=false; }
     calcLoanAmt();calcDelivery();initLCComma();
     if(typeof validateNisaLimits==='function') validateNisaLimits();
     if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);

@@ -1,6 +1,9 @@
 // housing.js — 住宅設定・修繕積立金・ローン控除
 
 function calcLoanAmt(){
+  // ★ データ復元中は何もしない（復元途中は前のCF表のモードが残っており、
+  //   総額モードの裏書き換え等が復元済みの値を壊すため。復元完了後に1回だけ再計算される）
+  if(window._restoringData)return;
   // ★ 現金一括購入モード: 借入は常に0（物件価格は引き渡し年に一括支出計上）
   if(document.getElementById('funding-mode')?.value==='cash'){
     const loanEl=document.getElementById('loan-amt'); if(loanEl)loanEl.value=0;
@@ -141,10 +144,10 @@ function setFundingMode(mode){
     const hint=document.getElementById('loan-breakdown-hint'); if(hint)hint.textContent='現金一括購入（ローンなし）';
     if(typeof live==='function') live(true);
   } else if(mode==='loanOnly'){
-    // 初回切替時: 現在の loan-amt を簡易入力に引き継ぐ
+    // 初回切替時: 現在の loan-amt を簡易入力に引き継ぐ（★復元中は保存値を尊重して引き継がない）
     const currentLoan=fv('loan-amt')||0;
     const simpleEl=document.getElementById('loan-total-simple');
-    if(simpleEl && (!simpleEl.value || simpleEl.value==='4500')) simpleEl.value=currentLoan;
+    if(!window._restoringData && simpleEl && (!simpleEl.value || simpleEl.value==='4500')) simpleEl.value=currentLoan;
     onLoanTotalSimpleChange();
   } else {
     // 詳細設定に戻したとき、諸費用の種別トグル表示を戻す
@@ -210,6 +213,7 @@ function onPairLoanInput(side,isFlat){
   if(typeof calcLoanAmt==='function') calcLoanAmt();
 }
 function syncPairLoanHalfHalf(isFlat){
+  if(window._restoringData)return; // 復元中は半々初期化しない（保存されたペア内訳を壊さない）
   // ペアローン切替時：両方空または合計が総額と一致しない場合に半々で初期化
   const total=_pairLoanTotal(isFlat);
   if(total<=0)return;
@@ -235,6 +239,7 @@ window.onPairLoanInput = onPairLoanInput;
 //   例: 2250/2250 で総額4500→(諸費用500をローン組込で)5000 なら 2500/2500。比率0なら半々。
 //   ※復元(_restoreDynamic等)は calcLoanAmt を直接呼ぶため本関数は走らず、保存値はそのまま。
 function _resyncPairFromTotal(isFlat){
+  if(window._restoringData)return; // 復元中は再配分しない（復元済みのペア内訳を壊さない）
   if(typeof pairLoanMode==='undefined' || !pairLoanMode) return;
   const want=_pairLoanTotal(isFlat);
   if(want<=0) return;
@@ -254,6 +259,7 @@ function _resyncPairFromTotal(isFlat){
 }
 // 物件価格・頭金・諸費用の変更時の共通処理（ペア時は総額に合わせて各自へ再配分してから再計算）
 function onFundingChange(){
+  if(window._restoringData)return; // 復元中は編集時ヘルパーを全停止
   if(typeof pairLoanMode!=='undefined' && pairLoanMode){
     _resyncPairFromTotal(typeof loanCategory!=='undefined' && loanCategory==='flat35');
   }

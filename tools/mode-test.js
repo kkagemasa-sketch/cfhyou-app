@@ -179,6 +179,32 @@ function pageRunCombo(combo){
       }
     }
 
+    // ── CF表(シナリオ)間の干渉テスト ──
+    // 再現: A=詳細ペア(3000/1500)→複製でB→Aを総額モード8000に変更→Bへ切替。
+    // Bのペア内訳・住宅価格・頭金・モードが無傷であること（過去バグ: 5333/2667・価格8000に汚染）。
+    const leak=await page.evaluate(function(){
+      const $=id=>document.getElementById(id);
+      _resetSheetState(); _cfStartYear=2026;
+      $('husband-age').value=30; $('wife-age').value=29;
+      setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+      $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=0;
+      setCostType('cash');
+      $('loan-h-amt').value=3000; $('loan-w-amt').value=1500; calcLoanAmt();
+      execAddScenario(true);
+      switchScenarioAndShow(scenarios[0].id);
+      setFundingMode('loanOnly'); $('loan-total-simple').value=8000; onLoanTotalSimpleChange();
+      switchScenarioAndShow(scenarios[scenarios.length-1].id);
+      return {mode:$('funding-mode').value,h:$('loan-h-amt').value,w:$('loan-w-amt').value,
+        total:$('loan-amt').value,price:$('house-price').value,down:$('down-payment').value};
+    });
+    const leakFails=[];
+    if(leak.mode!=='detail')leakFails.push(`モードが汚染(${leak.mode})`);
+    if(String(leak.h)!=='3000'||String(leak.w)!=='1500')leakFails.push(`ペア内訳が汚染(${leak.h}/${leak.w})`);
+    if(String(leak.total)!=='4500')leakFails.push(`借入額が汚染(${leak.total})`);
+    if(String(leak.price)!=='5000'||String(leak.down)!=='500')leakFails.push(`住宅価格/頭金が汚染(${leak.price}/${leak.down})`);
+    if(leakFails.length){ bad++; console.log('❌ CF表間干渉テスト(複製→片方編集→切替): '+leakFails.join(' / ')); }
+    else console.log('  ✓ CF表間干渉テスト(複製→片方編集→切替): Bは無傷');
+
     if(bad){
       console.log(`\n🛑 モード総当たりテスト不合格: ${count}通り中 ${bad}通りで約束違反。`);
       process.exit(1);
