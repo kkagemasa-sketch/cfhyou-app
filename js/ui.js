@@ -290,6 +290,10 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.use
   });
   // タッチ対応
   resizer.addEventListener('touchstart',e=>{
+    // ★ iPad修正: ◀開閉ボタンの上のタップはリサイズ扱いにしない。
+    //   ここで preventDefault すると iOS がクリックを発生させず、
+    //   「入力パネルを閉じられない」バグになっていた。
+    if(e.target&&e.target.closest&&e.target.closest('button'))return;
     isResizing=true;startX=e.touches[0].clientX;
     const pl=document.querySelector('.panel-l');
     startW=pl.getBoundingClientRect().width;

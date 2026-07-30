@@ -1338,3 +1338,10 @@ body.market-sim-on #btn-market-sim{
 /* CF表ドラッグスクロール中: テキスト選択を止め、掴んでいるカーソル表示 */
 body.cf-panning{user-select:none!important}
 body.cf-panning .tbl-wrap, body.cf-panning .tbl-wrap *{cursor:grabbing!important}
+
+/* iPad等タッチ端末: パネル開閉◀ボタンを常時表示・大きめのタップ領域に
+   （ホバーが無い端末では半透明の極小ボタンで実質押せなかった） */
+@media (pointer:coarse) and (hover:none){
+  .panel-resizer-grip{width:24px}
+  .panel-resizer-grip button{opacity:1!important;width:24px;height:72px;font-size:13px}
+}
