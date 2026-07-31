@@ -1345,3 +1345,10 @@ body.cf-panning .tbl-wrap, body.cf-panning .tbl-wrap *{cursor:grabbing!important
   .panel-resizer-grip{width:24px}
   .panel-resizer-grip button{opacity:1!important;width:24px;height:72px;font-size:13px}
 }
+
+/* CF全画面モード: ヘッダー・入力パネル・仕切りを隠してCF表を画面いっぱいに */
+body.cf-full .hdr,
+body.cf-full .panel-l,
+body.cf-full .panel-resizer-grip{display:none!important}
+body.cf-full .panel-r{min-width:0}
+#btn-cf-full.on{background:rgba(255,80,80,.35)!important;border-color:rgba(255,120,120,.7)!important}

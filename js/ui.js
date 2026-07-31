@@ -435,3 +435,22 @@ document.addEventListener('keydown',e=>{
     down=false;wrap=null;moved=false;
   });
 })();
+
+// ===== CF全画面モード =====
+// ヘッダー・入力パネルを隠してCF表だけを画面いっぱいに表示する。
+// もう一度押す / Esc で元のレイアウトへ戻る（入力パネルの開閉状態は変えない）。
+function toggleCfFullscreen(){
+  const on=document.body.classList.toggle('cf-full');
+  const b=document.getElementById('btn-cf-full');
+  if(b){
+    b.textContent=on?'✕ 全画面をやめる':'🖥 全画面';
+    b.title=on?'元のレイアウトに戻る（Escでも戻れます）':'ヘッダーと入力パネルを隠してCF表を画面いっぱいに表示';
+    b.classList.toggle('on',on);
+  }
+  // 表の描画幅が変わるためリサイズ通知（全体表示フィット等の再計算用）
+  try{window.dispatchEvent(new Event('resize'));}catch(e){}
+}
+window.toggleCfFullscreen=toggleCfFullscreen;
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&document.body.classList.contains('cf-full'))toggleCfFullscreen();
+});
