@@ -454,3 +454,22 @@ window.toggleCfFullscreen=toggleCfFullscreen;
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.body.classList.contains('cf-full'))toggleCfFullscreen();
 });
+
+// ===== 入力パネルの表示サイズ（端末ごとに記憶） =====
+// ノートPCでは縮小、外部モニターでは100%など、端末単位の好みを localStorage に保存する。
+// CSSのzoomは宣言幅(430px)ごと縮むため、縮めた分だけCF表が広くなる。
+function setPanelZoom(pct){
+  pct=Math.max(60,Math.min(110,Math.round(pct/5)*5));
+  window._panelZoom=pct;
+  const pl=document.querySelector('.panel-l');
+  if(pl)pl.style.zoom=pct/100;
+  const lb=document.getElementById('panel-zoom-label');
+  if(lb)lb.textContent=pct+'%';
+  try{localStorage.setItem('cf_panel_zoom',String(pct));}catch(e){}
+}
+window.setPanelZoom=setPanelZoom;
+document.addEventListener('DOMContentLoaded',()=>{
+  let z=100;
+  try{z=parseInt(localStorage.getItem('cf_panel_zoom'))||100;}catch(e){}
+  if(z!==100)setPanelZoom(z); else window._panelZoom=100;
+});

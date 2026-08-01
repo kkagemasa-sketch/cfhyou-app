@@ -166,6 +166,14 @@ window.closeAboutModal=closeAboutModal;
 
 <!-- ★ 左パネル：入力フォーム -->
 <div class="panel-l">
+  <!-- 入力パネルの表示サイズ（端末ごとに記憶。ノートPCでは縮小、外部モニターでは100%など） -->
+  <div id="panel-zoom-bar" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:3px 10px;background:var(--navy);border-bottom:1px solid rgba(255,255,255,.15)">
+    <span style="font-size:10px;color:rgba(255,255,255,.75);font-weight:600">入力サイズ</span>
+    <button type="button" onclick="setPanelZoom((window._panelZoom||100)-5)" title="入力パネルを小さく" style="width:22px;height:20px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:4px;font-size:12px;cursor:pointer;line-height:1;padding:0">−</button>
+    <span id="panel-zoom-label" style="font-size:11px;color:#fff;font-weight:700;min-width:36px;text-align:center;font-family:'Cascadia Code','Consolas',monospace">100%</span>
+    <button type="button" onclick="setPanelZoom((window._panelZoom||100)+5)" title="入力パネルを大きく" style="width:22px;height:20px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:4px;font-size:12px;cursor:pointer;line-height:1;padding:0">＋</button>
+    <span style="font-size:9px;color:rgba(255,255,255,.5)">この端末にのみ適用</span>
+  </div>
   <div class="fi">
 
   <div class="err-bar" id="err-bar">
@@ -2047,7 +2055,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/explain/explain-financial.js?v=2"></script>
 <script src="js/explain/explain-edu.js?v=1"></script>
 <script src="js/mg-qa.js?v=14"></script>
-<script src="js/ui.js?v=12"></script>
+<script src="js/ui.js?v=13"></script>
 <script src="js/app.js?v=42"></script>
 <!-- Firebase (マンションマスター共有) -->
 <script type="module" src="js/firebase-init.js?v=3"></script>
