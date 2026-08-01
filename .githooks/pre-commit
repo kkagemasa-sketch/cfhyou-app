@@ -47,5 +47,16 @@ if git diff --cached --name-only | grep -qE '^(js/|index\.html)'; then
     echo "   （緊急時のみ: git commit --no-verify）"
     exit 1
   fi
+
+  # ── 画面↔Excel 突き合わせ（過去最多のバグ型: Excel反映漏れ・不一致の検査）──
+  echo "📊 画面↔Excel照合テスト実行中…（約30秒）"
+  node "$(dirname "$0")/../tools/diff-excel.js"
+  diff_status=$?
+  if [ "$diff_status" -ne 0 ]; then
+    echo ""
+    echo "🛑 画面とExcelの行・数値が一致しないため、コミットを中止しました。"
+    echo "   （緊急時のみ: git commit --no-verify）"
+    exit 1
+  fi
 fi
 exit 0

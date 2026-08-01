@@ -2355,6 +2355,24 @@ function render(){
         if(R[key]&&c2<R[key].length)R[key][c2]=val;
       });
     });
+    // ★ バグ修正: 個別表示行（ペア返済 lRepH/lRepW・車所有者別 carTotalH/W/S/None）の
+    //   セル上書きも R 配列へ反映する。Excel出力は R をそのまま読むため、ここに無いと
+    //   「画面は編集値・Excelは元の値」の不一致になっていた。
+    //   ※expKeys には入れない（lRep/carTotal が既にあり合計が二重計上になるため）
+    ['lRepH','lRepW','carTotalH','carTotalW','carTotalS','carTotalNone'].forEach(key=>{
+      if(!cfOverrides[key])return;
+      Object.entries(cfOverrides[key]).forEach(([col,val])=>{
+        const c2=parseInt(col);
+        if(R[key]&&c2<R[key].length)R[key][c2]=val;
+      });
+    });
+    // ペア返済の上書き → 合計行 lRep を再構成（支出合計にも編集が効くように）
+    if((cfOverrides['lRepH']||cfOverrides['lRepW'])&&R.lRepH&&R.lRepW&&R.lRep){
+      for(let i=0;i<R.lRep.length;i++)R.lRep[i]=ri(R.lRepH[i]||0)+ri(R.lRepW[i]||0);
+      if(cfOverrides['lRep'])Object.entries(cfOverrides['lRep']).forEach(([col,val])=>{
+        const c2=parseInt(col);if(c2<R.lRep.length)R.lRep[c2]=val;
+      });
+    }
     children.forEach((_ch,ci)=>{
       const key='edu'+ci;
       if(!cfOverrides[key])return;
