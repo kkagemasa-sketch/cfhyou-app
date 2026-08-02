@@ -118,10 +118,12 @@ async function uploadMansionFile(mansionId,file){
     });
     saveMansionMaster();
     await saveMansionToCloud(m);
-    _renderMansionList();
-    // 編集画面が開いていたら再描画
+    // ★ バグ修正: 先に _renderMansionList() で画面全体を作り直していたため、
+    //   編集中（未保存）の入力欄が全部消えていた。編集画面が開いている間は
+    //   一覧を作り直さず、添付ファイル欄だけを更新する。
     const editBox=document.getElementById('med-files-'+mansionId);
-    if(editBox)_renderMansionFilesInEdit(mansionId);
+    if(editBox){ _renderMansionFilesInEdit(mansionId); }
+    else{ _renderMansionList(); }
   }catch(e){
     console.error('[Mansion Files] アップロード失敗:',e);
     alert('アップロードに失敗しました: '+(e.message||e));
@@ -155,9 +157,10 @@ async function deleteMansionFileEntry(mansionId,fileId){
     m.files=m.files.filter(x=>x.id!==fileId);
     saveMansionMaster();
     await saveMansionToCloud(m);
-    _renderMansionList();
+    // ★ バグ修正: 編集画面が開いている間は一覧を作り直さない（未保存の入力が消えるため）
     const editBox=document.getElementById('med-files-'+mansionId);
-    if(editBox)_renderMansionFilesInEdit(mansionId);
+    if(editBox){ _renderMansionFilesInEdit(mansionId); }
+    else{ _renderMansionList(); }
   }catch(e){
     console.error('[Mansion Files] 削除失敗:',e);
     alert('削除に失敗しました: '+(e.message||e));
