@@ -73,7 +73,7 @@ async function openApp(browser, origin, errors){
   });
   await page.goto(`${origin}/index.html`,{waitUntil:'load',timeout:60000});
   await page.waitForFunction("typeof live==='function'&&typeof _resetSheetState==='function'&&typeof render==='function'&&typeof addIncomeStep==='function'",{timeout:30000});
-  await new Promise(r=>setTimeout(r,1200)); // onloadのデフォルト投入(setTimeout)を待ってから上書き
+  await new Promise(r=>setTimeout(r,2000)); // onloadのデフォルト投入(setTimeout)を待ってから上書き（稀な競合フレーク対策で1.2s→2s）
   return page;
 }
 

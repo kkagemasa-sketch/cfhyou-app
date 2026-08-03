@@ -60,12 +60,16 @@ function toggleCalc(bodyId, btn){
 // ===== ライブ更新 =====
 function live(force){
   clearTimeout(timer);
+  // ★ 状態チップは常に同じ幅で表示し続け、文字と色だけ切り替える
+  //   （旧: display切替で出没→ヘッダーのボタン列が左右に動く「がたつき」の原因だった）
   const ind=document.getElementById('update-indicator');
-  if(ind){ind.style.display='inline';ind.textContent='● 更新中...';}
+  const _indCalc=()=>{if(ind){ind.textContent='● 計算中';ind.style.background='rgba(251,191,36,.25)';ind.style.color='#fbbf24';}};
+  const _indDone=()=>{if(ind){ind.textContent='✓ 最新';ind.style.background='rgba(74,222,128,.22)';ind.style.color='#4ade80';}};
+  _indCalc();
   timer=setTimeout(()=>{
     const hash=_getInputHash();
     if(!force&&hash===_lastInputHash){
-      if(ind)ind.style.display='none';
+      _indDone();
       return;
     }
     _lastInputHash=hash;
@@ -81,11 +85,7 @@ function live(force){
       renderContingency();
     }else{render();}
     document.querySelectorAll('.amt-inp').forEach(el=>{const v=el.value.trim();el.classList.toggle('is-zero',v===''||v==='0');});
-    if(ind){
-      ind.textContent='✓ 完了';ind.style.background='rgba(74,222,128,0.25)';ind.style.color='#4ade80';
-      clearTimeout(indicatorTimer);
-      indicatorTimer=setTimeout(()=>{ind.style.display='none';},1200);
-    }
+    _indDone(); // 完了後も消さずに「✓ 最新」を出し続ける（がたつき防止）
   },800);  // ★ レベル2最適化: 600ms → 800ms（連続入力時の再計算頻度を抑制）
 }
 

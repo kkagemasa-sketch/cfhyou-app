@@ -459,7 +459,7 @@ document.addEventListener('keydown',e=>{
 // ノートPCでは縮小、外部モニターでは100%など、端末単位の好みを localStorage に保存する。
 // CSSのzoomは宣言幅(430px)ごと縮むため、縮めた分だけCF表が広くなる。
 function setPanelZoom(pct){
-  pct=Math.max(60,Math.min(110,Math.round(pct/5)*5));
+  pct=Math.max(40,Math.min(110,Math.round(pct/5)*5)); // 下限40%（要望により60→40へ拡大）
   window._panelZoom=pct;
   const pl=document.querySelector('.panel-l');
   if(pl)pl.style.zoom=pct/100;
