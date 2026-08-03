@@ -44,7 +44,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     : 'background:#ecfdf5;color:#047857;border:1px solid #6ee7b7';
 
   // お客様名・物件タイプバッジ
-  let h=`<div class="r-summary"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+  let h=`<div class="r-summary"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;flex-wrap:wrap;gap:6px">
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <span style="background:var(--navy);color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${nm} 様</span>
       <span style="background:${isM?'var(--teal)':'var(--green)'};color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${isM?'🏢 マンション':'🏡 戸建て'}</span>

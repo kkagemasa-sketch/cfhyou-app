@@ -114,12 +114,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 /* ★ 段階1: contain:layout style + isolation で他要素の影響を遮断
    will-change:scroll-position は IE/旧Edgeのヒントのため現代ブラウザでは効果薄。
    contain で paint scope を限定する方が確実。 */
-.r-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px 16px;contain:layout style;isolation:isolate}
+.r-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:6px 16px 12px;contain:layout style;isolation:isolate}
 .r-body.cf-mode{display:flex;flex-direction:column;overflow:hidden}
 .r-body::-webkit-scrollbar{width:6px}
 .r-body::-webkit-scrollbar-track{background:#f0f4f8}
 .r-body::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
-.r-summary{margin-bottom:8px;flex-shrink:0}
+.r-summary{margin-bottom:3px;flex-shrink:0}
 /* テーブル：CF表時は縦横両スクロール（theadのsticky基準） */
 /* ★ overflow-anchor:none — content-visibility:auto の行が画面外で再計測される際に
    ブラウザがスクロール位置を勝手に補正して「下スクロールで上に戻る」現象を防ぐ。
@@ -723,9 +723,11 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
    ============================================================ */
 /* --- iPad 縦持ち（768px〜1024px）--- */
 @media screen and (max-width:1024px){
-  /* ヘッダー：ボタンは折り返さず1列に（収まらない分は横スクロール） */
-  .hdr{height:auto;padding:6px 10px;flex-wrap:wrap;gap:4px}
-  .hdr-acts{flex-wrap:nowrap;gap:2px;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:2px}
+  /* ヘッダー：ボタン列とロゴを完全に1行に。HouseFitロゴはⓘボタンの右側（行の右端）へ */
+  .hdr{height:auto;padding:6px 10px;flex-wrap:nowrap;gap:8px}
+  .hdr-acts{order:1;flex:1;min-width:0;flex-wrap:nowrap;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:2px}
+  .hdr-logo{order:2;flex-shrink:0}
+  .hdr-logo span{font-size:15px!important}
   .btn-h{padding:5px 6px;font-size:10px;white-space:nowrap;flex-shrink:0}
 
   /* 入力パネル幅を調整 */
