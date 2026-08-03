@@ -750,8 +750,13 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   .drow{padding:8px;gap:6px}
   .dlbl{font-size:11px}
 
-  /* タブ */
-  .r-tabs{flex-wrap:wrap;gap:3px}
+  /* タブ：コンパクト表示（縦横の余白を圧縮） */
+  .r-tabs{flex-wrap:wrap;gap:2px;padding:0 8px}
+  .rtab{padding:4px 10px 3px;font-size:11px;white-space:nowrap}
+  .rtab.on{padding-top:5px}
+  .stab-add{padding:3px 8px;font-size:12px}
+  .stab-rm{font-size:11px}
+  .r-tabs button{white-space:nowrap}
 
   /* 前提条件バー横スクロール */
   div[style*="border:1.5px solid #c8d6e8"]{overflow-x:auto;-webkit-overflow-scrolling:touch}
