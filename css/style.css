@@ -723,10 +723,10 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
    ============================================================ */
 /* --- iPad 縦持ち（768px〜1024px）--- */
 @media screen and (max-width:1024px){
-  /* ヘッダー：ボタンが折り返せるように */
-  .hdr{height:auto;padding:8px 12px;flex-wrap:wrap;gap:6px}
-  .hdr-acts{flex-wrap:wrap;gap:5px}
-  .btn-h{padding:7px 10px;font-size:11px}
+  /* ヘッダー：ボタンは折り返さず1列に（収まらない分は横スクロール） */
+  .hdr{height:auto;padding:6px 10px;flex-wrap:wrap;gap:4px}
+  .hdr-acts{flex-wrap:nowrap;gap:2px;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:2px}
+  .btn-h{padding:5px 6px;font-size:10px;white-space:nowrap;flex-shrink:0}
 
   /* 入力パネル幅を調整 */
   .panel-l{width:380px;min-width:200px}
