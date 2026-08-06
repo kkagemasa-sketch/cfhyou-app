@@ -92,7 +92,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 
 /* 右パネル：CF表 */
 .panel-r{flex:1 1 0%;min-width:150px;overflow:hidden;display:flex;flex-direction:column}
-.r-tabs{display:flex;background:var(--navy);padding:0 14px;gap:4px;flex-shrink:0;align-items:flex-end}
+.r-tabs{display:flex;background:var(--navy);padding:0 14px;gap:4px;flex-shrink:0;align-items:flex-end;flex-wrap:nowrap}
+/* ★ タブ帯はどの画面幅でも1行固定。タブが多い時は左のタブ群だけ横スクロール */
+.rtab-strip{flex:1 1 0;min-width:0;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.r-tabs>div:last-child{flex-shrink:0}
+.r-tabs .rtab{white-space:nowrap;flex-shrink:0}
+.r-tabs button{white-space:nowrap}
 .rtab{padding:9px 20px 8px;border:none;background:rgba(255,255,255,.1);font-family:inherit;font-size:12px;color:rgba(255,255,255,.65);cursor:pointer;border-radius:8px 8px 0 0;transition:.15s;font-weight:600;letter-spacing:.02em;border:1px solid transparent;border-bottom:none;margin-bottom:0;position:relative;top:1px}
 .rtab:hover{background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
 .rtab.on{background:var(--gray-bg);color:var(--navy);border-color:rgba(255,255,255,.15);font-weight:800;top:0;padding-top:10px}
@@ -750,8 +755,8 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   .drow{padding:8px;gap:6px}
   .dlbl{font-size:11px}
 
-  /* タブ：コンパクト表示（縦横の余白を圧縮） */
-  .r-tabs{flex-wrap:wrap;gap:2px;padding:0 8px}
+  /* タブ：コンパクト表示（縦横の余白を圧縮）※折り返しはさせない(1行固定) */
+  .r-tabs{flex-wrap:nowrap;gap:2px;padding:0 8px}
   .rtab{padding:4px 10px 3px;font-size:11px;white-space:nowrap}
   .rtab.on{padding-top:5px}
   .stab-add{padding:3px 8px;font-size:12px}
@@ -1353,9 +1358,9 @@ body.cf-panning .tbl-wrap, body.cf-panning .tbl-wrap *{cursor:grabbing!important
   .panel-resizer-grip button{opacity:1!important;width:24px;height:72px;font-size:13px}
 }
 
-/* CF全画面モード: ヘッダー・入力パネル・仕切りを隠してCF表を画面いっぱいに */
-body.cf-full .hdr,
-body.cf-full .panel-l,
-body.cf-full .panel-resizer-grip{display:none!important}
+/* CF全画面モード: ヘッダー・入力パネルを隠してCF表を画面いっぱいに。
+   仕切り(◀/▶ボタン付き)は残し、全画面のまま入力パネルを出し入れできる */
+body.cf-full .hdr{display:none!important}
+body.cf-full:not(.cf-full-input) .panel-l{display:none!important}
 body.cf-full .panel-r{min-width:0}
 #btn-cf-full.on{background:rgba(255,80,80,.35)!important;border-color:rgba(255,120,120,.7)!important}

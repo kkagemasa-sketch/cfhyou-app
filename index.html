@@ -15,7 +15,7 @@
 <!-- Sentry エラー監視（DSN未設定時はローカルログのみ動作） -->
 <script src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js" crossorigin="anonymous"></script>
 <script src="js/error-monitor.js?v=2"></script>
-<link rel="stylesheet" href="css/style.css?v=56">
+<link rel="stylesheet" href="css/style.css?v=57">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -1978,7 +1978,7 @@ window.closeAboutModal=closeAboutModal;
 <!-- ★ 右パネル：CF表 -->
 <div class="panel-r">
   <div class="r-tabs" style="justify-content:space-between">
-    <div style="display:flex;align-items:flex-end;gap:4px">
+    <div class="rtab-strip" style="display:flex;align-items:flex-end;gap:4px">
       <div class="scen-tabs" id="scen-tabs"></div>
       <button class="rtab" id="rt-lctab" onclick="setRTab('lctab')">💰 生活費</button>
       <button class="rtab" id="rt-graph" onclick="setRTab('graph')">📈 グラフ</button>
@@ -2056,7 +2056,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/explain/explain-financial.js?v=2"></script>
 <script src="js/explain/explain-edu.js?v=1"></script>
 <script src="js/mg-qa.js?v=14"></script>
-<script src="js/ui.js?v=14"></script>
+<script src="js/ui.js?v=15"></script>
 <script src="js/app.js?v=42"></script>
 <!-- Firebase (マンションマスター共有) -->
 <script type="module" src="js/firebase-init.js?v=3"></script>

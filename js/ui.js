@@ -42,8 +42,15 @@ function setHouseholdType(type){
 }
 
 function togglePanel(){
-  const pl=document.querySelector('.panel-l');
   const btn=document.getElementById('btn-toggle-panel');
+  // ★ CF全画面モード中: パネルの表示/非表示は cf-full-input クラスで制御
+  //   （全画面のまま入力パネルを出し入れできる。通常時の開閉状態(.hidden)には触れない）
+  if(document.body.classList.contains('cf-full')){
+    const show=document.body.classList.toggle('cf-full-input');
+    if(btn){btn.textContent=show?'◀':'▶';btn.title=show?'入力パネルを隠す（全画面のまま）':'入力パネルを表示する（全画面のまま）';}
+    return;
+  }
+  const pl=document.querySelector('.panel-l');
   const hidden=pl.classList.toggle('hidden');
   btn.textContent=hidden?'▶':'◀';
   btn.title=hidden?'入力パネルを表示する':'入力パネルを隠す';
@@ -446,6 +453,18 @@ function toggleCfFullscreen(){
     b.textContent=on?'✕ 全画面をやめる':'🖥 全画面';
     b.title=on?'元のレイアウトに戻る（Escでも戻れます）':'ヘッダーと入力パネルを隠してCF表を画面いっぱいに表示';
     b.classList.toggle('on',on);
+  }
+  // ★ 仕切りの◀/▶ボタン表示を状態に同期
+  //   全画面に入る: パネルは隠れた状態から開始(▶) / 抜ける: 通常時の開閉状態(.hidden)に合わせる
+  document.body.classList.remove('cf-full-input');
+  const tp=document.getElementById('btn-toggle-panel');
+  if(tp){
+    if(on){ tp.textContent='▶'; tp.title='入力パネルを表示する（全画面のまま）'; }
+    else{
+      const hidden=document.querySelector('.panel-l')?.classList.contains('hidden');
+      tp.textContent=hidden?'▶':'◀';
+      tp.title=hidden?'入力パネルを表示する':'入力パネルを隠す';
+    }
   }
   // 表の描画幅が変わるためリサイズ通知（全体表示フィット等の再計算用）
   try{window.dispatchEvent(new Event('resize'));}catch(e){}
