@@ -59,6 +59,18 @@ const SCENARIOS = {
     $('loan-total-simple').value=6000;
     onLoanTotalSimpleChange();
   },
+  'S7_繰上返済': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    // 10年目に期間短縮型300万 + 20年目に返済額軽減型200万（4パターンのうち金額指定2種）
+    addPrepayRow('s',{yr:10,type:'term',mode:'amt',val:300,_noLive:true});
+    addPrepayRow('s',{yr:20,type:'reduce',mode:'amt',val:200,_noLive:true});
+  },
   'S6_車所有者別': function(){
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');

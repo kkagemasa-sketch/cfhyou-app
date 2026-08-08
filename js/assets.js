@@ -809,6 +809,7 @@ function setLoanMode(mode){
     if(fpp)fpp.style.display='none';
   }
   if(typeof updateMGDansinUI==='function')updateMGDansinUI();
+  if(typeof syncPrepayUIVisibility==='function')syncPrepayUIVisibility(); // 繰上返済欄の単独/ペア切替
   if(loanCategory==='flat35')updateFlat35Info();
   // 借入金額表示をモードに合わせて再計算
   if(typeof calcLoanAmt==='function')calcLoanAmt();

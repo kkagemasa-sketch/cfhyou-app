@@ -1355,3 +1355,71 @@ function updateFlat35PayInfo(){
     if(hEl)hEl.textContent=loanType==='equal_payment'?'✓ 元利均等返済（当初金利）':'✓ 元金均等返済（1年目月額）';
   }
 }
+
+// ===== 繰上返済シミュレーション（入力行の生成・4パターン） =====
+// type: 'term'=期間短縮型 / 'reduce'=返済額軽減型
+// mode: 'amt'=繰上金額を指定 / 'target'=目標を指定(短縮年数 or 月返済額)→必要額を逆算
+let _ppRowCnt=0;
+function addPrepayRow(owner,d){
+  d=d||{};
+  _ppRowCnt++;
+  const id=_ppRowCnt;
+  const cont=document.getElementById('pp-cont-'+owner);
+  if(!cont)return;
+  const el=document.createElement('div');
+  el.id=`pp-${owner}-${id}`;
+  el.style.cssText='background:#fff;border:1px solid #cde3d2;border-radius:5px;padding:6px 8px;margin-bottom:6px';
+  el.innerHTML=`
+    <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+      <div class="suf" style="flex:0 0 92px"><input class="inp age-inp" id="pp-${owner}-${id}-yr" type="number" min="1" max="50" value="${d.yr||''}" placeholder="例:10" oninput="live()"><span class="sl">年目</span></div>
+      <select class="sel" id="pp-${owner}-${id}-type" onchange="onPrepayTypeChange('${owner}',${id})" style="width:118px;font-size:11px;padding:5px 4px">
+        <option value="term"${d.type!=='reduce'?' selected':''}>期間短縮型</option>
+        <option value="reduce"${d.type==='reduce'?' selected':''}>返済額軽減型</option>
+      </select>
+      <select class="sel" id="pp-${owner}-${id}-mode" onchange="onPrepayTypeChange('${owner}',${id})" style="width:150px;font-size:11px;padding:5px 4px"></select>
+      <div class="suf" style="flex:1;min-width:110px"><input class="inp amt-inp" id="pp-${owner}-${id}-val" type="number" min="0" step="0.1" value="${d.val||''}" placeholder="" oninput="live()"><span class="sl" id="pp-${owner}-${id}-unit">万円</span></div>
+      <button class="btn-rm" onclick="rmPrepayRow('${owner}',${id})" style="flex-shrink:0">×</button>
+    </div>
+    <div id="pp-${owner}-${id}-hint" style="font-size:10px;font-weight:700;color:#1a7a3a;margin-top:3px;min-height:13px"></div>`;
+  cont.appendChild(el);
+  _syncPrepayModeOptions(owner,id,d.mode);
+  if(!d._noLive&&typeof live==='function')live();
+}
+function rmPrepayRow(owner,id){
+  document.getElementById(`pp-${owner}-${id}`)?.remove();
+  if(typeof live==='function')live();
+}
+// 型に応じて「指定方法」の選択肢と単位を切替（4パターン）
+function _syncPrepayModeOptions(owner,id,keepMode){
+  const type=document.getElementById(`pp-${owner}-${id}-type`)?.value||'term';
+  const modeSel=document.getElementById(`pp-${owner}-${id}-mode`);
+  const unit=document.getElementById(`pp-${owner}-${id}-unit`);
+  const val=document.getElementById(`pp-${owner}-${id}-val`);
+  if(!modeSel)return;
+  const cur=keepMode||modeSel.value||'amt';
+  if(type==='term'){
+    modeSel.innerHTML=`<option value="amt">繰上金額を指定</option><option value="target">短縮したい年数を指定</option>`;
+  }else{
+    modeSel.innerHTML=`<option value="amt">繰上金額を指定</option><option value="target">目標の月返済額を指定</option>`;
+  }
+  modeSel.value=(cur==='target')?'target':'amt';
+  const isTarget=modeSel.value==='target';
+  if(unit)unit.textContent=isTarget?(type==='term'?'年分':'万円/月'):'万円';
+  if(val)val.placeholder=isTarget?(type==='term'?'例:5':'例:8.5'):'例:300';
+}
+function onPrepayTypeChange(owner,id){
+  _syncPrepayModeOptions(owner,id);
+  if(typeof live==='function')live();
+}
+// ペア/単独の切替に応じて入力欄の表示を同期（setLoanModeから呼ばれる）
+function syncPrepayUIVisibility(){
+  const isPair=typeof pairLoanMode!=='undefined'&&pairLoanMode;
+  const s=document.getElementById('pp-wrap-s');
+  const p=document.getElementById('pp-wrap-pair');
+  if(s)s.style.display=isPair?'none':'';
+  if(p)p.style.display=isPair?'':'none';
+}
+window.addPrepayRow=addPrepayRow;
+window.rmPrepayRow=rmPrepayRow;
+window.onPrepayTypeChange=onPrepayTypeChange;
+window.syncPrepayUIVisibility=syncPrepayUIVisibility;

@@ -94,6 +94,176 @@ function render(){
   const eLoanYrs=_isFlat?(_flatPair?Math.max(_fhYrs,_fwYrs):_flatYrs):loanYrs;
   const eRates=_isFlat?_flatRates:rates;
   const eLoanType=_isFlat?_flatType:(document.getElementById('loan-type')?.value||'equal_payment');
+
+  // ═══════════════ 繰上返済シミュレーション ═══════════════
+  // 入力行の読み取り: owner='s'(単独)/'h'/'w'。{id, yr(返済開始からn年目), type:'term'|'reduce', mode:'amt'|'target', val}
+  function _readPrepayRows(owner){
+    const rows=[];
+    document.querySelectorAll(`#pp-cont-${owner}>[id^="pp-${owner}-"]`).forEach(el=>{
+      const pid=el.id.split('-').pop();
+      const yr=iv(`pp-${owner}-${pid}-yr`)||0;
+      const type=document.getElementById(`pp-${owner}-${pid}-type`)?.value||'term';
+      const mode=document.getElementById(`pp-${owner}-${pid}-mode`)?.value||'amt';
+      const val=fv(`pp-${owner}-${pid}-val`)||0;
+      if(yr>0&&val>0)rows.push({id:pid,yr,type,mode,val});
+    });
+    return rows.sort((a,b)=>a.yr-b.yr);
+  }
+  // 月次逐次償還エンジン（繰上あり時のみ使用。無入力時は従来経路＝完全互換）
+  // amtMan:借入(万円) years:期間 loanKind:'equal_payment'|'equal_principal' ratesArr:金利変更配列
+  // 戻り: {annualPay[], yearEndBal[], prepay[], resolved:{rowId:{amt,effect}}, payoffYr}
+  function _buildPrepaySchedule(amtMan, years, loanKind, ratesArr, rows){
+    if(!(amtMan>0)||!(years>0)||!rows.length)return null;
+    const origMonths=years*12;
+    const pmt=(bal,mr,n)=>n<=0?bal:(mr===0?bal/n:bal*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1));
+    const pv=(pay,mr,n)=>mr===0?pay*n:pay*(1-Math.pow(1+mr,-n))/mr;
+    // 前向きシミュレーション。prepayPlan: {yr: 実額} を与えて年次配列を返す
+    const _sim=(prepayPlan)=>{
+      let bal=amtMan, monthsUsed=0, monthly=0, principalPerMonth=amtMan/origMonths, needRecalc=true;
+      const annualPay=[], yearEndBal=[], prepayOut=[];
+      let payoffMonths=origMonths;
+      for(let y=0;y<years+1&&(bal>0.0001||y===0);y++){
+        const mr=(effRate(y,ratesArr)||0)/100/12;
+        if(loanKind==='equal_payment'){
+          // 金利変更年・繰上(軽減)後は残高×残期間で月額を再計算
+          monthly=pmt(bal,mr,origMonths-monthsUsed);
+          if(!needRecalc&&_prevMonthly>0)monthly=_prevMonthly; // 短縮型直後は月額据置
+        }
+        var _prevMonthly=monthly;
+        let pay=0;
+        for(let m=0;m<12;m++){
+          if(bal<=0.0001)break;
+          const it=bal*mr;
+          let p, thisPay;
+          if(loanKind==='equal_payment'){ thisPay=Math.min(monthly,bal+it); p=thisPay-it; }
+          else{ p=Math.min(principalPerMonth,bal); thisPay=p+it; }
+          bal-=p; pay+=thisPay; monthsUsed++;
+          if(bal<=0.0001){ payoffMonths=monthsUsed; bal=0; }
+        }
+        // 年末に繰上返済を適用
+        let pp=prepayPlan[y+1]||0;
+        pp=Math.min(pp,bal);
+        if(pp>0){
+          bal-=pp;
+          if(bal<=0.0001){ payoffMonths=monthsUsed; bal=0; }
+          needRecalc=true; // 軽減型は次年に月額再計算（短縮型は下で据置指示）
+        }
+        annualPay.push(pay); yearEndBal.push(Math.max(0,bal)); prepayOut.push(pp);
+        if(bal<=0)break;
+      }
+      return {annualPay,yearEndBal,prepayOut,payoffMonths};
+    };
+    // ── 各行の実額を順に解決（目標指定は二分探索/PV式で逆算） ──
+    const plan={}, resolved={}, termYears=new Set(); // termYears: 短縮型を適用した年（月額据置指示用）
+    for(const row of rows){
+      // この行の直前までのplanで、行の年の「年末繰上前残高」と経過月数・月額を得る
+      const pre=_sim(plan);
+      const yIdx=row.yr-1;
+      const balBefore=(yIdx===0?amtMan:(pre.yearEndBal[yIdx-1]??0)) - 0; // 年初残高
+      // その年の返済後(繰上前)残高を再現するため、planに0を入れて年末値を取得
+      const balAtPrepay=(pre.yearEndBal[yIdx]??0)+(plan[row.yr]||0); // 既存planの同年繰上を除いた残高
+      const mr=(effRate(yIdx,ratesArr)||0)/100/12;
+      const monthsUsed=Math.min(origMonths,row.yr*12);
+      const remainMonths=origMonths-monthsUsed;
+      let amt=0, effect='';
+      if(row.mode==='amt'){
+        amt=Math.min(row.val,balAtPrepay);
+        if(row.type==='reduce'){
+          const newMonthly=remainMonths>0?pmt(Math.max(0,balAtPrepay-amt),mr,remainMonths):0;
+          effect=`→ 月返済額 約${(Math.round(newMonthly*10)/10).toFixed(1)}万円に軽減`;
+        }else{
+          // 短縮効果: 月額据置で残高が尽きるまでの月数
+          const curMonthly=pmt(balAtPrepay,mr,remainMonths);
+          let n;
+          const nb=Math.max(0,balAtPrepay-amt);
+          if(nb<=0)n=0;
+          else if(mr===0)n=nb/curMonthly;
+          else n=Math.log(curMonthly/(curMonthly-nb*mr))/Math.log(1+mr);
+          const shortenM=Math.max(0,remainMonths-Math.ceil(n));
+          effect=`→ 約${Math.floor(shortenM/12)}年${shortenM%12}ヶ月 短縮`;
+        }
+      }else if(row.type==='reduce'){
+        // 目標: 月返済額を val 万円にしたい → 必要繰上額 = 残高 - PV(目標月額)
+        const tgt=row.val;
+        amt=Math.max(0,balAtPrepay-pv(tgt,mr,remainMonths));
+        amt=Math.min(amt,balAtPrepay);
+        effect=`→ 必要繰上額 約${ri(amt).toLocaleString()}万円`;
+      }else{
+        // 目標: val 年分短縮したい → 月額据置で完済が val*12 ヶ月早まる繰上額
+        const curMonthly=pmt(balAtPrepay,mr,remainMonths);
+        const tgtMonths=Math.max(0,remainMonths-row.val*12);
+        amt=Math.max(0,balAtPrepay-pv(curMonthly,mr,tgtMonths));
+        amt=Math.min(amt,balAtPrepay);
+        effect=`→ 必要繰上額 約${ri(amt).toLocaleString()}万円`;
+      }
+      plan[row.yr]=(plan[row.yr]||0)+amt;
+      if(row.type==='term')termYears.add(row.yr);
+      resolved[row.id]={amt:Math.round(amt*10)/10, effect, type:row.type, mode:row.mode};
+    }
+    // ── 最終シミュレーション（短縮型の月額据置を厳密に反映） ──
+    let bal=amtMan, monthsUsed=0, monthly=0, keepMonthly=false;
+    const principalPerMonth0=amtMan/origMonths;
+    let principalPerMonth=principalPerMonth0;
+    const annualPay=[], yearEndBal=[], prepayOut=[];
+    let payoffMonths=origMonths, lastRate=null;
+    for(let y=0;y<years+1&&(bal>0.0001||y===0);y++){
+      const mr=(effRate(y,ratesArr)||0)/100/12;
+      const rateChanged=(lastRate!==null&&mr!==lastRate); lastRate=mr;
+      if(loanKind==='equal_payment'){
+        if(y===0||rateChanged||!keepMonthly)monthly=pmt(bal,mr,origMonths-monthsUsed);
+      }else{
+        if(y===0||!keepMonthly)principalPerMonth=bal/Math.max(1,origMonths-monthsUsed);
+      }
+      let pay=0;
+      for(let m=0;m<12;m++){
+        if(bal<=0.0001)break;
+        const it=bal*mr;
+        let p, thisPay;
+        if(loanKind==='equal_payment'){ thisPay=Math.min(monthly,bal+it); p=thisPay-it; }
+        else{ p=Math.min(principalPerMonth,bal); thisPay=p+it; }
+        bal-=p; pay+=thisPay; monthsUsed++;
+        if(bal<=0.0001){ payoffMonths=monthsUsed; bal=0; }
+      }
+      let pp=Math.min(plan[y+1]||0,bal);
+      if(pp>0){
+        bal-=pp;
+        if(bal<=0.0001){ payoffMonths=monthsUsed; bal=0; }
+        keepMonthly=termYears.has(y+1); // 短縮型→月額据置 / 軽減型→翌年再計算
+      }
+      annualPay.push(pay); yearEndBal.push(Math.max(0,bal)); prepayOut.push(pp);
+      if(bal<=0)break;
+    }
+    return {annualPay,yearEndBal,prepayOut,resolved,payoffMonths};
+  }
+  // 各ローンのスケジュール構築（繰上入力がある場合のみ。無ければnull=従来計算）
+  const _ppRowsS=(!pairLoanMode)?_readPrepayRows('s'):[];
+  const _ppRowsH=pairLoanMode?_readPrepayRows('h'):[];
+  const _ppRowsW=pairLoanMode?_readPrepayRows('w'):[];
+  const _ppS=(!pairLoanMode&&loanAmt>0)?_buildPrepaySchedule(loanAmt,eLoanYrs,eLoanType,eRates,_ppRowsS):null;
+  const _ppH=pairLoanMode?_buildPrepaySchedule(_flatPair?_fhAmt:lhAmt,_flatPair?_fhYrs:lhYrs,_flatPair?_fhType:lhType,_flatPair?_flatRates:ratesH,_ppRowsH):null;
+  const _ppW=pairLoanMode?_buildPrepaySchedule(_flatPair?_fwAmt:lwAmt,_flatPair?_fwYrs:lwYrs,_flatPair?_fwType:lwType,_flatPair?_flatRates:ratesW,_ppRowsW):null;
+  // 万一CF・入力欄ヒントから参照できるよう公開
+  window._prepaySchedules={s:_ppS,h:_ppH,w:_ppW};
+  // 残高取得ヘルパー: elapsed年経過後の年末残高（elapsed<=0なら当初元本）
+  const _ppBal=(sch,principal,elapsed)=>{
+    if(!sch)return null;
+    if(elapsed<=0)return principal;
+    return sch.yearEndBal[elapsed-1]??0;
+  };
+  // 入力欄の効果ヒントを更新（計算のたびに最新化）
+  try{
+    ['s','h','w'].forEach(o=>{
+      const sch=o==='s'?_ppS:o==='h'?_ppH:_ppW;
+      document.querySelectorAll(`#pp-cont-${o}>[id^="pp-${o}-"]`).forEach(el=>{
+        const pid=el.id.split('-').pop();
+        const hint=document.getElementById(`pp-${o}-${pid}-hint`);
+        if(!hint)return;
+        const rv=sch&&sch.resolved[pid];
+        hint.textContent=rv?rv.effect:'';
+      });
+    });
+  }catch(e){}
+  // ═══════════════ /繰上返済 ═══════════════
   const parking=fv('parking')/10000, propTax=fv('prop-tax')/10000;
   const sqm=fvd('sqm',75);
   const isM=ST.type==='mansion';
@@ -142,7 +312,7 @@ function render(){
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
-    lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
+    lc:[],lRep:[],lRepH:[],lRepW:[],prepayExp:[],prepayExpH:[],prepayExpW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carTotalH:[],carTotalW:[],carTotalS:[],carTotalNone:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,chidai:[],kaitai:[],
     // 買い替えイベント
     swapSell:[],swapTax:[],swapPayoff:[],swapBuy:[],
@@ -939,16 +1109,17 @@ function render(){
       let remainBal=0;
       let _hBal=0,_wBal=0; // ペアローン時の各自残高
       // 住宅ローン控除は「12/31時点（年末）残高」× 0.7%。lbal(...,lcYr+1) が年末残高
+      // ★ 繰上返済スケジュールがあれば逐次計算の年末残高を使用（繰上分だけ控除も正しく減る）
       if(_flatPair){
-        if(_fhAmt>0&&lcYr<_fhYrs)_hBal=(_fhType==='equal_payment'?lbal(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fhAmt,_fhYrs,lcYr+1));
-        if(_fwAmt>0&&lcYr<_fwYrs)_wBal=(_fwType==='equal_payment'?lbal(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fwAmt,_fwYrs,lcYr+1));
+        if(_fhAmt>0)_hBal=_ppH?(_ppBal(_ppH,_fhAmt,lcYr+1)||0):(lcYr<_fhYrs?(_fhType==='equal_payment'?lbal(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fhAmt,_fhYrs,lcYr+1)):0);
+        if(_fwAmt>0)_wBal=_ppW?(_ppBal(_ppW,_fwAmt,lcYr+1)||0):(lcYr<_fwYrs?(_fwType==='equal_payment'?lbal(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fwAmt,_fwYrs,lcYr+1)):0);
         remainBal=_hBal+_wBal;
       }else if(pairLoanMode){
-        _hBal=(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):0);
-        _wBal=(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):0);
+        _hBal=_ppH?(_ppBal(_ppH,lhAmt,lcYr+1)||0):(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):0);
+        _wBal=_ppW?(_ppBal(_ppW,lwAmt,lcYr+1)||0):(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):0);
         remainBal=_hBal+_wBal;
       }else{
-        remainBal=loanType2tmp==='equal_payment'?lbal(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr+1):lbal_gankin(loanAmt,eLoanYrs,lcYr+1);
+        remainBal=_ppS?(_ppBal(_ppS,loanAmt,lcYr+1)||0):(loanType2tmp==='equal_payment'?lbal(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr+1):lbal_gankin(loanAmt,eLoanYrs,lcYr+1));
       }
       _lctrlBd.hBal=_hBal; _lctrlBd.wBal=_wBal;
       const cappedBal=Math.min(remainBal,(pairLoanMode||_flatPair)?lctrlLimit*2:lctrlLimit);
@@ -1466,24 +1637,38 @@ function render(){
       }
     } else if(_flatPair){
       if(active){
-        if(_fhAmt>0&&lcYr<_fhYrs)_lRepH=ri(_fhType==='equal_payment'?mpay(_fhAmt,_fhYrs,effRate(lcYr,_flatRates))*12:mpay_gankin_year(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr));
-        if(_fwAmt>0&&lcYr<_fwYrs)_lRepW=ri(_fwType==='equal_payment'?mpay(_fwAmt,_fwYrs,effRate(lcYr,_flatRates))*12:mpay_gankin_year(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr));
+        // ★ 繰上返済スケジュールがあれば逐次計算の年間返済額を使用
+        if(_fhAmt>0)_lRepH=_ppH?ri(_ppH.annualPay[lcYr]||0):(lcYr<_fhYrs?ri(_fhType==='equal_payment'?mpay(_fhAmt,_fhYrs,effRate(lcYr,_flatRates))*12:mpay_gankin_year(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr)):0);
+        if(_fwAmt>0)_lRepW=_ppW?ri(_ppW.annualPay[lcYr]||0):(lcYr<_fwYrs?ri(_fwType==='equal_payment'?mpay(_fwAmt,_fwYrs,effRate(lcYr,_flatRates))*12:mpay_gankin_year(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr)):0);
       }
       lRep=_lRepH+_lRepW;
     } else if(pairLoanMode){
       if(active){
-        if(lcYr<lhYrs)_lRepH=ri(lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));
-        if(lcYr<lwYrs)_lRepW=ri(lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));
+        _lRepH=_ppH?ri(_ppH.annualPay[lcYr]||0):(lcYr<lhYrs?ri(lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr)):0);
+        _lRepW=_ppW?ri(_ppW.annualPay[lcYr]||0):(lcYr<lwYrs?ri(lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr)):0);
       }
       lRep=_lRepH+_lRepW;
-    } else if(active&&lcYr<eLoanYrs){
-      if(eLoanType==='equal_payment'){
-        lRep=ri(mpay(loanAmt,eLoanYrs,effRate(lcYr,eRates))*12);
-      } else {
-        lRep=ri(mpay_gankin_year(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr));
+    } else if(active){
+      if(_ppS){
+        lRep=ri(_ppS.annualPay[lcYr]||0); // ★ 繰上返済スケジュール使用
+      } else if(lcYr<eLoanYrs){
+        if(eLoanType==='equal_payment'){
+          lRep=ri(mpay(loanAmt,eLoanYrs,effRate(lcYr,eRates))*12);
+        } else {
+          lRep=ri(mpay_gankin_year(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr));
+        }
       }
     }
     R.lRep.push(lRep);R.lRepH.push(_lRepH);R.lRepW.push(_lRepW);
+    // ★ 繰上返済の支出計上（実行年に元本充当分を支出）
+    {
+      const _ppExpS=(!pairLoanMode&&_ppS&&active)?(_ppS.prepayOut[lcYr]||0):0;
+      const _ppExpH=(pairLoanMode&&_ppH&&active)?(_ppH.prepayOut[lcYr]||0):0;
+      const _ppExpW=(pairLoanMode&&_ppW&&active)?(_ppW.prepayOut[lcYr]||0):0;
+      R.prepayExpH.push(ri(_ppExpH));
+      R.prepayExpW.push(ri(_ppExpW));
+      R.prepayExp.push(ri(_ppExpS)+ri(_ppExpH)+ri(_ppExpW));
+    }
 
     // ─── 買い替えイベント：売却・税金・買付・残債一括返済 ───
     let _swSell=0, _swTax=0, _swPayoff=0, _swBuy=0;
@@ -1832,7 +2017,7 @@ function render(){
     // 現金一括購入：引き渡し年に「物件価格＋諸費用」を一括支出計上（不足分は下の自動取崩しで補填）
     const _housePurchase=(_isCashPurchase && i===delivery)?_cashPurchaseAmt:0;
     R.housePurchase.push(_housePurchase);
-    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i]+R.swapTax[i]+R.swapPayoff[i]+R.swapBuy[i]+R.housePurchase[i];
+    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i]+R.swapTax[i]+R.swapPayoff[i]+R.swapBuy[i]+R.housePurchase[i]+R.prepayExp[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     // ─ 自動資産取崩し（預貯金マイナス時のみ） ─
@@ -2259,20 +2444,21 @@ function render(){
     R.finAssetBase.push(ri(finAssetValBase));
     R.totalAssetBase.push(R.sav[i]+ri(finAssetValBase));
     let lb=0,_lbH=0,_lbW=0;
+    // ★ 繰上返済スケジュールがあれば逐次計算の年末残高を使用
     if(_flatPair){
       if(active){
-        _lbH=_fhAmt>0&&lcYr<_fhYrs?ri(_fhType==='equal_payment'?lbal(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fhAmt,_fhYrs,lcYr+1)):0;
-        _lbW=_fwAmt>0&&lcYr<_fwYrs?ri(_fwType==='equal_payment'?lbal(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fwAmt,_fwYrs,lcYr+1)):0;
+        _lbH=_fhAmt>0?ri(_ppH?(_ppBal(_ppH,_fhAmt,lcYr+1)||0):(lcYr<_fhYrs?(_fhType==='equal_payment'?lbal(_fhAmt,_fhYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fhAmt,_fhYrs,lcYr+1)):0)):0;
+        _lbW=_fwAmt>0?ri(_ppW?(_ppBal(_ppW,_fwAmt,lcYr+1)||0):(lcYr<_fwYrs?(_fwType==='equal_payment'?lbal(_fwAmt,_fwYrs,effRate(lcYr,_flatRates),lcYr+1):lbal_gankin(_fwAmt,_fwYrs,lcYr+1)):0)):0;
       }else{_lbH=ri(_fhAmt);_lbW=ri(_fwAmt);}
       lb=ri(Math.max(0,_lbH+_lbW));
     }else if(pairLoanMode){
       if(active){
-        _lbH=ri(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):0);
-        _lbW=ri(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):0);
+        _lbH=ri(_ppH?(_ppBal(_ppH,lhAmt,lcYr+1)||0):(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):0));
+        _lbW=ri(_ppW?(_ppBal(_ppW,lwAmt,lcYr+1)||0):(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):0));
       }else{_lbH=ri(lhAmt);_lbW=ri(lwAmt);}
       lb=ri(Math.max(0,_lbH+_lbW));
     }else{
-      lb=ri(active?Math.max(0,(eLoanType==='equal_payment'?lbal(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr+1):lbal_gankin(loanAmt,eLoanYrs,lcYr+1))):loanAmt);
+      lb=ri(active?Math.max(0,_ppS?(_ppBal(_ppS,loanAmt,lcYr+1)||0):(eLoanType==='equal_payment'?lbal(loanAmt,eLoanYrs,effRate(lcYr,eRates),lcYr+1):lbal_gankin(loanAmt,eLoanYrs,lcYr+1))):loanAmt);
     }
     R.lBal.push(lb);R.lBalH.push(_lbH);R.lBalW.push(_lbW);
 
@@ -2347,7 +2533,7 @@ function render(){
     // ★ autoLiq (自動資産取崩し) と autoLiqTax (譲渡益課税) を含めないと、
     //   手動編集発生時に年間収支から自動取崩し分が消えて計算ズレが発生
     const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','zaikeiRedeem','swapSell','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','swapTax','swapPayoff','swapBuy','housePurchase','autoLiqTax'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','swapTax','swapPayoff','swapBuy','housePurchase','prepayExp','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{
@@ -2359,7 +2545,7 @@ function render(){
     //   セル上書きも R 配列へ反映する。Excel出力は R をそのまま読むため、ここに無いと
     //   「画面は編集値・Excelは元の値」の不一致になっていた。
     //   ※expKeys には入れない（lRep/carTotal が既にあり合計が二重計上になるため）
-    ['lRepH','lRepW','carTotalH','carTotalW','carTotalS','carTotalNone'].forEach(key=>{
+    ['lRepH','lRepW','carTotalH','carTotalW','carTotalS','carTotalNone','prepayExpH','prepayExpW'].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{
         const c2=parseInt(col);

@@ -118,6 +118,14 @@ async function pageCollectAndDiff(){
         $('delivery-year').value=2031; if(typeof calcDelivery==='function')calcDelivery();
         calcLoanAmt();
       },
+      '繰上返済あり': function(){
+        const $=id=>document.getElementById(id);
+        setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+        $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=0;
+        setCostType('cash'); $('loan-h-amt').value=3000; $('loan-w-amt').value=1500; calcLoanAmt();
+        addPrepayRow('h',{yr:10,type:'term',mode:'amt',val:200,_noLive:true});
+        addPrepayRow('w',{yr:8,type:'reduce',mode:'amt',val:100,_noLive:true});
+      },
       'セル編集(上書き)': function(){
         const $=id=>document.getElementById(id);
         setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');

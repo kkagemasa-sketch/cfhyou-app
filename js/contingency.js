@@ -889,10 +889,13 @@ function _renderContingencyInner(){
     else{
       if((targetIsH&&mgDansinH)||(!targetIsH&&mgDansinW)){
         if(active&&lcYr>=0){
-          const hBal2=(isDead&&targetIsH&&mgDansinH)?0:(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0);
-          const wBal2=(isDead&&!targetIsH&&mgDansinW)?0:(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0);
-          const origHBal=lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0;
-          const origWBal=lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0;
+          // ★ 繰上返済スケジュールがあれば逐次計算の残高を使用
+          const _mgBalH=(el)=>{const s=window._prepaySchedules?.h;return s?(lcYr<=0?lhAmt:(s.yearEndBal[lcYr-1]??0)):(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0);};
+          const _mgBalW=(el)=>{const s=window._prepaySchedules?.w;return s?(lcYr<=0?lwAmt:(s.yearEndBal[lcYr-1]??0)):(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0);};
+          const hBal2=(isDead&&targetIsH&&mgDansinH)?0:_mgBalH();
+          const wBal2=(isDead&&!targetIsH&&mgDansinW)?0:_mgBalW();
+          const origHBal=_mgBalH();
+          const origWBal=_mgBalW();
           const origTotal=origHBal+origWBal;
           lctrlVal=origTotal>0?Math.round(baseCtrl*(hBal2+wBal2)/origTotal):0;
         }else{lctrlVal=0;}
@@ -1123,16 +1126,22 @@ function _renderContingencyInner(){
         if(isDead&&!targetIsH&&mgDansinW)wLA=false;
         const _lhType=_mgFlatPair?($('flat-loan-h-type')?.value||'equal_payment'):(document.getElementById('loan-h-type')?.value||'equal_payment');
         const _lwType=_mgFlatPair?($('flat-loan-w-type')?.value||'equal_payment'):(document.getElementById('loan-w-type')?.value||'equal_payment');
-        if(hLA&&lhAmt>0&&lcYr<lhYrs){_mlRepH=ri(_lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr));}
-        if(wLA&&lwAmt>0&&lcYr<lwYrs){_mlRepW=ri(_lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr));}
+        // ★ 繰上返済スケジュール(通常CFで構築)があれば逐次計算値を使用（団信で消えた側は0のまま）
+        const _mgPPH=window._prepaySchedules?.h, _mgPPW=window._prepaySchedules?.w;
+        if(hLA&&lhAmt>0){_mlRepH=_mgPPH?ri(_mgPPH.annualPay[lcYr]||0):(lcYr<lhYrs?ri(_lhType==='equal_payment'?mpay(lhAmt,lhYrs,effRate(lcYr,ratesH))*12:mpay_gankin_year(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr)):0);}
+        if(wLA&&lwAmt>0){_mlRepW=_mgPPW?ri(_mgPPW.annualPay[lcYr]||0):(lcYr<lwYrs?ri(_lwType==='equal_payment'?mpay(lwAmt,lwYrs,effRate(lcYr,ratesW))*12:mpay_gankin_year(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr)):0);}
       }
       lRep=_mlRepH+_mlRepW;
     }else{
-      if(active&&lcYr<loanYrs){
+      if(active&&lcYr<loanYrs+15){
         // 連帯債務 + 団信「両者」の場合、奥様死亡でも完済される（フラット35デュエット等）
         const jointDansinBoth=jointLoanMode&&document.getElementById('joint-dansin-both')?.checked;
         const dansinApplies=isDead&&mgDansin&&(targetIsH||jointDansinBoth);
-        if(!dansinApplies){const lt=_mgIsFlat?($('flat-loan-type')?.value||'equal_payment'):(document.getElementById('loan-type')?.value||'equal_payment');const r=effRate(lcYr,rates);lRep=ri(lt==='equal_payment'?mpay(loanAmt,loanYrs,r)*12:mpay_gankin_year(loanAmt,loanYrs,r,lcYr));}
+        if(!dansinApplies){
+          const _mgPPS=window._prepaySchedules?.s;
+          if(_mgPPS){lRep=ri(_mgPPS.annualPay[lcYr]||0);}
+          else if(lcYr<loanYrs){const lt=_mgIsFlat?($('flat-loan-type')?.value||'equal_payment'):(document.getElementById('loan-type')?.value||'equal_payment');const r=effRate(lcYr,rates);lRep=ri(lt==='equal_payment'?mpay(loanAmt,loanYrs,r)*12:mpay_gankin_year(loanAmt,loanYrs,r,lcYr));}
+        }
       }
     }
     MR.lRep.push(lRep);MR.lRepH.push(_mlRepH);MR.lRepW.push(_mlRepW);
@@ -1431,8 +1440,20 @@ function _renderContingencyInner(){
     MR.zaikeiExp=MR.zaikeiExp||[];
     MR.zaikeiExp.push(ri(zaikeiExpVal));
 
+    // ★ 繰上返済の支出（死亡側のローンは団信消滅のため以後停止・生存側は継続）
+    MR.prepayExp=MR.prepayExp||[];
+    {
+      const _pS=window._prepaySchedules?.s,_pH=window._prepaySchedules?.h,_pW=window._prepaySchedules?.w;
+      let _mgPp=0;
+      if(active){
+        if(_pS&&!(isDead&&targetIsH&&mgDansin))_mgPp+=(_pS.prepayOut[lcYr]||0); // 単独=ご主人契約想定
+        if(_pH&&!(isDead&&targetIsH&&mgDansinH))_mgPp+=(_pH.prepayOut[lcYr]||0);
+        if(_pW&&!(isDead&&!targetIsH&&mgDansinW))_mgPp+=(_pW.prepayOut[lcYr]||0);
+      }
+      MR.prepayExp.push(ri(_mgPp));
+    }
     // 支出合計（個別計算）
-    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0);
+    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0)+(MR.prepayExp[i]||0);
     children.forEach((c,ci)=>expTotal+=MR.edu[ci][i]);
     MR.expT.push(ri(expTotal));
 
@@ -1868,6 +1889,7 @@ function _renderContingencyInner(){
   h+=mgERow('家賃（引渡前）',MR.rent,null,'rent');
   if(pairLoanMode&&!_isSingle_mg){h+=mgERow('ローン返済(ご主人様)',MR.lRepH,N.lRepH,'lRepH');h+=mgERow('ローン返済(奥様)',MR.lRepW,N.lRepW,'lRepW');}
   else{h+=mgERow('住宅ローン返済',MR.lRep,N.lRep,'lRep');}
+  if(MR.prepayExp&&MR.prepayExp.some(v=>v>0))h+=mgERow('🔁 繰上返済',MR.prepayExp,N.prepayExp,'prepayExp');
   // 定期借地権付き物件：地代・解体準備金
   if(MR.chidai&&MR.chidai.some(v=>v>0))h+=mgERow('地代',MR.chidai,N.chidai,'chidai');
   if(MR.kaitai&&MR.kaitai.some(v=>v>0))h+=mgERow('解体準備金',MR.kaitai,N.kaitai,'kaitai');

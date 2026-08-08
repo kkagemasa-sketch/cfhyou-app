@@ -334,6 +334,20 @@ function _collectDynamic(){
       loanRemainYrs:document.getElementById('ecar-'+c+'-loan-remain-yrs')?.value||'',
     });
   });
+  // 繰上返済シミュレーションの入力行（単独s/ご主人h/奥様w）
+  d.prepays={};
+  ['s','h','w'].forEach(o=>{
+    d.prepays[o]=[];
+    document.querySelectorAll(`#pp-cont-${o}>[id^="pp-${o}-"]`).forEach(el=>{
+      const pid=el.id.split('-').pop();
+      d.prepays[o].push({
+        yr:document.getElementById(`pp-${o}-${pid}-yr`)?.value||'',
+        type:document.getElementById(`pp-${o}-${pid}-type`)?.value||'term',
+        mode:document.getElementById(`pp-${o}-${pid}-mode`)?.value||'amt',
+        val:document.getElementById(`pp-${o}-${pid}-val`)?.value||''
+      });
+    });
+  });
   d.pairLoanMode=pairLoanMode;
   d.jointLoanMode=jointLoanMode;
   d.fundingMode=document.getElementById('funding-mode')?.value||'detail'; // 資金計画モード（詳細/住宅ローン総額/現金一括購入）
@@ -707,6 +721,16 @@ function _restoreDynamic(d){
   // 引越タイプ復元
   const _moveTypeVal=d.fields?.['move-type'];
   if(_moveTypeVal && typeof setMoveType==='function') setMoveType(_moveTypeVal);
+  // 繰上返済シミュレーションの入力行を復元
+  ['s','h','w'].forEach(o=>{
+    const cont=document.getElementById(`pp-cont-${o}`);
+    if(cont)cont.innerHTML='';
+  });
+  if(d.prepays&&typeof addPrepayRow==='function'){
+    ['s','h','w'].forEach(o=>{
+      (d.prepays[o]||[]).forEach(r=>addPrepayRow(o,{yr:r.yr,type:r.type,mode:r.mode,val:r.val,_noLive:true}));
+    });
+  }
   // ローンモード復元: joint > pair > single の優先順
   if(typeof d.jointLoanMode!=='undefined'&&d.jointLoanMode) setLoanMode('joint');
   else if(typeof d.pairLoanMode!=='undefined') setLoanMode(d.pairLoanMode?'pair':'single');
@@ -1126,6 +1150,9 @@ function _resetSheetState(){
   // ★ バグ修正: 買い替え(住み替え)イベントのクリア漏れ → 新規作成で前のお客様のデータが残留していた
   if($('swap-events-cont'))$('swap-events-cont').innerHTML='';
   if(typeof _swapCnt!=='undefined')_swapCnt=0;
+  // 繰上返済シミュレーションの入力行もクリア（前客データ残留防止）
+  ['s','h','w'].forEach(o=>{const c=$(`pp-cont-${o}`);if(c)c.innerHTML='';});
+  if(typeof _ppRowCnt!=='undefined')_ppRowCnt=0;
   // ★ 自動チェックで発見: 以下の手入力欄も「復元」では消すが「新規作成」では消えず、
   //    前のお客様のデータが残留していた（swap-events-cont と同じ型）。
   // 繰上返済（手入力ステップ）

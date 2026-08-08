@@ -558,6 +558,7 @@ async function exportExcelMG(){
   addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent,null);
   if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(ご主人様)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
   else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
+  if(MR.prepayExp&&MR.prepayExp.some(v=>v>0))addE(_rl('mg-prepayExp','🔁 繰上返済'),MR.prepayExp);
   // 定期借地権付き物件：地代・解体準備金
   if(MR.chidai&&MR.chidai.some(v=>v>0))addE(_rl('mg-chidai','地代'),MR.chidai);
   if(MR.kaitai&&MR.kaitai.some(v=>v>0))addE(_rl('mg-kaitai','解体準備金'),MR.kaitai);
@@ -1674,6 +1675,13 @@ async function exportExcel(){
   addE(_rl('rent','家賃（引渡前）'),R.rent);
   if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(ご主人様)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
   else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
+  // 繰上返済（画面と同一行構成）
+  if(pairLoanMode&&!_isSingle_e){
+    if(R.prepayExpH&&R.prepayExpH.some(v=>v>0)) addE(_rl('prepayExpH','🔁 繰上返済(ご主人様)'),R.prepayExpH);
+    if(R.prepayExpW&&R.prepayExpW.some(v=>v>0)) addE(_rl('prepayExpW','🔁 繰上返済(奥様)'),R.prepayExpW);
+  } else if(R.prepayExp&&R.prepayExp.some(v=>v>0)){
+    addE(_rl('prepayExp','🔁 繰上返済'),R.prepayExp);
+  }
   if(R.housePurchase&&R.housePurchase.some(v=>v>0)) addE('💵 住宅購入（一括）',R.housePurchase);
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))addE(_rl('chidai','地代'),R.chidai);
