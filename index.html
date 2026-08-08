@@ -393,11 +393,14 @@ window.closeAboutModal=closeAboutModal;
           if(_hCalcAnchor && _hCalcOrigParent && _hCalcAnchor.parentNode===_hCalcOrigParent){
             _hCalcOrigParent.insertBefore(pop, _hCalcAnchor);
           }
-          pop.style.position='absolute';
-          pop.style.top='calc(100% + 6px)';
-          pop.style.left='0';
-          pop.style.right='0';
+          // ★ 被り防止: 浮かせる(absolute)のをやめて流し込み(static)に。
+          //   開くと下の内容(収入の段階1など)が押し下がるので、入力欄に重ならない。
+          pop.style.position='static';
+          pop.style.top='';
+          pop.style.left='';
+          pop.style.right='';
           pop.style.width='';
+          pop.style.marginTop='6px';
           pop.style.zIndex='';
           pop.dataset.floating='0';
         }
@@ -701,11 +704,13 @@ window.closeAboutModal=closeAboutModal;
               if(_wCalcAnchor && _wCalcOrigParent && _wCalcAnchor.parentNode===_wCalcOrigParent){
                 _wCalcOrigParent.insertBefore(pop, _wCalcAnchor);
               }
-              pop.style.position='absolute';
-              pop.style.top='calc(100% + 6px)';
-              pop.style.left='0';
-              pop.style.right='0';
+              // ★ 被り防止: 流し込み(static)方式（ご主人様側と同じ）
+              pop.style.position='static';
+              pop.style.top='';
+              pop.style.left='';
+              pop.style.right='';
               pop.style.width='';
+              pop.style.marginTop='6px';
               pop.style.zIndex='';
               pop.dataset.floating='0';
             }
