@@ -1373,7 +1373,8 @@ function mgQA_recalcNet(tabId, typeOverride){
     isFuyo = checked && checked.value === 'fuyo';
   }
   if(typeof calcTakeHomeBase === 'function'){
-    calcTakeHomeBase(gross, `mgqa-nc-result-${tabId}`, `mgqa-nc-detail-${tabId}`, isFuyo);
+    // 万一後の遺族収入: 配偶者は他界しているため配偶者控除なし（false固定）
+    calcTakeHomeBase(gross, `mgqa-nc-result-${tabId}`, `mgqa-nc-detail-${tabId}`, isFuyo, undefined, false);
   }
 }
 

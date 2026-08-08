@@ -80,7 +80,16 @@ function setCalcType(person,type){
     calcTakeHomeW();
   }
 }
-function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age){
+// 配偶者控除の自動判定（住宅ローン控除の「推定額面」逆算と同じ判定式に統一）
+// selfPerson: 'h'|'w'。単身世帯/共働き(配偶者の手取り103万超)は控除なし。
+function _autoSpouseDed(selfGross, selfPerson){
+  if(typeof householdType!=='undefined'&&householdType==='single')return false;
+  const spouseNet=fv(selfPerson==='h'?'w-is-1-net-from':'h-is-1-net-from')||0;
+  // 手取り103万以下は扶養内(額面≒手取り)、103万超は配偶者控除の対象外
+  const spouseGrossEst = spouseNet<=103 ? spouseNet : 9999;
+  return canApplySpouseDed(selfGross, spouseGrossEst);
+}
+function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
   const result = document.getElementById(resultId);
   const detail = document.getElementById(detailId);
   if(!gross||gross<=0){
@@ -96,8 +105,12 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age){
   const grossSyotoku = Math.max(0, gross - kyuyo);
   const [kisoIt, kisoJu] = calcKisoDed(grossSyotoku);
   const taxableBase = Math.max(0, grossSyotoku - shakai - kisoIt);
-  // 配偶者控除：参考計算機では一律適用（簡略）
-  const taxable = Math.max(0, taxableBase - 38);
+  // ★ 配偶者控除: 旧コードは「一律適用（簡略）」だったため、共働き世帯では
+  //   住宅ローン控除の推定額面(共働き=控除なしで逆算)と約17万円ズレていた。
+  //   呼び出し元で判定した spouseDed に従う（判定式は控除側 canApplySpouseDed と同一）。
+  const _spDedIt = spouseDed ? 38 : 0;
+  const _spDedJu = spouseDed ? 33 : 0;
+  const taxable = Math.max(0, taxableBase - _spDedIt);
   let income_tax = 0;
   // 扶養内パート：給与収入103万以下は所得税0（給与所得控除55万+基礎控除48万=103万）
   if(!isFuyo || gross > 103){
@@ -108,7 +121,7 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age){
   if(isFuyo && gross <= 100){
     jumin = 0; // 住民税非課税
   } else {
-    const juminTaxable = Math.max(0, grossSyotoku - shakai - kisoJu - 33);
+    const juminTaxable = Math.max(0, grossSyotoku - shakai - kisoJu - _spDedJu);
     jumin = calcJuminTax(juminTaxable);
   }
   const takeHome = Math.round((gross - shakai - income_tax - jumin) * 10) / 10;
@@ -119,6 +132,7 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age){
     const itaxD=Math.round(income_tax*10)/10;
     const juminD=Math.round(jumin*10)/10;
     let html = `社会保険料：<strong>${shakaiD.toLocaleString()}万円</strong>　所得税：<strong>${itaxD.toLocaleString()}万円</strong>　住民税：<strong>${juminD.toLocaleString()}万円</strong>`;
+    html += `<div style="font-size:10px;color:var(--muted);margin-top:3px">配偶者控除：${spouseDed?'適用':'なし'}（家族構成・配偶者の収入から自動判定。住宅ローン控除の推定額面と同じ基準）</div>`;
     // 扶養内パートで壁を超えている場合に注意表示
     if(isFuyo && gross > 130){
       html += `<div style="color:#d63a2a;font-weight:600;margin-top:4px">⚠ 年収130万超：社会保険の扶養から外れる可能性があります</div>`;
@@ -131,12 +145,12 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age){
 function calcTakeHomeW(){
   // 奥様の年齢を自動取得（未入力時は40歳想定）
   const age = parseInt(document.getElementById('wife-age')?.value);
-  calcTakeHomeBase(fv('w-calc-gross'),'w-calc-result','w-calc-detail',_calcTypeW==='fuyo', isNaN(age)?undefined:age);
+  calcTakeHomeBase(fv('w-calc-gross'),'w-calc-result','w-calc-detail',_calcTypeW==='fuyo', isNaN(age)?undefined:age, _autoSpouseDed(fv('w-calc-gross'),'w'));
 }
 function calcTakeHome(){
   // ご主人様の年齢を自動取得（未入力時は40歳想定）
   const age = parseInt(document.getElementById('husband-age')?.value);
-  calcTakeHomeBase(fv('calc-gross'),'calc-result','calc-detail',_calcTypeH==='fuyo', isNaN(age)?undefined:age);
+  calcTakeHomeBase(fv('calc-gross'),'calc-result','calc-detail',_calcTypeH==='fuyo', isNaN(age)?undefined:age, _autoSpouseDed(fv('calc-gross'),'h'));
 }
 
 // ===== 年金概算計算 =====
