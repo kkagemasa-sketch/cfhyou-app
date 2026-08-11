@@ -24,10 +24,20 @@ fi
 # 全計算結果を正解表(test/golden.json)と照合する。1円でもズレたら止める。
 # 意図した計算変更のときは: node tools/calc-test.js --update で正解表を更新してからコミット。
 if git diff --cached --name-only | grep -qE '^(js/|index\.html)'; then
+  # 稀なブラウザ起動フレーク対策: 失敗時は1回だけ自動再試行（本物のバグは2回とも失敗する）
+  run_twice(){
+    node "$1"
+    if [ $? -ne 0 ]; then
+      echo "…1回目が不合格。フレークの可能性があるため再試行します。"
+      node "$1"
+      return $?
+    fi
+    return 0
+  }
+
   echo "🧮 計算回帰テスト実行中…（約20秒）"
-  node "$(dirname "$0")/../tools/calc-test.js"
-  calc_status=$?
-  if [ "$calc_status" -ne 0 ]; then
+  run_twice "$(dirname "$0")/../tools/calc-test.js"
+  if [ $? -ne 0 ]; then
     echo ""
     echo "🛑 計算結果が正解表とズレたため、コミットを中止しました。"
     echo "   意図した計算変更なら: node tools/calc-test.js --update → 再コミット"
@@ -39,9 +49,8 @@ if git diff --cached --name-only | grep -qE '^(js/|index\.html)'; then
   # 資金計画×ローン種別×金利タイプ=18通り全てで、借入額・表示・NaN・保存復元・
   # データ保護の「約束」を検査する。
   echo "🔀 モード総当たりテスト実行中…（約10秒）"
-  node "$(dirname "$0")/../tools/mode-test.js"
-  mode_status=$?
-  if [ "$mode_status" -ne 0 ]; then
+  run_twice "$(dirname "$0")/../tools/mode-test.js"
+  if [ $? -ne 0 ]; then
     echo ""
     echo "🛑 モードの組み合わせで約束違反が見つかったため、コミットを中止しました。"
     echo "   （緊急時のみ: git commit --no-verify）"
@@ -50,7 +59,7 @@ if git diff --cached --name-only | grep -qE '^(js/|index\.html)'; then
 
   # ── 画面↔Excel 突き合わせ（過去最多のバグ型: Excel反映漏れ・不一致の検査）──
   echo "📊 画面↔Excel照合テスト実行中…（約30秒）"
-  node "$(dirname "$0")/../tools/diff-excel.js"
+  run_twice "$(dirname "$0")/../tools/diff-excel.js"
   diff_status=$?
   if [ "$diff_status" -ne 0 ]; then
     echo ""

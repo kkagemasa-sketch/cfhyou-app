@@ -1362,5 +1362,8 @@ body.cf-panning .tbl-wrap, body.cf-panning .tbl-wrap *{cursor:grabbing!important
    仕切り(◀/▶ボタン付き)は残し、全画面のまま入力パネルを出し入れできる */
 body.cf-full .hdr{display:none!important}
 body.cf-full:not(.cf-full-input) .panel-l{display:none!important}
+/* ★ バグ修正: 通常時に◀で隠した(.hidden)後に全画面へ入ると、▶を押しても .hidden の
+   display:none!important が勝ってパネルが出なかった。全画面中の表示指示を最優先にする */
+body.cf-full.cf-full-input .panel-l{display:flex!important}
 body.cf-full .panel-r{min-width:0}
 #btn-cf-full.on{background:rgba(255,80,80,.35)!important;border-color:rgba(255,120,120,.7)!important}

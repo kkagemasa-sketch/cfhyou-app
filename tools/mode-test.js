@@ -205,6 +205,30 @@ function pageRunCombo(combo){
     if(leakFails.length){ bad++; console.log('❌ CF表間干渉テスト(複製→片方編集→切替): '+leakFails.join(' / ')); }
     else console.log('  ✓ CF表間干渉テスト(複製→片方編集→切替): Bは無傷');
 
+    // ── 入力パネル表示の状態遷移テスト ──
+    // 過去バグ: 通常時に◀で隠した後に全画面へ入ると、▶を押してもパネルが出なかった
+    const panel=await page.evaluate(()=>{
+      const $=id=>document.getElementById(id);
+      const pl=document.querySelector('.panel-l'), tp=$('btn-toggle-panel');
+      const vis=()=>pl.offsetWidth>0;
+      const f=[];
+      const ck=(cond,msg)=>{if(!cond)f.push(msg);};
+      // 初期状態へ
+      document.body.classList.remove('cf-full','cf-full-input');
+      pl.classList.remove('hidden'); tp.textContent='◀';
+      ck(vis(),'初期状態でパネルが見えない');
+      tp.click(); ck(!vis(),'◀で隠れない');
+      $('btn-cf-full').click(); ck(!vis(),'全画面開始時にパネルが出ている');
+      tp.click(); ck(vis(),'★全画面中に▶を押してもパネルが出ない（過去バグ）');
+      tp.click(); ck(!vis(),'全画面中に◀で隠れない');
+      document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+      ck(!vis(),'全画面解除で以前の非表示状態が維持されない');
+      tp.click(); ck(vis(),'通常時に▶で再表示できない');
+      return f;
+    });
+    if(panel.length){ bad++; console.log('❌ 入力パネル状態遷移テスト: '+panel.join(' / ')); }
+    else console.log('  ✓ 入力パネル状態遷移テスト(通常⇄全画面×開閉): 全状態OK');
+
     if(bad){
       console.log(`\n🛑 モード総当たりテスト不合格: ${count}通り中 ${bad}通りで約束違反。`);
       process.exit(1);
