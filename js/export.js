@@ -901,6 +901,19 @@ async function exportExcelMG(){
   });
 
   const lastCol=disp+2; // 合計列index
+  // ★ バグ修正: 預貯金残高セルはExcel上「購入直後＋年間収支」の数式で表示されるため、
+  //   色判定も同じ積み上げ値で行う（内部配列の値で判定すると、表示がプラスなのに赤になる年が出る）
+  let _savColorChain=null;
+  {
+    const _tpOf=t=>(t&&typeof t==='object')?t.type:t;
+    const _sr=types.findIndex(t=>_tpOf(t)==='savings');
+    const _br=types.findIndex(t=>_tpOf(t)==='balance');
+    if(_sr>=0&&_br>=0){
+      _savColorChain={}; let acc=Number(rows[_sr][1])||0;
+      for(let c=2;c<=disp+1;c++){acc+=Number(rows[_br][c])||0;_savColorChain[c]=acc;}
+      _savColorChain[disp+2]=_savColorChain[disp+1];
+    }
+  }
   rows.forEach((row,r)=>{
     const rawTp=types[r];
     const tp=(rawTp&&typeof rawTp==='object')?rawTp.type:rawTp;
@@ -961,8 +974,10 @@ async function exportExcelMG(){
         fObj.color={rgb:cell.v<0?C.red:'FF0d8a20'};
       }
       // 預貯金残高の赤字（赤文字）
-      if(tp==='savings'&&c>=2&&typeof cell.v==='number'&&cell.v<0){
-        fObj.color={rgb:C.red};
+      if(tp==='savings'&&c>=2){
+        // ★ Excelに表示される値（数式の積み上げ）でマイナス判定。プラスは白のまま
+        const _sv=(_savColorChain&&_savColorChain[c]!==undefined)?_savColorChain[c]:cell.v;
+        if(typeof _sv==='number'&&_sv<0){fObj.color={rgb:C.red};}
       }
       // 0値はグレー
       if((tp==='inc'||tp==='exp'||tp==='edu')&&c>=2&&typeof cell.v==='number'&&cell.v===0){
@@ -1056,7 +1071,8 @@ async function exportExcelMG(){
         else if(label==='遺族年金'&&N.survPension)normalVal=N.survPension[colIdx];
         else if(label==='駐車場代'&&N.prk)normalVal=N.prk[colIdx];
         else if(label==='車両費・車検'&&N.carTotal)normalVal=N.carTotal[colIdx];
-        else if(tp==='savings'&&N.sav)normalVal=N.sav[colIdx];
+        // ★ 預貯金残高は「通常CFとの差分赤強調」の対象から除外（ユーザー要望:
+        //   プラス=白/マイナス=赤のみ。差分強調が効くと「プラスなのに赤」に見えるため）
         if(normalVal!==null&&Math.round(normalVal)!==Math.round(cell.v)){
           fObj.color={rgb:C.red};fObj.bold=true;
         }
@@ -2028,6 +2044,19 @@ async function exportExcel(){
   });
 
   const lastCol=disp+2; // 合計列index
+  // ★ バグ修正: 預貯金残高セルはExcel上「購入直後＋年間収支」の数式で表示されるため、
+  //   色判定も同じ積み上げ値で行う（内部配列の値で判定すると、表示がプラスなのに赤になる年が出る）
+  let _savColorChain=null;
+  {
+    const _tpOf=t=>(t&&typeof t==='object')?t.type:t;
+    const _sr=types.findIndex(t=>_tpOf(t)==='savings');
+    const _br=types.findIndex(t=>_tpOf(t)==='balance');
+    if(_sr>=0&&_br>=0){
+      _savColorChain={}; let acc=Number(rows[_sr][1])||0;
+      for(let c=2;c<=disp+1;c++){acc+=Number(rows[_br][c])||0;_savColorChain[c]=acc;}
+      _savColorChain[disp+2]=_savColorChain[disp+1];
+    }
+  }
   rows.forEach((row,r)=>{
     const rawTp=types[r];
     const tp=(rawTp&&typeof rawTp==='object')?rawTp.type:rawTp;
@@ -2088,8 +2117,11 @@ async function exportExcel(){
         fObj.color={rgb:cell.v<0?C.red:'FF0d8a20'};
       }
       // 預貯金残高の赤字（赤文字）
-      if(tp==='savings'&&c>=1&&typeof cell.v==='number'&&cell.v<0){
-        fObj.color={rgb:C.red};
+      // ★ Excelに表示される値（数式の積み上げ）でマイナス判定。プラスは白のまま
+      //   c=1(購入直後)は数式でないため従来どおり実値で判定
+      if(tp==='savings'&&c>=1){
+        const _sv=(c>=2&&_savColorChain&&_savColorChain[c]!==undefined)?_savColorChain[c]:cell.v;
+        if(typeof _sv==='number'&&_sv<0){fObj.color={rgb:C.red};}
       }
       // 0値はグレー
       if((tp==='inc'||tp==='exp'||tp==='edu')&&c>=2&&typeof cell.v==='number'&&cell.v===0){

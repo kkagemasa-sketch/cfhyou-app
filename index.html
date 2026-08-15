@@ -402,6 +402,7 @@ window.closeAboutModal=closeAboutModal;
           pop.style.width='';
           pop.style.marginTop='6px';
           pop.style.zIndex='';
+          pop.style.zoom='';
           pop.dataset.floating='0';
         }
         function toggleCalcPopup(){
@@ -439,11 +440,16 @@ window.closeAboutModal=closeAboutModal;
               _hCalcOrigParent.insertBefore(_hCalcAnchor, pop);
             }
             document.body.appendChild(pop);
+            // ★ サイズ不変: 入力パネルの縮小率(zoom)をポップにも適用し、
+            //   定位置と浮遊時で見た目の大きさが変わらないようにする
+            const _z=(window._panelZoom||100)/100;
+            pop.style.zoom=_z;
             pop.style.position='fixed';
-            pop.style.top=rect.top+'px';
-            pop.style.left=rect.left+'px';
+            pop.style.marginTop='0';
+            pop.style.top=(rect.top/_z)+'px';
+            pop.style.left=(rect.left/_z)+'px';
             pop.style.right='auto';
-            pop.style.width=rect.width+'px';
+            pop.style.width=(rect.width/_z)+'px';
             pop.style.zIndex='100001';
             pop.dataset.floating='1';
           }
@@ -462,11 +468,13 @@ window.closeAboutModal=closeAboutModal;
             const pop=document.getElementById('calc-popup');
             if(!pop) return;
             const dx=cx-_startX, dy=cy-_startY;
+            // ポップに zoom がかかっている場合、left/top は zoom 後の座標系なので画面座標を換算する
+            const _z=parseFloat(pop.style.zoom)||1;
             const popW=pop.offsetWidth;
-            const maxLeft=Math.max(0,window.innerWidth-50);
-            const maxTop=Math.max(0,window.innerHeight-30);
-            let nL=Math.min(Math.max(-popW+80, _origLeft+dx), maxLeft);
-            let nT=Math.min(Math.max(0, _origTop+dy), maxTop);
+            const maxLeft=Math.max(0,window.innerWidth/_z-50);
+            const maxTop=Math.max(0,window.innerHeight/_z-30);
+            let nL=Math.min(Math.max(-popW+80, (_origLeft+dx)/_z), maxLeft);
+            let nT=Math.min(Math.max(0, (_origTop+dy)/_z), maxTop);
             pop.style.left=nL+'px';
             pop.style.top=nT+'px';
           }
@@ -712,6 +720,7 @@ window.closeAboutModal=closeAboutModal;
               pop.style.width='';
               pop.style.marginTop='6px';
               pop.style.zIndex='';
+              pop.style.zoom='';
               pop.dataset.floating='0';
             }
             function toggleWCalcPopup(){
@@ -745,11 +754,15 @@ window.closeAboutModal=closeAboutModal;
                   _wCalcOrigParent.insertBefore(_wCalcAnchor, pop);
                 }
                 document.body.appendChild(pop);
+                // ★ サイズ不変: 入力パネルの縮小率をポップにも適用（ご主人様側と同じ）
+                const _z=(window._panelZoom||100)/100;
+                pop.style.zoom=_z;
                 pop.style.position='fixed';
-                pop.style.top=rect.top+'px';
-                pop.style.left=rect.left+'px';
+                pop.style.marginTop='0';
+                pop.style.top=(rect.top/_z)+'px';
+                pop.style.left=(rect.left/_z)+'px';
                 pop.style.right='auto';
-                pop.style.width=rect.width+'px';
+                pop.style.width=(rect.width/_z)+'px';
                 pop.style.zIndex='100001';
                 pop.dataset.floating='1';
               }
@@ -765,11 +778,13 @@ window.closeAboutModal=closeAboutModal;
                 if(!_dragging) return;
                 const pop=document.getElementById('w-calc-popup'); if(!pop) return;
                 const dx=cx-_startX, dy=cy-_startY;
+                // ポップに zoom がかかっている場合、left/top は zoom 後の座標系なので画面座標を換算する
+                const _z=parseFloat(pop.style.zoom)||1;
                 const popW=pop.offsetWidth;
-                const maxLeft=Math.max(0,window.innerWidth-50);
-                const maxTop=Math.max(0,window.innerHeight-30);
-                let nL=Math.min(Math.max(-popW+80,_origLeft+dx),maxLeft);
-                let nT=Math.min(Math.max(0,_origTop+dy),maxTop);
+                const maxLeft=Math.max(0,window.innerWidth/_z-50);
+                const maxTop=Math.max(0,window.innerHeight/_z-30);
+                let nL=Math.min(Math.max(-popW+80,(_origLeft+dx)/_z),maxLeft);
+                let nT=Math.min(Math.max(0,(_origTop+dy)/_z),maxTop);
                 pop.style.left=nL+'px'; pop.style.top=nT+'px';
               }
               function _onEnd(){ _dragging=false; }
@@ -2069,7 +2084,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/cf-table.js?v=69"></script>
 <script src="js/cf-highlight.js?v=3"></script>
 <script src="js/graphs.js?v=5"></script>
-<script src="js/export.js?v=69"></script>
+<script src="js/export.js?v=70"></script>
 <script src="js/loan-plan.js?v=20"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=5"></script>
