@@ -51,7 +51,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       <span style="font-size:11px;color:var(--muted)">全${total}年間 / ご主人様 ${hAge}〜${hAge+total-1}歳</span>
     </div>
     <div style="display:flex;gap:6px;align-items:center">
-      <button onclick="toggleAutoLiq()" title="預貯金マイナス時に有価証券を自動取崩して補填する機能のON/OFF" style="${_liqBtnStyle};padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_liqBtnLabel}</button>
+      <button onclick="toggleAutoLiq()" title="預貯金マイナス時に財形貯蓄・有価証券を自動取崩して補填する機能のON/OFF（財形→課税→NISAの順）" style="${_liqBtnStyle};padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_liqBtnLabel}</button>
       <button id="cf-summary-toggle" onclick="toggleCfSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:#eef5ff;color:#1e5a9a;border:1px solid #c8d6e8;padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_togLabel}</button>
     </div>
   </div>`;

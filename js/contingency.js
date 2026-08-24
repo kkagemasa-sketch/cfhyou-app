@@ -623,11 +623,36 @@ function _renderContingencyInner(){
         liquidations:[]
       });
     });
+    // 財形貯蓄（利回り0%・非課税）— 自動取崩しの対象（優先順位は有価証券より先）
+    {
+      const zbal=fv(`zaikei-${p}-bal`)||0;
+      const zm=fv(`zaikei-${p}-monthly`)||0;
+      if(zbal>0||zm>0){
+        const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
+        const ze=iv(`zaikei-${p}-end`)||0;
+        const zr=iv(`zaikei-${p}-redeem`)||0;
+        const _zEnd=ze>0?ze:pRetAge;
+        _mgSecurityState.push({
+          sid:'zk', p, type:'zaikei', lbl:`財形貯蓄(${pLbl})`, isNisa:false, baseAge:pBaseAge,
+          bal:zbal, monthly:zm,
+          endAge:_zEnd, rate:0,
+          redeemAge:zr>0?zr:_zEnd,
+          basisInput:0,
+          liquidations:[]
+        });
+      }
+    }
   });
   // 生(raw)将来価値
   function _mgRawFV(s,i){
     const pAge = (s.p==='h'?hAge:wAge)+i;
     if(s.redeemAge>0 && pAge>=s.redeemAge)return 0;
+    if(s.type==='zaikei'){
+      // 財形: 利回り0%。積立は「積立終了 or 解約」の早い方まで（通常CFと同一式）
+      const stopAge=Math.min(s.endAge,s.redeemAge);
+      const contribYrs=Math.min(i+1,Math.max(0,stopAge-s.baseAge));
+      return s.bal + s.monthly*12*contribYrs;
+    }
     if(s.type==='accum'){
       const yrs=i+1;
       const mr=s.rate/12;
@@ -658,7 +683,12 @@ function _renderContingencyInner(){
   function _mgEffCost(s,i){
     const pAge=(s.p==='h'?hAge:wAge)+i;
     let cost;
-    if(s.type==='accum'){
+    if(s.type==='zaikei'){
+      // 財形: 元本=評価額（利回り0%）→ 譲渡益ゼロで課税なし
+      const stopAge=Math.min(s.endAge,s.redeemAge);
+      const contribYrs=Math.min(i+1,Math.max(0,stopAge-s.baseAge));
+      cost = s.bal + s.monthly*12*contribYrs;
+    } else if(s.type==='accum'){
       const effYrs=(s.endAge>0&&pAge>s.endAge)?(s.endAge-s.baseAge+1):(i+1);
       cost = (s.basisInput>0?s.basisInput:s.bal) + s.monthly*12*Math.max(0,effYrs);
     } else {
@@ -672,9 +702,11 @@ function _renderContingencyInner(){
   function _mgAutoLiquidate(shortfall, year){
     if(shortfall<=0) return {gross:0,tax:0};
     let totalGross=0, totalTax=0;
+    // 優先順位: 財形貯蓄 → 課税口座 → NISA口座（通常CFと同じ）
     const groups = [
-      _mgSecurityState.filter(s=>!s.isNisa),
-      _mgSecurityState.filter(s=>s.isNisa)
+      _mgSecurityState.filter(s=>s.type==='zaikei'),
+      _mgSecurityState.filter(s=>s.type!=='zaikei'&&!s.isNisa),
+      _mgSecurityState.filter(s=>s.type!=='zaikei'&&s.isNisa)
     ];
     for(const group of groups){
       if(shortfall<=0.01) break;
@@ -1090,6 +1122,17 @@ function _renderContingencyInner(){
         if(p2===_deadP)return;
         zaikeiRedeemVal+=(row.vals[i]||0);
       });
+    }
+    // 万一CF内の自動取崩しで既に受け取った財形分は、解約金から差し引く（二重計上防止）
+    if(zaikeiRedeemVal>0){
+      let _zLiqMg=0;
+      _mgSecurityState.forEach(s=>{
+        if(s.type!=='zaikei')return;
+        const pA=(s.p==='h'?hAge:wAge)+i;
+        if(pA!==s.redeemAge)return;
+        for(const q of s.liquidations){if(q.year<=i)_zLiqMg+=q.gross;}
+      });
+      if(_zLiqMg>0)zaikeiRedeemVal=Math.max(0,zaikeiRedeemVal-Math.round(_zLiqMg));
     }
     MR.zaikeiRedeem=MR.zaikeiRedeem||[];
     MR.zaikeiRedeem.push(ri(zaikeiRedeemVal));
@@ -1585,16 +1628,73 @@ function _renderContingencyInner(){
     if(mgOverrides['carTotal']){
       Object.entries(mgOverrides['carTotal']).forEach(([col,val])=>{const c2=parseInt(col);if(MR.carTotal&&c2<MR.carTotal.length)MR.carTotal[c2]=val;});
     }
+    // ★ バグ修正（通常CFと同じ）: セル上書き・カスタム行はこの後処理で初めて収支へ反映
+    //   されるため、初回計算で凍結した自動取崩し額のままでは預貯金がマイナス固定になる。
+    //   → 上書き後の本当の収支で取崩しを年ごとに決め直す。
+    const _mgReLiq = _mgAutoLiqEnabled;
+    const _mgOldLiqsBk = new Map();
+    if(_mgReLiq){
+      _mgSecurityState.forEach(s=>{_mgOldLiqsBk.set(s, s.liquidations.slice()); s.liquidations.length=0;});
+    }
+    const _mgIncKeysNoLiq = incKeys.filter(k=>k!=='autoLiq');
+    const _mgExpKeysNoLiq = expKeys.filter(k=>k!=='autoLiqTax');
     let newSav=initSav;
     for(let i=0;i<MR.incT.length;i++){
-      if(mgOverrides['incT']?.[i]!==undefined){MR.incT[i]=mgOverrides['incT'][i];}
-      else{let t=incKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));if(MR.insAnnuityRows)MR.insAnnuityRows.forEach(row=>t+=(row.vals[i]||0));mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.incT[i]=t;}
-      if(mgOverrides['expT']?.[i]!==undefined){MR.expT[i]=mgOverrides['expT'][i];}
-      else{let t=expKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(MR.edu[ci]?.[i]||0));mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.expT[i]=t;}
+      const _mgIncPinned = mgOverrides['incT']?.[i]!==undefined;
+      const _mgExpPinned = mgOverrides['expT']?.[i]!==undefined;
+      if(_mgReLiq && !_mgIncPinned && !_mgExpPinned){
+        let tInc=_mgIncKeysNoLiq.reduce((s,k)=>s+(MR[k]?.[i]||0),0);
+        if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>tInc+=(row.vals[i]||0));
+        if(MR.insAnnuityRows)MR.insAnnuityRows.forEach(row=>tInc+=(row.vals[i]||0));
+        mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{tInc+=(mgOverrides[r.id]?.[i]||0);});
+        let tExp=_mgExpKeysNoLiq.reduce((s,k)=>s+(MR[k]?.[i]||0),0);
+        children.forEach((_ch,ci)=>tExp+=(MR.edu[ci]?.[i]||0));
+        mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{tExp+=(mgOverrides[r.id]?.[i]||0);});
+        const _tentSav2 = newSav + tInc - tExp;
+        let _g2=0,_t2=0;
+        if(_tentSav2 < -0.5){
+          const _liq2=_mgAutoLiquidate(-_tentSav2, i);
+          _g2=_liq2.gross; _t2=_liq2.tax;
+        }
+        MR.autoLiq[i]=ri(_g2); MR.autoLiqTax[i]=ri(_t2);
+        MR.incT[i]=ri(tInc+_g2); MR.expT[i]=ri(tExp+_t2);
+      }else{
+        if(_mgReLiq){
+          // 合計セル直接上書きの年は初回計算の取崩し履歴を復元（以降の年の残高計算を保つ）
+          _mgSecurityState.forEach(s=>{(_mgOldLiqsBk.get(s)||[]).forEach(q=>{if(q.year===i)s.liquidations.push(q);});});
+        }
+        if(_mgIncPinned){MR.incT[i]=mgOverrides['incT'][i];}
+        else{let t=incKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));if(MR.insAnnuityRows)MR.insAnnuityRows.forEach(row=>t+=(row.vals[i]||0));mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.incT[i]=t;}
+        if(_mgExpPinned){MR.expT[i]=mgOverrides['expT'][i];}
+        else{let t=expKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(MR.edu[ci]?.[i]||0));mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.expT[i]=t;}
+      }
       MR.bal[i]=MR.incT[i]-MR.expT[i];
       newSav+=MR.bal[i]+(MR.savExtra[i]||0);
+      // 丸め誤差吸収（初回計算と同条件のスナップ）
+      const _mgLiqG_i=MR.autoLiq?.[i]||0;
+      const _mgPrevSav=i>0?MR.sav[i-1]:initSav;
+      const _mgWasNearZeroR=i>0&&Math.abs(_mgPrevSav)<=1;
+      if((_mgLiqG_i>0||_mgWasNearZeroR)&&newSav>-2&&newSav<2&&_mgAutoLiqEnabled){newSav=0;}
       MR.sav[i]=ri(newSav);
       MR.totalAsset[i]=MR.sav[i]+ri(MR.finAsset[i]||0);
+    }
+    // 取崩しを決め直した分、その他金融資産の残高（合計）も差し引き直す
+    if(_mgReLiq){
+      const _redSum=(list,rate,j)=>{let x=0;for(const q of list){if(q.year<=j)x+=q.gross*Math.pow(1+rate,j-q.year);}return x;};
+      _mgSecurityState.forEach(s=>{
+        const oldL=_mgOldLiqsBk.get(s)||[];
+        if(oldL.length===0&&s.liquidations.length===0)return;
+        for(let j=0;j<MR.finAsset.length;j++){
+          const d=_redSum(s.liquidations,s.rate,j)-_redSum(oldL,s.rate,j);
+          if(Math.abs(d)<0.5)continue;
+          MR.finAsset[j]=Math.max(0,ri((MR.finAsset[j]||0)-d));
+          if(MR.finAssetBase)MR.finAssetBase[j]=Math.max(0,ri((MR.finAssetBase[j]||0)-d));
+        }
+      });
+      for(let j=0;j<MR.totalAsset.length;j++){
+        MR.totalAsset[j]=MR.sav[j]+ri(MR.finAsset[j]||0);
+        if(MR.totalAssetBase)MR.totalAssetBase[j]=MR.sav[j]+ri(MR.finAssetBase?.[j]||0);
+      }
     }
   }
 

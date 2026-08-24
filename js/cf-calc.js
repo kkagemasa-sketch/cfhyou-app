@@ -584,7 +584,7 @@ function render(){
   const _secBalByP={h:_secBalHEls,w:_secBalWEls};
   const _secStkByP={h:_secStkHEls,w:_secStkWEls};
 
-  // ===== 自動資産取崩し: 預貯金マイナス時に有価証券から取崩し =====
+  // ===== 自動資産取崩し: 預貯金マイナス時に財形貯蓄・有価証券から取崩し =====
   // デフォルトON（localStorage 'cf_auto_liq_off'='1' の場合のみ OFF）
   const _autoLiqEnabled = (()=>{try{return localStorage.getItem('cf_auto_liq_off')!=='1'}catch(e){return true}})();
   // 全有価証券のメタ情報を事前収集（年ループ内で参照、取崩し履歴を蓄積）
@@ -633,6 +633,25 @@ function render(){
         liquidations:[]
       });
     });
+    // 財形貯蓄（利回り0%・非課税）— 自動取崩しの対象（優先順位は有価証券より先）
+    {
+      const zbal=fv(`zaikei-${p}-bal`)||0;
+      const zm=fv(`zaikei-${p}-monthly`)||0;
+      if(zbal>0||zm>0){
+        const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
+        const ze=iv(`zaikei-${p}-end`)||0;
+        const zr=iv(`zaikei-${p}-redeem`)||0;
+        const _zEnd=ze>0?ze:pRetAge;
+        securityState.push({
+          sid:'zk', p, type:'zaikei', lbl:`財形貯蓄(${pLbl})`, isNisa:false, baseAge:pBaseAge,
+          bal:zbal, monthly:zm,
+          endAge:_zEnd, rate:0,
+          redeemAge:zr>0?zr:_zEnd,
+          basisInput:0,
+          liquidations:[]
+        });
+      }
+    }
   });
   // ★ パフォーマンス改善: securityState を Map 化（O(1) 検索）
   //   年ループ内で多用される `securityState.find(...)` を高速化（O(N²) → O(N)）。
@@ -646,6 +665,12 @@ function render(){
   function _rawFV(s,i){
     const pAge = (s.p==='h'?hAge:wAge)+i;
     if(s.redeemAge>0 && pAge>=s.redeemAge)return 0;
+    if(s.type==='zaikei'){
+      // 財形: 利回り0%。積立は「積立終了 or 解約」の早い方まで（表示側と同一式）
+      const stopAge=Math.min(s.endAge,s.redeemAge);
+      const contribYrs=Math.min(i+1,Math.max(0,stopAge-s.baseAge));
+      return s.bal + s.monthly*12*contribYrs;
+    }
     if(s.type==='accum'){
       const yrs=i+1;
       const mr=s.rate/12;
@@ -678,7 +703,12 @@ function render(){
   function _effCost(s,i){
     const pAge=(s.p==='h'?hAge:wAge)+i;
     let cost;
-    if(s.type==='accum'){
+    if(s.type==='zaikei'){
+      // 財形: 元本=評価額（利回り0%）→ 譲渡益ゼロで課税なし
+      const stopAge=Math.min(s.endAge,s.redeemAge);
+      const contribYrs=Math.min(i+1,Math.max(0,stopAge-s.baseAge));
+      cost = s.bal + s.monthly*12*contribYrs;
+    } else if(s.type==='accum'){
       const effYrs=(s.endAge>0&&pAge>s.endAge)?(s.endAge-s.baseAge+1):(i+1);
       cost = (s.basisInput>0?s.basisInput:s.bal) + s.monthly*12*Math.max(0,effYrs);
     } else {
@@ -770,10 +800,12 @@ function render(){
     if(shortfall<=0) return {gross:0,tax:0,byLbl:{}};
     let totalGross=0, totalTax=0;
     const byLbl={};
-    // 優先順位グループ: 課税口座 → NISA口座（H/W問わず比例配分）
+    // 優先順位グループ: 財形貯蓄 → 課税口座 → NISA口座（H/W問わず比例配分）
+    // 財形は利回り0%・非課税なので先に崩し、運用中の資産（特にNISA）はできるだけ残す
     const groups = [
-      securityState.filter(s=>!s.isNisa),
-      securityState.filter(s=>s.isNisa)
+      securityState.filter(s=>s.type==='zaikei'),
+      securityState.filter(s=>s.type!=='zaikei'&&!s.isNisa),
+      securityState.filter(s=>s.type!=='zaikei'&&s.isNisa)
     ];
     for(const group of groups){
       if(shortfall<=0.01) break;
@@ -1545,7 +1577,11 @@ function render(){
       if(pAge===_zRedeemAge){
         // 解約時点までの拠出年数（解約年齢が積立終了より前なら短くなる）
         const _contribYrsR=Math.max(0,_zStopContribAge-pBaseAge);
-        vZR=Math.round(zbal+zm*12*_contribYrsR);
+        // 自動取崩しで既に受け取った分は解約金から差し引く（二重計上防止）
+        let _zLiqR=0;
+        const _zSecR=_secStateMap.get(`zaikei|${p}|zk`);
+        if(_zSecR){for(const liq of _zSecR.liquidations){if(liq.year<=i)_zLiqR+=liq.gross;}}
+        vZR=Math.max(0,Math.round(zbal+zm*12*_contribYrsR-_zLiqR));
       }
       rowZR.vals.push(vZR);
       zaikeiRedeemTotal+=vZR;
@@ -2404,7 +2440,11 @@ function render(){
       const _zContribYrs=Math.min(i+1,Math.max(0,_zStopContribAge-pBaseAge));
       // 解約年齢に到達したらその年から残高を0に（一括解約済みの扱い）
       const _zRedeemed=pAge>=_zRedeemAge;
-      const zVal=_zRedeemed?0:Math.round(zbal+zm*12*_zContribYrs);
+      // 自動取崩しによる減額（財形は利回り0%なので取崩し額をそのまま差し引く）
+      let _zLiqRed=0;
+      const _zSec=_secStateMap.get(`zaikei|${p}|zk`);
+      if(_zSec){for(const liq of _zSec.liquidations){if(liq.year<=i)_zLiqRed+=liq.gross;}}
+      const zVal=_zRedeemed?0:Math.max(0,Math.round(zbal+zm*12*_zContribYrs-_zLiqRed));
       const _pLblZ=p==='h'?'ご主人様':'奥様';
       const lblZ=`財形貯蓄(${_pLblZ})`;
       finRowMap[lblZ]=(finRowMap[lblZ]||0)+zVal;
@@ -2626,12 +2666,51 @@ function render(){
     _aggRowFix(R.insLumpExpRows, R.insLumpExp);   // 一時払い保険
     _aggRowFix(R.zaikeiRows, R.zaikeiExp);        // 財形積立（支出）
     _aggRowFix(R.zaikeiRedeemRows, R.zaikeiRedeem); // 財形解約（収入）
+    // ★ バグ修正: セル上書き・カスタム行はこの後処理で初めて収支合計へ反映されるが、
+    //   自動取崩し額は初回計算（上書き前の収支）で決めたまま凍結されていた。
+    //   そのため「上書きで増えた不足」が取り崩されず、預貯金が資産を残したまま
+    //   マイナス固定になっていた（例: 年71万円の上書き支出→毎年▲71のまま）。
+    //   → 上書き後の本当の収支で、取崩しを年ごとに最初から決め直す。
+    //   （収入合計/支出合計セルを直接上書きした年だけは、その数字を尊重して決め直さない）
+    const _reLiq = _autoLiqEnabled;
+    const _oldLiqsBk = new Map();
+    if(_reLiq){
+      securityState.forEach(s=>{_oldLiqsBk.set(s, s.liquidations.slice()); s.liquidations.length=0;});
+    }
+    const _incKeysNoLiq = incKeys.filter(k=>k!=='autoLiq');
+    const _expKeysNoLiq = expKeys.filter(k=>k!=='autoLiqTax');
     let newSav=initSav;
     for(let i=0;i<R.incT.length;i++){
-      if(cfOverrides['incT']?.[i]!==undefined){R.incT[i]=cfOverrides['incT'][i];}
-      else{let t=incKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);if(R.secRedeemRows)R.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.incT[i]=t;}
-      if(cfOverrides['expT']?.[i]!==undefined){R.expT[i]=cfOverrides['expT'][i];}
-      else{let t=expKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(R.edu[ci]?.[i]||0));cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.expT[i]=t;}
+      const _incPinned = cfOverrides['incT']?.[i]!==undefined;
+      const _expPinned = cfOverrides['expT']?.[i]!==undefined;
+      if(_reLiq && !_incPinned && !_expPinned){
+        // 取崩し抜きの本当の収支を集計
+        let tInc=_incKeysNoLiq.reduce((s,k)=>s+(R[k]?.[i]||0),0);
+        if(R.secRedeemRows)R.secRedeemRows.forEach(row=>tInc+=(row.vals[i]||0));
+        cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{tInc+=(cfOverrides[r.id]?.[i]||0);});
+        let tExp=_expKeysNoLiq.reduce((s,k)=>s+(R[k]?.[i]||0),0);
+        children.forEach((_ch,ci)=>tExp+=(R.edu[ci]?.[i]||0));
+        cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{tExp+=(cfOverrides[r.id]?.[i]||0);});
+        // 不足判定（DC/iDeCo受取は実額が tInc に含まれるため先回り推定は不要）
+        const _tentSav2 = newSav + tInc - tExp;
+        let _g2=0,_t2=0,_byLbl2={};
+        if(_tentSav2 < -0.5){
+          const _liq2=_autoLiquidate(-_tentSav2, i);
+          _g2=_liq2.gross; _t2=_liq2.tax; _byLbl2=_liq2.byLbl;
+        }
+        R.autoLiq[i]=ri(_g2); R.autoLiqTax[i]=ri(_t2); R.autoLiqDetails[i]=_byLbl2;
+        R.incT[i]=ri(tInc+_g2); R.expT[i]=ri(tExp+_t2);
+      }else{
+        // 合計セルが直接上書きされた年（または取崩しOFF）: 従来どおりの再集計
+        if(_reLiq){
+          // この年の初回計算の取崩し履歴を復元（以降の年の資産残高計算を保つ）
+          securityState.forEach(s=>{(_oldLiqsBk.get(s)||[]).forEach(q=>{if(q.year===i)s.liquidations.push(q);});});
+        }
+        if(_incPinned){R.incT[i]=cfOverrides['incT'][i];}
+        else{let t=incKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);if(R.secRedeemRows)R.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.incT[i]=t;}
+        if(_expPinned){R.expT[i]=cfOverrides['expT'][i];}
+        else{let t=expKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(R.edu[ci]?.[i]||0));cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.expT[i]=t;}
+      }
       R.bal[i]=R.incT[i]-R.expT[i];
       // ★ 初回計算と同じ順序でsavを更新（snap処理を再現）：
       //   1) bal（DC受取を除く）を加算
@@ -2653,6 +2732,30 @@ function render(){
       newSav += _dcContrib;
       R.sav[i]=ri(newSav);
       R.totalAsset[i]=R.sav[i]+ri(R.finAsset[i]||0);
+    }
+    // 取崩しを決め直した分、その他金融資産の残高表示も差し引き直す
+    // （各証券の「複利成長込みの減額」を旧→新で差し替える）
+    if(_reLiq){
+      const _redSum=(list,rate,j)=>{let x=0;for(const q of list){if(q.year<=j)x+=q.gross*Math.pow(1+rate,j-q.year);}return x;};
+      securityState.forEach(s=>{
+        const oldL=_oldLiqsBk.get(s)||[];
+        if(oldL.length===0&&s.liquidations.length===0)return;
+        const row=R.finAssetRows?R.finAssetRows.find(r=>r.lbl===s.lbl):null;
+        for(let j=0;j<R.finAsset.length;j++){
+          const d=_redSum(s.liquidations,s.rate,j)-_redSum(oldL,s.rate,j);
+          if(Math.abs(d)<0.5)continue;
+          if(row){
+            row.vals[j]=Math.max(0,ri((row.vals[j]||0)-d));
+            if(row.baseVals)row.baseVals[j]=Math.max(0,ri((row.baseVals[j]||0)-d));
+          }
+          R.finAsset[j]=Math.max(0,ri((R.finAsset[j]||0)-d));
+          if(R.finAssetBase)R.finAssetBase[j]=Math.max(0,ri((R.finAssetBase[j]||0)-d));
+        }
+      });
+      for(let j=0;j<R.totalAsset.length;j++){
+        R.totalAsset[j]=R.sav[j]+ri(R.finAsset[j]||0);
+        if(R.totalAssetBase)R.totalAssetBase[j]=R.sav[j]+ri(R.finAssetBase?.[j]||0);
+      }
     }
   }
 

@@ -94,6 +94,48 @@ const SCENARIOS = {
     $('delivery-year').value=2031; if(typeof calcDelivery==='function')calcDelivery();
     calcLoanAmt();
   },
+  'S8_財形自動取崩し': function(){
+    // 赤字家計＋財形＋課税積立: 財形→課税の順で自動取崩し、解約年ネットまで検査
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    $('lc-food').value=600000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+    addSecurity('h');
+    const els=document.querySelectorAll('[id^="sec-bal-h-"]');
+    const sid=els[els.length-1].id.split('-').pop();
+    document.getElementById(`sec-acc-h-${sid}`)?.classList.add('on');
+    document.getElementById(`sec-bal-h-${sid}`).value=3000;
+    document.getElementById(`sec-monthly-h-${sid}`).value=2;
+    document.getElementById(`sec-rate-h-${sid}`).value=3;
+    if($('zaikei-h-bal'))$('zaikei-h-bal').value=600;
+    if($('zaikei-h-monthly'))$('zaikei-h-monthly').value=1;
+  },
+  'S9_上書き自動取崩し': function(){
+    // セル上書き＋カスタム支出行があっても「マイナスなら0まで取崩す」約束を検査
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    $('lc-food').value=600000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+    addSecurity('h');
+    const els=document.querySelectorAll('[id^="sec-bal-h-"]');
+    const sid=els[els.length-1].id.split('-').pop();
+    document.getElementById(`sec-acc-h-${sid}`)?.classList.add('on');
+    document.getElementById(`sec-bal-h-${sid}`).value=3000;
+    document.getElementById(`sec-monthly-h-${sid}`).value=2;
+    document.getElementById(`sec-rate-h-${sid}`).value=3;
+    // 生活費セル上書き(5年目1000万) ＋ カスタム支出行(8年目71万)
+    cfOverrides['lc']={5:1000};
+    cfCustomRows.push({id:'cexp_reg1',type:'exp',label:'回帰テスト支出'});
+    cfOverrides['cexp_reg1']={8:71};
+  },
 };
 
 /* ---------- ページ内スナップショット関数 ---------- */
