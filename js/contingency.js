@@ -419,9 +419,8 @@ function _renderContingencyInner(){
   const downDeduct=(downType==='own')?downPay0:0;
   const costType0=document.getElementById('cost-type')?.value||'cash';
   const costDeduct=(costType0==='cash')?(fv('house-cost')||0):0;
-  const _moveType_mg=document.getElementById('move-type')?.value||'own';
-  const moveDeduct=(_moveType_mg==='other')?0:((fv('moving-cost')||0)+(fv('furniture-init')||0));
-  const initSav=cashH+cashW+cashJoint-downDeduct-costDeduct-moveDeduct;
+  // 引越・家具家電は「引き渡し年の支出」計上方式のため、購入直後からは差し引かない（通常CFと同じ）
+  const initSav=cashH+cashW+cashJoint-downDeduct-costDeduct;
 
   let sav=initSav;
   // MR._deathOffset / _targetIsH はレンダリング前に設定（HTML生成時に参照されるため）
@@ -1496,7 +1495,7 @@ function _renderContingencyInner(){
       MR.prepayExp.push(ri(_mgPp));
     }
     // 支出合計（個別計算）
-    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0)+(MR.prepayExp[i]||0);
+    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+(MR.moveInCost[i]||0)+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0)+(MR.prepayExp[i]||0);
     children.forEach((c,ci)=>expTotal+=MR.edu[ci][i]);
     MR.expT.push(ri(expTotal));
 
@@ -1607,7 +1606,7 @@ function _renderContingencyInner(){
   // ── mgOverrides後処理 ──
   if(Object.keys(mgOverrides).length>0){
     const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','moveInCost','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR[key]&&c2<MR[key].length)MR[key][c2]=val;});
@@ -1757,13 +1756,14 @@ function _renderContingencyInner(){
   const _costType2=document.getElementById('cost-type')?.value||'cash';
   const downFromOwn2=downType==='gift'?0:downPay2;
   const houseCostDeduct2=_costType2==='loan'?0:houseCost2;
-  const initialOut2=downFromOwn2+houseCostDeduct2+movCost2_mov+movCost2_fur;
+  // 引越・家具家電は引き渡し年の支出行に計上するため、購入直後からは差し引かない
+  const initialOut2=downFromOwn2+houseCostDeduct2;
   const cashAfter2=cashTotal2-initialOut2;
   const cashAfterColor2=cashAfter2>=0?'var(--green)':'var(--red)';
   h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:6px;background:#fff">
     <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;border-bottom:1px solid #c8d6e8">💰 自己資金の内訳</div>
     <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-      ${mgChip('🏦','現預金合計',cashTotal2.toLocaleString()+'万円')}${mgArrow}${downType==='gift'?mgChip('🎁','頭金（贈与）',downPay2.toLocaleString()+'万円','#2d7dd2'):mgChip('💴','頭金（自己資金）',downPay2.toLocaleString()+'万円','var(--red)')}${_costType2==='loan'?mgChip('📋','諸費用（ローン組込）',houseCost2.toLocaleString()+'万円','#2d7dd2'):mgChip('📋','諸費用',houseCost2.toLocaleString()+'万円','var(--red)')}${mgChip('🚚','引越・家具',(movCost2_mov+movCost2_fur).toLocaleString()+'万円','var(--red)')}${mgArrow}${mgChip('✅','購入後残高',cashAfter2.toLocaleString()+'万円',cashAfterColor2)}
+      ${mgChip('🏦','現預金合計',cashTotal2.toLocaleString()+'万円')}${mgArrow}${downType==='gift'?mgChip('🎁','頭金（贈与）',downPay2.toLocaleString()+'万円','#2d7dd2'):mgChip('💴','頭金（自己資金）',downPay2.toLocaleString()+'万円','var(--red)')}${_costType2==='loan'?mgChip('📋','諸費用（ローン組込）',houseCost2.toLocaleString()+'万円','#2d7dd2'):mgChip('📋','諸費用',houseCost2.toLocaleString()+'万円','var(--red)')}${mgChip('🚚','引越・家具（引き渡し年に計上）',(movCost2_mov+movCost2_fur).toLocaleString()+'万円','#2d7dd2')}${mgArrow}${mgChip('✅','購入後残高',cashAfter2.toLocaleString()+'万円',cashAfterColor2)}
     </div></div>`;
   // 段階金利チップ生成ヘルパー
   const _mgRateChips=(rArr)=>{
@@ -1987,6 +1987,7 @@ function _renderContingencyInner(){
 
   h+=mgERow('生活費',MR.lc,N.lc,'lc');
   h+=mgERow('家賃（引渡前）',MR.rent,null,'rent');
+  if(MR.moveInCost&&MR.moveInCost.some(v=>v>0))h+=mgERow('🚚 引越・家具家電',MR.moveInCost,null,'moveInCost');
   if(pairLoanMode&&!_isSingle_mg){h+=mgERow('ローン返済(ご主人様)',MR.lRepH,N.lRepH,'lRepH');h+=mgERow('ローン返済(奥様)',MR.lRepW,N.lRepW,'lRepW');}
   else{h+=mgERow('住宅ローン返済',MR.lRep,N.lRep,'lRep');}
   if(MR.prepayExp&&MR.prepayExp.some(v=>v>0))h+=mgERow('🔁 繰上返済',MR.prepayExp,N.prepayExp,'prepayExp');

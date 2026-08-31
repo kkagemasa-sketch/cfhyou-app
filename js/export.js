@@ -236,8 +236,8 @@ async function exportExcelMG(){
   const downFromOwn=(downType==='gift'||downType==='other')?0:downPay;
   const houseCostDeductMG=(costTypeV_mg==='loan'||costTypeV_mg==='other')?0:houseCostV;
   const _moveTypeMG=document.getElementById('move-type')?.value||'own';
-  const _moveDeductMG=(_moveTypeMG==='other')?0:(movingCostV+furnitureInitV);
-  const initialOut=downFromOwn+houseCostDeductMG+_moveDeductMG;
+  // 引越・家具家電は引き渡し年の支出行に計上するため、購入直後からは差し引かない
+  const initialOut=downFromOwn+houseCostDeductMG;
   const _moveOtherTextMG=(()=>{try{return localStorage.getItem('cf_move_other_text')||'その他'}catch(e){return 'その他'}})();
   const cashAfter=cashTotal-initialOut;
   const _isFlat_e=loanCategory==='flat35';
@@ -285,7 +285,7 @@ async function exportExcelMG(){
     `現預金: ${cashTotal}万円`,..._pad(infoSpan),
     `${downType==='gift'?'頭金(贈与)':downType==='other'?`頭金(${(()=>{try{return localStorage.getItem('cf_down_other_text')||'その他'}catch(e){return 'その他'}})()})`:'頭金'}: ${downPay}万円`,..._pad(infoSpan),
     `${costTypeV_mg==='loan'?'諸費用(込)':costTypeV_mg==='other'?`諸費用(${(()=>{try{return localStorage.getItem('cf_cost_other_text')||'その他'}catch(e){return 'その他'}})()})`:'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
-    `${(document.getElementById('move-type')?.value||'own')==='other'?`引越家具(${(()=>{try{return localStorage.getItem('cf_move_other_text')||'その他'}catch(e){return 'その他'}})()})`:'引越家具'}: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
+    `${(document.getElementById('move-type')?.value||'own')==='other'?`引越家具(${(()=>{try{return localStorage.getItem('cf_move_other_text')||'その他'}catch(e){return 'その他'}})()})`:'引越家具(引渡年に計上)'}: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
     `購入後残高: ${cashAfter}万円`,..._pad(infoSpan),
   ];
   const infoRow1Len=infoRow1.length;
@@ -556,6 +556,7 @@ async function exportExcelMG(){
   };
   addE(_rl('mg-lc','生活費'),MR.lc);
   addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent,null);
+  addESkip(_rl('mg-moveInCost','🚚 引越・家具家電'),MR.moveInCost,null);
   if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(ご主人様)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
   else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
   if(MR.prepayExp&&MR.prepayExp.some(v=>v>0))addE(_rl('mg-prepayExp','🔁 繰上返済'),MR.prepayExp);
@@ -1466,8 +1467,8 @@ async function exportExcel(){
   const downFromOwn=(downType==='gift'||downType==='other')?0:downPay;
   const houseCostDeductE=(costTypeV==='loan'||costTypeV==='other')?0:houseCostV;
   const _moveTypeE=document.getElementById('move-type')?.value||'own';
-  const _moveDeductE=(_moveTypeE==='other')?0:(movingCostV+furnitureInitV);
-  const initialOut=downFromOwn+houseCostDeductE+_moveDeductE;
+  // 引越・家具家電は引き渡し年の支出行に計上するため、購入直後からは差し引かない
+  const initialOut=downFromOwn+houseCostDeductE;
   const cashAfter=cashTotal-initialOut;
   const _isFlat_e=loanCategory==='flat35';
   const _flatPair_e=_isFlat_e&&pairLoanMode;
@@ -1500,7 +1501,7 @@ async function exportExcel(){
     `現預金: ${cashTotal}万円`,..._pad(infoSpan),
     `${downType==='gift'?'頭金(贈与)':downType==='other'?`頭金(${(()=>{try{return localStorage.getItem('cf_down_other_text')||'その他'}catch(e){return 'その他'}})()})`:'頭金'}: ${downPay}万円`,..._pad(infoSpan),
     `${costTypeV==='loan'?'諸費用(込)':costTypeV==='other'?`諸費用(${(()=>{try{return localStorage.getItem('cf_cost_other_text')||'その他'}catch(e){return 'その他'}})()})`:'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
-    `${(document.getElementById('move-type')?.value||'own')==='other'?`引越家具(${(()=>{try{return localStorage.getItem('cf_move_other_text')||'その他'}catch(e){return 'その他'}})()})`:'引越家具'}: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
+    `${(document.getElementById('move-type')?.value||'own')==='other'?`引越家具(${(()=>{try{return localStorage.getItem('cf_move_other_text')||'その他'}catch(e){return 'その他'}})()})`:'引越家具(引渡年に計上)'}: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
     `購入後残高: ${cashAfter}万円`,..._pad(infoSpan),
   ];
   // infoRowの実データ長を記録（これ以降は塗りつぶしなし）
@@ -1689,6 +1690,7 @@ async function exportExcel(){
   // 支出行順序：CF表(cf-table.js)と同じ順序で出力
   addE(_rl('lc','生活費'),R.lc);
   addE(_rl('rent','家賃（引渡前）'),R.rent);
+  addE(_rl('moveInCost','🚚 引越・家具家電'),R.moveInCost);
   if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(ご主人様)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
   else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
   // 繰上返済（画面と同一行構成）

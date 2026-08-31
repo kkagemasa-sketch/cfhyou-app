@@ -18,7 +18,8 @@ function render(){
   // 自己資産：現預金合計を初期残高に
   const cashH=fv('cash-h')||0, cashW=fv('cash-w')||0, cashJoint=fv('cash-joint')||0;
   // 財形貯蓄は「その他金融資産」扱い（預貯金には含めない）
-  // 頭金（自己資金）・諸費用（現金払い）・引越/家具費用は前提条件として初期残高から差し引く
+  // 頭金（自己資金）・諸費用（現金払い）は前提条件として初期残高から差し引く
+  // 引越・家具家電は「引き渡し年の支出」としてCF表に計上（下の _moveCostAtDelivery）
   // ★ 現金一括購入モード: 物件価格＋諸費用は「引き渡し年」に一括支出として計上するため、
   //   初期残高からは差し引かない（頭金・諸費用の初期差引を無効化）。借入も0扱い。
   const _isCashPurchase = document.getElementById('funding-mode')?.value==='cash';
@@ -29,11 +30,13 @@ function render(){
   // 'cash'のときだけ現預金から差し引き（loan・other は外部資金扱い）／現金一括購入では引き渡し年計上のため除外
   const costDeduct=(!_isCashPurchase && costType0==='cash')?(fv('house-cost')||0):0;
   const _moveType0=document.getElementById('move-type')?.value||'own';
-  const moveDeduct=(_moveType0==='other')?0:((fv('moving-cost')||0)+(fv('furniture-init')||0));
+  // ★ 引越・家具家電は「引き渡し年の支出」として計上する方式に変更（購入直後からは差し引かない）
+  //   'other'（外部資金）の場合は従来どおりCFに影響させない
+  const _moveCostAtDelivery=(_moveType0==='other')?0:((fv('moving-cost')||0)+(fv('furniture-init')||0));
   // ★ 定期借地権付き物件：契約時の前払い地代を初期残高から差し引き
   const _leaseholdOn=!!document.getElementById('leasehold-on')?.checked;
   const _leaseholdMaeharai=_leaseholdOn?(fv('leasehold-maeharai')||0):0;
-  const initSav=cashH+cashW+cashJoint-downDeduct-costDeduct-moveDeduct-_leaseholdMaeharai;
+  const initSav=cashH+cashW+cashJoint-downDeduct-costDeduct-_leaseholdMaeharai;
   // ご主人収入設定
   // ※ getIncomeSteps / getIncomeAtAge はグローバル版を使用
   const hSteps=getIncomeSteps('h');
@@ -1981,8 +1984,8 @@ function render(){
     R.ext.push(extSum);
     // 諸費用は前提条件で初期残高から差引済み → CF表には計上しない
     R.houseCostArr.push(0);
-    // 引っ越し・家具家電は前提条件で初期残高から差引済み → CF表には計上しない
-    R.moveInCost.push(0);
+    // 引っ越し・家具家電：引き渡し年に一括支出として計上（'other'=外部資金なら0）
+    R.moveInCost.push(i===delivery?ri(_moveCostAtDelivery):0);
     // 結婚お祝い
     let wedTotal=0;
     (_wedAmtEls||document.querySelectorAll('[id^="wed-amt-"]')).forEach(el=>{
@@ -2053,7 +2056,7 @@ function render(){
     // 現金一括購入：引き渡し年に「物件価格＋諸費用」を一括支出計上（不足分は下の自動取崩しで補填）
     const _housePurchase=(_isCashPurchase && i===delivery)?_cashPurchaseAmt:0;
     R.housePurchase.push(_housePurchase);
-    let exp=R.lc[i]+R.rent[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i]+R.swapTax[i]+R.swapPayoff[i]+R.swapBuy[i]+R.housePurchase[i]+R.prepayExp[i];
+    let exp=R.lc[i]+R.rent[i]+R.moveInCost[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i]+R.swapTax[i]+R.swapPayoff[i]+R.swapBuy[i]+R.housePurchase[i]+R.prepayExp[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     // ─ 自動資産取崩し（預貯金マイナス時のみ） ─
@@ -2573,7 +2576,7 @@ function render(){
     // ★ autoLiq (自動資産取崩し) と autoLiqTax (譲渡益課税) を含めないと、
     //   手動編集発生時に年間収支から自動取崩し分が消えて計算ズレが発生
     const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','otherInc','insMat','rPay','wRPay','pTotalH','pTotalW','scholarship','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','zaikeiRedeem','swapSell','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','swapTax','swapPayoff','swapBuy','housePurchase','prepayExp','autoLiqTax'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','moveInCost','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','swapTax','swapPayoff','swapBuy','housePurchase','prepayExp','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!cfOverrides[key])return;
       Object.entries(cfOverrides[key]).forEach(([col,val])=>{

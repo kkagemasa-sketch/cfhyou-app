@@ -73,9 +73,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const _moveType=document.getElementById('move-type')?.value||'own';
   const _moveOtherText=(()=>{try{return localStorage.getItem('cf_move_other_text')||''}catch(e){return ''}})();
   const houseCostDeduct=(_costTypeDisp==='loan'||_costTypeDisp==='other')?0:houseCostV;
-  // 引越・家具家電：'other'なら自己資金から差し引かない
-  const moveDeductForTable=(_moveType==='other')?0:(movingCostV+furnitureInitV);
-  const initialOut=downFromOwn+houseCostDeduct+moveDeductForTable;
+  // 引越・家具家電：引き渡し年の支出行に計上する方式のため、購入直後からは差し引かない
+  const initialOut=downFromOwn+houseCostDeduct;
   const cashAfter=cashTotal-initialOut;
   const cashAfterColor=cashAfter>=0?'var(--green)':'var(--red)';
 
@@ -102,7 +101,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       }
       ${_moveType==='other'
         ? chip('📝',`引越・家具（${_moveOtherText||'その他'}）`,`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'#7c3aed')
-        : chip('🚚','引越・家具',`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'var(--red)')
+        : chip('🚚','引越・家具（引き渡し年に計上）',`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'#2d7dd2')
       }
       ${arrow}
       ${chip('✅','購入後残高',`${cashAfter.toLocaleString()}万円`,cashAfterColor)}
@@ -446,6 +445,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   };
   // 支出行：生活費 → 住宅系 → 教育費 → 車 → 駐車場 → 積立投資 → その他
   h+=eRow('生活費',R.lc,'lc')+eRow('家賃（引渡前）',R.rent,'rent');
+  // 引越・家具家電（引き渡し年に一括計上。外部資金なら0で行ごと非表示）
+  h+=eRow('🚚 引越・家具家電',R.moveInCost,'moveInCost');
   if(pairLoanMode&&!_isSingle_t){h+=eRow('ローン返済(ご主人様)',R.lRepH,'lRepH')+eRow('ローン返済(奥様)',R.lRepW,'lRepW');}
   else{h+=eRow('住宅ローン返済',R.lRep,'lRep');}
   // 繰上返済（実行年のみ値が入る。ペアは所有者別行）

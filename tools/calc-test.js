@@ -136,6 +136,18 @@ const SCENARIOS = {
     cfCustomRows.push({id:'cexp_reg1',type:'exp',label:'回帰テスト支出'});
     cfOverrides['cexp_reg1']={8:71};
   },
+  'S10_引越引渡年計上': function(){
+    // 引越・家具家電が引き渡し年の支出として計上され、購入直後からは差引かれないことを検査
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    $('moving-cost').value=150;
+    setMoveType('own');
+  },
 };
 
 /* ---------- ページ内スナップショット関数 ---------- */

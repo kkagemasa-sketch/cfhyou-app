@@ -531,10 +531,11 @@ function setMoveType(t){
   const hint=document.getElementById('move-type-hint');
   if(hint){
     if(t==='other'){
-      hint.textContent='📝 その他の資金源（自己資金は減りません）';
+      hint.textContent='📝 その他の資金源（自己資金は減りません・CF表には出ません）';
       hint.style.color='#7c3aed';
     } else {
-      hint.textContent='';
+      hint.textContent='💰 引き渡しの年にCF表の支出として反映されます';
+      hint.style.color='var(--muted)';
     }
   }
   live(true);

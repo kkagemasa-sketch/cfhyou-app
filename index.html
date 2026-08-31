@@ -1531,13 +1531,13 @@ window.closeAboutModal=closeAboutModal;
             <input class="inp" id="move-other-text" type="text" placeholder="例：株式売却、親からの援助、退職金など" oninput="onMoveOtherTextChange()" style="font-size:11px;padding:4px 8px;width:100%">
             <span class="hint" style="font-size:9px;color:var(--muted)">※ 入力した内容が「自己資金の内訳」に反映されます</span>
           </div>
-          <span class="hint" id="move-type-hint" style="font-size:9px;color:var(--muted)"></span>
+          <span class="hint" id="move-type-hint" style="font-size:9px;color:var(--muted)">💰 引き渡しの年にCF表の支出として反映されます</span>
         </div>
         <!-- 旧データ互換: 家具・家電を内部的にゼロにしておく（_collectSaveDataで持続） -->
         <input type="hidden" id="furniture-init" value="0">
         <input type="hidden" id="move-type" value="own">
       </div>
-      <span class="hint">※ 引越費用と家具・家電をまとめて入力</span>
+      <span class="hint">※ 引越費用と家具・家電をまとめて入力（住宅の引き渡し年に支出として反映）</span>
 
       <!-- マンション専用 -->
       <div id="m-fields">
@@ -2073,18 +2073,18 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/income.js?v=24"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=5"></script>
-<script src="js/housing.js?v=40"></script>
+<script src="js/housing.js?v=41"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=20"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=96"></script>
+<script src="js/contingency.js?v=97"></script>
 <script src="js/cf-ui.js?v=25"></script>
-<script src="js/cf-calc.js?v=82"></script>
-<script src="js/cf-table.js?v=70"></script>
+<script src="js/cf-calc.js?v=83"></script>
+<script src="js/cf-table.js?v=71"></script>
 <script src="js/cf-highlight.js?v=3"></script>
 <script src="js/graphs.js?v=5"></script>
-<script src="js/export.js?v=70"></script>
+<script src="js/export.js?v=71"></script>
 <script src="js/loan-plan.js?v=20"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=5"></script>
