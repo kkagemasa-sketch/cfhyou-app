@@ -1171,8 +1171,8 @@ function setFlat35Sub(sub){
     const el=$(id);
     if(el){el.max=maxYrs;if(parseInt(el.value)>maxYrs)el.value=maxYrs;}
   });
-  // 金利テーブルから選択中なら再適用
-  if($('flat-rate-month')?.value)applyFlatRateFromTable();
+  // 金利テーブルから選択中なら再適用（データ復元中は保存された金利を尊重して再適用しない）
+  if($('flat-rate-month')?.value && !window._restoringData)applyFlatRateFromTable();
   updateFlat35Info();
   live();
 }

@@ -1023,8 +1023,13 @@ function _applyData(d){
     finally{ window._restoringData=false; }
     calcLoanAmt();calcDelivery();initLCComma();
     if(typeof validateNisaLimits==='function') validateNisaLimits();
-    if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
-    if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
+    // ★ 復元中フラグ: setFlat35Sub 内の「金利テーブル再適用」を止め、
+    //   保存されたフラット金利（手動調整含む）が最新月の値で上書きされるのを防ぐ
+    window._restoringData=true;
+    try{
+      if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
+      if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
+    }finally{ window._restoringData=false; }
     // 万が一Q&Aタブ（複数タブ）復元
     if(typeof mgQA_tabs !== 'undefined' && Array.isArray(mgQA_tabs)){
       mgQA_tabs.length = 0;  // 配列を空に（const配列の場合のみ）
@@ -1220,6 +1225,10 @@ function _resetSheetState(){
   });
 
   initLCComma();
+  // フラット35金利: リセット後は最新月の金利を自動適用（空のまま古いフォールバック値で
+  // 計算されるのを防ぐ。保存データ読込時はこの後の復元処理で保存値に上書きされる）
+  if(typeof initFlatRateSelect==='function')initFlatRateSelect();
+
   _lastInputHash='';  // ハッシュキャッシュをリセットして強制再描画
 }
 
