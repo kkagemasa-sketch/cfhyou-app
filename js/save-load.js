@@ -1360,10 +1360,24 @@ async function restoreAutoSave(){
 // ===== パネルUI =====
 async function openSlotPanel(){
   document.getElementById('slot-modal')?.remove();
-  const slots=await dbGetAll();
+  // ★ 別端末などでブラウザのデータ保存機能(IndexedDB)が使えないと、ここで失敗して
+  //   「押しても無反応」に見えていた → 原因と代替手段をわかりやすく案内する
+  let slots,totalSize;
+  try{
+    slots=await dbGetAll();
+    totalSize=await dbEstimateSize();
+  }catch(err){
+    alert('保存/読込の画面を開けませんでした。\n\n'
+      +'この端末のブラウザで「データ保存機能(IndexedDB)」が使えない状態の可能性があります。\n'
+      +'・プライベート(シークレット)ウィンドウで開いている\n'
+      +'・ブラウザ設定でサイトデータの保存がブロックされている\n'
+      +'などが主な原因です。\n\n'
+      +'代わりに「📤 ファイルに保存」「📥 ファイルから復元」ボタンをご利用ください。\n\n'
+      +'（技術情報: '+((err&&err.message)||err)+'）');
+    return;
+  }
   const rawName=_v('client-name')||'';
   const clientName=rawName&&!rawName.endsWith('様')?rawName+'様':rawName;
-  const totalSize=await dbEstimateSize();
   const slotCount=slots.length;
 
   const listHtml=slots.length===0
