@@ -1,5 +1,18 @@
 // education.js — 教育費計算
 
+// ===== 保育料の年齢別デフォルト（万円/年） =====
+// v2(現行): 入園年齢〜6歳 一律12万（2026-09変更。入園前は自動0円）
+// v1(旧):  保育園[0,0,41,31,31,31,31] / 幼稚園[0,0,0,25,25,25,0]
+// ★ 過去に保存されたCF表の計算結果を変えないため、旧データ(世代タグなし)は
+//   v1 のまま計算し続ける。新規作成は v2。世代は保存データに hoikuDefaultsVer で持続。
+var _hoikuDefaultsVer='2';
+function hoikuDefaults(hoikuType){
+  if(window._hoikuDefaultsVer==='1'){
+    return hoikuType==='youchien'?[0,0,0,25,25,25,0]:[0,0,41,31,31,31,31];
+  }
+  return [12,12,12,12,12,12,12];
+}
+
 function eduCosts(cid){
   const c=new Array(32).fill(0);
   const el=_v(`ce-${cid}`)||'public',mi=_v(`cm-${cid}`)||'public',hi=_v(`ch-${cid}`)||'public',un=_v(`cu-${cid}`)||'plit_h';
@@ -9,7 +22,7 @@ function eduCosts(cid){
   const startAge=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${cid}`)?.value));
   const hArr=[h0,h1,h2,h3,h4,h5,h6];
   const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
-  const defaults=hoikuType==='youchien'?[0,0,0,25,25,25,0]:[0,0,41,31,31,31,31]; // 年齢別デフォルト
+  const defaults=hoikuDefaults(hoikuType); // 年齢別デフォルト（世代対応）
   for(let a=0;a<=6;a++){
     if(a<startAge){c[a]=0;continue;} // 入園前は0
     const v=hArr[a];
@@ -150,10 +163,13 @@ function updateEdu(){
     const cid=el.id.split('-')[1];
     const age=parseInt(el.value)||0;
     const startAge=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${cid}`)?.value));
+    const _phDef=hoikuDefaults(_v(`hoiku-type-${cid}`)||'hoikuen');
     for(let a=0;a<=6;a++){
       const grp=document.getElementById(`hg-${a}-${cid}`);
       const inp=document.getElementById(`hn-${a}-${cid}`);
       if(!grp||!inp)continue;
+      // グレーのデフォルト表示を計算に使う値と常に一致させる（世代・保育園/幼稚園切替に追従）
+      inp.placeholder=String(_phDef[a]);
       const passed=age>a;         // 年齢を過ぎた欄（現在年齢a以下ならまだこれから）
       const beforeEntry=a<startAge; // 入園前の欄
       if(passed||beforeEntry){
@@ -185,7 +201,7 @@ function updateEdu(){
     const hoikuStart=(x=>isNaN(x)?1:x)(parseInt(document.getElementById(`hoiku-start-${cid}`)?.value));
     const hoiku=[0,1,2,3,4,5,6].map(a=>a<hoikuStart?0:fv(`hn-${a}-${cid}`));
     const hoikuType=_v(`hoiku-type-${cid}`)||'hoikuen';
-    const hoikuDef=hoikuType==='youchien'?[0,0,0,25,25,25,0]:[0,0,41,31,31,31,31];
+    const hoikuDef=hoikuDefaults(hoikuType);
     const hoikuTot=hoiku.reduce((s,v,i)=>i<hoikuStart?s:s+(v>0?v:hoikuDef[i]),0);
     const hoikuNote=hoiku.some(v=>v>0)?`　保育料合計：<strong style="color:#1a6b2e">${hoikuTot}万円</strong>`:'　保育料：デフォルト値使用';
     pv.innerHTML=`${e2}→${m}→${h}→${u}　教育費合計：<strong style="color:#2d7dd2">${tot}万円</strong>${hoikuNote}`;

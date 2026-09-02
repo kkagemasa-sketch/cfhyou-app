@@ -883,6 +883,7 @@ function _collectSaveData(){
   const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],mgQACounter:(typeof mgQA_counter!=='undefined')?{h:(mgQA_counter.h||0),w:(mgQA_counter.w||0)}:null,cfStartYear:_cfStartYear,version:'9'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   d.cfSummaryNote=window._cfSummaryNote||''; // 注釈・補足メモ（各CF表=シナリオごとに独立）
+  d.hoikuDefaultsVer=window._hoikuDefaultsVer||'2'; // 保育料デフォルトの世代（旧データは'1'を維持）
   return d;
 }
 // ★ 自動保存・更新ボタン用：全シナリオを含む完全な状態を返す
@@ -952,6 +953,9 @@ function _applyData(d){
     window._mgStore=null;
     window._mgMRStore=null;
     window.lastMR=null;
+    // 保育料デフォルトの世代: 旧データ(タグなし)は旧デフォルトで計算し続ける
+    //（過去に保存されたCF表の計算結果を変えないため）
+    window._hoikuDefaultsVer=d.hoikuDefaultsVer||'1';
     // 保存データ全体からカンマ付き数値文字列を救済（再帰的）
     function _scrub(obj){
       if(!obj||typeof obj!=='object')return;
@@ -1228,6 +1232,8 @@ function _resetSheetState(){
   // フラット35金利: リセット後は最新月の金利を自動適用（空のまま古いフォールバック値で
   // 計算されるのを防ぐ。保存データ読込時はこの後の復元処理で保存値に上書きされる）
   if(typeof initFlatRateSelect==='function')initFlatRateSelect();
+  // 保育料デフォルト: 新規作成は現行世代（一律12万）
+  window._hoikuDefaultsVer='2';
 
   _lastInputHash='';  // ハッシュキャッシュをリセットして強制再描画
 }
