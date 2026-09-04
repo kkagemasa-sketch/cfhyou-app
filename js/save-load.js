@@ -812,18 +812,34 @@ function _restoreDynamic(d){
 
 // ===== IndexedDB データベース =====
 function openDB(){
-  return new Promise((resolve,reject)=>{
-    if(_db){resolve(_db);return;}
-    const req=indexedDB.open(DB_NAME,DB_VERSION);
+  if(_db)return Promise.resolve(_db);
+  const _tryOpen=(ver)=>new Promise((resolve,reject)=>{
+    // ver未指定 = 既存バージョンのまま開く
+    const req=(ver!==undefined)?indexedDB.open(DB_NAME,ver):indexedDB.open(DB_NAME);
     req.onupgradeneeded=e=>{
       const db=e.target.result;
       if(!db.objectStoreNames.contains(STORE_NAME)){
         db.createObjectStore(STORE_NAME,{keyPath:'name'});
       }
     };
-    req.onsuccess=e=>{_db=e.target.result;resolve(_db);};
+    req.onsuccess=e=>resolve(e.target.result);
     req.onerror=e=>reject(e.target.error);
   });
+  return _tryOpen(DB_VERSION)
+    .catch(err=>{
+      // 既存DBの方がバージョンが新しい端末（旧URL版の残骸等）→ 既存バージョンのまま開く
+      if(err&&err.name==='VersionError')return _tryOpen();
+      throw err;
+    })
+    .then(db=>{
+      // ★ 自己修復: 過去の別実装が同名DBを保存場所(store)なしで作っていた端末では
+      //   ここで store が無く、以前は「保存/読込が開けない」エラーになっていた
+      //   （実例: 旧URL github.io 版のPC）。バージョンを+1して保存場所を作り直す。
+      if(db.objectStoreNames.contains(STORE_NAME)){_db=db;return _db;}
+      const nextVer=db.version+1;
+      db.close();
+      return _tryOpen(nextVer).then(db2=>{_db=db2;return _db;});
+    });
 }
 async function dbGetAll(){
   const db=await openDB();
