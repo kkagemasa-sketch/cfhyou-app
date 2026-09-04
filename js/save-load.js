@@ -811,19 +811,41 @@ function _restoreDynamic(d){
 }
 
 // ===== IndexedDB データベース =====
-function openDB(){
+// 内部: バージョン指定の有無を切り替えてオープン（upgradeneededでストア作成）
+function _openDBRaw(version){
   return new Promise((resolve,reject)=>{
-    if(_db){resolve(_db);return;}
-    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    const req=(version===undefined)?indexedDB.open(DB_NAME):indexedDB.open(DB_NAME,version);
     req.onupgradeneeded=e=>{
       const db=e.target.result;
       if(!db.objectStoreNames.contains(STORE_NAME)){
         db.createObjectStore(STORE_NAME,{keyPath:'name'});
       }
     };
-    req.onsuccess=e=>{_db=e.target.result;resolve(_db);};
+    req.onsuccess=e=>resolve(e.target.result);
     req.onerror=e=>reject(e.target.error);
+    req.onblocked=()=>reject(new Error('データベースが他のタブで使用中です。他のタブを閉じてから再度お試しください。'));
   });
+}
+async function openDB(){
+  if(_db)return _db;
+  // バージョン指定なしでオープン：新規作成なら v1 で upgradeneeded が走りストアが作られる。
+  // 既存DBならその現行バージョンで開く（DB_VERSION固定だと、修復でバージョンが
+  // 上がった後に VersionError で開けなくなるため指定しない）
+  let db=await _openDBRaw();
+  // ★ 自己修復: 過去バージョンの _saveNow が upgradeneeded ハンドラ無しでDBを
+  //   作ってしまうと「slotsストアの無い空DB」が残り、以後すべての transaction が
+  //   NotFoundError（One of the specified object stores was not found）になる。
+  //   その場合はバージョンを+1して再オープンし、upgradeneeded でストアを作成する。
+  if(!db.objectStoreNames.contains(STORE_NAME)){
+    const newVer=db.version+1;
+    db.close();
+    db=await _openDBRaw(newVer);
+  }
+  // 別タブで修復（バージョンアップ）が走った場合に備え、古い接続は破棄する
+  db.onversionchange=()=>{try{db.close();}catch(e){} if(_db===db)_db=null;};
+  db.onclose=()=>{if(_db===db)_db=null;};
+  _db=db;
+  return _db;
 }
 async function dbGetAll(){
   const db=await openDB();
@@ -1288,8 +1310,26 @@ function _saveNow(){
     try{ localStorage.setItem('cf_refresh_backup_v1', JSON.stringify({data, ts:Date.now()})); }catch(e){}
     // IndexedDBへも非同期で保存試行
     const entry={name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data};
-    const req=indexedDB.open(DB_NAME,DB_VERSION);
-    req.onsuccess=e=>{const db=e.target.result;const tx=db.transaction(STORE_NAME,'readwrite');tx.objectStore(STORE_NAME).put(entry);};
+    // ★ upgradeneeded ハンドラ必須: これが無いと初回作成時に「ストアの無い空DB」が
+    //   出来てしまい、以後 openDB 側の transaction がすべて NotFoundError になる
+    const req=indexedDB.open(DB_NAME);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains(STORE_NAME)){
+        db.createObjectStore(STORE_NAME,{keyPath:'name'});
+      }
+    };
+    req.onsuccess=e=>{
+      const db=e.target.result;
+      try{
+        // ストアが無い壊れたDBなら書き込みは諦める（localStorageバックアップ済み。
+        // 修復は次回の openDB が行う）
+        if(db.objectStoreNames.contains(STORE_NAME)){
+          const tx=db.transaction(STORE_NAME,'readwrite');
+          tx.objectStore(STORE_NAME).put(entry);
+        }
+      }catch(err){}
+    };
   }catch(e){}
 }
 window.addEventListener('beforeunload',_saveNow);
