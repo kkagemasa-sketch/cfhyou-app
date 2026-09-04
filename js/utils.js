@@ -504,5 +504,12 @@ function _getInputHash(){
     const v = el.type==='checkbox' ? (el.checked?'1':'0') : el.value;
     s += el.id + '=' + v + '|';
   });
+  // ★ トグルボタンのON状態もハッシュに含める。
+  //   これが無いと「自由入力⇄割合」等のモード切替ボタンを押しただけでは
+  //   「入力が変わっていない」と判定され、再計算がスキップされていた
+  //   （実例: 生活費の段階で「割合」に切り替えてもCF表が反応しない）
+  document.querySelectorAll('.btn-tog.on,.tc.on').forEach(el=>{
+    if(el.id)s+=el.id+'=on|';
+  });
   return s;
 }
