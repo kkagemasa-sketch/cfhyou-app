@@ -661,7 +661,7 @@ function _restoreDynamic(d){
     $('mg-park-keep')?.classList.toggle('on',mg.parkOn!==false);
     $('mg-park-stop')?.classList.toggle('on',mg.parkOn===false);
     if($('mg-park-fields'))$('mg-park-fields').style.display=mg.parkOn!==false?'':'none';
-    if($('mg-parking'))$('mg-parking').value=mg.parking||'15000';
+    if($('mg-parking'))$('mg-parking').value=mg.parking||'1.5';
     if($('mg-park-h-from-age')&&(mg.parkHFromAge||mg.parkFromAge))$('mg-park-h-from-age').value=mg.parkHFromAge||mg.parkFromAge||'';
     if($('mg-park-h-to-age')&&(mg.parkHToAge||mg.parkToAge))$('mg-park-h-to-age').value=mg.parkHToAge||mg.parkToAge||'';
     if($('mg-park-w-from-age')&&mg.parkWFromAge)$('mg-park-w-from-age').value=mg.parkWFromAge;
@@ -896,7 +896,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],mgQACounter:(typeof mgQA_counter!=='undefined')?{h:(mgQA_counter.h||0),w:(mgQA_counter.w||0)}:null,cfStartYear:_cfStartYear,version:'9'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],mgQACounter:(typeof mgQA_counter!=='undefined')?{h:(mgQA_counter.h||0),w:(mgQA_counter.w||0)}:null,cfStartYear:_cfStartYear,version:'10'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   d.cfSummaryNote=window._cfSummaryNote||''; // 注釈・補足メモ（各CF表=シナリオごとに独立）
   d.hoikuDefaultsVer=window._hoikuDefaultsVer||'2'; // 保育料デフォルトの世代（旧データは'1'を維持）
@@ -963,6 +963,30 @@ function _cleanNumStr(v){
   const stripped=v.replace(/,/g,'');
   return /^-?\d+(\.\d+)?$/.test(stripped) ? stripped : v;
 }
+// ═══ v10互換: 入力単位の統一（円 → 万円） ═══
+// v9以前は駐車場代・固定資産税・引き渡し前家賃・地代/解体準備金・住み替え固定資産税が
+// 「円」入力だったため、旧保存データは読み込み時に万円へ換算する。
+// （生活費・管理費・修繕積立金の円入力ブロックは対象外＝円のまま）
+function _migrateYenToManV10(d){
+  if((parseInt(d.version)||0)>=10)return;
+  const conv=v=>{
+    const n=parseFloat(String(v??'').replace(/,/g,''));
+    return (isFinite(n)&&n!==0)?String(n/10000):v;
+  };
+  if(d.fields){
+    ['parking','prop-tax','rent-before','leasehold-chidai','leasehold-kaitai'].forEach(f=>{
+      if(d.fields[f]!==undefined&&d.fields[f]!==null&&d.fields[f]!=='')d.fields[f]=conv(d.fields[f]);
+    });
+  }
+  if(d.mg&&d.mg.parking)d.mg.parking=conv(d.mg.parking);
+  (d.mgQATabs||[]).forEach(t=>{
+    if(t&&t.state&&t.state.parkMonthly)t.state.parkMonthly=parseFloat(conv(t.state.parkMonthly))||0;
+  });
+  (d.swapEvents||[]).forEach(ev=>{
+    if(ev&&ev.ptx)ev.ptx=parseFloat(conv(ev.ptx))||0;
+  });
+  d.version='10';
+}
 function _applyData(d){
   try{
     // 万が一タブのキャッシュをクリア（前データの残留を防ぐ）
@@ -983,6 +1007,8 @@ function _applyData(d){
       });
     }
     try{ _scrub(d); }catch(e){}
+    // 旧データ互換: 円入力だった項目を万円へ換算（v10）
+    try{ _migrateYenToManV10(d); }catch(e){}
     setType(d.type||'mansion');
     var _defs={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
     // 旧データ互換: 引越費用と家具・家電を統合（moving-cost に合算、furniture-init を0に）
@@ -1518,7 +1544,7 @@ async function deleteSlot(name){
 async function exportAllJSON(){
   const slots=await dbGetAll();
   if(slots.length===0){alert('保存データがありません');return;}
-  const json=JSON.stringify({version:'9',exportedAt:_fmtDate(new Date()),slots},null,2);
+  const json=JSON.stringify({version:'10',exportedAt:_fmtDate(new Date()),slots},null,2);
   const fileName=`CF表_全件バックアップ_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.json`;
   if(window.showSaveFilePicker){
     try{

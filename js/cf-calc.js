@@ -267,7 +267,7 @@ function render(){
     });
   }catch(e){}
   // ═══════════════ /繰上返済 ═══════════════
-  const parking=fv('parking')/10000, propTax=fv('prop-tax')/10000;
+  const parking=fv('parking'), propTax=fv('prop-tax');  // 万円入力（v10で円→万円に統一）
   const sqm=fvd('sqm',75);
   const isM=ST.type==='mansion';
   const choki=iv('choki');
@@ -1609,7 +1609,7 @@ function render(){
     });
     R.secBuy.push(ri(secBuyTotal));
     // ─── 家賃（引き渡し前）───
-    const rentMonthly=fv('rent-before')/10000;
+    const rentMonthly=fv('rent-before');  // 万円/月
     const rentAmt=(!active&&delivery>0)?ri(rentMonthly*12):0;
     R.rent.push(rentAmt);
 
@@ -1624,11 +1624,11 @@ function render(){
       const _yrsSinceDelivery=lcYr+1;
       const _withinLease = _leaseYrs<=0 || _yrsSinceDelivery<=_leaseYrs;
       if(_withinLease){
-        // 円/月入力 → 万円/年に換算（CF表は万円単位）
-        const chidaiMon=fv('leasehold-chidai')||0;  // 円/月
-        const kaitaiMon=fv('leasehold-kaitai')||0;  // 円/月
-        _chidaiYr=ri(chidaiMon*12/10000);  // 万円/年
-        _kaitaiYr=ri(kaitaiMon*12/10000);
+        // 万円/月入力 → 万円/年に換算
+        const chidaiMon=fv('leasehold-chidai')||0;  // 万円/月
+        const kaitaiMon=fv('leasehold-kaitai')||0;  // 万円/月
+        _chidaiYr=ri(chidaiMon*12);  // 万円/年
+        _kaitaiYr=ri(kaitaiMon*12);
       }
     }
     R.chidai.push(_chidaiYr);

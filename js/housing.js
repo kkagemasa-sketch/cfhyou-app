@@ -388,7 +388,7 @@ function addSwapEvent(data){
       <div class="fg"><label class="lbl" style="font-size:9px">新居 修繕費（年）任意</label>
         <div class="suf"><input class="inp amt-inp" id="sw-${id}-rep" type="number" value="${d.rep||''}" placeholder="空欄=現住継続" min="0" oninput="live()"><span class="sl">万円/年</span></div></div>
       <div class="fg"><label class="lbl" style="font-size:9px">新居 固定資産税 任意</label>
-        <div class="suf"><input class="inp amt-inp" id="sw-${id}-ptx" type="number" value="${d.ptx||''}" placeholder="空欄=現住継続" min="0" oninput="live()"><span class="sl">円/年</span></div></div>
+        <div class="suf"><input class="inp amt-inp" id="sw-${id}-ptx" type="number" value="${d.ptx||''}" placeholder="空欄=現住継続" min="0" step="0.1" oninput="live()"><span class="sl">万円/年</span></div></div>
       <div class="fg"><label class="lbl" style="font-size:9px">管理費（マンション）任意</label>
         <div class="suf"><input class="inp amt-inp" id="sw-${id}-mgmt" type="number" value="${d.mgmt||''}" placeholder="空欄=現住継続" min="0" oninput="live()"><span class="sl">円/月</span></div></div>
     </div>

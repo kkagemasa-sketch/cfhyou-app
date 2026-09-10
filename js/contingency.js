@@ -118,7 +118,7 @@ function syncMGCarFromNormal(){
   // 駐車場も連動
   const parkEl=$('mg-parking');
   const normPark=$('parking');
-  if(parkEl&&normPark&&parkEl.value==='') parkEl.value=normPark.value||'15000';
+  if(parkEl&&normPark&&parkEl.value==='') parkEl.value=normPark.value||'1.5';
 }
 function setMGCarType(p,type){
   $(`mg-car-${p}-new`)?.classList.toggle('on',type==='new');
@@ -385,7 +385,7 @@ function _renderContingencyInner(){
   const _mgCarType=getMGCarType(_cp); // 'new' or 'used'
   const _mgParkFrom=mgParkKeep?(iv(`mg-park-${_cp}-from-age`)||0):0;
   const _mgParkTo=mgParkKeep?(iv(`mg-park-${_cp}-to-age`)||0):0;
-  const _mgParkAnnual=mgParkKeep?ri((fv('mg-parking')||15000)*12/10000):0;
+  const _mgParkAnnual=mgParkKeep?ri((fv('mg-parking')||1.5)*12):0;  // 万円/月入力
   const mgScholarOn=document.getElementById('mg-scholarship-yes')?.classList.contains('on');
   const mgScholarAmt=mgScholarOn?(fv('mg-scholarship-amt')||0):0;
   const mgScholarAge=iv('mg-scholarship-age')||19;
@@ -567,8 +567,8 @@ function _renderContingencyInner(){
   const mgDisp=disp;
   const isM_mg=ST.type==='mansion';
   const sqm_mg=fvd('sqm',75);
-  const parking_mg=fv('parking')/10000;
-  const propTax_mg=fv('prop-tax')/10000;
+  const parking_mg=fv('parking');  // 万円入力
+  const propTax_mg=fv('prop-tax');
   const choki_mg=iv('choki');
   const taxRed_mg=isM_mg?PROP_TAX_RELIEF.mansion_general:(choki_mg?PROP_TAX_RELIEF.kodate_choki:PROP_TAX_RELIEF.kodate_general);
   const extraItems_mg=getExtraItems();

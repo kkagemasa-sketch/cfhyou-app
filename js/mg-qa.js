@@ -96,7 +96,7 @@ function mgQA_buildDefaultState(target){
     // 手放す年齢: 通常CFは「歳」入力なのでそのまま継承
     carD.endAge = mgQA_iv(`car-${cid}-end-age`) || 0;
   }
-  const parkMonthlyDef = mgQA_iv('parking') || 15000;
+  const parkMonthlyDef = fv('parking') || 1.5;  // 万円/月（小数があるためiv不可）
   // 駐車場の年齢範囲も通常CFから継承（歳単位なので直接）
   const parkFromDef = mgQA_iv('park-from-age') || 0;
   const parkToDef = mgQA_iv('park-to-age') || 0;
@@ -899,7 +899,7 @@ function mgQA_buildPanel(tab){
         <div style="margin-top:8px;${s.parkMode==='keep'?'':'display:none'}" data-cond="parkMode:keep">
           <div class="g2">
             <div class="fg"><label class="lbl">月額駐車場代</label>
-              <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.parkMonthly||15000}" data-k="parkMonthly" data-cf-row="prk" data-cf-dyn="parkAll"><span class="sl">円/月</span></div>
+              <div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${s.parkMonthly||1.5}" data-k="parkMonthly" data-cf-row="prk" data-cf-dyn="parkAll"><span class="sl">万円/月</span></div>
             </div>
           </div>
           <div class="g2" style="margin-top:6px">
