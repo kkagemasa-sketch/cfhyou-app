@@ -492,3 +492,85 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{z=parseInt(localStorage.getItem('cf_panel_zoom'))||100;}catch(e){}
   if(z!==100)setPanelZoom(z); else window._panelZoom=100;
 });
+
+// ===== カスタムステッパー（▲▼ボタン） =====
+// ブラウザ標準のスピナーは長押しで連打モード（時間とともに加速）に入る。
+// 再計算による画面の固まりと重なると「ボタンを離した」操作がブラウザに
+// 届かず連打が続き、固まりが解けた瞬間に数字が一気に飛ぶ事故が起きていた。
+// → 標準スピナーはCSSで全廃し、独自ボタンに置き換える:
+//   - 1クリック（pointerdown）＝必ず1ステップ
+//   - 長押しは500ms後から120ms間隔の一定速度。setIntervalは処理が
+//     詰まっても未実行分を1回に合流させるため、構造的に暴走しない
+//   - 対象: .amt-inp（金額欄・元々スピナー無し）以外の type=number
+function _stepNumInput(inp,dir){
+  if(!inp||inp.disabled||inp.readOnly)return;
+  const step=parseFloat(inp.step)||1;
+  const dec=(String(step).split('.')[1]||'').length;
+  let base=parseFloat(String(inp.value).replace(/,/g,''));
+  if(isNaN(base))base=0;
+  let v=base+dir*step;
+  const mn=inp.min!==''?parseFloat(inp.min):NaN;
+  const mx=inp.max!==''?parseFloat(inp.max):NaN;
+  if(!isNaN(mn)&&v<mn)v=mn;
+  if(!isNaN(mx)&&v>mx)v=mx;
+  v=Number(v.toFixed(dec));
+  inp.value=v;
+  // oninput属性・委譲リスナー（live/自動保存/ヒント更新等）を通常入力と同様に発火
+  inp.dispatchEvent(new Event('input',{bubbles:true}));
+}
+function _attachStepper(inp){
+  if(inp._hasStepper)return;
+  inp._hasStepper=true;
+  const box=document.createElement('span');
+  box.className='num-stepper';
+  const mk=(dir,ch)=>{
+    const b=document.createElement('button');
+    b.type='button';b.className='ns-btn';b.textContent=ch;b.tabIndex=-1;
+    let delayT=null,repT=null;
+    const stop=()=>{if(delayT){clearTimeout(delayT);delayT=null;}if(repT){clearInterval(repT);repT=null;}};
+    b.addEventListener('pointerdown',e=>{
+      e.preventDefault(); // ボタンにフォーカスを移さない（select等の既存挙動を維持）
+      try{inp.focus();}catch(_){}
+      _stepNumInput(inp,dir);
+      delayT=setTimeout(()=>{repT=setInterval(()=>_stepNumInput(inp,dir),120);},500);
+    });
+    ['pointerup','pointerleave','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,stop));
+    b.addEventListener('contextmenu',e=>e.preventDefault()); // iPad長押しメニュー防止
+    return b;
+  };
+  box.appendChild(mk(1,'▲'));
+  box.appendChild(mk(-1,'▼'));
+  const suf=inp.closest('.suf');
+  if(suf){
+    suf.appendChild(box); // [入力][単位][▲▼] の並びで単位ラベルの右に付ける
+  }else{
+    // 裸のinput（グリッド内 width:100% 等）はflexラッパーで包んで横に付ける
+    const wrap=document.createElement('span');
+    wrap.className='num-stepwrap';
+    inp.parentNode.insertBefore(wrap,inp);
+    wrap.appendChild(inp);
+    wrap.appendChild(box);
+  }
+}
+const _STEPPER_SEL='input[type="number"]:not(.amt-inp)';
+function initCustomSteppers(){
+  document.querySelectorAll(_STEPPER_SEL).forEach(_attachStepper);
+  if(window._stepperObs)return;
+  // 動的追加された入力欄（車・保険・住み替え・万が一Q&A等）に自動付与。
+  // CF表・グラフ等の右パネル(#right-body)は毎回大量のDOM置換が走るうえ
+  // 対象欄が無いため監視から除外（パフォーマンス対策）。
+  window._stepperObs=new MutationObserver(muts=>{
+    for(const m of muts){
+      const t=m.target;
+      if(t&&t.nodeType===1&&(t.id==='right-body'||(t.closest&&t.closest('#right-body'))))continue;
+      for(const node of m.addedNodes){
+        if(node.nodeType!==1)continue;
+        if(node.matches&&node.matches(_STEPPER_SEL))_attachStepper(node);
+        else if(node.querySelectorAll)node.querySelectorAll(_STEPPER_SEL).forEach(_attachStepper);
+      }
+    }
+  });
+  window._stepperObs.observe(document.body,{childList:true,subtree:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initCustomSteppers);
+else initCustomSteppers();
