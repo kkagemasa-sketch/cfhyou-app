@@ -430,6 +430,74 @@ function onIncomeModeChange(){
 window.applyIncomeModeLabels=applyIncomeModeLabels;
 window.onIncomeModeChange=onIncomeModeChange;
 
+// ===== 額面→手取りの計算フローポップアップ（収入ステップの🔍ボタンから） =====
+// explain-core.js の _buildPopup / closeExplainPopup を流用してその場に表示する
+function showGrossFlowPopup(stepId, btnEl){
+  if(typeof _buildPopup!=='function'){alert('表示部品の読み込みに失敗しました');return;}
+  const person=stepId.startsWith('h-is')?'h':'w';
+  const label=person==='h'?'ご主人様':'奥様';
+  const gross=_amtVal(document.getElementById(`${stepId}-net-from`));
+  const fromAge=parseInt(document.getElementById(`${stepId}-from`)?.value)||40;
+  if(gross<=0){alert('開始時の額面年収を入力してください');return;}
+  const wt=getWorkType(person);
+  const wtLabel=wt==='komuin'?'公務員':wt==='part'?'扶養内パート':'会社員';
+  // CF表と同じ基準で配偶者控除・扶養控除を判定（この段階の開始年齢時点）
+  const _single=(typeof householdType!=='undefined'&&householdType==='single');
+  const baseAge=person==='h'?(iv('husband-age')||30):(iv('wife-age')||29);
+  const yearOffset=Math.max(0,fromAge-baseAge);
+  let spouseDed=false, fuyo={it:0,ju:0,n16_18:0,n19_22:0};
+  if(person==='h'){
+    fuyo=calcFuyoDed(_childrenNowForFuyo(),yearOffset);
+    if(!_single){
+      const otherBase=iv('wife-age')||29;
+      const otherGross=getIncomeAtAge(getIncomeSteps('w'), otherBase+yearOffset);
+      spouseDed=canApplySpouseDed(gross,otherGross);
+    }
+  }
+  const bd=grossToNetBreakdown(gross,fromAge,wt,spouseDed,fuyo.it,fuyo.ju);
+  if(!bd)return;
+  const pct=Math.round(bd.net/bd.gross*1000)/10;
+  const _row=(lbl,val,color)=>`<div style="display:flex;justify-content:space-between;padding:2px 0${color?';color:'+color:''}"><span>${lbl}</span><span>${val}</span></div>`;
+  const _fuyoParts=[];
+  if(fuyo.n16_18>0)_fuyoParts.push(`16〜18歳×${fuyo.n16_18}人`);
+  if(fuyo.n19_22>0)_fuyoParts.push(`19〜22歳×${fuyo.n19_22}人`);
+  const simple=`
+    <div style="font-size:12px">
+      ${_row(`📥 額面年収（${fromAge}歳・${wtLabel}）`,`<strong>${bd.gross.toLocaleString()}万円</strong>`)}
+      ${bd.workType==='part'
+        ?_row('社会保険料','0円（配偶者の社保に加入）','#3a8a3a')
+        :_row(`− 社会保険料（${(bd.shakaiRate*100).toFixed(2)}%）`,`▲${bd.shakai.toLocaleString()}万円`,'#b91c1c')}
+      ${_row(`− 所得税`,`▲${bd.itax.toLocaleString()}万円`,'#b91c1c')}
+      ${_row(`− 住民税`,`▲${bd.jumin.toLocaleString()}万円`,'#b91c1c')}
+      <div style="display:flex;justify-content:space-between;padding:5px 0 2px;border-top:2px solid #1e3a5f;font-weight:700;margin-top:4px">
+        <span>💴 手取り年収</span><span style="color:#1e3a5f;font-size:15px">${Math.round(bd.net).toLocaleString()}万円</span>
+      </div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:2px;text-align:right">額面の ${pct}%</div>
+    </div>`;
+  const detail=`
+    <div style="display:flex;flex-direction:column;gap:3px;font-size:11px">
+      <div style="font-weight:700;color:#1e3a5f">▼ 税金のもとになる所得</div>
+      <div>額面 ${bd.gross.toLocaleString()}万 − 給与所得控除 ${bd.kyuyo.toLocaleString()}万 = 給与所得 <strong>${bd.grossSyotoku.toLocaleString()}万円</strong></div>
+      <div style="font-weight:700;color:#1e3a5f;margin-top:5px">▼ 差し引ける控除（所得税）</div>
+      <div>基礎控除 ${bd.kisoIt}万${bd.spIt?` ＋ 配偶者控除 ${bd.spIt}万`:''}${bd.fuyoIt?` ＋ 扶養控除 ${bd.fuyoIt}万（${_fuyoParts.join('・')}）`:''}${bd.workType!=='part'?` ＋ 社会保険料 ${bd.shakai.toLocaleString()}万`:''}</div>
+      <div>→ 課税所得 <strong>${bd.taxable.toLocaleString()}万円</strong> → 所得税 <strong>${bd.itax.toLocaleString()}万円</strong>（累進5〜45%・復興税込）</div>
+      <div style="font-weight:700;color:#1e3a5f;margin-top:5px">▼ 住民税</div>
+      <div>基礎控除 ${bd.kisoJu}万${bd.spJu?`・配偶者控除 ${bd.spJu}万`:''}${bd.fuyoJu?`・扶養控除 ${bd.fuyoJu}万`:''} を差引後の所得 × 10% ＋ 均等割 = <strong>${bd.jumin.toLocaleString()}万円</strong></div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:6px;line-height:1.5">
+        ※ この段階の開始年齢時点での計算例です。CF表では毎年、年齢・お子様の扶養・配偶者の収入に応じて自動で再計算されます。iDeCo等の控除・住宅ローン控除はCF表の別行で反映されます。
+      </div>
+    </div>`;
+  // 同じボタンをもう一度押したら閉じる（トグル）
+  if(typeof _explainPopupEl!=='undefined'&&_explainPopupEl&&_explainPopupEl.dataset.row==='grossFlow-'+stepId){closeExplainPopup();return;}
+  closeExplainPopup();
+  _buildPopup(btnEl,'grossFlow-'+stepId,0,{title:`💴 ${label} 額面→手取りの計算`,simple,detail});
+  setTimeout(()=>{
+    document.addEventListener('click',_explainOutsideClick,true);
+    document.addEventListener('keydown',_explainEscKey,true);
+  },0);
+}
+window.showGrossFlowPopup=showGrossFlowPopup;
+
 // ===== 収入段階の折りたたみ／要約表示 =====
 // 入力済みの段階を1行に圧縮表示することで「追加済み」を明示し、誤って
 // 追加ボタンを連打して同じ段階を二重作成するのを防ぐ。
@@ -549,7 +617,9 @@ function calcStepHint(id){
         const wt=getWorkType(person);
         const netF=nf>0?Math.round(grossToNetYearly(nf,af||40,wt,false,0,0)):0;
         const netT=nt>0?Math.round(grossToNetYearly(nt,at||af||40,wt,false,0,0)):netF;
-        txt+=`<br>💰 手取り換算: 約 ${netF.toLocaleString()}万 → ${netT.toLocaleString()}万円/年（配偶者・扶養控除はCF表側で自動反映）`;
+        txt+=`<br>💰 手取り換算: 約 ${netF.toLocaleString()}万 → ${netT.toLocaleString()}万円/年
+          <button type="button" onclick="event.stopPropagation();showGrossFlowPopup('${id}',this)"
+            style="font-size:10px;background:#eef5ff;border:1px solid #b8d4f8;color:#2d7dd2;border-radius:4px;padding:2px 7px;cursor:pointer;margin-left:4px;font-family:inherit">🔍 計算の内訳</button>`;
       }
       hint.innerHTML=txt;
     }

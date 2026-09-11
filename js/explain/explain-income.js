@@ -50,10 +50,12 @@
     }
 
     // シンプル表示: 額面 − 社会保険料 − 所得税 − 住民税 = 手取
+    // 額面入力モードでは「入力した額面が起点」の表現に切り替える
+    const _gm=(typeof isGrossInputMode==='function')&&isGrossInputMode();
     const simple=`
       <div style="display:flex;flex-direction:column;gap:3px;font-size:12px">
         <div style="display:flex;justify-content:space-between">
-          <span>📥 推定額面年収</span><span>${explainFmt(bd.gross,'万円')}</span>
+          <span>📥 ${_gm?'額面年収（入力値ベース）':'推定額面年収'}</span><span>${explainFmt(bd.gross,'万円')}</span>
         </div>
         <div style="display:flex;justify-content:space-between;color:#b91c1c">
           <span>− 社会保険料</span><span>${explainFmt(bd.shakai,'万円')}</span>
@@ -65,26 +67,49 @@
           <span>− 住民税</span><span>${explainFmt(bd.jumin,'万円')}</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding-top:5px;border-top:2px solid #1e3a5f;font-weight:700">
-          <span>手取年収（入力値）</span>
+          <span>手取年収${_gm?'（自動計算）':'（入力値）'}</span>
           <span style="color:#1e3a5f;font-size:14px">${explainFmt(bd.net,'万円')}</span>
         </div>
         <div style="font-size:10px;color:#94a3b8;margin-top:4px">
-          ※ 手取りから額面を逆算して算出。入力値とは概ね一致します（逆算誤差あり: 逆算手取 ${explainFmt(bd.netComputed,'万円')}）
+          ${_gm?'※ 入力された額面から社保・税を自動計算した手取りです（額面はこの手取りからの逆算表示のため入力値と±0.1万円程度ズレることがあります）'
+              :`※ 手取りから額面を逆算して算出。入力値とは概ね一致します（逆算誤差あり: 逆算手取 ${explainFmt(bd.netComputed,'万円')}）`}
         </div>
       </div>
     `;
 
-    return { title:titleText, simple, detail:_buildIncomeDetail(bd,person) };
+    return { title:titleText, simple, detail:_buildIncomeDetail(bd,person,ctx) };
   }
 
-  function _buildIncomeDetail(bd,person){
+  // その年の扶養対象のお子様人数（16-18歳／19-22歳）を年齢行から数える
+  function _fuyoCountsAt(R,i){
+    let n16=0,n19=0;
+    (R.cA||[]).forEach(arr=>{
+      const ag=arr&&arr[i];
+      if(typeof ag!=='number')return;
+      if(ag>=16&&ag<=18)n16++;
+      else if(ag>=19&&ag<=22)n19++;
+    });
+    return {n16,n19};
+  }
+
+  function _buildIncomeDetail(bd,person,ctx){
     const labelSelf=person==='h'?'ご主人':'奥様';
     const shakaiPct=(bd.shakaiRate*100).toFixed(2);
     const ageNote=bd.age>=40&&bd.age<65?'（40歳以上：介護保険料加算）':'';
+    const _gm=(typeof isGrossInputMode==='function')&&isGrossInputMode();
+    // 扶養控除の人数内訳（この年の子の年齢から）
+    let fuyoNote='';
+    if(bd.fuyoIt>0&&ctx&&ctx.R){
+      const c=_fuyoCountsAt(ctx.R,ctx.colIndex);
+      const parts=[];
+      if(c.n16>0)parts.push(`16〜18歳×${c.n16}人`);
+      if(c.n19>0)parts.push(`19〜22歳×${c.n19}人`);
+      fuyoNote=parts.length?`（${parts.join('・')}）`:'';
+    }
     return `
       <div style="display:flex;flex-direction:column;gap:3px;font-size:11px">
         <div style="font-weight:700;color:#1e3a5f;margin-top:2px">▼ 社会保険料</div>
-        <div>推定額面 ${explainFmt(bd.gross,'万円')} × <strong>${shakaiPct}%</strong> ${ageNote}</div>
+        <div>${_gm?'額面':'推定額面'} ${explainFmt(bd.gross,'万円')} × <strong>${shakaiPct}%</strong> ${ageNote}</div>
         <div>= <strong>${explainFmt(bd.shakai,'万円')}</strong></div>
 
         <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 所得税（課税所得から累進）</div>
@@ -92,17 +117,20 @@
         <div>給与所得金額: 額面 − 給与所得控除 = <strong>${explainFmt(bd.grossSyotoku,'万円')}</strong></div>
         <div>基礎控除（所得税）: ${explainFmt(bd.kisoIt,'万円')}</div>
         ${bd.hasSpouseDed?`<div>配偶者控除: ${explainFmt(bd.spouseDedIt,'万円')}</div>`:''}
+        ${bd.fuyoIt>0?`<div>扶養控除: ${explainFmt(bd.fuyoIt,'万円')}${fuyoNote}</div>`:''}
         <div>課税所得: ${explainFmt(bd.taxable,'万円')}</div>
         <div>= <strong>${explainFmt(bd.itax,'万円')}</strong> <span style="color:#94a3b8">（復興特別所得税含む）</span></div>
 
         <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 住民税</div>
         <div>基礎控除（住民税）: ${explainFmt(bd.kisoJu,'万円')}</div>
         ${bd.hasSpouseDed?`<div>配偶者控除（住民税）: ${explainFmt(bd.spouseDedJu,'万円')}</div>`:''}
+        ${bd.fuyoJu>0?`<div>扶養控除（住民税）: ${explainFmt(bd.fuyoJu,'万円')}${fuyoNote}</div>`:''}
         <div>住民税課税所得: ${explainFmt(bd.juminTaxable,'万円')}</div>
         <div>= <strong>${explainFmt(bd.jumin,'万円')}</strong> <span style="color:#94a3b8">（所得割10% + 均等割・調整控除）</span></div>
 
         <div style="font-size:10px;color:#94a3b8;margin-top:8px;line-height:1.5">
-          ※ 手取り(入力値)から額面を逆算しています。扶養家族数・生命保険料控除・医療費控除など一部の控除は簡略化されています。
+          ${_gm?'※ 額面入力モード: 入力された額面から自動計算しています。生命保険料控除・医療費控除など一部の控除は簡略化されています。'
+              :'※ 手取り(入力値)から額面を逆算しています。生命保険料控除・医療費控除など一部の控除は簡略化されています。'}
         </div>
       </div>
     `;

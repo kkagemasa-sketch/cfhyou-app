@@ -195,8 +195,8 @@ function breakdownPensionAt(grossWan, age){
 // workType: 'kaishain'(会社員) | 'komuin'(公務員・雇用保険なし) | 'part'(扶養内パート・社保なし)
 // spouseDed: 配偶者控除を適用するか / fuyoIt・fuyoJu: 扶養控除（所得税・住民税）
 // 手取り計算機(calcTakeHomeBase)と同じ式の純関数版。CF表の年次ループから毎年呼ばれる
-function grossToNetYearly(gross, age, workType, spouseDed, fuyoIt, fuyoJu){
-  if(!gross||gross<=0)return 0;
+function grossToNetBreakdown(gross, age, workType, spouseDed, fuyoIt, fuyoJu){
+  if(!gross||gross<=0)return null;
   const kyuyo=calcKyuyoDed(gross);
   const gs=Math.max(0,gross-kyuyo);
   const [kisoIt,kisoJu]=calcKisoDed(gs);
@@ -206,7 +206,10 @@ function grossToNetYearly(gross, age, workType, spouseDed, fuyoIt, fuyoJu){
     let itax=0,jumin=0;
     if(gross>160)itax=calcIncomeTax(Math.max(0,gs-kisoIt));
     if(gross>110)jumin=calcJuminTax(Math.max(0,gs-kisoJu));
-    return Math.round((gross-itax-jumin)*10)/10;
+    const net=Math.round((gross-itax-jumin)*10)/10;
+    return {gross, workType, age, shakai:0, shakaiRate:0, kyuyo, grossSyotoku:gs,
+      kisoIt, kisoJu, spIt:0, spJu:0, fuyoIt:0, fuyoJu:0,
+      taxable:gross>160?Math.max(0,gs-kisoIt):0, itax, jumin, net};
   }
   // 会社員/公務員: 公務員は雇用保険料(0.6%相当)がないぶん社保率を下げる
   const shakaiRate=calcShakaiRate(age)-(workType==='komuin'?0.006:0);
@@ -215,7 +218,14 @@ function grossToNetYearly(gross, age, workType, spouseDed, fuyoIt, fuyoJu){
   const taxable=Math.max(0,gs-shakai-kisoIt-spIt-(fuyoIt||0));
   const itax=calcIncomeTax(taxable);
   const jumin=calcJuminTax(Math.max(0,gs-shakai-kisoJu-spJu-(fuyoJu||0)));
-  return Math.round((gross-shakai-itax-jumin)*10)/10;
+  const net=Math.round((gross-shakai-itax-jumin)*10)/10;
+  return {gross, workType, age, shakai, shakaiRate, kyuyo, grossSyotoku:gs,
+    kisoIt, kisoJu, spIt, spJu, fuyoIt:fuyoIt||0, fuyoJu:fuyoJu||0,
+    taxable, itax, jumin, net};
+}
+function grossToNetYearly(gross, age, workType, spouseDed, fuyoIt, fuyoJu){
+  const bd=grossToNetBreakdown(gross, age, workType, spouseDed, fuyoIt, fuyoJu);
+  return bd?bd.net:0;
 }
 // 収入の入力モード（'net'=手取り入力・従来 / 'gross'=額面入力）
 function isGrossInputMode(){
