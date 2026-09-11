@@ -49,6 +49,11 @@ function _getPrevStepTakeHome(stepId){
       const txt = calcRes.textContent.replace(/[^0-9.]/g,'');
       prev = parseFloat(txt) || 0;
     }
+  } else if(typeof isGrossInputMode==='function' && isGrossInputMode() && prev > 0){
+    // ★ 額面入力モード: ステップ欄の値は額面なので、給付金計算（手取り×率）の前に
+    //   手取りへ換算する（年齢はこの段階の開始年齢で近似）
+    const fromAge = parseInt(document.getElementById(`${stepId}-from`)?.value) || 40;
+    prev = Math.round(grossToNetYearly(prev, fromAge, getWorkType(person), false, 0, 0));
   }
   return prev;
 }

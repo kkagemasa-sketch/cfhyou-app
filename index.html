@@ -350,6 +350,33 @@ window.closeAboutModal=closeAboutModal;
     <div class="sh" onclick="tog(this)" style="background:#2d7dd2"><span class="sh-tab" style="background:#2d7dd2">③収入</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">3</span>💰 収入設定<span class="stog on">▾</span></div>
     <div class="sb">
 
+      <!-- 収入の入力方法（額面/手取り）・世帯一括 -->
+      <div style="background:#eef5ff;border:1.5px solid #b8d4f8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
+        <div class="fg"><label class="lbl">収入の入力方法（世帯一括）</label>
+          <select class="sel" id="income-input-mode" oninput="onIncomeModeChange()">
+            <option value="net" selected>手取り年収で入力（従来どおり）</option>
+            <option value="gross">額面年収で入力（税・社保を自動計算）</option>
+          </select>
+          <span class="hint" style="font-size:9px">額面モードでは、社会保険料・所得税・住民税（配偶者控除・お子様の扶養控除・iDeCo等を考慮）を毎年自動計算して手取り化します。源泉徴収票の「支払金額」をそのまま入力できます</span></div>
+        <div id="work-type-row" style="display:none;margin-top:8px">
+          <div class="g2">
+            <div class="fg"><label class="lbl" style="font-size:9px">ご主人様の働き方</label>
+              <select class="sel" id="h-work-type" oninput="live()">
+                <option value="kaishain" selected>会社員</option>
+                <option value="komuin">公務員</option>
+                <option value="part">扶養内パート</option>
+              </select></div>
+            <div class="fg wife-only"><label class="lbl" style="font-size:9px">奥様の働き方</label>
+              <select class="sel" id="w-work-type" oninput="live()">
+                <option value="kaishain" selected>会社員</option>
+                <option value="komuin">公務員</option>
+                <option value="part">扶養内パート</option>
+              </select></div>
+          </div>
+          <span class="hint" style="font-size:9px">自営業・フリーランスの方は税・社保の仕組みが異なるため、恐れ入りますが「手取り年収で入力」をご利用ください（次回対応予定）</span>
+        </div>
+      </div>
+
       <!-- 🧮 手取り計算機トグルボタン（押すと下にポップアップ表示） -->
       <div style="position:relative;margin-bottom:12px">
         <button type="button" id="calc-toggle-btn" onclick="toggleCalcPopup()"
@@ -2085,22 +2112,22 @@ window.closeAboutModal=closeAboutModal;
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=19"></script>
-<script src="js/constants.js?v=27"></script>
+<script src="js/constants.js?v=28"></script>
 <script src="js/market-scenarios.js?v=3"></script>
 <script src="js/market-sim.js?v=6"></script>
-<script src="js/utils.js?v=30"></script>
+<script src="js/utils.js?v=31"></script>
 <script src="js/family.js?v=5"></script>
-<script src="js/income.js?v=26"></script>
-<script src="js/mat-leave.js?v=5"></script>
+<script src="js/income.js?v=27"></script>
+<script src="js/mat-leave.js?v=6"></script>
 <script src="js/education.js?v=6"></script>
 <script src="js/housing.js?v=43"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=20"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=100"></script>
+<script src="js/contingency.js?v=101"></script>
 <script src="js/cf-ui.js?v=26"></script>
-<script src="js/cf-calc.js?v=86"></script>
+<script src="js/cf-calc.js?v=87"></script>
 <script src="js/cf-table.js?v=73"></script>
 <script src="js/cf-highlight.js?v=3"></script>
 <script src="js/graphs.js?v=7"></script>
@@ -2108,7 +2135,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/loan-plan.js?v=20"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=5"></script>
-<script src="js/save-load.js?v=84"></script>
+<script src="js/save-load.js?v=85"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=8"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>

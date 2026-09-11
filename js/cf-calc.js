@@ -69,6 +69,12 @@ function render(){
   //   旧方式（手取りに調整率を直接乗算）は、繰上げ時の公的年金等控除60万円
   //  （65歳未満）や税の非線形を無視していた。65歳受給・調整なしの場合は
   //   逆算→再計算の往復で入力値と一致するため従来と同じ値になる。
+  // ★ 額面入力モード: 収入ステップの値を「額面年収」とみなし、毎年
+  //   grossToNetYearly で手取り化してから従来の手取りベース計算に流す。
+  //   手取りモード(従来・デフォルト)では一切変換しない
+  const _grossMode=(typeof isGrossInputMode==='function')&&isGrossInputMode();
+  const _wtH=_grossMode?getWorkType('h'):null;
+  const _wtW=_grossMode?getWorkType('w'):null;
   // 退職後の税・社保の自動計上（トグル・国保概算は任意入力）
   const _retTaxOn=!!document.getElementById('retire-tax-on')?.checked;
   const _kokuhoAnnual=fv('retire-kokuho')||0;
@@ -884,9 +890,23 @@ function render(){
     children.forEach((c,ci)=>R.cA[ci].push(c.age+i));
 
     // ─── ご主人収入 ───
+    // 扶養控除（この年の子の年齢で判定・主たる生計者=ご主人側にのみ適用）
+    const _fuyoY=calcFuyoDed(children,i);
+    // 奥様のこの年の育休状態（額面モードの変換スキップ・配偶者控除判定に使用）
+    const _wLeaveY=(!_isSingle)?leaves.find(l=>wa>=l.startAge&&wa<l.endAge):null;
     let hInc=0, hDCSaving=0, _hDCSv=null, _hDedMatching=0, _hDedIdeco=0;
     if(!(hDeathAge>0&&ha>hDeathAge)){
       hInc=getIncomeAtAge(hSteps,ha);
+      if(_grossMode&&hInc>0){
+        // ご主人の育休ステップ（給付金=非課税の手取り額）は変換しない
+        const _hOnLeaveY=_hStepLeaves.some(s=>s.isMatLeave&&ha>=s.fromAge&&ha<=s.toAge);
+        if(!_hOnLeaveY){
+          // 配偶者控除: 奥様のこの年の額面で判定（育休給付は非課税所得のため0扱い=適用側）
+          const _wGrossY=(!_isSingle&&!(wDeathAge>0&&wa>wDeathAge))?(_wLeaveY?0:getIncomeAtAge(wSteps,wa)):0;
+          const _spDedY=!_isSingle&&canApplySpouseDed(hInc,_wGrossY);
+          hInc=ri(grossToNetYearly(hInc,ha,_wtH,_spDedY,_fuyoY.it,_fuyoY.ju));
+        }
+      }
       // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
       if(hInc>0&&ha<dcIdeco.h.retAge){
         _hDedMatching=dcIdeco.h.matching*12;
@@ -901,12 +921,14 @@ function render(){
     // ─── 奥様収入（産休・育休・時短対応）※単身時スキップ ───
     let wInc=0, wDCSaving=0, _wDCSv=null, _wDedMatching=0, _wDedIdeco=0, _wLeaveType=null;
     if(!_isSingle&&!(wDeathAge>0&&wa>wDeathAge)){
-      const leave=leaves.find(l=>wa>=l.startAge&&wa<l.endAge);
+      const leave=_wLeaveY;
       if(leave){
-        wInc=ri(leave.income);
+        wInc=ri(leave.income); // 育休給付金は非課税の手取り額 → 額面モードでも変換しない
         _wLeaveType=leave.type;
       } else {
         wInc=getIncomeAtAge(wSteps,wa);
+        // 奥様側の変換: 扶養控除・配偶者控除はご主人側に適用済みのため本人分の控除のみ
+        if(_grossMode&&wInc>0)wInc=ri(grossToNetYearly(wInc,wa,_wtW,false,0,0));
       }
       // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
       if(wInc>0&&wa<dcIdeco.w.retAge){
@@ -920,8 +942,7 @@ function render(){
     R.dcTaxSavingW.push(ri(wDCSaving));
 
     // ─── 手取年収の内訳（額面・社会保険料・所得税・住民税の逆算） ───
-    // 扶養控除（この年の子の年齢で判定・主たる生計者=ご主人側にのみ適用）
-    const _fuyoY=calcFuyoDed(children,i);
+    // ※_fuyoY はご主人収入ブロックの冒頭で定義済み（額面モードの変換と共用）
     R.hIncBd.push(hInc>0?_calcNetBreakdown(hInc,ha,_isSingle,wInc,true,_fuyoY.it,_fuyoY.ju):null);
     R.wIncBd.push(wInc>0?_calcNetBreakdown(wInc,wa,true,0,false):null);
     // DC/iDeCo節税の内訳
@@ -1056,16 +1077,20 @@ function render(){
       const _hAliveRT=(hDeathAge===0||ha<=hDeathAge);
       const _wAliveRT=(!_isSingle&&(wDeathAge===0||wa<=wDeathAge));
       if(_hAliveRT&&ha===retAge+1){
-        const _lastNetH=getIncomeAtAge(hSteps,retAge);
+        let _lastNetH=getIncomeAtAge(hSteps,retAge);
+        // 額面モード: 手取りに変換してから逆算経路へ（往復同エンジンのため誤差極小）
+        const _fuyoRT=calcFuyoDed(children,i-1);
+        if(_grossMode&&_lastNetH>0)_lastNetH=grossToNetYearly(_lastNetH,retAge,_wtH,false,_fuyoRT.it,_fuyoRT.ju);
         if(_lastNetH>0){
-          const _spNetRT=_isSingle?0:getIncomeAtAge(wSteps,wa-1);
-          const _fuyoRT=calcFuyoDed(children,i-1);
+          let _spNetRT=_isSingle?0:getIncomeAtAge(wSteps,wa-1);
+          if(_grossMode&&_spNetRT>0)_spNetRT=grossToNetYearly(_spNetRT,wa-1,_wtW,false,0,0);
           const _bdLast=_calcNetBreakdown(_lastNetH,retAge,_isSingle,_spNetRT,true,_fuyoRT.it,_fuyoRT.ju);
           if(_bdLast)_rtax+=ri(_bdLast.jumin);
         }
       }
       if(_wAliveRT&&wa===wRetAge+1){
-        const _lastNetW=getIncomeAtAge(wSteps,wRetAge);
+        let _lastNetW=getIncomeAtAge(wSteps,wRetAge);
+        if(_grossMode&&_lastNetW>0)_lastNetW=grossToNetYearly(_lastNetW,wRetAge,_wtW,false,0,0);
         if(_lastNetW>0){
           const _bdLastW=_calcNetBreakdown(_lastNetW,wRetAge,true,0,false);
           if(_bdLastW)_rtax+=ri(_bdLastW.jumin);
@@ -1131,6 +1156,8 @@ function render(){
         survP=overrideW;
         _survBd={receiver:'h', manual:true, total:survP};
       }else{
+        // 生計維持要件の年収850万判定: 制度上は「額面」基準。
+        // 額面モードでは生値がそのまま正しく、手取りモードは従来どおりの近似
         const hIncome=getIncomeAtAge(hSteps,ha);
         let childUnder18=0;
         children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)childUnder18++;});

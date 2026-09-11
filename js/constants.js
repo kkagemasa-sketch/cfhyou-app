@@ -221,6 +221,7 @@ const _W_ROWS  = ['wInc','pW','wRPay','wAge'];
 const _ROW_CLS = { incT:'rinct', expT:'rexpt', bal:'rbal', sav:'rsav', lBal:'rloan', totalAsset:'rttl', finAsset:'rfin' };
 
 const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-death-age','izoku-mode',
+  'income-input-mode','h-work-type','w-work-type',
   'house-price','down-payment','house-cost','cost-type','loan-yrs','loan-type',
   'loan-total-simple', // 住宅ローン総額モードの入力（★保存漏れでCF表間に値が漏れていたバグの修正）
   'loan-h-amt','loan-h-yrs','loan-h-type','rate-h-base','loan-w-amt','loan-w-yrs','loan-w-type','rate-w-base',

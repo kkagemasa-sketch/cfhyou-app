@@ -1125,6 +1125,8 @@ function _applyData(d){
     if(typeof updateMatLeaveJointHint==='function') setTimeout(updateMatLeaveJointHint, 50);
     // 年金繰上げ・繰下げヒント再計算
     if(typeof updatePensionAdjustHint==='function') setTimeout(()=>{updatePensionAdjustHint('h');updatePensionAdjustHint('w');}, 50);
+    // 収入の入力モード（額面/手取り）に応じてラベル・働き方区分行を復元
+    if(typeof applyIncomeModeLabels==='function') applyIncomeModeLabels();
     // 読込後は必ずメインCF表タブに戻す
     if(typeof setRTab==='function')setRTab('cf');
     live();render();

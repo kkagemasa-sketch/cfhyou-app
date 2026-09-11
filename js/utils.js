@@ -191,6 +191,41 @@ function breakdownPensionAt(grossWan, age){
   return (age<65)?breakdownPensionUnder65(grossWan):breakdownPension65plus(grossWan);
 }
 
+// ===== 額面年収 → 手取り年収（年次計算・額面入力モード用） =====
+// workType: 'kaishain'(会社員) | 'komuin'(公務員・雇用保険なし) | 'part'(扶養内パート・社保なし)
+// spouseDed: 配偶者控除を適用するか / fuyoIt・fuyoJu: 扶養控除（所得税・住民税）
+// 手取り計算機(calcTakeHomeBase)と同じ式の純関数版。CF表の年次ループから毎年呼ばれる
+function grossToNetYearly(gross, age, workType, spouseDed, fuyoIt, fuyoJu){
+  if(!gross||gross<=0)return 0;
+  const kyuyo=calcKyuyoDed(gross);
+  const gs=Math.max(0,gross-kyuyo);
+  const [kisoIt,kisoJu]=calcKisoDed(gs);
+  if(workType==='part'){
+    // 扶養内パート: 配偶者の社保に加入（本人負担なし）。
+    // 160万まで所得税0・110万まで住民税0（令和7年度改正後）
+    let itax=0,jumin=0;
+    if(gross>160)itax=calcIncomeTax(Math.max(0,gs-kisoIt));
+    if(gross>110)jumin=calcJuminTax(Math.max(0,gs-kisoJu));
+    return Math.round((gross-itax-jumin)*10)/10;
+  }
+  // 会社員/公務員: 公務員は雇用保険料(0.6%相当)がないぶん社保率を下げる
+  const shakaiRate=calcShakaiRate(age)-(workType==='komuin'?0.006:0);
+  const shakai=Math.round(gross*shakaiRate*10)/10;
+  const spIt=spouseDed?38:0, spJu=spouseDed?33:0;
+  const taxable=Math.max(0,gs-shakai-kisoIt-spIt-(fuyoIt||0));
+  const itax=calcIncomeTax(taxable);
+  const jumin=calcJuminTax(Math.max(0,gs-shakai-kisoJu-spJu-(fuyoJu||0)));
+  return Math.round((gross-shakai-itax-jumin)*10)/10;
+}
+// 収入の入力モード（'net'=手取り入力・従来 / 'gross'=額面入力）
+function isGrossInputMode(){
+  return document.getElementById('income-input-mode')?.value==='gross';
+}
+// 働き方区分（額面入力モードで使用）
+function getWorkType(person){
+  return document.getElementById(`${person}-work-type`)?.value||'kaishain';
+}
+
 // 扶養控除（子の年齢ベース・令和7年度改正後）
 // - 16〜18歳: 一般扶養 38万円（住民税33万円）
 // - 19〜22歳: 特定親族特別控除 63万円（住民税45万円）※子の収入150万以下を前提とした簡略

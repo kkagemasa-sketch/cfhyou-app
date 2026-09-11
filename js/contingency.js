@@ -402,6 +402,13 @@ function _renderContingencyInner(){
   const _pGrossH_mg=pSelf>0?estimatePensionGrossFromNet(pSelf):0;
   const _pGrossW_mg=pWife>0?estimatePensionGrossFromNet(pWife):0;
   const _pNetAt_mg=(g,age)=>{if(g<=0)return 0;const bd=breakdownPensionAt(g,age);return bd?bd.net:0;};
+  // ★ 額面入力モード: 収入ステップ値を手取り化してから使用（通常CFと同方式）。
+  //   扶養控除はご主人側のみ、配偶者控除は万一CFでは簡略のため省略（誤差は小さい）
+  const _grossMode_mg=(typeof isGrossInputMode==='function')&&isGrossInputMode();
+  const _wtH_mg=_grossMode_mg?getWorkType('h'):null;
+  const _wtW_mg=_grossMode_mg?getWorkType('w'):null;
+  const _g2nH_mg=(v,age,fu)=>(_grossMode_mg&&v>0)?ri(grossToNetYearly(v,age,_wtH_mg,false,fu?fu.it:0,fu?fu.ju:0)):v;
+  const _g2nW_mg=(v,age)=>(_grossMode_mg&&v>0)?ri(grossToNetYearly(v,age,_wtW_mg,false,0,0)):v;
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=_isSingle_mg?99:(iv('pension-w-receive')||65);
   const retPay=fv('retire-pay'), retPayAge=iv('retire-pay-age')||iv('retire-age')||60;
@@ -776,20 +783,21 @@ function _renderContingencyInner(){
       }
       return null;
     };
+    const _fuyoY_mg=_grossMode_mg?calcFuyoDed(children,i):null;
     if(targetIsH){
-      hInc=isDead?0:getIncomeAtAge(hSteps,ha);
-      // 奥様の産休・育休考慮
+      hInc=isDead?0:_g2nH_mg(getIncomeAtAge(hSteps,ha),ha,_fuyoY_mg);
+      // 奥様の産休・育休考慮（育休給付金=非課税の手取り額 → 額面モードでも変換しない）
       const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);
-      const _baseW = leave?ri(leave.income):getIncomeAtAge(wSteps,wa);
-      // 生存者=奥様：死亡後の年は Q&A 上書きが効く
+      const _baseW = leave?ri(leave.income):_g2nW_mg(getIncomeAtAge(wSteps,wa),wa);
+      // 生存者=奥様：死亡後の年は Q&A 上書きが効く（上書き値は手取り）
       const _ov = isDead ? _getMgIncomeOverride('w', wa) : null;
       wInc = (_ov!==null) ? _ov : _baseW;
     }else{
-      const _baseH = getIncomeAtAge(hSteps,ha);
-      // 生存者=ご主人：死亡後の年は Q&A 上書きが効く
+      const _baseH = _g2nH_mg(getIncomeAtAge(hSteps,ha),ha,_fuyoY_mg);
+      // 生存者=ご主人：死亡後の年は Q&A 上書きが効く（上書き値は手取り）
       const _ov = isDead ? _getMgIncomeOverride('h', ha) : null;
       hInc = (_ov!==null) ? _ov : _baseH;
-      wInc=isDead?0:(()=>{const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);return leave?ri(leave.income):getIncomeAtAge(wSteps,wa);})();
+      wInc=isDead?0:(()=>{const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);return leave?ri(leave.income):_g2nW_mg(getIncomeAtAge(wSteps,wa),wa);})();
     }
     // 生存者のDC/iDeCo節税効果（通常CFと同じく独立した収入行として表示）
     let dcTaxSaveH=0, dcTaxSaveW=0;
@@ -889,6 +897,7 @@ function _renderContingencyInner(){
           // ★ B6修正: 「850万要件」は生計維持要件＝死亡時1回の判定。旧コードは ha と
           //   hIncome を現在年で見て毎年再判定していたため、収入の年次変動で支給がON/OFF
           //   を繰り返してしまっていた。本来は死亡時の年収で判定し、それ以降は固定。
+          // 850万判定は制度上「額面」基準 → 額面モードでは生値がそのまま正しい
           const _hIncomeAtDeath = getIncomeAtAge(getIncomeSteps('h'), hAgeAtDeath);
           const _meetsLivelihood = _hIncomeAtDeath < 850;
           if(_izokuR2028){

@@ -187,7 +187,8 @@ function calcPension(person){
     const steps = getStepsForPension(person);
     const avgNet = steps.length > 0 ? steps.reduce((s,v)=>s+v,0)/steps.length : (isH?541:322);
     const _coeff=avgNet<300?0.84:avgNet<500?0.80:avgNet<700?0.77:avgNet<900?0.74:avgNet<1100?0.71:0.68;
-    const avgGrossYear = Math.round(avgNet / _coeff);
+    // 額面入力モードならステップ値=額面のため係数変換は不要
+    const avgGrossYear = (typeof isGrossInputMode==='function'&&isGrossInputMode()) ? Math.round(avgNet) : Math.round(avgNet / _coeff);
     avgMonthly = Math.round(avgGrossYear / 12);
   }
   // 老齢厚生年金（本来水準）= 平均標準報酬月額 × 5.481/1000 × 加入月数
@@ -393,8 +394,41 @@ function addIncomeStep(person){
   document.getElementById(`${person}-income-cont`).appendChild(el);
   // 初期サマリーを描画（空の状態）
   if(typeof updateIncomeStepSummary==='function') updateIncomeStepSummary(id);
+  // 額面入力モード中は新規ステップのラベルも額面表記に合わせる
+  if(typeof applyIncomeModeLabels==='function') applyIncomeModeLabels();
   live();
 }
+
+// ===== 収入の入力モード（額面/手取り）切替 =====
+// ステップ欄のラベルを現在のモードに合わせて書き換える
+function applyIncomeModeLabels(){
+  const gm=isGrossInputMode();
+  document.querySelectorAll('[id$="-amt-body"]').forEach(b=>{
+    if(!/^[hw]-is-\d+-amt-body$/.test(b.id))return;
+    const ls=b.querySelectorAll('.lbl');
+    if(ls[0])ls[0].textContent=gm?'開始時の額面年収':'開始時の手取り年収';
+    if(ls[1])ls[1].textContent=gm?'終了時の額面年収':'終了時の手取り年収';
+  });
+  document.querySelectorAll('[id$="-pct-body"]').forEach(b=>{
+    if(!/^[hw]-is-\d+-pct-body$/.test(b.id))return;
+    const l=b.querySelector('.lbl');
+    if(l)l.textContent=gm?'直前の額面に対する割合':'直前の手取りに対する割合';
+  });
+  // 働き方区分行の表示切替（額面モードのみ）
+  const row=document.getElementById('work-type-row');
+  if(row)row.style.display=gm?'':'none';
+}
+function onIncomeModeChange(){
+  applyIncomeModeLabels();
+  // 全ステップのヒントを更新（額面モードなら手取り換算を表示）
+  document.querySelectorAll('[id^="h-is-"],[id^="w-is-"]').forEach(el=>{
+    const m=el.id.match(/^([hw]-is-\d+)$/);
+    if(m)try{calcStepHint(m[1]);}catch(e){}
+  });
+  live();
+}
+window.applyIncomeModeLabels=applyIncomeModeLabels;
+window.onIncomeModeChange=onIncomeModeChange;
 
 // ===== 収入段階の折りたたみ／要約表示 =====
 // 入力済みの段階を1行に圧縮表示することで「追加済み」を明示し、誤って
@@ -501,12 +535,23 @@ function calcStepHint(id){
   const at=parseInt(document.getElementById(`${id}-to`)?.value)||0;
   const hint=document.getElementById(`${id}-hint`);
   if(hint){
-    if(!nf&&!nt){hint.textContent='手取り：― 万円 → ― 万円';}
+    const _gm=isGrossInputMode();
+    const _isLeaveStep=!!document.getElementById(`${id}-matleave`)?.checked;
+    if(!nf&&!nt){hint.textContent=(_gm?'額面':'手取り')+'：― 万円 → ― 万円';}
     else{
       const span=Math.max(1,at-af);
       const annual=Math.round((nt-nf)/span*10)/10;
       const dir=annual>0?`+${annual}万円/年増加`:annual<0?`${annual}万円/年減少`:'変動なし';
-      hint.textContent=`✓ ${af}歳${nf.toLocaleString()}万→${at}歳${nt.toLocaleString()}万　（${dir}）`;
+      let txt=`✓ ${af}歳${nf.toLocaleString()}万→${at}歳${nt.toLocaleString()}万　（${dir}）`;
+      // 額面入力モード: 手取り換算をその場で表示（育休ステップは給付金=手取りのため対象外）
+      if(_gm&&!_isLeaveStep){
+        const person=id.startsWith('h-is')?'h':'w';
+        const wt=getWorkType(person);
+        const netF=nf>0?Math.round(grossToNetYearly(nf,af||40,wt,false,0,0)):0;
+        const netT=nt>0?Math.round(grossToNetYearly(nt,at||af||40,wt,false,0,0)):netF;
+        txt+=`<br>💰 手取り換算: 約 ${netF.toLocaleString()}万 → ${netT.toLocaleString()}万円/年（配偶者・扶養控除はCF表側で自動反映）`;
+      }
+      hint.innerHTML=txt;
     }
   }
   // フォーカス中のステップのみハイライト更新（updateHints 一括呼び出しで別ステップを上書きしない）
@@ -687,7 +732,9 @@ function updateDCTaxHint(p){
   // 手取り年収を推定（現在の最初のステップから）
   const steps=getIncomeSteps(p==='h'?'h':'w');
   const baseAge=p==='h'?(iv('husband-age')||30):(iv('wife-age')||29);
-  const takeHome=getIncomeAtAge(steps, baseAge)||0;
+  let takeHome=getIncomeAtAge(steps, baseAge)||0;
+  // 額面入力モード: 節税効果の推計は手取りベースのため換算してから渡す
+  if(isGrossInputMode()&&takeHome>0)takeHome=grossToNetYearly(takeHome, baseAge, getWorkType(p==='h'?'h':'w'), false, 0, 0);
   const saving=estimateTaxSaving(takeHome, annualDeduction);
   const hint=document.getElementById(`dc-${p}-tax-hint`);
   if(hint){
@@ -749,7 +796,8 @@ function calcAvgHyojun(person, startAge, retireAge){
       net=firstNetFrom*(0.6+0.4*progress);
     }
     if(net<=0) continue; // カバーされない期間はスキップ
-    const grossYear=NET2GROSS(net);
+    // 額面入力モードならステップ値=額面をそのまま使用（係数変換の誤差がなくなり年金推計が正確に）
+    const grossYear=(typeof isGrossInputMode==='function'&&isGrossInputMode())?net:NET2GROSS(net);
     const hyojunMonth=Math.min(grossYear/12, 65); // 標準報酬月額上限65万
     sumHyojun+=hyojunMonth*12;
     countMonths+=12;
