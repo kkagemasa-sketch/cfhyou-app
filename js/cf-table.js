@@ -690,11 +690,18 @@ function applyStickyTop(container){
   const thead=container?.querySelector('.cf thead');
   if(!thead)return;
   const rows=thead.querySelectorAll('tr');
+  // ★ 読み取り（offsetHeight）と書き込み（style.top）を分離。
+  //   旧実装は行ごとに「書く→次の行の高さを読む」を繰り返し、
+  //   そのたびに強制レイアウト計算が走っていた（layout thrashing）。
+  //   style.topはsticky位置指定で行高さに影響しないため、先に全行の高さを
+  //   読み切ってから書いても結果は同一。
+  const heights=[];
+  rows.forEach(tr=>{heights.push(tr.offsetHeight)});
   let cumTop=0;
-  rows.forEach(tr=>{
+  rows.forEach((tr,i)=>{
     const cells=tr.querySelectorAll('th,td');
     cells.forEach(c=>{c.style.top=cumTop+'px'});
-    cumTop+=tr.offsetHeight;
+    cumTop+=heights[i];
   });
 }
 

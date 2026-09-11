@@ -921,6 +921,30 @@ function _updateUndoRedoBtns(){
   if(u)u.disabled=_undoStack.length<2;
   if(r)r.disabled=_redoStack.length===0;
 }
+// ★ パフォーマンス: live()経由のUndo記録は「画面が落ち着いてから」実行する。
+//   pushUndoSnap（全状態収集+JSON.stringifyで20〜80ms）を再計算チェーンの
+//   ブロッキング処理から外し、入力時の固まり時間を短縮する。
+function schedulePushUndoSnap(){
+  if(_undoSnapTimer!==null)return; // 既にスケジュール済み
+  const run=()=>{_undoSnapTimer=null;pushUndoSnap();};
+  if(typeof requestIdleCallback==='function'){
+    _undoSnapIsIdle=true;
+    _undoSnapTimer=requestIdleCallback(run,{timeout:1000});
+  }else{
+    _undoSnapIsIdle=false;
+    _undoSnapTimer=setTimeout(run,200);
+  }
+}
+// 未記録のスナップショットを即時確定する。
+// Undo/Redo実行直前に必ず呼ぶこと（遅延中の変更が記録される前に
+// 戻してしまい「1手古い状態に戻る」のを防ぐ）。
+function _flushUndoSnap(){
+  if(_undoSnapTimer===null)return;
+  if(_undoSnapIsIdle&&typeof cancelIdleCallback==='function')cancelIdleCallback(_undoSnapTimer);
+  else clearTimeout(_undoSnapTimer);
+  _undoSnapTimer=null;
+  pushUndoSnap();
+}
 function pushUndoSnap(){
   const snap=_collectSaveData();
   const snapStr=JSON.stringify(snap);
@@ -936,6 +960,7 @@ function pushUndoSnap(){
   _updateUndoRedoBtns();
 }
 function undoState(){
+  _flushUndoSnap(); // 遅延中の未記録スナップを先に確定（1手古い状態に戻るのを防止）
   if(_undoStack.length<2)return;
   const cur=_undoStack.pop();
   _redoStack.push(cur);
@@ -947,6 +972,7 @@ function undoState(){
   _updateUndoRedoBtns();
 }
 function redoState(){
+  _flushUndoSnap(); // 遅延中の未記録スナップを先に確定
   if(_redoStack.length===0)return;
   const next=_redoStack.pop();
   _undoStack.push(next);

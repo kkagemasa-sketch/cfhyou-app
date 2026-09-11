@@ -204,11 +204,16 @@ function renderGraphs(R,disp,isM,total,hAge){
     charts.c5=new Chart($('c5'),{type:'bar',data:{labels:lbls,datasets:ds5},options:stkOpt});
   } else {
     // グリッド既存：サマリーのみ更新、チャートはデータのみ差し替え
+    // ★ 系列の一致判定は「本数」でなく「ラベルの並び」で行う。
+    //   本数が偶然同じでも中身が違うケース（例: 有価証券系列が消えて
+    //   下落比較線が増えた等）で、古いラベル・色のまま別データを
+    //   表示してしまう事故を防ぐ。
+    const _dsSig=a=>a.map(d=>d.label).join('|');
     $('graph-sum-row').innerHTML=sumHtml;
     charts.c1.data.labels=lbls;
     d1.forEach((ds,i)=>{if(charts.c1.data.datasets[i])charts.c1.data.datasets[i].data=ds.data;});
     charts.c1.update('none');
-    if(charts.c2.data.datasets.length===c2ds.length){
+    if(_dsSig(charts.c2.data.datasets)===_dsSig(c2ds)){
       charts.c2.data.labels=lbls;
       c2ds.forEach((ds,i)=>{charts.c2.data.datasets[i].data=ds.data;});
       charts.c2.update('none');
@@ -216,7 +221,7 @@ function renderGraphs(R,disp,isM,total,hAge){
       try{charts.c2.destroy()}catch(e){}
       charts.c2=new Chart($('c2'),{type:'line',data:{labels:lbls,datasets:c2ds},options:opt});
     }
-    if(charts.c4.data.datasets.length===ds4.length){
+    if(_dsSig(charts.c4.data.datasets)===_dsSig(ds4)){
       charts.c4.data.labels=lbls;
       ds4.forEach((ds,i)=>{charts.c4.data.datasets[i].data=ds.data;});
       charts.c4.update('none');
@@ -224,7 +229,7 @@ function renderGraphs(R,disp,isM,total,hAge){
       try{charts.c4.destroy()}catch(e){}
       charts.c4=new Chart($('c4'),{type:'bar',data:{labels:lbls,datasets:ds4},options:stkOpt});
     }
-    if(charts.c5.data.datasets.length===ds5.length){
+    if(_dsSig(charts.c5.data.datasets)===_dsSig(ds5)){
       charts.c5.data.labels=lbls;
       ds5.forEach((ds,i)=>{charts.c5.data.datasets[i].data=ds.data;});
       charts.c5.update('none');

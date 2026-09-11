@@ -104,6 +104,9 @@ let _redoStack=[];
 // ★ パフォーマンス: 最後にpushしたスナップショットの文字列形式をキャッシュ
 //   pushUndoSnap での JSON.stringify を2回 → 1回に削減（入力ごとに 20〜80ms 短縮）
 let _lastUndoStr=null;
+// ★ Undo記録の遅延実行（live()の重い処理チェーンからJSON.stringifyを外す）
+//   _undoSnapTimer: requestIdleCallback/setTimeout のID、_undoSnapIsIdle: どちらでスケジュールしたか
+let _undoSnapTimer=null,_undoSnapIsIdle=false;
 
 let _autoSaveRestored=false; // 自動保存の復元完了フラグ（app.jsのsetTimeoutと競合防止）
 

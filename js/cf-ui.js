@@ -73,7 +73,9 @@ function live(force){
       return;
     }
     _lastInputHash=hash;
-    pushUndoSnap();
+    // ★ Undo記録は重い（全状態収集+JSON化）ため、再計算チェーンから外して
+    //   画面が落ち着いてから実行する（Undo/Redo押下時はflushで即時確定される）
+    if(typeof schedulePushUndoSnap==='function')schedulePushUndoSnap();else pushUndoSnap();
     validate();updateHints();calcLC();updateEdu();
     // 万が一タブ表示中はrenderContingency()（内部でrender()も呼ばれる）
     // Q&A万が一タブがアクティブなら該当タブを再計算
