@@ -1355,9 +1355,18 @@ function _saveNow(){
     // ★ localStorageへ同期保存（IndexedDBが間に合わなくてもこれが残る）
     try{ localStorage.setItem('cf_refresh_backup_v1', JSON.stringify({data, ts:Date.now()})); }catch(e){}
     // IndexedDBへも非同期で保存試行
+    // ★ storeなし残骸DBの端末では transaction が NotFoundError になるため、
+    //   openDB済みの接続(_db=自己修復済み)を優先。無ければ生openするが、
+    //   離脱中に重い再構築はせず「store無しなら諦める」(localStorageバックアップが残る)
     const entry={name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data};
-    const req=indexedDB.open(DB_NAME,DB_VERSION);
-    req.onsuccess=e=>{const db=e.target.result;const tx=db.transaction(STORE_NAME,'readwrite');tx.objectStore(STORE_NAME).put(entry);};
+    const _put=db=>{try{if(db&&db.objectStoreNames.contains(STORE_NAME)){const tx=db.transaction(STORE_NAME,'readwrite');tx.objectStore(STORE_NAME).put(entry);}}catch(e){}};
+    if(_db){_put(_db);}
+    else{
+      const req=indexedDB.open(DB_NAME,DB_VERSION);
+      req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(STORE_NAME))db.createObjectStore(STORE_NAME,{keyPath:'name'});};
+      req.onsuccess=e=>_put(e.target.result);
+      req.onerror=()=>{};  // VersionError等も握りつぶす(バックアップ済み)
+    }
   }catch(e){}
 }
 window.addEventListener('beforeunload',_saveNow);
