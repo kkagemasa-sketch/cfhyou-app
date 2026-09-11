@@ -61,27 +61,33 @@ function calcShakaiRate(age){
   return 0.1437;
 }
 // 配偶者控除の適用可否判定（税制準拠・簡略）
-// - 配偶者の年収103万以下（合計所得48万以下）
+// - 配偶者の年収123万以下（合計所得58万以下）※令和7年度改正で103万→123万に引き上げ
 // - 本人の年収おおむね1,095万以下（合計所得900万以下）
 function canApplySpouseDed(selfGross, spouseGross){
-  if(spouseGross>103)return false;
+  if(spouseGross>123)return false;
   if(selfGross>1095)return false;
   return true;
 }
-// 給与所得控除（令和2年改正後、上限195万）— 国税庁正規表に準拠
-// https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1410.htm
+// 給与所得控除（令和7年度改正後、最低保障65万円・上限195万）— 国税庁正規表に準拠
+// ※令和7年度改正（2025年分〜）で最低保障が55万→65万に引き上げ（年金シミュレーターと同一式）
 function calcKyuyoDed(gross){
-  if(gross<=162.5)return 55;
-  if(gross<=180)return gross*0.4-10;
+  if(gross<=190)return 65;
   if(gross<=360)return gross*0.3+8;
   if(gross<=660)return gross*0.2+44;
   if(gross<=850)return gross*0.1+110;
   return 195; // 850万円超は195万円固定（上限）
 }
-// 基礎控除（2020年改正：所得2,400万超で逓減）
+// 基礎控除（令和7年度改正後）
+// - 所得税: 58万円（合計所得132万以下は95万円 → これで「160万円の壁」= 給与65万+基礎95万 を再現）
+//   ※2025・2026年分限定の中間所得層の上乗せ特例（88/68/63万円）は2年限りのため
+//     長期CFでは恒久ルール（95万/58万）に簡略化している
+// - 住民税: 43万円（改正なし）
+// - 高所得の逓減: 合計所得2,350万円超で段階的に縮小（所得税）
 // 戻り値：[所得税の基礎控除額, 住民税の基礎控除額]
 function calcKisoDed(taxableBeforeKiso){
   // 合計所得金額 ≒ taxableBeforeKiso (ほぼ課税所得前＝給与所得)
+  if(taxableBeforeKiso<=132)return [95,43];
+  if(taxableBeforeKiso<=2350)return [58,43];
   if(taxableBeforeKiso<=2400)return [48,43];
   if(taxableBeforeKiso<=2450)return [32,29];
   if(taxableBeforeKiso<=2500)return [16,15];
@@ -147,8 +153,9 @@ function breakdownPension65plus(grossWan){
   const shakai=Math.round(grossWan*0.09*10)/10;
   // 雑所得（年金所得）
   const grossSyotoku=Math.max(0,grossWan-kokinDed);
-  // 所得税（基礎控除48万）
-  const taxableIT=Math.max(0,grossSyotoku-shakai-48);
+  // 所得税（基礎控除は令和7年度改正後: 低所得95万/通常58万 — calcKisoDedと同一基準）
+  const _kisoP=grossSyotoku<=132?95:58;
+  const taxableIT=Math.max(0,grossSyotoku-shakai-_kisoP);
   const itax=calcIncomeTax(taxableIT);
   // 住民税（基礎控除43万、均等割＋調整控除は calcJuminTax で処理）
   const taxableJU=Math.max(0,grossSyotoku-shakai-43);

@@ -350,6 +350,8 @@ function _renderContingencyInner(){
   const deathYear=getCfStartYear()+deathYearOffset-1;
   const targetIsH=mgTarget==='h';
   const deathAge=targetIsH?hAge+deathYearOffset-1:(_isSingle_mg?0:wAge+deathYearOffset-1);
+  // 遺族年金の制度モード（'current'=現行 / 'r2028'=2028年4月改正後の完全移行後簡略）— 通常CF(cf-calc.js)と共通
+  const _izokuR2028=(document.getElementById('izoku-mode')?.value||'current')==='r2028';
 
   // 通常render()の結果を取得
   const normalR=window.lastR;
@@ -856,14 +858,21 @@ function _renderContingencyInner(){
           //   これが false なら成人子しかいない＝失権ルールの対象。`!children.length` は冗長。
           const noChildAtDeath = !hadChildren;
           const yearsSinceDeath=i-(deathYearOffset-1);
-          if(noChildAtDeath&&wAgeAtDeath<30&&yearsSinceDeath>=5){
+          // 有期失権判定:
+          //  現行:   30歳未満・子なし妻のみ5年有期（H19年改正）
+          //  改正後: 子のない死亡時60歳未満の配偶者は男女とも5年有期（2028年4月改正・完全移行後）
+          const _yuki5W=_izokuR2028?(noChildAtDeath&&wAgeAtDeath<60):(noChildAtDeath&&wAgeAtDeath<30);
+          if(_yuki5W&&yearsSinceDeath>=5){
             survP=0; // 5年経過で遺族厚生年金失権
           }else{
             const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
             // ★ 中高齢寡婦加算も遺族厚生年金制度の一部 → 国民年金のみの死亡では 0
-            const chukorei=(!_isKokumin && kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
-            if(wa>=pWReceive){survP=Math.max(ri(kH*0.75)-koseiW_mg,0)+kiso+chukorei;}
-            else{survP=ri(kH*0.75)+kiso+chukorei;}
+            //   改正後モードでは廃止（新規受給者向け完全移行後の姿）
+            const chukorei=(!_izokuR2028 && !_isKokumin && kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
+            // 改正後の5年有期対象者には有期給付加算（×1.3）を上乗せ
+            const _bairitsu=(_izokuR2028&&_yuki5W)?YUKI_KASAN_BAIRITSU:1;
+            if(wa>=pWReceive){survP=Math.max(ri(kH*0.75*_bairitsu)-koseiW_mg,0)+kiso+chukorei;}
+            else{survP=ri(kH*0.75*_bairitsu)+kiso+chukorei;}
           }
         }else{
           // ── 奥様死亡 → ご主人が受給 ──
@@ -876,9 +885,25 @@ function _renderContingencyInner(){
           //   を繰り返してしまっていた。本来は死亡時の年収で判定し、それ以降は固定。
           const _hIncomeAtDeath = getIncomeAtAge(getIncomeSteps('h'), hAgeAtDeath);
           const _meetsLivelihood = _hIncomeAtDeath < 850;
-          // 夫の遺族厚生年金要件: 死亡時に(子ありOR55歳以上)が必須
-          // 死亡時55歳未満・子なし→受給権自体が発生しない（永久に）
-          if(childUnder18>0){
+          if(_izokuR2028){
+            // ── 2028年4月改正後（完全移行後の簡略・男女差解消）──
+            //  死亡時に子あり: 終身（55歳要件・60歳支給開始・収入850万停止は撤廃）
+            //  死亡時60歳以上・子なし: 終身
+            //  死亡時60歳未満・子なし: 5年有期×有期給付加算（1.3倍）
+            const _noChildW=!hadChildAtDeath;
+            const _yuki5H=_noChildW&&hAgeAtDeath<60;
+            const _yearsSinceW=i-(deathYearOffset-1);
+            if(_yuki5H&&_yearsSinceW>=5){
+              survP=0; // 5年経過で失権
+            }else{
+              const _bairitsuH=_yuki5H?YUKI_KASAN_BAIRITSU:1;
+              if(ha>=pHReceive){survP=Math.max(ri(kW*0.75*_bairitsuH)-koseiH_mg,0)+kiso;}
+              else{survP=ri(kW*0.75*_bairitsuH)+kiso;}
+            }
+          }else if(childUnder18>0){
+            // ── 現行制度 ──
+            // 夫の遺族厚生年金要件: 死亡時に(子ありOR55歳以上)が必須
+            // 死亡時55歳未満・子なし→受給権自体が発生しない（永久に）
             if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0)+kiso;}
             else{survP=ri(kW*0.75)+kiso;}
           }else if(hadChildAtDeath||hAgeAtDeath>=55){

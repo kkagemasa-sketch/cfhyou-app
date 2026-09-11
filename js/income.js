@@ -85,8 +85,9 @@ function setCalcType(person,type){
 function _autoSpouseDed(selfGross, selfPerson){
   if(typeof householdType!=='undefined'&&householdType==='single')return false;
   const spouseNet=fv(selfPerson==='h'?'w-is-1-net-from':'h-is-1-net-from')||0;
-  // 手取り103万以下は扶養内(額面≒手取り)、103万超は配偶者控除の対象外
-  const spouseGrossEst = spouseNet<=103 ? spouseNet : 9999;
+  // 手取り121万以下は税負担ほぼゼロで額面≒手取り → そのまま推定額面に使う。
+  // 121万超は額面123万超（=配偶者控除の対象外・令和7年度改正後基準）とみなす
+  const spouseGrossEst = spouseNet<=121 ? spouseNet : 9999;
   return canApplySpouseDed(selfGross, spouseGrossEst);
 }
 function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
@@ -112,13 +113,15 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
   const _spDedJu = spouseDed ? 33 : 0;
   const taxable = Math.max(0, taxableBase - _spDedIt);
   let income_tax = 0;
-  // 扶養内パート：給与収入103万以下は所得税0（給与所得控除55万+基礎控除48万=103万）
-  if(!isFuyo || gross > 103){
+  // 扶養内パート：給与収入160万以下は所得税0
+  // （令和7年度改正後: 給与所得控除65万+基礎控除95万=160万 — いわゆる「160万円の壁」）
+  if(!isFuyo || gross > 160){
     income_tax = calcIncomeTax(taxable);
   }
-  // 住民税：非課税基準は自治体によるが概ね100万以下で非課税
+  // 住民税：非課税基準は自治体によるが概ね110万以下で非課税
+  // （給与所得控除65万+非課税限度45万=110万。令和7年度改正で100万→110万に）
   let jumin;
-  if(isFuyo && gross <= 100){
+  if(isFuyo && gross <= 110){
     jumin = 0; // 住民税非課税
   } else {
     const juminTaxable = Math.max(0, grossSyotoku - shakai - kisoJu - _spDedJu);
@@ -137,7 +140,7 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
     if(isFuyo && gross > 130){
       html += `<div style="color:#d63a2a;font-weight:600;margin-top:4px">⚠ 年収130万超：社会保険の扶養から外れる可能性があります</div>`;
     } else if(isFuyo && gross > 106){
-      html += `<div style="color:#e67e22;font-weight:600;margin-top:4px">⚠ 年収106万超：従業員51人以上の会社では社保加入の可能性あり</div>`;
+      html += `<div style="color:#e67e22;font-weight:600;margin-top:4px">⚠ 年収106万超：週20時間以上の勤務なら社保加入の可能性あり（2026年10月から賃金要件が撤廃され、加入対象は順次拡大中）</div>`;
     }
     detail.innerHTML = html;
   }

@@ -16,7 +16,8 @@ const LCTRL_TABLE = {
   '2024_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[4000,13], new_general:[0,0],    used_eco:[2000,10], used_other:[2000,10] },
   '2025_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[3000,13], new_general:[0,0],    used_eco:[2000,10], used_other:[2000,10] },
   '2025_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[4000,13], new_general:[0,0],    used_eco:[2000,10], used_other:[2000,10] },
-  // 2026〜2030年入居（令和8年度税制改正 閣議決定済み・法案審議中（2026年3月末成立見込み））
+  // 2026〜2030年入居（令和8年度税制改正・成立済み。床面積要件は40㎡以上に緩和、
+  // 2028年以降入居は災害レッドゾーンの新築が対象外 — 借入限度額表には影響しないため未実装）
   '2026_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[2000,13], new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
   '2026_kosodate':{ new_long:[5000,13], new_zeh:[4500,13], new_eco:[3000,13], new_general:[0,0],    used_eco:[4500,13], used_other:[2000,10] },
   '2027_general': { new_long:[4500,13], new_zeh:[3500,13], new_eco:[2000,13], new_general:[0,0],    used_eco:[3500,13], used_other:[2000,10] },
@@ -47,6 +48,9 @@ const PROP_TAX_RELIEF = {
 };
 
 const EDU_TABLE = {
+  // 出典: 文部科学省「令和5年度 子供の学習費調査」（隔年調査・現時点の最新）
+  //   公立小6年計201.8万/私立小6年計1096.9万/公立中54.2万/私立中156.0万/公立高59.8万/私立高103.0万
+  //   → 本表の値と一致することを2026-09に確認済み。次回調査（令和7年度分）公表時に見直すこと
   // elem: インデックス0,1=未使用, 2〜7=小1〜小6
   // 公立平均33.6万/年 → 学年差を考慮（1年は入学準備等で高め、6年は修学旅行等で高め）
   // 私立1年は入学金・制服等で220.3万と突出して高い
@@ -216,7 +220,7 @@ const eduColors={
 const _W_ROWS  = ['wInc','pW','wRPay','wAge'];
 const _ROW_CLS = { incT:'rinct', expT:'rexpt', bal:'rbal', sav:'rsav', lBal:'rloan', totalAsset:'rttl', finAsset:'rfin' };
 
-const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-death-age',
+const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-death-age','izoku-mode',
   'house-price','down-payment','house-cost','cost-type','loan-yrs','loan-type',
   'loan-total-simple', // 住宅ローン総額モードの入力（★保存漏れでCF表間に値が漏れていたバグの修正）
   'loan-h-amt','loan-h-yrs','loan-h-type','rate-h-base','loan-w-amt','loan-w-yrs','loan-w-type','rate-w-base',
@@ -257,16 +261,23 @@ const DB_VERSION=1;
 const STORE_NAME='slots';
 const AUTOSAVE_KEY='__autosave__';
 
-// ===== 年金額（令和7年度・2025年度の満額） =====
+// ===== 年金額（令和8年度・2026年度の満額） =====
+// 出典: 日本年金機構「令和8年4月分からの年金額等について」（年金シミュレーターと同一値）
 // 老齢基礎年金満額（40年納付）
-const KISO_FULL_AMT=82.51;
+const KISO_FULL_AMT=84.73;   // 847,300円
 // 遺族基礎年金：基本額（被保険者の老齢基礎年金額と同額）
-const SURV_KISO_BASE=82.51;
+const SURV_KISO_BASE=84.73;
 // 遺族基礎年金の子の加算額
-const SURV_KISO_CHILD1_2=23.73; // 第1子・第2子（令和7年度：237,300円）
-const SURV_KISO_CHILD3PLUS=7.91; // 第3子以降（令和7年度：79,100円）
-// 中高齢寡婦加算（2025年度概算）
-const CHUKOREI_KAFU=61.98;
+const SURV_KISO_CHILD1_2=24.38;  // 第1子・第2子（令和8年度：243,800円）
+const SURV_KISO_CHILD3PLUS=8.13; // 第3子以降（令和8年度：81,300円）
+// 中高齢寡婦加算（令和8年度：635,500円）
+const CHUKOREI_KAFU=63.55;
+// ===== 遺族年金 2028年4月改正（年金制度改正法2025）=====
+// 改正後モード（izoku-mode='r2028'）で使用。完全移行後の姿の簡略で、
+// 経過措置（女性の段階的有期化・中高齢寡婦加算の25年かけた縮小・
+// 2028年3月までの受給開始者は現行ルール維持）は反映しない（年金シミュレーターと同方式）。
+// 子のない死亡時60歳未満の配偶者（男女共通）: 遺族厚生は5年有期×有期給付加算
+const YUKI_KASAN_BAIRITSU=1.3;
 
 // フラット35/20/50 金利テーブル（融資率9割以下・機構団信加入・最低金利）
 // [年月, フラット35(21-35年)%, フラット20(15-20年)%, フラット50(36-50年)%]

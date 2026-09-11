@@ -245,6 +245,14 @@ window.closeAboutModal=closeAboutModal;
           <span class="hint ok" id="w-death-hint" style="font-size:9px">✓ 88歳まで計算</span></div>
         <div></div>
       </div>
+      <div class="fg" style="margin-top:6px">
+        <label class="lbl" style="font-size:9px">遺族年金の制度 <span style="font-weight:400">（通常CF・万が一の両方に反映）</span></label>
+        <select class="sel" id="izoku-mode" oninput="live()">
+          <option value="current" selected>現行制度</option>
+          <option value="r2028">2028年4月改正後（5年有期化・寡婦加算廃止）</option>
+        </select>
+        <span class="hint" style="font-size:9px">改正後＝完全移行後の簡易計算。子のない60歳未満の配偶者への遺族厚生年金は5年間（額は1.3倍）で終了し、中高齢寡婦加算はなくなります（経過措置は未反映）</span>
+      </div>
       <div class="divider"></div>
       <div id="children-cont"></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -2065,12 +2073,12 @@ window.closeAboutModal=closeAboutModal;
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=19"></script>
-<script src="js/constants.js?v=25"></script>
+<script src="js/constants.js?v=26"></script>
 <script src="js/market-scenarios.js?v=3"></script>
 <script src="js/market-sim.js?v=6"></script>
-<script src="js/utils.js?v=28"></script>
+<script src="js/utils.js?v=29"></script>
 <script src="js/family.js?v=5"></script>
-<script src="js/income.js?v=24"></script>
+<script src="js/income.js?v=25"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=6"></script>
 <script src="js/housing.js?v=43"></script>
@@ -2078,9 +2086,9 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=20"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=98"></script>
+<script src="js/contingency.js?v=99"></script>
 <script src="js/cf-ui.js?v=26"></script>
-<script src="js/cf-calc.js?v=84"></script>
+<script src="js/cf-calc.js?v=85"></script>
 <script src="js/cf-table.js?v=72"></script>
 <script src="js/cf-highlight.js?v=3"></script>
 <script src="js/graphs.js?v=6"></script>
