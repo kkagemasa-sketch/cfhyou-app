@@ -245,14 +245,6 @@ window.closeAboutModal=closeAboutModal;
           <span class="hint ok" id="w-death-hint" style="font-size:9px">✓ 88歳まで計算</span></div>
         <div></div>
       </div>
-      <div class="fg" style="margin-top:6px">
-        <label class="lbl" style="font-size:9px">遺族年金の制度 <span style="font-weight:400">（通常CF・万が一の両方に反映）</span></label>
-        <select class="sel" id="izoku-mode" oninput="live()">
-          <option value="current" selected>現行制度</option>
-          <option value="r2028">2028年4月改正後（5年有期化・寡婦加算廃止）</option>
-        </select>
-        <span class="hint" style="font-size:9px">改正後＝完全移行後の簡易計算。子のない60歳未満の配偶者への遺族厚生年金は5年間（額は1.3倍）で終了し、中高齢寡婦加算はなくなります（経過措置は未反映）</span>
-      </div>
       <div class="divider"></div>
       <div id="children-cont"></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -2011,6 +2003,16 @@ window.closeAboutModal=closeAboutModal;
       <button class="btn-add" id="mg-run-btn" onclick="renderContingency()" style="display:none;background:#c2185b;color:#fff;border-color:#a01550;padding:8px 16px;font-size:12px;margin-top:8px;width:100%;border-radius:var(--r)">🛡️ 万が一CF表を生成</button>
 
       </div><!-- /mg-legacy-ui -->
+
+      <!-- 遺族年金の制度（①家族から移設 2026-09-12） -->
+      <div class="fg" style="margin-top:6px">
+        <label class="lbl" style="font-size:9px">遺族年金の制度 <span style="font-weight:400">（通常CF・万が一の両方に反映）</span></label>
+        <select class="sel" id="izoku-mode" oninput="live()">
+          <option value="current" selected>現行制度</option>
+          <option value="r2028">2028年4月改正後（5年有期化・寡婦加算廃止）</option>
+        </select>
+        <span class="hint" style="font-size:9px">改正後＝完全移行後の簡易計算。子のない60歳未満の配偶者への遺族厚生年金は5年間（額は1.3倍）で終了し、中高齢寡婦加算はなくなります（経過措置は未反映）</span>
+      </div>
 
       <!-- ===== Q&A形式 万が一シミュレーション（複数タブ対応） ===== -->
       <div style="padding:10px;border:2px dashed #f59e0b;border-radius:8px;background:#fffbeb;margin-top:10px">
