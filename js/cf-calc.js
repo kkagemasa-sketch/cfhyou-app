@@ -64,6 +64,21 @@ function render(){
   };
   const pHAdjRate = pHNoAdjust ? 1 : _pAdjRate(pHReceive);
   const pWAdjRate = pWNoAdjust ? 1 : _pAdjRate(pWReceive);
+  // ★ 老齢年金の年次手取り: 入力欄の手取り(65歳受給基準)から額面を逆算し、
+  //   繰上げ/繰下げ調整は「額面」に適用した上で受給時年齢別の詳細手取り計算を行う。
+  //   旧方式（手取りに調整率を直接乗算）は、繰上げ時の公的年金等控除60万円
+  //  （65歳未満）や税の非線形を無視していた。65歳受給・調整なしの場合は
+  //   逆算→再計算の往復で入力値と一致するため従来と同じ値になる。
+  // 退職後の税・社保の自動計上（トグル・国保概算は任意入力）
+  const _retTaxOn=!!document.getElementById('retire-tax-on')?.checked;
+  const _kokuhoAnnual=fv('retire-kokuho')||0;
+  const _pGrossH = pSelf>0 ? estimatePensionGrossFromNet(pSelf) : 0;
+  const _pGrossW = pWife>0 ? estimatePensionGrossFromNet(pWife) : 0;
+  const _pNetAt=(gross,adjRate,age)=>{
+    if(gross<=0)return 0;
+    const bd=breakdownPensionAt(Math.round(gross*adjRate*10)/10, age);
+    return bd?bd.net:0;
+  };
   // 老齢基礎年金概算（令和7年度満額82.51万円 × 加入年数/40年、constants.js で一元管理）
   const KISO_FULL=KISO_FULL_AMT;
   const pHStart=iv('pension-h-start')||22;
@@ -317,7 +332,7 @@ function render(){
   let sav=initSav;
   const R={yr:[],hA:[],wA:[],cA:children.map(()=>[]),
     hInc:[],wInc:[],hIncBd:[],wIncBd:[],dcTaxSavingH:[],dcTaxSavingW:[],dcTaxBdH:[],dcTaxBdW:[],rPay:[],wRPay:[],otherInc:[],scholarship:[],insMat:[],insMatBd:[],secRedeem:[],secRedeemBd:{},finAssetBd:{},pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],lCtrl:[],lCtrlBreakdown:[],survPension:[],dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
-    lc:[],lRep:[],lRepH:[],lRepW:[],prepayExp:[],prepayExpH:[],prepayExpW:[],rep:[],ptx:[],furn:[],senyu:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
+    lc:[],lRep:[],lRepH:[],lRepW:[],prepayExp:[],prepayExpH:[],prepayExpW:[],rep:[],ptx:[],furn:[],senyu:[],retireTax:[],edu:children.map(()=>[]),eduBd:children.map(()=>[]),
     rent:[],houseCostArr:[],moveInCost:[],secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],carBuy:[],carInsp:[],carTotal:[],carTotalH:[],carTotalW:[],carTotalS:[],carTotalNone:[],carBd:[],carRows:null,prk:[],wedding:[],ext:[],dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],zaikeiExp:[],zaikeiRows:null,zaikeiRedeem:[],zaikeiRedeemRows:null,chidai:[],kaitai:[],
     // 買い替えイベント
     swapSell:[],swapTax:[],swapPayoff:[],swapBuy:[],
@@ -504,15 +519,16 @@ function render(){
   // ─── 手取年収→額面・税金の逆算ヘルパー ───
   // netInc: 手取年収(万円), age: 年齢, isSelfSingle: 単身か, spouseNetInc: 配偶者の手取(配偶者控除判定用), isHSide: ご主人側か
   // 手取り計算機(calcTakeHomeBase)と同じ式を二分探索で逆算する（TAX表の補間を廃止）
-  function _calcNetBreakdown(netInc, age, isSelfSingle, spouseNetInc, isHSide){
+  function _calcNetBreakdown(netInc, age, isSelfSingle, spouseNetInc, isHSide, fuyoIt, fuyoJu){
     if(netInc<=0)return null;
+    fuyoIt=fuyoIt||0; fuyoJu=fuyoJu||0; // 扶養控除（16-18歳:38/33万、19-22歳:63/45万）— 主たる生計者(ご主人側)にのみ渡す
     const shakaiRate=calcShakaiRate(age);
     // 配偶者の額面を推定（配偶者控除判定用）
-    // - 手取り103万以下: 扶養内パート想定で社保ゼロ → gross ≈ net
-    // - 手取り103万超: 単身扱いで二分探索（isSelfSingle=true, spouseNetInc=0 で再帰停止）
+    // - 手取り121万以下: 税負担ほぼゼロで gross ≈ net（令和7年度改正後の123万基準に対応）
+    // - 121万超: 単身扱いで二分探索（isSelfSingle=true, spouseNetInc=0 で再帰停止）
     let spouseGrossEst = 0;
     if(spouseNetInc>0){
-      if(spouseNetInc<=103){
+      if(spouseNetInc<=121){
         spouseGrossEst = spouseNetInc;
       } else {
         const _wBd = _calcNetBreakdown(spouseNetInc, age, true, 0, false);
@@ -533,9 +549,9 @@ function render(){
         spouseDedJu=hasSpouseDed?33:0;
       }
       const taxableBase=Math.max(0,grossSyotoku-shakai-kisoIt);
-      const taxable=Math.max(0,taxableBase-spouseDedIt);
+      const taxable=Math.max(0,taxableBase-spouseDedIt-fuyoIt);
       const itax=calcIncomeTax(taxable);
-      const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-spouseDedJu);
+      const juminTaxable=Math.max(0,grossSyotoku-shakai-kisoJu-spouseDedJu-fuyoJu);
       const jumin=calcJuminTax(juminTaxable);
       const netComputed=Math.round((gross-shakai-itax-jumin)*10)/10;
       return {gross, shakai, kyuyo, grossSyotoku, kisoIt, kisoJu,
@@ -560,6 +576,7 @@ function render(){
       shakai:br.shakai, kyuyo:br.kyuyo, grossSyotoku:br.grossSyotoku,
       kisoIt:br.kisoIt, kisoJu:br.kisoJu,
       hasSpouseDed:br.hasSpouseDed, spouseDedIt:br.spouseDedIt, spouseDedJu:br.spouseDedJu,
+      fuyoIt, fuyoJu,
       taxableBase:br.taxableBase, taxable:br.taxable, itax:br.itax,
       juminTaxable:br.juminTaxable, jumin:br.jumin,
       netComputed:br.netComputed,
@@ -903,7 +920,9 @@ function render(){
     R.dcTaxSavingW.push(ri(wDCSaving));
 
     // ─── 手取年収の内訳（額面・社会保険料・所得税・住民税の逆算） ───
-    R.hIncBd.push(hInc>0?_calcNetBreakdown(hInc,ha,_isSingle,wInc,true):null);
+    // 扶養控除（この年の子の年齢で判定・主たる生計者=ご主人側にのみ適用）
+    const _fuyoY=calcFuyoDed(children,i);
+    R.hIncBd.push(hInc>0?_calcNetBreakdown(hInc,ha,_isSingle,wInc,true,_fuyoY.it,_fuyoY.ju):null);
     R.wIncBd.push(wInc>0?_calcNetBreakdown(wInc,wa,true,0,false):null);
     // DC/iDeCo節税の内訳
     R.dcTaxBdH.push(_hDCSv?{..._hDCSv, matching:_hDedMatching, ideco:_hDedIdeco, takeHome:hInc, age:ha}:null);
@@ -1002,8 +1021,8 @@ function render(){
     R.insMat.push(insMatTotal);
     R.insMatBd.push(_insMatItems.length>0?{items:_insMatItems,total:insMatTotal,year:yr,age_h:ha,age_w:wa}:null);
     // 老齢年金（死亡後も生存配偶者の年金は継続表示）
-    const _pSVal=(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(pSelf*pHAdjRate):0;
-    const _pWVal=(!_isSingle&&wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(pWife*pWAdjRate):0;
+    const _pSVal=(ha>=pHReceive&&(hDeathAge===0||ha<=hDeathAge))?ri(_pNetAt(_pGrossH,pHAdjRate,ha)):0;
+    const _pWVal=(!_isSingle&&wa>=pWReceive&&(wDeathAge===0||wa<=wDeathAge))?ri(_pNetAt(_pGrossW,pWAdjRate,wa)):0;
     R.pS.push(_pSVal);
     R.pW.push(_pWVal);
     // ─── 児童手当（TEATE_TABLEを参照・2024年10月改正対応） ───
@@ -1024,6 +1043,39 @@ function render(){
       });
     }
     R.teate.push(t);
+
+    // ─── 退職後の税・社会保険（トグルON時のみ自動計上） ───
+    // (a) 退職翌年の住民税: 住民税は前年所得に課税されるため、最終就労年の分を
+    //     退職翌年に納付書で支払う。CFの手取りは当年控除の簡略のため、この1年分が
+    //     従来は抜けていた（最終就労年の手取りから逆算した住民税額を計上）
+    // (b) 国民年金保険料: 厚生年金を抜けた退職翌年〜59歳は第1号被保険者として納付
+    //     （令和8年度: 月17,920円）
+    // (c) 国保概算: 世帯・自治体差が大きいため任意入力（万円/年）。退職翌年〜64歳に計上
+    let _rtax=0;
+    if(_retTaxOn){
+      const _hAliveRT=(hDeathAge===0||ha<=hDeathAge);
+      const _wAliveRT=(!_isSingle&&(wDeathAge===0||wa<=wDeathAge));
+      if(_hAliveRT&&ha===retAge+1){
+        const _lastNetH=getIncomeAtAge(hSteps,retAge);
+        if(_lastNetH>0){
+          const _spNetRT=_isSingle?0:getIncomeAtAge(wSteps,wa-1);
+          const _fuyoRT=calcFuyoDed(children,i-1);
+          const _bdLast=_calcNetBreakdown(_lastNetH,retAge,_isSingle,_spNetRT,true,_fuyoRT.it,_fuyoRT.ju);
+          if(_bdLast)_rtax+=ri(_bdLast.jumin);
+        }
+      }
+      if(_wAliveRT&&wa===wRetAge+1){
+        const _lastNetW=getIncomeAtAge(wSteps,wRetAge);
+        if(_lastNetW>0){
+          const _bdLastW=_calcNetBreakdown(_lastNetW,wRetAge,true,0,false);
+          if(_bdLastW)_rtax+=ri(_bdLastW.jumin);
+        }
+      }
+      if(_hAliveRT&&ha>retAge&&ha<60)_rtax+=Math.round(KOKUMIN_NENKIN_MONTHLY*12*10)/10;
+      if(_wAliveRT&&wa>wRetAge&&wa<60)_rtax+=Math.round(KOKUMIN_NENKIN_MONTHLY*12*10)/10;
+      if(_kokuhoAnnual>0&&_hAliveRT&&ha>retAge&&ha<65)_rtax+=_kokuhoAnnual;
+    }
+    R.retireTax.push(ri(_rtax));
 
     // ─── 遺族年金（純粋な遺族年金部分のみ、老齢年金は別行表示）※単身時スキップ ───
     let survP=0, survPH=0, survPW=0; // survPH: ご主人が受給, survPW: 奥様が受給
@@ -1196,7 +1248,7 @@ function render(){
       const _wMatLeaveForSpouse = _wStepLeaves.some(s=>s.isMatLeave&&wa>=s.fromAge&&wa<=s.toAge);
       const grossInc=(hInc>0 && !_hMatLeave)?hInc:0;
       const spouseIncForCalc = (wInc>0 && !_wMatLeaveForSpouse) ? wInc : 0;
-      const _hLctrlBd = _calcNetBreakdown(grossInc, ha, _isSingle, spouseIncForCalc, true);
+      const _hLctrlBd = _calcNetBreakdown(grossInc, ha, _isSingle, spouseIncForCalc, true, _fuyoY.it, _fuyoY.ju);
       let itax=0, jumin=0, taxableBase=0, grossEst=0;
       if(_hLctrlBd){
         grossEst=_hLctrlBd.gross;
@@ -2084,7 +2136,7 @@ function render(){
     // 現金一括購入：引き渡し年に「物件価格＋諸費用」を一括支出計上（不足分は下の自動取崩しで補填）
     const _housePurchase=(_isCashPurchase && i===delivery)?_cashPurchaseAmt:0;
     R.housePurchase.push(_housePurchase);
-    let exp=R.lc[i]+R.rent[i]+R.moveInCost[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i]+R.swapTax[i]+R.swapPayoff[i]+R.swapBuy[i]+R.housePurchase[i]+R.prepayExp[i];
+    let exp=R.lc[i]+R.rent[i]+R.moveInCost[i]+R.secInvest[i]+R.secBuy[i]+R.insMonthly[i]+R.insLumpExp[i]+lRep+R.rep[i]+R.ptx[i]+R.furn[i]+R.senyu[i]+R.prk[i]+R.carTotal[i]+R.wedding[i]+R.ext[i]+R.dcMatchExpH[i]+R.dcMatchExpW[i]+R.idecoExpH[i]+R.idecoExpW[i]+R.zaikeiExp[i]+R.chidai[i]+R.kaitai[i]+R.swapTax[i]+R.swapPayoff[i]+R.swapBuy[i]+R.housePurchase[i]+R.prepayExp[i]+R.retireTax[i];
     children.forEach((c,ci)=>exp+=R.edu[ci][i]);
     R.expT.push(ri(exp));
     // ─ 自動資産取崩し（預貯金マイナス時のみ） ─

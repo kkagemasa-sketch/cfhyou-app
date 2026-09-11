@@ -528,6 +528,18 @@ window.closeAboutModal=closeAboutModal;
             <div></div>
           </div>
 
+          <!-- 退職後の税・社会保険 -->
+          <div style="background:#f8f6f0;border:1px solid #ddd4bc;border-radius:var(--rs);padding:10px;margin-bottom:10px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--navy);cursor:pointer">
+              <input type="checkbox" id="retire-tax-on" checked oninput="live()">
+              退職後の税・社保を自動計上
+            </label>
+            <div class="hint" style="margin-top:4px">退職翌年の住民税（前年所得分・給与天引き終了後に納付）と、退職後〜59歳の国民年金保険料（月17,920円・令和8年度）をご夫婦それぞれ自動でCF表に計上します</div>
+            <div class="fg" style="margin-top:6px"><label class="lbl" style="font-size:9px">国民健康保険の概算（任意・世帯合算）</label>
+              <div class="suf"><input class="inp amt-inp" id="retire-kokuho" type="number" step="0.1" min="0" placeholder="例:30" oninput="live()"><span class="sl">万円/年</span></div>
+              <span class="hint" style="font-size:9px">入力するとご主人様の退職翌年〜64歳に計上。自治体・所得で大きく異なるため自動計算はしません</span></div>
+          </div>
+
           <!-- 退職金 -->
           <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -2073,12 +2085,12 @@ window.closeAboutModal=closeAboutModal;
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=19"></script>
-<script src="js/constants.js?v=26"></script>
+<script src="js/constants.js?v=27"></script>
 <script src="js/market-scenarios.js?v=3"></script>
 <script src="js/market-sim.js?v=6"></script>
-<script src="js/utils.js?v=29"></script>
+<script src="js/utils.js?v=30"></script>
 <script src="js/family.js?v=5"></script>
-<script src="js/income.js?v=25"></script>
+<script src="js/income.js?v=26"></script>
 <script src="js/mat-leave.js?v=5"></script>
 <script src="js/education.js?v=6"></script>
 <script src="js/housing.js?v=43"></script>
@@ -2086,13 +2098,13 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/living-cost.js?v=3"></script>
 <script src="js/assets.js?v=20"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=99"></script>
+<script src="js/contingency.js?v=100"></script>
 <script src="js/cf-ui.js?v=26"></script>
-<script src="js/cf-calc.js?v=85"></script>
-<script src="js/cf-table.js?v=72"></script>
+<script src="js/cf-calc.js?v=86"></script>
+<script src="js/cf-table.js?v=73"></script>
 <script src="js/cf-highlight.js?v=3"></script>
-<script src="js/graphs.js?v=6"></script>
-<script src="js/export.js?v=71"></script>
+<script src="js/graphs.js?v=7"></script>
+<script src="js/export.js?v=72"></script>
 <script src="js/loan-plan.js?v=20"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=5"></script>

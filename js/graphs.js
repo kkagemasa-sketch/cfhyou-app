@@ -64,7 +64,7 @@ function renderGraphsMG(MR,disp,isM,hAge,targetLabel){
   const eduSum=new Array(n).fill(0);
   MR.edu.forEach(arr=>arr.slice(0,n).forEach((v,i2)=>eduSum[i2]+=(v||0)));
   const secInvSum=MR.secInvest.slice(0,n).map((v,i)=>(v||0)+(MR.secBuy?MR.secBuy[i]||0:0));
-  const otherExp=MR.ptx.slice(0,n).map((v,i)=>(v||0)+(MR.prk[i]||0));
+  const otherExp=MR.ptx.slice(0,n).map((v,i)=>(v||0)+(MR.prk[i]||0)+(MR.retireTax?MR.retireTax[i]||0:0));
   const ds4=[{label:'生活費',data:MR.lc.slice(0,n),backgroundColor:'rgba(37,99,235,.55)'}];
   if(MR.lRep.some(v=>v>0))ds4.push({label:'ローン返済',data:MR.lRep.slice(0,n),backgroundColor:'rgba(124,58,237,.55)'});
   if(eduSum.some(v=>v>0))ds4.push({label:'教育費',data:eduSum,backgroundColor:'rgba(217,119,6,.65)'});
@@ -165,7 +165,7 @@ function renderGraphs(R,disp,isM,total,hAge){
   const eduSum=new Array(n).fill(0);
   R.edu.forEach(arr=>arr.slice(0,n).forEach((v,i2)=>eduSum[i2]+=(v||0)));
   const secInvSum=R.secInvest.slice(0,n).map((v,i)=>(v||0)+(R.secBuy?R.secBuy[i]||0:0));
-  const otherExp=R.ptx.slice(0,n).map((v,i)=>(v||0)+(R.prk[i]||0));
+  const otherExp=R.ptx.slice(0,n).map((v,i)=>(v||0)+(R.prk[i]||0)+(R.retireTax?R.retireTax[i]||0:0));
   const ds4=[{label:'生活費',data:R.lc.slice(0,n),backgroundColor:'rgba(37,99,235,.55)'}];
   if(R.lRep.some(v=>v>0))ds4.push({label:'ローン返済',data:R.lRep.slice(0,n),backgroundColor:'rgba(124,58,237,.55)'});
   if(eduSum.some(v=>v>0))ds4.push({label:'教育費',data:eduSum,backgroundColor:'rgba(217,119,6,.65)'});

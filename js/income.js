@@ -90,7 +90,7 @@ function _autoSpouseDed(selfGross, selfPerson){
   const spouseGrossEst = spouseNet<=121 ? spouseNet : 9999;
   return canApplySpouseDed(selfGross, spouseGrossEst);
 }
-function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
+function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed, fuyoDed){
   const result = document.getElementById(resultId);
   const detail = document.getElementById(detailId);
   if(!gross||gross<=0){
@@ -111,7 +111,10 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
   //   呼び出し元で判定した spouseDed に従う（判定式は控除側 canApplySpouseDed と同一）。
   const _spDedIt = spouseDed ? 38 : 0;
   const _spDedJu = spouseDed ? 33 : 0;
-  const taxable = Math.max(0, taxableBase - _spDedIt);
+  // 扶養控除（16-18歳:38/33万、19-22歳:63/45万・特定親族特別控除）— 主たる生計者にのみ適用
+  const _fuIt = fuyoDed ? (fuyoDed.it||0) : 0;
+  const _fuJu = fuyoDed ? (fuyoDed.ju||0) : 0;
+  const taxable = Math.max(0, taxableBase - _spDedIt - _fuIt);
   let income_tax = 0;
   // 扶養内パート：給与収入160万以下は所得税0
   // （令和7年度改正後: 給与所得控除65万+基礎控除95万=160万 — いわゆる「160万円の壁」）
@@ -124,7 +127,7 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
   if(isFuyo && gross <= 110){
     jumin = 0; // 住民税非課税
   } else {
-    const juminTaxable = Math.max(0, grossSyotoku - shakai - kisoJu - _spDedJu);
+    const juminTaxable = Math.max(0, grossSyotoku - shakai - kisoJu - _spDedJu - _fuJu);
     jumin = calcJuminTax(juminTaxable);
   }
   const takeHome = Math.round((gross - shakai - income_tax - jumin) * 10) / 10;
@@ -136,6 +139,12 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
     const juminD=Math.round(jumin*10)/10;
     let html = `社会保険料：<strong>${shakaiD.toLocaleString()}万円</strong>　所得税：<strong>${itaxD.toLocaleString()}万円</strong>　住民税：<strong>${juminD.toLocaleString()}万円</strong>`;
     html += `<div style="font-size:10px;color:var(--muted);margin-top:3px">配偶者控除：${spouseDed?'適用':'なし'}（家族構成・配偶者の収入から自動判定。住宅ローン控除の推定額面と同じ基準）</div>`;
+    if(_fuIt>0){
+      const _fuParts=[];
+      if(fuyoDed.n16_18>0)_fuParts.push(`16〜18歳×${fuyoDed.n16_18}人`);
+      if(fuyoDed.n19_22>0)_fuParts.push(`19〜22歳×${fuyoDed.n19_22}人`);
+      html += `<div style="font-size:10px;color:var(--muted);margin-top:2px">扶養控除：${_fuIt}万円（${_fuParts.join('・')}・お子様の現在年齢から自動判定）</div>`;
+    }
     // 扶養内パートで壁を超えている場合に注意表示
     if(isFuyo && gross > 130){
       html += `<div style="color:#d63a2a;font-weight:600;margin-top:4px">⚠ 年収130万超：社会保険の扶養から外れる可能性があります</div>`;
@@ -145,15 +154,20 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed){
     detail.innerHTML = html;
   }
 }
+// 現在の子の年齢一覧（扶養控除の自動判定用）
+function _childrenNowForFuyo(){
+  return [...document.querySelectorAll('input[id^="ca-"]')].map(e=>({age:parseInt(e.value)||0}));
+}
 function calcTakeHomeW(){
   // 奥様の年齢を自動取得（未入力時は40歳想定）
+  // 扶養控除は主たる生計者(ご主人側)に付ける想定のため奥様側には適用しない（二重適用防止）
   const age = parseInt(document.getElementById('wife-age')?.value);
   calcTakeHomeBase(fv('w-calc-gross'),'w-calc-result','w-calc-detail',_calcTypeW==='fuyo', isNaN(age)?undefined:age, _autoSpouseDed(fv('w-calc-gross'),'w'));
 }
 function calcTakeHome(){
   // ご主人様の年齢を自動取得（未入力時は40歳想定）
   const age = parseInt(document.getElementById('husband-age')?.value);
-  calcTakeHomeBase(fv('calc-gross'),'calc-result','calc-detail',_calcTypeH==='fuyo', isNaN(age)?undefined:age, _autoSpouseDed(fv('calc-gross'),'h'));
+  calcTakeHomeBase(fv('calc-gross'),'calc-result','calc-detail',_calcTypeH==='fuyo', isNaN(age)?undefined:age, _autoSpouseDed(fv('calc-gross'),'h'), calcFuyoDed(_childrenNowForFuyo(),0));
 }
 
 // ===== 年金概算計算 =====
@@ -178,16 +192,19 @@ function calcPension(person){
   }
   // 老齢厚生年金（本来水準）= 平均標準報酬月額 × 5.481/1000 × 加入月数
   const koseiRaw = Math.round(avgMonthly * 5.481 / 1000 * months);
-  // 老齢基礎年金 = 満額約80万 × 加入月数/480
-  const kisoRaw = Math.round(80 * months / 480);
-  // 税・社保控除（概算15%）
-  const total = Math.round((koseiRaw + kisoRaw) * 0.85);
+  // 老齢基礎年金 = 満額（令和8年度84.73万円）× 加入月数/480 ※旧: 80万のハードコード
+  const kisoRaw = Math.round(KISO_FULL_AMT * months / 480);
+  // 手取り化: 公的年金等控除・社保天引き・所得税・住民税の詳細計算
+  // ※旧: 一律×0.85。標準的な年金額(150〜250万)で年7〜9万円の過小評価があった
+  const grossP = koseiRaw + kisoRaw;
+  const bd = breakdownPension65plus(grossP);
+  const total = bd ? Math.round(bd.net) : 0;
   // 入力欄に反映
   const el = document.getElementById(`pension-${person}`);
   if(el) el.value = total;
   // ヒントに内訳表示
   const hint = document.getElementById(`${person}-pension-hint`);
-  if(hint) hint.textContent = `✓ 厚生年金:${koseiRaw}万+基礎年金:${kisoRaw}万 → 手取り概算:${total}万円/年（平均月収${avgMonthly}万・加入${Math.round(months/12)}年）`;
+  if(hint&&bd) hint.textContent = `✓ 額面${grossP}万（厚生${koseiRaw}万+基礎${kisoRaw}万）− 社保${bd.shakai}万 − 税${Math.round((bd.itax+bd.jumin)*10)/10}万 = 手取り${total}万円/年（平均月収${avgMonthly}万・加入${Math.round(months/12)}年）`;
   live();
 }
 // ===== 繰上げ・繰下げ受給の調整率計算 =====
@@ -233,7 +250,15 @@ function updatePensionAdjustHint(person){
   if(!hintEl) return;
   const rate = calcPensionAdjustRate(receiveAge);
   const pct = Math.round((rate - 1) * 1000) / 10;   // 少数第1位
-  const adjusted = Math.round(baseAmt * rate);
+  // ★ 調整は「額面」に適用し、受給開始年齢での手取りを詳細計算で表示
+  //   （65歳未満は公的年金等控除60万円のため手取り率が下がる）
+  const _grossB = estimatePensionGrossFromNet(baseAmt);
+  const _grossAdj = Math.round(_grossB * rate * 10) / 10;
+  const _bdAdj = breakdownPensionAt(_grossAdj, receiveAge);
+  const adjusted = _bdAdj ? Math.round(_bdAdj.net) : 0;
+  // 繰上げの場合、65歳以降は控除が110万円に戻り手取りが増える
+  const _bd65 = receiveAge < 65 ? breakdownPension65plus(_grossAdj) : null;
+  const adjusted65 = _bd65 ? Math.round(_bd65.net) : 0;
   const be = calcPensionBreakeven(receiveAge);
   // 基本ヒント（受給開始年齢）を更新
   if(baseHintEl) baseHintEl.textContent = `${receiveAge}歳〜 受給`;
@@ -248,11 +273,11 @@ function updatePensionAdjustHint(person){
   if(noAdj){
     // 自動調整OFFのとき: 「実際に使う値」を強調し、参考として調整後の値を併記
     mainText = `${label} ${receiveAge}歳 受給<br>
-      <strong style="color:#1e3a5f;font-size:12px">📌 CF表には ${baseAmt}万円/年 をそのまま反映（自動調整OFF）</strong>
-      <span style="color:#94a3b8;font-size:10px">　参考: 制度どおりの調整なら ${baseAmt}万 × ${Math.round(rate*1000)/1000} = ${adjusted}万円/年</span>`;
+      <strong style="color:#1e3a5f;font-size:12px">📌 CF表には ${baseAmt}万円/年 を基準に反映（自動調整OFF）</strong>
+      <span style="color:#94a3b8;font-size:10px">　参考: 制度どおりの調整なら手取り約 ${adjusted}万円/年${receiveAge<65?`（65歳からは約 ${adjusted65}万円/年）`:''}</span>`;
   } else {
-    mainText = `${label} ${receiveAge}歳 受給 → 調整率 <strong>${sign}${pct}%</strong>（${baseAmt}万 × ${Math.round(rate*1000)/1000} = ${adjusted}万円/年）<br>
-      <strong style="color:#b8860b">→ CF表には ${adjusted}万円/年 を反映</strong>`;
+    mainText = `${label} ${receiveAge}歳 受給 → 調整率 <strong>${sign}${pct}%</strong>（額面換算で調整 → 手取り約 ${adjusted}万円/年${receiveAge<65?`、65歳からは控除が増えて約 ${adjusted65}万円/年`:''}）<br>
+      <strong style="color:#b8860b">→ CF表には受給時の年齢に応じた手取りを反映</strong>`;
   }
   let beTxt = '';
   if(be){

@@ -164,12 +164,56 @@ function breakdownPension65plus(grossWan){
   return {gross:grossWan, kokinDed, shakai, itax, jumin, net};
 }
 
+// 60〜64歳（繰上げ受給）の年金手取り詳細計算
+// 65歳以上との違いは公的年金等控除のみ（最低保障 110万→60万円）
+function breakdownPensionUnder65(grossWan){
+  if(!grossWan||grossWan<=0)return null;
+  // 公的年金等控除（65歳未満、他所得1,000万以下）
+  let kokinDed;
+  if(grossWan<=130)kokinDed=60;
+  else if(grossWan<=410)kokinDed=grossWan*0.25+27.5;
+  else if(grossWan<=770)kokinDed=grossWan*0.15+68.5;
+  else if(grossWan<=1000)kokinDed=grossWan*0.05+145.5;
+  else kokinDed=195.5;
+  kokinDed=Math.round(kokinDed*10)/10;
+  const shakai=Math.round(grossWan*0.09*10)/10;
+  const grossSyotoku=Math.max(0,grossWan-kokinDed);
+  const _kisoP=grossSyotoku<=132?95:58;
+  const taxableIT=Math.max(0,grossSyotoku-shakai-_kisoP);
+  const itax=calcIncomeTax(taxableIT);
+  const taxableJU=Math.max(0,grossSyotoku-shakai-43);
+  const jumin=calcJuminTax(taxableJU);
+  const net=Math.round((grossWan-shakai-itax-jumin)*10)/10;
+  return {gross:grossWan, kokinDed, shakai, itax, jumin, net};
+}
+// 年齢に応じた年金手取り詳細計算（65歳未満は控除60万版）
+function breakdownPensionAt(grossWan, age){
+  return (age<65)?breakdownPensionUnder65(grossWan):breakdownPension65plus(grossWan);
+}
+
+// 扶養控除（子の年齢ベース・令和7年度改正後）
+// - 16〜18歳: 一般扶養 38万円（住民税33万円）
+// - 19〜22歳: 特定親族特別控除 63万円（住民税45万円）※子の収入150万以下を前提とした簡略
+// children: [{age:現在年齢}...], yearOffset: 何年後か
+// 戻り値: {it:所得税控除計, ju:住民税控除計, n16_18, n19_22}
+function calcFuyoDed(children, yearOffset){
+  let n16_18=0, n19_22=0;
+  (children||[]).forEach(c=>{
+    const a=(c.age||0)+(yearOffset||0);
+    if(a>=16&&a<=18)n16_18++;
+    else if(a>=19&&a<=22)n19_22++;
+  });
+  return {it:n16_18*38+n19_22*63, ju:n16_18*33+n19_22*45, n16_18, n19_22};
+}
+
 // 老齢年金の手取り → 額面 逆算（65歳以上想定）
 // breakdownPension65plus を使い二分探索で厳密逆算
+// ★ 旧: 110万以下は「非課税相当」として額面=手取りのショートカットがあったが、
+//   breakdownPension65plus は非課税でも社保9%を引くため往復が一致せず、
+//   手取り入力した少額年金がCF表で約9%目減りする副作用があった → 常に厳密逆算
 function estimatePensionGrossFromNet(netWan){
   if(!netWan||netWan<=0)return 0;
-  if(netWan<=110)return Math.round(netWan*10)/10; // 非課税相当
-  let lo=netWan, hi=netWan*1.5;
+  let lo=netWan, hi=netWan*1.6;
   for(let iter=0;iter<30;iter++){
     const mid=(lo+hi)/2;
     const bd=breakdownPension65plus(mid);

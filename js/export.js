@@ -565,6 +565,7 @@ async function exportExcelMG(){
   if(MR.kaitai&&MR.kaitai.some(v=>v>0))addE(_rl('mg-kaitai','解体準備金'),MR.kaitai);
   if(isM)addE(_rl('mg-rep','修繕積立金'),MR.rep);
   addE(_rl('mg-ptx','固定資産税'),MR.ptx);
+  if(MR.retireTax&&MR.retireTax.some(v=>v>0))addE(_rl('mg-retireTax','退職後の税・社保'),MR.retireTax);
   addESkip(_rl('mg-furn','家具家電買替'),MR.furn,null);
   addESkip(_rl('mg-senyu',isM?'専有部分修繕費':'修繕費'),MR.senyu,null);
   children.forEach((c,ci)=>{
@@ -1711,6 +1712,7 @@ async function exportExcel(){
   if(isM)addE(_rl('rep','修繕積立金'),R.rep);
   addE(_rl('ptx','固定資産税'),R.ptx);addE(_rl('furn','家具家電買替'),R.furn);
   addE(_rl('senyu',isM?'専有部分修繕費':'修繕費'),R.senyu);
+  if(R.retireTax&&R.retireTax.some(v=>v>0))addE(_rl('retireTax','退職後の税・社保'),R.retireTax);
   children.forEach((c,ci)=>{
     const arr=R.edu[ci];if(!arr)return;
     const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;

@@ -466,6 +466,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(R.swapBuy&&R.swapBuy.some(v=>v>0))h+=eRow('🔄 新居買付費用',R.swapBuy,'swapBuy');
   if(isM)h+=eRow('修繕積立金',R.rep,'rep');
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
+  // 退職後の税・社保（退職翌年の住民税・国民年金保険料・国保概算）— 値がある年のみ表示
+  if(R.retireTax&&R.retireTax.slice(0,disp).some(v=>v>0))h+=eRow('退職後の税・社保',R.retireTax,'retireTax');
   children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`,ci);});
   // 車両費（現有車・将来購入車）: 所有者(ご主人様/奥様/共用)を設定した車は所有者ごとの行、
   // 未設定の車は従来どおり「車両費・車検」行に表示 + hover内訳ツールチップ

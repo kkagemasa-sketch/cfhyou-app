@@ -228,7 +228,7 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'delivery-year','rent-before',
   'zaikei-h-bal','zaikei-h-monthly','zaikei-h-end','zaikei-h-redeem','zaikei-w-bal','zaikei-w-monthly','zaikei-w-end','zaikei-w-redeem',
   'rate-base','sqm','mgmt-fee','mgmt-net','rep-unit','rep-manual-base','rep-manual-override','choki',
-  'retire-age','retire-pay','retire-pay-age','pension-h','pension-h-start','pension-h-receive','pension-h-noadjust',
+  'retire-age','retire-pay','retire-pay-age','retire-tax-on','retire-kokuho','pension-h','pension-h-start','pension-h-receive','pension-h-noadjust',
   'h-gross-monthly','h-gross-bonus',
   'w-retire-age','w-retire-pay','w-retire-pay-age','pension-w','pension-w-start','pension-w-receive','pension-w-noadjust',
   'w-gross-monthly','w-gross-bonus',
@@ -272,6 +272,8 @@ const SURV_KISO_CHILD1_2=24.38;  // 第1子・第2子（令和8年度：243,800�
 const SURV_KISO_CHILD3PLUS=8.13; // 第3子以降（令和8年度：81,300円）
 // 中高齢寡婦加算（令和8年度：635,500円）
 const CHUKOREI_KAFU=63.55;
+// 国民年金保険料（令和8年度：月17,920円）— 退職後〜59歳の第1号被保険者期間に計上
+const KOKUMIN_NENKIN_MONTHLY=1.792;
 // ===== 遺族年金 2028年4月改正（年金制度改正法2025）=====
 // 改正後モード（izoku-mode='r2028'）で使用。完全移行後の姿の簡略で、
 // 経過措置（女性の段階的有期化・中高齢寡婦加算の25年かけた縮小・

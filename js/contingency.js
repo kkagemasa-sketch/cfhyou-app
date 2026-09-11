@@ -396,6 +396,12 @@ function _renderContingencyInner(){
   // 年金型保険の受取人年齢（受取人=生存者）
   const _aliveBaseAge=targetIsH?wAge:hAge;
   const pSelf=fv('pension-h')||186, pWife=_isSingle_mg?0:(fv('pension-w')||66);
+  // ★ 老齢年金の年次手取り: 手取り入力から額面を逆算し、受給時年齢別の詳細計算
+  //   （65歳未満は公的年金等控除60万円）で手取り化する — 通常CF(cf-calc.js)と同方式。
+  //   万一CFは従来から繰上げ/繰下げ調整なしの簡略のため調整率は掛けない。
+  const _pGrossH_mg=pSelf>0?estimatePensionGrossFromNet(pSelf):0;
+  const _pGrossW_mg=pWife>0?estimatePensionGrossFromNet(pWife):0;
+  const _pNetAt_mg=(g,age)=>{if(g<=0)return 0;const bd=breakdownPensionAt(g,age);return bd?bd.net:0;};
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=_isSingle_mg?99:(iv('pension-w-receive')||65);
   const retPay=fv('retire-pay'), retPayAge=iv('retire-pay-age')||iv('retire-age')||60;
@@ -430,7 +436,7 @@ function _renderContingencyInner(){
     hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],insAnnuityRows:[],finLiquid:[],otherInc:[],scholarship:[],
     lCtrl:[],lCtrlBreakdown:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
     dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
-    lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],edu:[],rent:[],
+    lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],retireTax:[],edu:[],rent:[],
     secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],
     dcMatchExpH:[],dcMatchExpW:[],idecoExpH:[],idecoExpW:[],
     carTotal:[],carRows:null,prk:[],wedding:[],ext:[],houseCostArr:[],moveInCost:[],expT:[],
@@ -973,8 +979,8 @@ function _renderContingencyInner(){
 
     // 本人年金（入力値が手取りのためそのまま使用、遺族年金は非課税で別行）
     let pSelfVal=0, pWifeVal=0;
-    if(targetIsH){pSelfVal=isDead?0:(ha>=pHReceive?ri(pSelf):0);pWifeVal=wa>=pWReceive?ri(pWife):0;}
-    else{pSelfVal=ha>=pHReceive?ri(pSelf):0;pWifeVal=isDead?0:(wa>=pWReceive?ri(pWife):0);}
+    if(targetIsH){pSelfVal=isDead?0:(ha>=pHReceive?ri(_pNetAt_mg(_pGrossH_mg,ha)):0);pWifeVal=wa>=pWReceive?ri(_pNetAt_mg(_pGrossW_mg,wa)):0;}
+    else{pSelfVal=ha>=pHReceive?ri(_pNetAt_mg(_pGrossH_mg,ha)):0;pWifeVal=isDead?0:(wa>=pWReceive?ri(_pNetAt_mg(_pGrossW_mg,wa)):0);}
     MR.pS.push(pSelfVal);
     MR.pW.push(pWifeVal);
     // 年金合算行（老齢年金 + 遺族年金）
@@ -1216,6 +1222,9 @@ function _renderContingencyInner(){
     // 住宅関連（通常CFから取得）
     MR.rep.push(i<normalR.rep.length?normalR.rep[i]:0);
     MR.ptx.push(i<normalR.ptx.length?normalR.ptx[i]:0);
+    // 退職後の税・社保: 通常CFからコピー（teate等と同方式の簡略。
+    // 死亡者の退職翌年住民税・国民年金は厳密には変わるが誤差は小さい）
+    MR.retireTax.push(i<normalR.retireTax.length?normalR.retireTax[i]:0);
     MR.furn.push(i<normalR.furn.length?normalR.furn[i]:0);
     MR.senyu.push(i<normalR.senyu.length?normalR.senyu[i]:0);
     MR.rent.push(i<normalR.rent.length?normalR.rent[i]:0);
@@ -1520,7 +1529,7 @@ function _renderContingencyInner(){
       MR.prepayExp.push(ri(_mgPp));
     }
     // 支出合計（個別計算）
-    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+MR.rent[i]+(MR.moveInCost[i]||0)+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0)+(MR.prepayExp[i]||0);
+    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+(MR.retireTax[i]||0)+MR.rent[i]+(MR.moveInCost[i]||0)+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0)+(MR.prepayExp[i]||0);
     children.forEach((c,ci)=>expTotal+=MR.edu[ci][i]);
     MR.expT.push(ri(expTotal));
 
@@ -2021,6 +2030,7 @@ function _renderContingencyInner(){
   if(MR.kaitai&&MR.kaitai.some(v=>v>0))h+=mgERow('解体準備金',MR.kaitai,N.kaitai,'kaitai');
   if(isM)h+=mgERow('修繕積立金',MR.rep,null,'rep');
   h+=mgERow('固定資産税',MR.ptx,null,'ptx');
+  if(MR.retireTax&&MR.retireTax.some(v=>v>0))h+=mgERow('退職後の税・社保',MR.retireTax,null,'retireTax');
   h+=mgERow('家具家電買替',MR.furn,null,'furn');
   h+=mgERow(isM?'専有部分修繕費':'修繕費',MR.senyu,null,'senyu');
   children.forEach((c,ci)=>{
