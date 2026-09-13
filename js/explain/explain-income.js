@@ -96,27 +96,33 @@
     if(Math.abs((bd.gross||0)-(bdPrev.gross||0))>=2){
       reasons.push(`📈 額面年収が ${explainFmt(Math.round(bdPrev.gross),'万円')} → ${explainFmt(Math.round(bd.gross),'万円')} に変化`);
     }
-    // 介護保険料（40歳開始・65歳終了）
+    // 介護保険料（40歳開始・65歳終了）— お客様に見せる前提の平易な文章で
     if(bd.shakaiRate!==bdPrev.shakaiRate){
       reasons.push(bd.shakaiRate>bdPrev.shakaiRate
-        ?'👤 40歳到達 → 介護保険料の支払いが始まりました（手取り減）'
-        :'👤 65歳到達 → 介護保険料の給与天引きが終わりました（手取り増）');
+        ?'👤 40歳になったので、介護保険料のお支払いが始まります（その分、手取りが少し減ります）'
+        :'👤 65歳になったので、お給料からの介護保険料の天引きが終わります（その分、手取りが少し増えます）');
     }
     // お子様の扶養控除（16歳で開始・19歳で拡大・23歳で卒業）
     const fPrev=bdPrev.fuyoIt||0, fNow=bd.fuyoIt||0;
     if(fNow!==fPrev){
       const c0=_fuyoCountsAt(R,i-1), c1=_fuyoCountsAt(R,i);
-      let why='';
-      if(c1.n16>c0.n16&&c1.n19===c0.n19)why='お子様が16歳になり控除開始';
-      else if(c1.n19>c0.n19)why='お子様が19歳になり控除拡大（大学生年代63万円）';
-      else if(fNow<fPrev)why='お子様が23歳になり控除卒業';
-      reasons.push(`🎓 扶養控除 ${fPrev}万円 → ${fNow}万円${why?'（'+why+'）':''}`);
+      const inc=fNow>fPrev;
+      let why;
+      if(inc&&c1.n16>c0.n16&&c1.n19===c0.n19)
+        why='お子様が16歳になり、税金が軽くなる「扶養控除」の対象になりました';
+      else if(inc&&c1.n19>c0.n19)
+        why='お子様が19歳（大学生の年代）になり、扶養控除がさらに大きくなりました';
+      else if(!inc)
+        why='お子様が23歳になり、扶養控除の対象を卒業されました';
+      else
+        why='お子様の扶養控除の金額が変わりました';
+      reasons.push(`🎓 ${why}（控除 ${fPrev}万円 → ${fNow}万円・手取り${inc?'増':'減'}）`);
     }
     // 配偶者控除の適用/終了
     if(!!bd.hasSpouseDed!==!!bdPrev.hasSpouseDed){
       reasons.push(bd.hasSpouseDed
-        ?'💑 配偶者控除の適用が始まりました（配偶者の収入が基準内・手取り増）'
-        :'💑 配偶者控除が外れました（配偶者の収入が基準超・手取り減）');
+        ?'💑 配偶者様の収入が基準内になり、「配偶者控除」で税金が軽くなります（手取り増）'
+        :'💑 配偶者様の収入が基準を超えたため、「配偶者控除」の対象から外れました（手取り減）');
     }
     if(dNet===0&&reasons.length===0) return '';
     if(reasons.length===0) return ''; // 理由が特定できない微小変動（丸め）は出さない
