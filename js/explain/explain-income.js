@@ -128,9 +128,14 @@
     if(reasons.length===0) return ''; // 理由が特定できない微小変動（丸め）は出さない
     const col=dNet>0?'#166534':dNet<0?'#b91c1c':'#475569';
     const sign=dNet>0?'+':'';
+    const prevNet=Math.round(bdPrev.net), nowNet=Math.round(bd.net);
     return `
       <div style="background:#fefce8;border:1px solid #facc15;border-radius:7px;padding:8px 10px;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:800;color:#713f12;margin-bottom:3px">📌 前年からの変化: <span style="color:${col};font-size:13px">${sign}${dNet.toLocaleString()}万円</span></div>
+        <div style="font-size:11px;font-weight:800;color:#713f12;margin-bottom:3px">📌 前年からの変化</div>
+        <div style="font-size:13px;font-weight:800;color:#1c1917;margin-bottom:4px">
+          手取り ${prevNet.toLocaleString()}万円 → <span style="color:${col}">${nowNet.toLocaleString()}万円</span>
+          <span style="color:${col};font-size:12px">（${sign}${dNet.toLocaleString()}万円）</span>
+        </div>
         ${reasons.map(r=>`<div style="font-size:11px;color:#44403c;line-height:1.6">・${r}</div>`).join('')}
       </div>`;
   }
