@@ -52,7 +52,9 @@
     // シンプル表示: 額面 − 社会保険料 − 所得税 − 住民税 = 手取
     // 額面入力モードでは「入力した額面が起点」の表現に切り替える
     const _gm=(typeof isGrossInputMode==='function')&&isGrossInputMode(person);
-    const simple=`
+    // 前年からの変化サマリー（額面モード時のみ。手取り入力モードは入力値どおりなので不要）
+    const diffHtml=_gm?_buildYearDiff(R,bdKey,i,person):'';
+    const simple=diffHtml+`
       <div style="display:flex;flex-direction:column;gap:3px;font-size:12px">
         <div style="display:flex;justify-content:space-between">
           <span>📥 ${_gm?'額面年収（入力値ベース）':'推定額面年収'}</span><span>${explainFmt(bd.gross,'万円')}</span>
@@ -78,6 +80,53 @@
     `;
 
     return { title:titleText, simple, detail:_buildIncomeDetail(bd,person,ctx) };
+  }
+
+  // ─── 前年からの変化サマリー（額面モード時のみ・変化があった年だけ表示） ───
+  // 「同じ額面なのに手取りが変わる」年に、理由（扶養控除・介護保険・配偶者控除・額面変化）を
+  // ポップアップの最上部で一目でわかるように示す（2026-09-14）
+  function _buildYearDiff(R, bdKey, i, person){
+    if(i<=0) return '';
+    const bd=R[bdKey]&&R[bdKey][i];
+    const bdPrev=R[bdKey]&&R[bdKey][i-1];
+    if(!bd||!bdPrev) return '';
+    const dNet=Math.round((bd.net-bdPrev.net)*10)/10;
+    const reasons=[];
+    // 額面（入力値）の変化 — 逆算表示の丸め誤差(±2万円未満)は変化とみなさない
+    if(Math.abs((bd.gross||0)-(bdPrev.gross||0))>=2){
+      reasons.push(`📈 額面年収が ${explainFmt(Math.round(bdPrev.gross),'万円')} → ${explainFmt(Math.round(bd.gross),'万円')} に変化`);
+    }
+    // 介護保険料（40歳開始・65歳終了）
+    if(bd.shakaiRate!==bdPrev.shakaiRate){
+      reasons.push(bd.shakaiRate>bdPrev.shakaiRate
+        ?'👤 40歳到達 → 介護保険料の支払いが始まりました（手取り減）'
+        :'👤 65歳到達 → 介護保険料の給与天引きが終わりました（手取り増）');
+    }
+    // お子様の扶養控除（16歳で開始・19歳で拡大・23歳で卒業）
+    const fPrev=bdPrev.fuyoIt||0, fNow=bd.fuyoIt||0;
+    if(fNow!==fPrev){
+      const c0=_fuyoCountsAt(R,i-1), c1=_fuyoCountsAt(R,i);
+      let why='';
+      if(c1.n16>c0.n16&&c1.n19===c0.n19)why='お子様が16歳になり控除開始';
+      else if(c1.n19>c0.n19)why='お子様が19歳になり控除拡大（大学生年代63万円）';
+      else if(fNow<fPrev)why='お子様が23歳になり控除卒業';
+      reasons.push(`🎓 扶養控除 ${fPrev}万円 → ${fNow}万円${why?'（'+why+'）':''}`);
+    }
+    // 配偶者控除の適用/終了
+    if(!!bd.hasSpouseDed!==!!bdPrev.hasSpouseDed){
+      reasons.push(bd.hasSpouseDed
+        ?'💑 配偶者控除の適用が始まりました（配偶者の収入が基準内・手取り増）'
+        :'💑 配偶者控除が外れました（配偶者の収入が基準超・手取り減）');
+    }
+    if(dNet===0&&reasons.length===0) return '';
+    if(reasons.length===0) return ''; // 理由が特定できない微小変動（丸め）は出さない
+    const col=dNet>0?'#166534':dNet<0?'#b91c1c':'#475569';
+    const sign=dNet>0?'+':'';
+    return `
+      <div style="background:#fefce8;border:1px solid #facc15;border-radius:7px;padding:8px 10px;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:800;color:#713f12;margin-bottom:3px">📌 前年からの変化: <span style="color:${col};font-size:13px">${sign}${dNet.toLocaleString()}万円</span></div>
+        ${reasons.map(r=>`<div style="font-size:11px;color:#44403c;line-height:1.6">・${r}</div>`).join('')}
+      </div>`;
   }
 
   // その年の扶養対象のお子様人数（16-18歳／19-22歳）を年齢行から数える
