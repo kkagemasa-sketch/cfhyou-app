@@ -629,7 +629,7 @@ function render(){
       if(!isAcc)return;
       const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on')||false;
       const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-      const lbl=customLabel||((isNisa?'NISA':'課税')+'積み立て('+pLbl+')');
+      const lbl=secRowLabel(p,sid,'課税積立');
       const bal=fv(`sec-bal-${p}-${sid}`)||0;
       const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
       if(bal<=0&&monthly<=0)return;
@@ -650,7 +650,7 @@ function render(){
       if(!isStock)return;
       const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on')||false;
       const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-      const lbl=customLabel||((isNisa?'NISA':'課税')+'一括投資('+pLbl+')');
+      const lbl=secRowLabel(p,sid,'課税一括投資');
       const bal=fv(`sec-stk-bal-${p}-${sid}`)||0;
       if(bal<=0)return;
       securityState.push({
@@ -1485,7 +1485,7 @@ function render(){
           netAccum=Math.round(fv2-taxAccum);
         }
         const _pLblR=p==='h'?'ご主人様':'奥様';
-        const lbl=customLabel||`${isNisa?'積立NISA':'課税積立'}解約(${_pLblR})`;
+        const lbl=secRowLabel(p,sid,'課税積立','解約');
         const _accumKey=`accum-${p}-${sid}`;
         secRedeemMap[_accumKey]={lbl,val:netAccum};
         secRedeemTotal+=netAccum;
@@ -1544,7 +1544,7 @@ function render(){
           netStk=Math.round(redeemVal-taxStk);
         }
         const _pLblS=p==='h'?'ご主人様':'奥様';
-        const lbl=customLabel||`${isNisa?'NISA':'課税'}一括投資解約(${_pLblS})`;
+        const lbl=secRowLabel(p,sid,'課税一括投資','解約');
         const _stkKey=`stk-${p}-${sid}`;
         secRedeemMap[_stkKey]={lbl,val:netStk};
         secRedeemTotal+=netStk;
@@ -1639,7 +1639,7 @@ function render(){
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const rowKey=`secInv-${p}-${sid}`;
         const isNisa=_s.isNisa;
-        const lbl=customLabel||`${isNisa?'積立NISA':'積立投資'}(${pLabel})`;
+        const lbl=secRowLabel(p,sid,'課税積立');
         const endAge=_s.endAge;
         const redeemAge=_s.redeemAge;
         const isActive=(endAge===0||pAge<endAge)&&(redeemAge===0||pAge<redeemAge);
@@ -2123,7 +2123,7 @@ function render(){
         const endAge2=(redeemAge2>0&&redeemAge2<matAge2)?redeemAge2:matAge2;
         const customLabel=document.getElementById(`ins-label-${p}-${iid}`)?.value?.trim()||'';
         const rowKey=`insM-${p}-${iid}`;
-        const lbl=customLabel||`積立保険(${pLabel2})`;
+        const lbl=(customLabel||'積立保険')+`(${pLabel2})`;
         const v=(monthly2>0&&matAge2>0&&pAge2>=enrollAge2&&pAge2<endAge2)?ri(monthly2*12):0;
         let row=_insMonthlyKeyMap.get(rowKey);
         if(!row){row={lbl,vals:[],key:rowKey};R.insMonthlyRows.push(row);_insMonthlyKeyMap.set(rowKey,row);}
@@ -2145,7 +2145,7 @@ function render(){
         const amt2=fv(`ins-lump-amt-${p}-${iid}`)||0;
         const customLabel=document.getElementById(`ins-lump-label-${p}-${iid}`)?.value?.trim()||'';
         const rowKey=`insL-${p}-${iid}`;
-        const lbl=customLabel||`一時払保険(${pLabel2})`;
+        const lbl=(customLabel||'一時払保険')+`(${pLabel2})`;
         const v=(amt2>0&&pAge2===enrollAge2)?ri(amt2):0;
         let row=_insLumpExpKeyMap.get(rowKey);
         if(!row){row={lbl,vals:[],key:rowKey};R.insLumpExpRows.push(row);_insLumpExpKeyMap.set(rowKey,row);}
@@ -2222,7 +2222,7 @@ function render(){
         const _pLbl=p==='h'?'ご主人様':'奥様';
         // ★ 共有(both)概念を撤廃: カスタム名でも所有者を付けて必ず各自の行に分ける
         //   （同名でも合算せず別行。万一CFで死亡後に半額化される共有扱いをなくす）
-        const lbl=customLabel?`${customLabel}(${_pLbl})`:((isNisa?'NISA':'課税')+'積み立て('+_pLbl+')');
+        const lbl=secRowLabel(p,sid,'課税積立');
         const bal=fv(`sec-bal-${p}-${sid}`)||0;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         if(bal<=0&&monthly<=0)return; // 残高も積立額もなければスキップ
@@ -2308,7 +2308,7 @@ function render(){
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const _pLbl=p==='h'?'ご主人様':'奥様';
         // ★ 共有(both)概念を撤廃: カスタム名でも所有者を付けて必ず各自の行に分ける
-        const lbl=customLabel?`${customLabel}(${_pLbl})`:((isNisa?'NISA':'課税')+'一括投資('+_pLbl+')');
+        const lbl=secRowLabel(p,sid,'課税一括投資');
         const bal=fv(`sec-stk-bal-${p}-${sid}`)||0;
         if(bal<=0)return; // 残高なければスキップ
         const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;

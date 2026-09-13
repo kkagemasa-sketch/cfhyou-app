@@ -594,10 +594,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         let val=0, lbl='';
         if(isAcc){
           val=fv(`sec-bal-${p}-${sid}`)||0;
-          lbl=custom||((isNisa?'NISA':'課税')+'積み立て('+pLbl+')');
+          lbl=secRowLabel(p,sid,'課税積立');
         } else if(isStock){
           val=fv(`sec-stk-bal-${p}-${sid}`)||0;
-          lbl=custom||((isNisa?'NISA':'課税')+'一括投資('+pLbl+')');
+          lbl=secRowLabel(p,sid,'課税一括投資');
         } else return;
         if(val<=0)return;
         _curByLbl[lbl]=(_curByLbl[lbl]||0)+val;

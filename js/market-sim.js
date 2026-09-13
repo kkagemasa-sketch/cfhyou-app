@@ -32,7 +32,7 @@ function mspCollectSecurities(){
       const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
       if(!isAccum)return;
       const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
-      items.push({key:`sec-accum-${p}-${sid}`, label:customLabel||`${isNisa?'積立NISA':'積立投資'}(${pLbl})`, kind:'equity'});
+      items.push({key:`sec-accum-${p}-${sid}`, label:secRowLabel(p,sid,'課税積立'), kind:'equity'});
     });
     // 一括投資
     document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
@@ -40,7 +40,7 @@ function mspCollectSecurities(){
       const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
       const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
       if(!isStock)return;
-      items.push({key:`sec-stk-${p}-${sid}`, label:customLabel||`一括投資(${pLbl})`, kind:'equity'});
+      items.push({key:`sec-stk-${p}-${sid}`, label:secRowLabel(p,sid,'課税一括投資'), kind:'equity'});
     });
     // DC（企業型確定拠出年金）
     const dcMatch=parseFloat(document.getElementById(`dc-${p}-matching`)?.value)||0;

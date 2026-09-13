@@ -605,7 +605,7 @@ function _renderContingencyInner(){
       if(!isAcc)return;
       const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on')||false;
       const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-      const lbl=customLabel||((isNisa?'NISA':'課税')+'積み立て('+pLbl+')');
+      const lbl=secRowLabel(p,sid,'課税積立');
       const bal=fv(`sec-bal-${p}-${sid}`)||0;
       const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
       if(bal<=0&&monthly<=0)return;
@@ -626,7 +626,7 @@ function _renderContingencyInner(){
       if(!isStock)return;
       const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on')||false;
       const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-      const lbl=customLabel||((isNisa?'NISA':'課税')+'一括投資('+pLbl+')');
+      const lbl=secRowLabel(p,sid,'課税一括投資');
       const bal=fv(`sec-stk-bal-${p}-${sid}`)||0;
       if(bal<=0)return;
       _mgSecurityState.push({
@@ -1103,7 +1103,7 @@ function _renderContingencyInner(){
           _stMatched.liquidations.push({ year:i, gross:fv2, costReduced:0, redeemed:true });
         }
         const _pLblA=p==='h'?'ご主人様':'奥様';
-        const lbl=customLabel||`${isNisa?'積立NISA':'課税積立'}解約(${_pLblA})`;
+        const lbl=secRowLabel(p,sid,'課税積立','解約');
         secRedeemMap_mg[_stKey]={lbl,val:net};secRedeemTotal+=net;
       });
       document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{

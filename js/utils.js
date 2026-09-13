@@ -239,6 +239,29 @@ function getWorkType(person){
   return document.getElementById(`${person}-work-type`)?.value||'kaishain';
 }
 
+// ===== 有価証券のCF行ラベル共通生成（2026-09-13統一） =====
+// 規則: 行名の末尾に必ず所有者「(ご主人様)/(奥様)」を付ける。
+//  - 銘柄名あり → 「銘柄名(ご主人様)」（suffix指定時は「銘柄名解約(ご主人様)」）
+//  - 銘柄名なし+NISA → 枠に応じて「NISA成長枠」「NISAつみたて枠」
+//  - 銘柄名なし+課税 → baseLbl（'課税積立' / '課税一括投資' 等）
+// 画面(cf-table)・CF行(cf-calc)・万一(contingency)・Excel(export)・
+// 運用シミュ(market-sim)すべてがこの関数を使う（表記ゆれ・所有者の付け漏れ防止）
+function secRowLabel(p, sid, baseLbl, suffix){
+  const owner = p==='h' ? '(ご主人様)' : '(奥様)';
+  const custom = document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim() || '';
+  let name = custom;
+  if(!name){
+    const isNisa = document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
+    if(isNisa){
+      const isGrow = document.getElementById(`sec-frame-grow-${p}-${sid}`)?.classList.contains('on');
+      name = isGrow ? 'NISA成長枠' : 'NISAつみたて枠';
+    } else {
+      name = baseLbl || '有価証券';
+    }
+  }
+  return name + (suffix||'') + owner;
+}
+
 // 扶養控除（子の年齢ベース・令和7年度改正後）
 // - 16〜18歳: 一般扶養 38万円（住民税33万円）
 // - 19〜22歳: 特定親族特別控除 63万円（住民税45万円）※子の収入150万以下を前提とした簡略

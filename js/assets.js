@@ -275,10 +275,12 @@ function setSecNisaFrame(person,id,f){
 function applyNisaFrameVisibility(person, id, frame){
   const accumFields = document.getElementById(`sec-accum-fields-${person}-${id}`);
   if(accumFields){
-    // 成長枠: 現在評価額(bal)のみ表示。つみたて枠: 全項目表示
+    // 成長枠: 毎月の積立額(monthly)のみ隠す（年間投資予定額から自動換算のため）。
+    // ★2026-09-13修正: 旧実装は想定利回り・積立終了/解約年齢まで隠していたため
+    //   成長枠で年利を入力する場所がなかった（計算には使われていたのに変更不可だった）
     accumFields.querySelectorAll('[data-f]').forEach(el=>{
       const f = el.dataset.f;
-      if(frame==='grow') el.style.display = (f==='bal') ? '' : 'none';
+      if(frame==='grow') el.style.display = (f==='monthly') ? 'none' : '';
       else el.style.display = '';
     });
   }
