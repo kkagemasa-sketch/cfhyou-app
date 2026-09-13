@@ -228,8 +228,11 @@ function grossToNetYearly(gross, age, workType, spouseDed, fuyoIt, fuyoJu){
   return bd?bd.net:0;
 }
 // 収入の入力モード（'net'=手取り入力・従来 / 'gross'=額面入力）
-function isGrossInputMode(){
-  return document.getElementById('income-input-mode')?.value==='gross';
+// 2026-09-13: 世帯一括(income-input-mode)から夫婦別({h,w}-income-mode)に変更。
+// person('h'|'w')指定でその人のモードを返す。省略時は「どちらかが額面ならtrue」（総括判定用）。
+function isGrossInputMode(person){
+  if(person)return document.getElementById(`${person}-income-mode`)?.value==='gross';
+  return isGrossInputMode('h')||isGrossInputMode('w');
 }
 // 働き方区分（額面入力モードで使用）
 function getWorkType(person){

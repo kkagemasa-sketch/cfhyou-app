@@ -404,11 +404,13 @@ function _renderContingencyInner(){
   const _pNetAt_mg=(g,age)=>{if(g<=0)return 0;const bd=breakdownPensionAt(g,age);return bd?bd.net:0;};
   // ★ 額面入力モード: 収入ステップ値を手取り化してから使用（通常CFと同方式）。
   //   扶養控除はご主人側のみ、配偶者控除は万一CFでは簡略のため省略（誤差は小さい）
-  const _grossMode_mg=(typeof isGrossInputMode==='function')&&isGrossInputMode();
-  const _wtH_mg=_grossMode_mg?getWorkType('h'):null;
-  const _wtW_mg=_grossMode_mg?getWorkType('w'):null;
-  const _g2nH_mg=(v,age,fu)=>(_grossMode_mg&&v>0)?ri(grossToNetYearly(v,age,_wtH_mg,false,fu?fu.it:0,fu?fu.ju:0)):v;
-  const _g2nW_mg=(v,age)=>(_grossMode_mg&&v>0)?ri(grossToNetYearly(v,age,_wtW_mg,false,0,0)):v;
+  // 夫婦それぞれの入力モード（2026-09-13: 世帯一括→個人別に変更）
+  const _grossH_mg=(typeof isGrossInputMode==='function')&&isGrossInputMode('h');
+  const _grossW_mg=(typeof isGrossInputMode==='function')&&isGrossInputMode('w');
+  const _wtH_mg=_grossH_mg?getWorkType('h'):null;
+  const _wtW_mg=_grossW_mg?getWorkType('w'):null;
+  const _g2nH_mg=(v,age,fu)=>(_grossH_mg&&v>0)?ri(grossToNetYearly(v,age,_wtH_mg,false,fu?fu.it:0,fu?fu.ju:0)):v;
+  const _g2nW_mg=(v,age)=>(_grossW_mg&&v>0)?ri(grossToNetYearly(v,age,_wtW_mg,false,0,0)):v;
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=_isSingle_mg?99:(iv('pension-w-receive')||65);
   const retPay=fv('retire-pay'), retPayAge=iv('retire-pay-age')||iv('retire-age')||60;
@@ -783,7 +785,7 @@ function _renderContingencyInner(){
       }
       return null;
     };
-    const _fuyoY_mg=_grossMode_mg?calcFuyoDed(children,i):null;
+    const _fuyoY_mg=_grossH_mg?calcFuyoDed(children,i):null;
     if(targetIsH){
       hInc=isDead?0:_g2nH_mg(getIncomeAtAge(hSteps,ha),ha,_fuyoY_mg);
       // 奥様の産休・育休考慮（育休給付金=非課税の手取り額 → 額面モードでも変換しない）

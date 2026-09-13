@@ -1,5 +1,28 @@
 // living-cost.js — 生活費計算・ステップ管理
 
+// ===== 生活費の一括クリア（確認ダイアログ付き・2026-09-13） =====
+// 対象: 毎月の固定費・年間の変動費の「金額」欄のみ。
+// 項目名（その他1〜4の名称）・管理費/ネット代/修繕積立金（マンション連動）・
+// 生活費の変化段階は残す（誤爆防止）。クリア前の状態はUndoに積むためCtrl+Zで戻せる。
+function clearLivingCosts(){
+  const ids=['lc-food','lc-water','lc-gas','lc-elec','lc-fuel','lc-comm','lc-misc',
+    'lc-pocket','lc-ins-m','lc-other-m','lc-other-m2','lc-other-m3','lc-other-m4',
+    'lc-travel','lc-social','lc-clothes','lc-ins-y','lc-medical','lc-home','lc-car-tax',
+    'lc-other-y','lc-other-y2','lc-other-y3','lc-other-y4'];
+  const filled=ids.filter(id=>{const el=$(id);return el&&String(el.value).replace(/[,\s]/g,'')!=='';}).length;
+  if(filled===0){alert('クリアする金額が入力されていません');return;}
+  const msg='生活費の金額をすべて空にします（入力済み '+filled+' 項目）。\n\n'
+    +'・毎月の固定費（食費〜その他）と年間の変動費（娯楽・旅行〜その他）の金額が対象です\n'
+    +'・項目の名前、管理費・インターネット代・修繕積立金、生活費の変化段階は残ります\n'
+    +'・間違えた場合は「戻る」ボタン（Ctrl+Z）で元に戻せます\n\n'
+    +'よろしいですか？';
+  if(!confirm(msg))return;
+  if(typeof pushUndoSnap==='function')pushUndoSnap(); // クリア前の状態を戻せるように記録
+  ids.forEach(id=>{const el=$(id);if(el)el.value='';});
+  if(typeof live==='function')live(true);
+}
+window.clearLivingCosts=clearLivingCosts;
+
 function calcLC(){
   let ms=0;document.querySelectorAll('.lc-m').forEach(e=>{ms+=parseFloat(String(e.value).replace(/,/g,''))||0});
   let ys=0;document.querySelectorAll('.lc-y').forEach(e=>{ys+=parseFloat(String(e.value).replace(/,/g,''))||0});

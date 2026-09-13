@@ -1013,6 +1013,17 @@ function _migrateYenToManV10(d){
   });
   d.version='10';
 }
+// ===== 静的フィールドのHTML初期値ヘルパー =====
+// input: defaultValue / checkbox: defaultChecked / select: selected属性付きoption(なければ先頭)
+function _staticFieldDefault(el){
+  if(!el)return '';
+  if(el.tagName==='SELECT'){
+    const opt=[...el.options].find(o=>o.defaultSelected)||el.options[0];
+    return opt?opt.value:'';
+  }
+  return el.defaultValue||'';
+}
+
 function _applyData(d){
   try{
     // 万が一タブのキャッシュをクリア（前データの残留を防ぐ）
@@ -1046,7 +1057,44 @@ function _applyData(d){
         d.fields['furniture-init']='0';
       }
     }
-    Object.entries(d.fields||{}).forEach(([id,val])=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=!!val;else el.value=val||_defs[id]||'';}});
+    // ★ 残留バグ根絶(2026-09-13): 復元を「データにあるキーだけ適用」から
+    //   「_STATIC_FIELDS全件駆動」に変更。旧方式では保存データに無いフィールドが
+    //   直前のCF表・直前のお客様の値のまま画面に残留し、
+    //   「昔の手取りデータが額面モード扱いになる」「預貯金が別CF表の値に化ける」
+    //   等の事故が起きていた。データに無いフィールドはHTML初期値へ強制リセットする。
+    const _f=d.fields||{};
+    _STATIC_FIELDS.forEach(id=>{
+      const el=$(id); if(!el)return;
+      const has=Object.prototype.hasOwnProperty.call(_f,id)&&_f[id]!==undefined&&_f[id]!==null;
+      if(el.type==='checkbox'){
+        el.checked=has?!!_f[id]:el.defaultChecked;
+      }else if(has){
+        el.value=_f[id]||_defs[id]||''; // 従来どおり空値は既定値で救済
+      }else if(el.tagName==='SELECT'){
+        el.value=_staticFieldDefault(el); // selectは''でなくHTML初期選択へ（income-input-mode→net 等）
+      }else{
+        el.value=_defs[id]||'';
+      }
+    });
+    // 後方互換: 過去バージョンで _STATIC_FIELDS 外だったキーも従来どおり適用
+    Object.entries(_f).forEach(([id,val])=>{
+      if(_STATIC_FIELDS.includes(id))return;
+      const el=$(id); if(!el)return;
+      if(el.type==='checkbox')el.checked=!!val; else el.value=val||_defs[id]||'';
+    });
+    // 後方互換(2026-09-13): 旧「世帯一括」の入力モード(income-input-mode)で保存された
+    // データは、夫婦それぞれの新モード欄(h/w-income-mode)に同じ値を適用する
+    if(!Object.prototype.hasOwnProperty.call(_f,'h-income-mode')&&_f['income-input-mode']){
+      const _m=(_f['income-input-mode']==='gross')?'gross':'net';
+      const _hm=$('h-income-mode'); if(_hm)_hm.value=_m;
+      const _wm=$('w-income-mode'); if(_wm)_wm.value=_m;
+    }
+    // フラット35金利: 選択肢が動的生成のため、データに欄が無い場合は
+    // 先頭「手動入力」に落ちてしまう → 新規作成と同じ「最新月の金利を自動適用」で補正
+    //（保存データに値がある場合は上の適用値がそのまま尊重される）
+    if(!Object.prototype.hasOwnProperty.call(_f,'flat-rate-month')&&typeof initFlatRateSelect==='function'){
+      try{ initFlatRateSelect(); }catch(e){}
+    }
     // 定期借地権チェックの body 表示同期
     if(typeof toggleLeasehold==='function') toggleLeasehold();
     cfOverrides=d.cfOverrides||{};
@@ -1166,7 +1214,15 @@ async function _migrateFromLocalStorage(){
 function _resetSheetState(){
   // 全フィールドをクリア（デフォルト値があるものは復元）
   var _defaults={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
-  _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el)el.value=_defaults[id]||'';});
+  // ★ 残留バグ根絶(2026-09-13): 旧実装は checkbox にも .value を代入していて
+  //   チェック状態が前のお客様のまま残留、select は '' 代入で選択が不定になっていた。
+  //   checkbox は defaultChecked、select はHTML初期選択（額面/手取り→手取り 等）へ戻す。
+  _STATIC_FIELDS.forEach(id=>{
+    const el=$(id); if(!el)return;
+    if(el.type==='checkbox'){ el.checked=el.defaultChecked; }
+    else if(el.tagName==='SELECT'){ el.value=_staticFieldDefault(el); }
+    else { el.value=_defaults[id]||''; }
+  });
 
   // グローバル状態リセット
   cfOverrides={};
@@ -1299,6 +1355,8 @@ function _resetSheetState(){
   });
 
   initLCComma();
+  // 収入の入力モードをリセットしたのでラベル・働き方区分行の表示も同期
+  if(typeof applyIncomeModeLabels==='function')applyIncomeModeLabels();
   // フラット35金利: リセット後は最新月の金利を自動適用（空のまま古いフォールバック値で
   // 計算されるのを防ぐ。保存データ読込時はこの後の復元処理で保存値に上書きされる）
   if(typeof initFlatRateSelect==='function')initFlatRateSelect();

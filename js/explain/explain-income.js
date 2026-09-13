@@ -51,7 +51,7 @@
 
     // シンプル表示: 額面 − 社会保険料 − 所得税 − 住民税 = 手取
     // 額面入力モードでは「入力した額面が起点」の表現に切り替える
-    const _gm=(typeof isGrossInputMode==='function')&&isGrossInputMode();
+    const _gm=(typeof isGrossInputMode==='function')&&isGrossInputMode(person);
     const simple=`
       <div style="display:flex;flex-direction:column;gap:3px;font-size:12px">
         <div style="display:flex;justify-content:space-between">
@@ -96,7 +96,7 @@
     const labelSelf=person==='h'?'ご主人':'奥様';
     const shakaiPct=(bd.shakaiRate*100).toFixed(2);
     const ageNote=bd.age>=40&&bd.age<65?'（40歳以上：介護保険料加算）':'';
-    const _gm=(typeof isGrossInputMode==='function')&&isGrossInputMode();
+    const _gm=(typeof isGrossInputMode==='function')&&isGrossInputMode(person);
     // 扶養控除の人数内訳（この年の子の年齢から）
     let fuyoNote='';
     if(bd.fuyoIt>0&&ctx&&ctx.R){

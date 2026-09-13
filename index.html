@@ -342,31 +342,38 @@ window.closeAboutModal=closeAboutModal;
     <div class="sh" onclick="tog(this)" style="background:#2d7dd2"><span class="sh-tab" style="background:#2d7dd2">③収入</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">3</span>💰 収入設定<span class="stog on">▾</span></div>
     <div class="sb">
 
-      <!-- 収入の入力方法（額面/手取り）・世帯一括 -->
+      <!-- 収入の入力方法（額面/手取り）— 夫婦それぞれ選択（2026-09-13〜） -->
       <div style="background:#eef5ff;border:1.5px solid #b8d4f8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
-        <div class="fg"><label class="lbl">収入の入力方法（世帯一括）</label>
-          <select class="sel" id="income-input-mode" oninput="onIncomeModeChange()">
-            <option value="net" selected>手取り年収で入力（従来どおり）</option>
-            <option value="gross">額面年収で入力（税・社保を自動計算）</option>
-          </select>
-          <span class="hint" style="font-size:9px">額面モードでは、社会保険料・所得税・住民税（配偶者控除・お子様の扶養控除・iDeCo等を考慮）を毎年自動計算して手取り化します。源泉徴収票の「支払金額」をそのまま入力できます</span></div>
-        <div id="work-type-row" style="display:none;margin-top:8px">
-          <div class="g2">
-            <div class="fg"><label class="lbl" style="font-size:9px">ご主人様の働き方</label>
+        <label class="lbl">収入の入力方法（ご主人様・奥様で別々に選べます）</label>
+        <div class="g2" style="margin-top:4px">
+          <div class="fg"><label class="lbl" style="font-size:9px">👨 ご主人様</label>
+            <select class="sel" id="h-income-mode" oninput="onIncomeModeChange()">
+              <option value="net" selected>手取り年収で入力</option>
+              <option value="gross">額面年収で入力</option>
+            </select>
+            <span id="h-work-type-wrap" style="display:none">
+              <label class="lbl" style="font-size:9px;margin-top:6px;display:block">働き方</label>
               <select class="sel" id="h-work-type" oninput="live()">
                 <option value="kaishain" selected>会社員</option>
                 <option value="komuin">公務員</option>
                 <option value="part">扶養内パート</option>
-              </select></div>
-            <div class="fg wife-only"><label class="lbl" style="font-size:9px">奥様の働き方</label>
+              </select>
+            </span></div>
+          <div class="fg wife-only"><label class="lbl" style="font-size:9px">👩 奥様</label>
+            <select class="sel" id="w-income-mode" oninput="onIncomeModeChange()">
+              <option value="net" selected>手取り年収で入力</option>
+              <option value="gross">額面年収で入力</option>
+            </select>
+            <span id="w-work-type-wrap" style="display:none">
+              <label class="lbl" style="font-size:9px;margin-top:6px;display:block">働き方</label>
               <select class="sel" id="w-work-type" oninput="live()">
                 <option value="kaishain" selected>会社員</option>
                 <option value="komuin">公務員</option>
                 <option value="part">扶養内パート</option>
-              </select></div>
-          </div>
-          <span class="hint" style="font-size:9px">自営業・フリーランスの方は税・社保の仕組みが異なるため、恐れ入りますが「手取り年収で入力」をご利用ください（次回対応予定）</span>
+              </select>
+            </span></div>
         </div>
+        <span class="hint" style="font-size:9px">額面モードでは社会保険料・所得税・住民税（配偶者控除・お子様の扶養控除・iDeCo等を考慮）を毎年自動計算して手取り化します。源泉徴収票の「支払金額」をそのまま転記できます。自営業の方は手取り入力をご利用ください（次回対応予定）</span>
       </div>
 
       <!-- 🧮 手取り計算機トグルボタン（押すと下にポップアップ表示） -->
@@ -1681,6 +1688,7 @@ window.closeAboutModal=closeAboutModal;
   <div class="sec">
     <div class="sh" onclick="tog(this)" style="background:#b45309"><span class="sh-tab" style="background:#b45309">⑥生活</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">6</span>🛒 生活費・支出<span class="stog on">▾</span></div>
     <div class="sb">
+      <button type="button" onclick="clearLivingCosts()" style="width:100%;margin-bottom:8px;padding:7px 10px;background:#fff5f5;border:1.5px dashed #f0a0a0;border-radius:var(--rs);color:#b91c1c;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🗑 生活費の金額を一括クリア</button>
       <div class="sub">📅 毎月の固定費（円/月）</div>
       <div class="g3">
         <div class="fg"><label class="lbl">食費</label><div class="suf"><input class="inp lc-m amt-inp" id="lc-food" type="text" inputmode="numeric" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="40000"><span class="sl">円</span></div></div>
@@ -2114,22 +2122,22 @@ window.closeAboutModal=closeAboutModal;
 
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=19"></script>
-<script src="js/constants.js?v=28"></script>
+<script src="js/constants.js?v=29"></script>
 <script src="js/market-scenarios.js?v=3"></script>
 <script src="js/market-sim.js?v=6"></script>
-<script src="js/utils.js?v=32"></script>
+<script src="js/utils.js?v=33"></script>
 <script src="js/family.js?v=5"></script>
-<script src="js/income.js?v=28"></script>
-<script src="js/mat-leave.js?v=6"></script>
+<script src="js/income.js?v=29"></script>
+<script src="js/mat-leave.js?v=7"></script>
 <script src="js/education.js?v=6"></script>
 <script src="js/housing.js?v=43"></script>
 <script src="js/loan-calc.js?v=4"></script>
-<script src="js/living-cost.js?v=3"></script>
+<script src="js/living-cost.js?v=4"></script>
 <script src="js/assets.js?v=20"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=101"></script>
+<script src="js/contingency.js?v=102"></script>
 <script src="js/cf-ui.js?v=26"></script>
-<script src="js/cf-calc.js?v=87"></script>
+<script src="js/cf-calc.js?v=88"></script>
 <script src="js/cf-table.js?v=73"></script>
 <script src="js/cf-highlight.js?v=3"></script>
 <script src="js/graphs.js?v=7"></script>
@@ -2137,11 +2145,11 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/loan-plan.js?v=20"></script>
 <script src="js/lc-tab.js?v=4"></script>
 <script src="js/scenario.js?v=5"></script>
-<script src="js/save-load.js?v=85"></script>
+<script src="js/save-load.js?v=86"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=8"></script>
 <script src="js/explain/explain-pension.js?v=1"></script>
-<script src="js/explain/explain-income.js?v=2"></script>
+<script src="js/explain/explain-income.js?v=3"></script>
 <script src="js/explain/explain-financial.js?v=2"></script>
 <script src="js/explain/explain-edu.js?v=1"></script>
 <script src="js/mg-qa.js?v=16"></script>
@@ -2159,8 +2167,20 @@ if('serviceWorker' in navigator){
   });
 
   // 「🔄 新しいバージョンがあります」バナーを表示（更新内容つき）
+  // ★2026-09-13: 「後で」を押した版は localStorage に記録し、同じ版では再表示しない。
+  //   （更新が続いた時期に、開くたび・タブごとにバナーが出続けるのを防ぐ。
+  //     新しい版が公開されれば版名が変わるので、また1回だけ表示される）
   function _showUpdateBanner(waitingWorker){
     if(document.getElementById('cf-update-banner'))return; // 二重表示防止
+    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).catch(()=>null).then(v=>{
+      const ver=(v&&v.cache)||'';
+      let dismissed=''; try{dismissed=localStorage.getItem('cf_update_dismissed')||'';}catch(e){}
+      if(ver&&ver===dismissed)return; // この版は「後で」済み
+      _buildUpdateBanner(waitingWorker, v, ver);
+    });
+  }
+  function _buildUpdateBanner(waitingWorker, v, ver){
+    if(document.getElementById('cf-update-banner'))return;
     const bar=document.createElement('div');
     bar.id='cf-update-banner';
     bar.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#1e3a5f;color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic UI","Meiryo",sans-serif;font-size:14px;max-width:min(92vw,440px)';
@@ -2170,14 +2190,15 @@ if('serviceWorker' in navigator){
       '<button id="cf-update-later" style="background:transparent;color:#cbd5e1;border:none;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap">後で</button>'+
       '</div><div id="cf-update-notes" style="display:none;font-size:11.5px;line-height:1.7;color:#dbe6f5;border-top:1px solid rgba(255,255,255,.2);padding-top:7px"></div>';
     document.body.appendChild(bar);
-    // 新バージョンの更新内容(version.json)をサーバから取得して表示（失敗しても無害）
-    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(v=>{
+    // 新バージョンの更新内容（呼び出し元で取得済みのversion.jsonから表示）
+    try{
       const el=document.getElementById('cf-update-notes');
-      if(!el||!v||!Array.isArray(v.notes)||v.notes.length===0)return;
-      el.innerHTML='<div style="font-weight:700;color:#fff;margin-bottom:2px">📋 今回の更新内容</div>'+
-        v.notes.slice(0,5).map(n=>'・'+String(n).replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>');
-      el.style.display='';
-    }).catch(()=>{});
+      if(el&&v&&Array.isArray(v.notes)&&v.notes.length>0){
+        el.innerHTML='<div style="font-weight:700;color:#fff;margin-bottom:2px">📋 今回の更新内容</div>'+
+          v.notes.slice(0,5).map(n=>'・'+String(n).replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>');
+        el.style.display='';
+      }
+    }catch(e){}
     document.getElementById('cf-update-btn').onclick=()=>{
       // 念のため現在の状態を保存してから更新（autosave）
       try{ if(typeof _saveNow==='function') _saveNow(); }catch(e){}
@@ -2196,7 +2217,11 @@ if('serviceWorker' in navigator){
       //   2秒待っても切替が来なければ強制的に再読込する（「更新中…」のまま固まるのを防止）。
       setTimeout(()=>{ if(!_swRefreshing){ _swRefreshing=true; location.reload(); } }, 2000);
     };
-    document.getElementById('cf-update-later').onclick=()=>bar.remove();
+    document.getElementById('cf-update-later').onclick=()=>{
+      // この版はもう表示しない（新しい版が出たらまた1回だけ表示される）
+      try{ if(ver)localStorage.setItem('cf_update_dismissed',ver); }catch(e){}
+      bar.remove();
+    };
   }
 
   navigator.serviceWorker.register('./sw.js').then(reg=>{

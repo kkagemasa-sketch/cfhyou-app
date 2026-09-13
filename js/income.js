@@ -188,7 +188,7 @@ function calcPension(person){
     const avgNet = steps.length > 0 ? steps.reduce((s,v)=>s+v,0)/steps.length : (isH?541:322);
     const _coeff=avgNet<300?0.84:avgNet<500?0.80:avgNet<700?0.77:avgNet<900?0.74:avgNet<1100?0.71:0.68;
     // 額面入力モードならステップ値=額面のため係数変換は不要
-    const avgGrossYear = (typeof isGrossInputMode==='function'&&isGrossInputMode()) ? Math.round(avgNet) : Math.round(avgNet / _coeff);
+    const avgGrossYear = (typeof isGrossInputMode==='function'&&isGrossInputMode(person)) ? Math.round(avgNet) : Math.round(avgNet / _coeff);
     avgMonthly = Math.round(avgGrossYear / 12);
   }
   // 老齢厚生年金（本来水準）= 平均標準報酬月額 × 5.481/1000 × 加入月数
@@ -402,21 +402,24 @@ function addIncomeStep(person){
 // ===== 収入の入力モード（額面/手取り）切替 =====
 // ステップ欄のラベルを現在のモードに合わせて書き換える
 function applyIncomeModeLabels(){
-  const gm=isGrossInputMode();
-  document.querySelectorAll('[id$="-amt-body"]').forEach(b=>{
-    if(!/^[hw]-is-\d+-amt-body$/.test(b.id))return;
-    const ls=b.querySelectorAll('.lbl');
-    if(ls[0])ls[0].textContent=gm?'開始時の額面年収':'開始時の手取り年収';
-    if(ls[1])ls[1].textContent=gm?'終了時の額面年収':'終了時の手取り年収';
+  // 2026-09-13: 夫婦それぞれのモードに応じて、その人のステップだけラベルを切替
+  ['h','w'].forEach(p=>{
+    const gm=isGrossInputMode(p);
+    document.querySelectorAll(`[id^="${p}-is-"][id$="-amt-body"]`).forEach(b=>{
+      if(!new RegExp(`^${p}-is-\\d+-amt-body$`).test(b.id))return;
+      const ls=b.querySelectorAll('.lbl');
+      if(ls[0])ls[0].textContent=gm?'開始時の額面年収':'開始時の手取り年収';
+      if(ls[1])ls[1].textContent=gm?'終了時の額面年収':'終了時の手取り年収';
+    });
+    document.querySelectorAll(`[id^="${p}-is-"][id$="-pct-body"]`).forEach(b=>{
+      if(!new RegExp(`^${p}-is-\\d+-pct-body$`).test(b.id))return;
+      const l=b.querySelector('.lbl');
+      if(l)l.textContent=gm?'直前の額面に対する割合':'直前の手取りに対する割合';
+    });
+    // その人の働き方セレクトは額面モードのときだけ表示
+    const wrap=document.getElementById(`${p}-work-type-wrap`);
+    if(wrap)wrap.style.display=gm?'':'none';
   });
-  document.querySelectorAll('[id$="-pct-body"]').forEach(b=>{
-    if(!/^[hw]-is-\d+-pct-body$/.test(b.id))return;
-    const l=b.querySelector('.lbl');
-    if(l)l.textContent=gm?'直前の額面に対する割合':'直前の手取りに対する割合';
-  });
-  // 働き方区分行の表示切替（額面モードのみ）
-  const row=document.getElementById('work-type-row');
-  if(row)row.style.display=gm?'':'none';
 }
 function onIncomeModeChange(){
   applyIncomeModeLabels();
@@ -603,7 +606,7 @@ function calcStepHint(id){
   const at=parseInt(document.getElementById(`${id}-to`)?.value)||0;
   const hint=document.getElementById(`${id}-hint`);
   if(hint){
-    const _gm=isGrossInputMode();
+    const _gm=isGrossInputMode(id.startsWith('h-is')?'h':'w');
     const _isLeaveStep=!!document.getElementById(`${id}-matleave`)?.checked;
     if(!nf&&!nt){hint.textContent=(_gm?'額面':'手取り')+'：― 万円 → ― 万円';}
     else{
@@ -804,7 +807,7 @@ function updateDCTaxHint(p){
   const baseAge=p==='h'?(iv('husband-age')||30):(iv('wife-age')||29);
   let takeHome=getIncomeAtAge(steps, baseAge)||0;
   // 額面入力モード: 節税効果の推計は手取りベースのため換算してから渡す
-  if(isGrossInputMode()&&takeHome>0)takeHome=grossToNetYearly(takeHome, baseAge, getWorkType(p==='h'?'h':'w'), false, 0, 0);
+  if(isGrossInputMode(p==='h'?'h':'w')&&takeHome>0)takeHome=grossToNetYearly(takeHome, baseAge, getWorkType(p==='h'?'h':'w'), false, 0, 0);
   const saving=estimateTaxSaving(takeHome, annualDeduction);
   const hint=document.getElementById(`dc-${p}-tax-hint`);
   if(hint){
@@ -867,7 +870,7 @@ function calcAvgHyojun(person, startAge, retireAge){
     }
     if(net<=0) continue; // カバーされない期間はスキップ
     // 額面入力モードならステップ値=額面をそのまま使用（係数変換の誤差がなくなり年金推計が正確に）
-    const grossYear=(typeof isGrossInputMode==='function'&&isGrossInputMode())?net:NET2GROSS(net);
+    const grossYear=(typeof isGrossInputMode==='function'&&isGrossInputMode(person))?net:NET2GROSS(net);
     const hyojunMonth=Math.min(grossYear/12, 65); // 標準報酬月額上限65万
     sumHyojun+=hyojunMonth*12;
     countMonths+=12;
