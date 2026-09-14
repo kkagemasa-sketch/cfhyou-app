@@ -475,7 +475,9 @@ function _renderContingencyInner(){
     const isAccum=document.getElementById(`sec-acc-${_deadP}-${sid}`)?.classList.contains('on');
     if(!isAccum)return;
     const redeemAge=iv(`sec-redeem-${_deadP}-${sid}`)||0;
-    if(redeemAge>0&&_deadDeathAge>=redeemAge)return; // 既に解約済み
+    // 死亡年より前に解約済みなら除外。「死亡年＝解約年齢」の年は、収入側が
+    // 死亡年以降を生存者のみ処理するため解約収入に入らない → 死亡時現金化に含める
+    if(redeemAge>0&&_deadDeathAge>redeemAge)return; // 既に解約済み
     const bal=fv(`sec-bal-${_deadP}-${sid}`)||0;
     const monthly=fv(`sec-monthly-${_deadP}-${sid}`)||0;
     if(bal<=0&&monthly<=0)return;
@@ -508,7 +510,7 @@ function _renderContingencyInner(){
     const isStock=document.getElementById(`sec-stock-${_deadP}-${sid}`)?.classList.contains('on');
     if(!isStock)return;
     const redeemAge=iv(`sec-stk-redeem-${_deadP}-${sid}`)||0;
-    if(redeemAge>0&&_deadDeathAge>=redeemAge)return;
+    if(redeemAge>0&&_deadDeathAge>redeemAge)return; // 死亡年＝解約年齢の年は死亡時現金化に含める（上と同様）
     const bal=fv(`sec-stk-bal-${_deadP}-${sid}`)||0;if(bal<=0)return;
     const investAge=iv(`sec-stk-age-${_deadP}-${sid}`)||0;
     if(investAge>0&&_deadDeathAge<investAge)return;
@@ -538,13 +540,15 @@ function _renderContingencyInner(){
       const mr=rate>0?Math.pow(1+rate,1/12)-1:0;
       return initBal*cpd+(monthly>0?(mr>0?monthly*(cpd-1)/mr:monthly*12*yrs):0);
     };
-    if(hasDC2&&_deadDeathAge<_deadDC.receiveAge){
+    // 「死亡年＝受取開始年齢」の年は、受取側が死亡年以降を生存者のみ処理するため
+    // 受取に入らない → 死亡時現金化に含める（<= で等号を含める）
+    if(hasDC2&&_deadDeathAge<=_deadDC.receiveAge){
       const yrsContrib=Math.min(_deadDC.retAge-_deadPBaseAge,_yrsAtDeath);
       const balAtEnd=_fvWI2(_deadDC.dcInitBal,dcTotal,_deadDC.dcRate,yrsContrib);
       const yrsAfter=Math.max(0,_yrsAtDeath-yrsContrib);
       _deadFinTotal+=Math.round(balAtEnd*(_deadDC.dcRate>0?Math.pow(1+_deadDC.dcRate,yrsAfter):1));
     }
-    if(hasIdeco2&&_deadDeathAge<_deadDC.receiveAge){
+    if(hasIdeco2&&_deadDeathAge<=_deadDC.receiveAge){
       const yrsContrib=Math.min(_deadDC.retAge-_deadPBaseAge,_yrsAtDeath);
       const balAtEnd=_fvWI2(_deadDC.idecoInitBal,_deadDC.idecoMonthly,_deadDC.idecoRate,yrsContrib);
       const yrsAfter=Math.max(0,_yrsAtDeath-yrsContrib);
@@ -1076,8 +1080,16 @@ function _renderContingencyInner(){
         const bal=fv(`sec-bal-${p}-${sid}`)||0;const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         const endAge=iv(`sec-end-${p}-${sid}`)||0;const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
         const yrs=i+1;let fv2=0;
-        if(endAge===0||pAge<=endAge){const cpd=Math.pow(1+rate,yrs);const mr2=rate>0?Math.pow(1+rate,1/12)-1:0;fv2=Math.round(bal*cpd+(mr2>0?monthly*(cpd-1)/mr2:monthly*12*yrs));}
-        else{const mr2=rate>0?Math.pow(1+rate,1/12)-1:0;const yrsA=endAge-pBaseAge;const cpdA=Math.pow(1+rate,yrsA);const bAE=bal*cpdA+(mr2>0?monthly*(cpdA-1)/mr2:monthly*12*yrsA);fv2=Math.round(bAE*Math.pow(1+rate,Math.max(0,yrs-yrsA)));}
+        // 評価額の式は通常CF(cf-calc.js)・_mgRawFVと同一（月利r/12、積立終了年齢はその年も含む）
+        if(endAge===0||pAge<=endAge){
+          const mr=rate/12;const cpd=Math.pow(1+mr,12*yrs);
+          fv2=Math.round(bal*cpd+(mr>0?monthly*(cpd-1)/mr:monthly*12*yrs));
+        }else{
+          const mr=rate/12;const yrsAccum=endAge-pBaseAge+1;const yrsAfter=yrs-yrsAccum;
+          const cpdA=Math.pow(1+mr,12*yrsAccum);
+          const bAE=bal*cpdA+(mr>0?monthly*(cpdA-1)/mr:monthly*12*yrsAccum);
+          fv2=Math.round(bAE*Math.pow(1+mr,12*Math.max(0,yrsAfter)));
+        }
         // ★ A5修正: 旧コードは fv2（生のFV）をそのまま解約収入にしていたため、
         //   過去年に自動取崩しで減らした分を考慮せず、二重計上になっていた。
         //   _mgSecurityState から該当銘柄を引き、過去取崩し相当分を差し引いた
@@ -1099,7 +1111,7 @@ function _renderContingencyInner(){
         let net=fv2;
         if(!isNisa){
           // 取得費も同じく取崩しで減っているはずなので _mgEffCost を使う
-          const cost = _stMatched ? _mgEffCost(_stMatched, i) : (bal+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge):yrs));
+          const cost = _stMatched ? _mgEffCost(_stMatched, i) : (bal+monthly*12*(endAge>0&&pAge>endAge?(endAge-pBaseAge+1):yrs));
           net=Math.round(fv2-Math.max(0,fv2-cost)*0.20315);
         }
         // 解約後は以降の自動取崩し対象から外す（残高ゼロ扱い）
@@ -1120,11 +1132,53 @@ function _renderContingencyInner(){
         const investAge=iv(`sec-stk-age-${p}-${sid}`)||0;const rate=(fv(`sec-div-${p}-${sid}`)||0)/100;
         const yrsHeld=investAge>0?(pAge-investAge):(i+1);
         let val=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        // 通常CF(cf-calc.js)と同じく、過去年の自動取崩し分（複利成長込み）と
+        // 取得原価の減少を反映してから課税する
+        const _stkMatched=_mgSecurityState.find(s=>s.p===p&&s.sid===sid&&s.type==='stock');
+        let _costRedStk=0;
+        if(_stkMatched){
+          let _redLiqStk=0;
+          for(const liq of _stkMatched.liquidations){
+            if(liq.year<i){_redLiqStk+=liq.gross*Math.pow(1+_stkMatched.rate,i-liq.year);_costRedStk+=liq.costReduced;}
+          }
+          val=Math.max(0,val-Math.round(_redLiqStk));
+        }
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
-        if(!isNisa){val=Math.round(val-Math.max(0,val-bal)*0.20315);}
-        const _pLblB=p==='h'?'ご主人様':'奥様';
-        const lbl=(document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'')||`${isNisa?'NISA':'課税'}一括投資解約(${_pLblB})`;
+        if(!isNisa){
+          const _basisStk=(_stkMatched&&_stkMatched.basisInput>0)?_stkMatched.basisInput:bal;
+          const _costStk=Math.max(0,_basisStk-_costRedStk);
+          val=Math.round(val-Math.max(0,val-_costStk)*0.20315);
+        }
+        const lbl=secRowLabel(p,sid,'課税一括投資','解約');
         secRedeemMap_mg[`stk-${p}-${sid}`]={lbl,val};secRedeemTotal+=val;
+      });
+      // 積立保険の解約／満期受取（通常CF cf-calc.js と同じ推定式・個別行）
+      // 旧実装はこのブロック自体が無く、解約年齢を入れた積立保険の受取が万一CFでは0円だった
+      document.querySelectorAll(`[id^="ins-m-${p}-"]`).forEach(el=>{
+        const parts=el.id.split('-');const iid=parts[parts.length-1];
+        const redeemAge=iv(`ins-redeem-${p}-${iid}`)||0;
+        if(redeemAge<=0||pAge!==redeemAge)return;
+        const monthly=fv(`ins-m-${p}-${iid}`)||0;
+        const matAge=iv(`ins-age-${p}-${iid}`)||0;
+        const matAmt=fv(`ins-mat-${p}-${iid}`)||0;
+        const redeemAmt=fv(`ins-redeem-amt-${p}-${iid}`)||0;
+        let insRedeemVal=0;
+        if(pAge>=matAge&&matAmt>0){insRedeemVal=matAmt;}
+        else if(redeemAmt>0){insRedeemVal=redeemAmt;}
+        else if(matAge>0&&monthly>0){
+          const enrollAge=iv(`ins-enroll-${p}-${iid}`)||pBaseAge;
+          const totalPayYrs=matAge-enrollAge;
+          const paidYrs2=Math.min(redeemAge-enrollAge,totalPayYrs);
+          const cumPay=monthly*12*Math.max(0,paidYrs2);
+          const ratio=totalPayYrs>0?paidYrs2/totalPayYrs:0;
+          const surrenderCharge=Math.max(0,0.3*(1-ratio));
+          insRedeemVal=Math.round(cumPay*(1-surrenderCharge)+matAmt*ratio*ratio);
+        }
+        if(insRedeemVal<=0)return;
+        const customLbl=document.getElementById(`ins-label-${p}-${iid}`)?.value?.trim()||'';
+        const pLabel=p==='h'?'ご主人様':'奥様';
+        const lbl=customLbl||`積立保険 解約(${pLabel})`;
+        secRedeemMap_mg[`ins-${p}-${iid}`]={lbl,val:insRedeemVal};secRedeemTotal+=insRedeemVal;
       });
     });
     Object.keys(secRedeemMap_mg).forEach(k=>{if(!MR.secRedeemRows.find(r=>r.key===k))MR.secRedeemRows.push({key:k,lbl:secRedeemMap_mg[k].lbl,vals:new Array(i).fill(0)});});
