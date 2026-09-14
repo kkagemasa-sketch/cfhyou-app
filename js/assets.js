@@ -243,7 +243,7 @@ function updateBasisHint(person, id){
   } else if(basis<=0 && bal>0){
     hintEl.style.color='#dc2626';
     hintEl.style.fontWeight='700';
-    hintEl.innerHTML='⚠ 未入力のため現在評価額を取得原価とみなします。含み益がある場合は税金が過少評価されます';
+    hintEl.innerHTML='未入力のため現在評価額を取得原価とみなします。含み益がある場合は税金が過少評価されます';
   } else {
     hintEl.style.color='#475569';
     hintEl.style.fontWeight='400';
@@ -370,22 +370,22 @@ function validateNisaLimits(){
 
     // 年次超過
     if(a.annual > limit){
-      msgs.push(`⚠️ ${pLbl}の${fLbl}：年間拠出合計 <b>${a.annual.toFixed(1)}万円/年</b> が上限 ${limit}万円/年 を超えています`);
+      msgs.push(`${pLbl}の${fLbl}：年間拠出合計 <b>${a.annual.toFixed(1)}万円/年</b> が上限 ${limit}万円/年 を超えています`);
     }
     // つみたて枠に一括投資が入っている
     if(it.frame==='tsumi' && it.type==='stock'){
-      msgs.push(`⚠️ つみたて枠は定額積立のみ対象です（一括投資は成長枠を選択してください）`);
+      msgs.push(`つみたて枠は定額積立のみ対象です（一括投資は成長枠を選択してください）`);
     }
     // 生涯枠超過（両枠合算）
     const personTotal = agg[it.p].tsumi.basis + agg[it.p].grow.basis
                       + agg[it.p].tsumi.future + agg[it.p].grow.future;
     if(personTotal > LIFETIME){
-      msgs.push(`⚠️ ${pLbl}のNISA生涯枠：既購入+将来拠出の累計 <b>${personTotal.toFixed(0)}万円</b> が生涯枠 ${LIFETIME}万円 を超えます`);
+      msgs.push(`${pLbl}のNISA生涯枠：既購入+将来拠出の累計 <b>${personTotal.toFixed(0)}万円</b> が生涯枠 ${LIFETIME}万円 を超えます`);
     }
     // 成長枠のみの生涯1200万超過
     const growTotal = agg[it.p].grow.basis + agg[it.p].grow.future;
     if(it.frame==='grow' && growTotal > LIFETIME_GROW){
-      msgs.push(`⚠️ ${pLbl}の成長枠：既購入+将来拠出の累計 <b>${growTotal.toFixed(0)}万円</b> が成長枠生涯上限 ${LIFETIME_GROW}万円 を超えます`);
+      msgs.push(`${pLbl}の成長枠：既購入+将来拠出の累計 <b>${growTotal.toFixed(0)}万円</b> が成長枠生涯上限 ${LIFETIME_GROW}万円 を超えます`);
     }
     if(msgs.length){
       warnEl.innerHTML = msgs.map(m=>`・${m}`).join('<br>');
@@ -539,7 +539,7 @@ function addCar(defaults){
   el.style.cssText='background:#f5f0ff;border:1px solid #c4b0e8;border-radius:var(--rs);padding:10px;margin-bottom:10px';
   el.innerHTML=`
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <span style="font-size:14px">🚗</span>
+      <span style="font-size:14px"></span>
       <input class="inp" id="car-${id}-label" value="${d.label||''}" placeholder="${id}台目（例:ご主人様車）" style="flex:1;font-size:11px;font-weight:700;padding:4px 8px" oninput="live()">
       <select class="sel" id="car-${id}-owner" onchange="live()" title="CF表で所有者ごとの行に分けて表示します" style="width:92px;font-size:10px;padding:4px 4px">
         <option value=""${!d.owner?' selected':''}>所有者:未設定</option>
@@ -551,15 +551,15 @@ function addCar(defaults){
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <div class="tc ${d.type!=='used'?'on':''}" id="car-${id}-new" onclick="setCarType(${id},'new')" style="flex:1;padding:6px;flex-direction:column;align-items:center;text-align:center;gap:2px">
-        <span style="font-size:16px">✨</span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検：初回3年・以降2年</div>
+        <span style="font-size:16px"></span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検：初回3年・以降2年</div>
       </div>
       <div class="tc ${d.type==='used'?'on':''}" id="car-${id}-used" onclick="setCarType(${id},'used')" style="flex:1;padding:6px;flex-direction:column;align-items:center;text-align:center;gap:2px">
-        <span style="font-size:16px">🔄</span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検：2年ごと</div>
+        <span style="font-size:16px"></span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検：2年ごと</div>
       </div>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
-      <div class="tc ${d.pay!=='loan'?'on':''}" id="car-${id}-pay-cash" onclick="setCarPay(${id},'cash')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">💴 現金一括</div></div>
-      <div class="tc ${d.pay==='loan'?'on':''}" id="car-${id}-pay-loan" onclick="setCarPay(${id},'loan')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">🏦 ローン</div></div>
+      <div class="tc ${d.pay!=='loan'?'on':''}" id="car-${id}-pay-cash" onclick="setCarPay(${id},'cash')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">現金一括</div></div>
+      <div class="tc ${d.pay==='loan'?'on':''}" id="car-${id}-pay-loan" onclick="setCarPay(${id},'loan')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">ローン</div></div>
     </div>
     <div class="g3" style="margin-bottom:8px">
       <div class="fg"><label class="lbl" style="font-size:10px">車両価格</label>
@@ -578,7 +578,7 @@ function addCar(defaults){
         <span class="hint" id="car-${id}-insp-hint" style="font-size:9px">${(d.type||'new')==='new'?'新車：初回3年後・以降2年ごと':'中古：2年ごと'}</span></div>
     </div>
     <div id="car-${id}-loan-fields" style="display:${d.pay==='loan'?'':'none'};background:#f0ecff;border:1px solid #c4b0e8;border-radius:var(--rs);padding:8px">
-      <div style="font-size:10px;font-weight:700;color:#6b5ea8;margin-bottom:6px">🏦 カーローン設定</div>
+      <div style="font-size:10px;font-weight:700;color:#6b5ea8;margin-bottom:6px">カーローン設定</div>
       <div class="g3">
         <div class="fg"><label class="lbl" style="font-size:9px">頭金</label>
           <div class="suf"><input class="inp amt-inp" id="car-${id}-down" type="number" value="${d.down||50}" min="0" oninput="setCarPay(${id},'loan')"><span class="sl">万円</span></div></div>
@@ -607,7 +607,7 @@ function addExistingCar(defaults){
   el.style.cssText='background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:10px;margin-bottom:8px';
   el.innerHTML=`
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <span style="font-size:14px">🚙</span>
+      <span style="font-size:14px"></span>
       <input class="inp" id="ecar-${id}-label" value="${d.label||''}" placeholder="現有車${id}台目（例:ご主人様車）" style="flex:1;font-size:11px;font-weight:700;padding:4px 8px" oninput="live()">
       <select class="sel" id="ecar-${id}-owner" onchange="live()" title="CF表で所有者ごとの行に分けて表示します" style="width:92px;font-size:10px;padding:4px 4px">
         <option value=""${!d.owner?' selected':''}>所有者:未設定</option>
@@ -619,15 +619,15 @@ function addExistingCar(defaults){
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <div class="tc ${d.type!=='used'?'on':''}" id="ecar-${id}-new" onclick="setExistingCarType(${id},'new')" style="flex:1;padding:6px;flex-direction:column;align-items:center;text-align:center;gap:2px">
-        <span style="font-size:16px">✨</span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検：初回3年・以降2年</div>
+        <span style="font-size:16px"></span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検：初回3年・以降2年</div>
       </div>
       <div class="tc ${d.type==='used'?'on':''}" id="ecar-${id}-used" onclick="setExistingCarType(${id},'used')" style="flex:1;padding:6px;flex-direction:column;align-items:center;text-align:center;gap:2px">
-        <span style="font-size:16px">🔄</span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検：2年ごと</div>
+        <span style="font-size:16px"></span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検：2年ごと</div>
       </div>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
-      <div class="tc ${d.pay!=='loan'?'on':''}" id="ecar-${id}-pay-cash" onclick="setExistingCarPay(${id},'cash')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">💴 現金一括</div></div>
-      <div class="tc ${d.pay==='loan'?'on':''}" id="ecar-${id}-pay-loan" onclick="setExistingCarPay(${id},'loan')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">🏦 ローン中</div></div>
+      <div class="tc ${d.pay!=='loan'?'on':''}" id="ecar-${id}-pay-cash" onclick="setExistingCarPay(${id},'cash')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">現金一括</div></div>
+      <div class="tc ${d.pay==='loan'?'on':''}" id="ecar-${id}-pay-loan" onclick="setExistingCarPay(${id},'loan')" style="flex:1;padding:5px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">ローン中</div></div>
     </div>
     <!-- 共通の最低限入力（pay/mode に依存しない） -->
     <div class="g2" style="margin-bottom:8px">
@@ -645,14 +645,14 @@ function addExistingCar(defaults){
     -->
     <div id="ecar-${id}-loan-fields" style="display:${d.pay==='loan'?'':'none'};background:#fff3d0;border:1px solid #ffc000;border-radius:var(--rs);padding:8px">
       <div style="display:flex;gap:4px;margin-bottom:6px">
-        <div class="tc ${(d.loanInputMode||'original')==='original'?'on':''}" id="ecar-${id}-loan-mode-original" onclick="setExistingCarLoanMode(${id},'original')" style="flex:1;padding:4px 6px"><div class="tc-lbl" style="font-size:10px">📋 当初借入条件から</div></div>
-        <div class="tc ${d.loanInputMode==='reverse'?'on':''}" id="ecar-${id}-loan-mode-reverse" onclick="setExistingCarLoanMode(${id},'reverse')" style="flex:1;padding:4px 6px"><div class="tc-lbl" style="font-size:10px">🔄 現在の支払いから逆算</div></div>
+        <div class="tc ${(d.loanInputMode||'original')==='original'?'on':''}" id="ecar-${id}-loan-mode-original" onclick="setExistingCarLoanMode(${id},'original')" style="flex:1;padding:4px 6px"><div class="tc-lbl" style="font-size:10px">当初借入条件から</div></div>
+        <div class="tc ${d.loanInputMode==='reverse'?'on':''}" id="ecar-${id}-loan-mode-reverse" onclick="setExistingCarLoanMode(${id},'reverse')" style="flex:1;padding:4px 6px"><div class="tc-lbl" style="font-size:10px">現在の支払いから逆算</div></div>
       </div>
       <input type="hidden" id="ecar-${id}-loan-mode" value="${d.loanInputMode||'original'}">
 
       <!-- モード①: 当初借入条件 -->
       <div id="ecar-${id}-loan-original-fields" style="display:${(d.loanInputMode||'original')==='original'?'':'none'}">
-        <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🏦 当初ローン条件（自動で残債計算）</div>
+        <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">当初ローン条件（自動で残債計算）</div>
         <div class="g3" style="margin-bottom:6px">
           <div class="fg"><label class="lbl" style="font-size:9px">当初借入時期</label>
             <div class="suf"><input class="inp age-inp" id="ecar-${id}-bought-ago" type="number" value="${d.boughtAgo||3}" min="0" max="20" oninput="setExistingCarPay(${id},'loan')"><span class="sl">年前</span></div></div>
@@ -671,7 +671,7 @@ function addExistingCar(defaults){
 
       <!-- モード②: 現在の支払いから逆算 -->
       <div id="ecar-${id}-loan-reverse-fields" style="display:${d.loanInputMode==='reverse'?'':'none'}">
-        <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🔄 現在の支払い情報を入力（金額×期間で残債を概算）</div>
+        <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">現在の支払い情報を入力（金額×期間で残債を概算）</div>
         <div class="g3">
           <div class="fg"><label class="lbl" style="font-size:9px">月々の支払い</label>
             <div class="suf"><input class="inp amt-inp" id="ecar-${id}-loan-monthly" type="number" value="${d.loanMonthly||3}" min="0" step="0.1" oninput="setExistingCarPay(${id},'loan')"><span class="sl">万円/月</span></div></div>
@@ -723,7 +723,7 @@ function setExistingCarPay(id,pay){
       const totalRemain=Math.round(annual*remainYrs*10)/10;
       if(hint){
         if(remainYrs<=0||annual<=0){
-          hint.textContent='⚠️ 月々と残年数を入力してください';
+          hint.textContent='月々と残年数を入力してください';
           hint.className='hint';
         }else{
           hint.textContent=`年額: ${Math.round(annual*10)/10}万円/年（月々${monthly}万＋ボーナス${bonus}万×2）× あと${remainYrs}年 → 残債概算 ${totalRemain}万円`;
@@ -850,7 +850,7 @@ function syncJointShare(changed){
     hint.style.color=ok?'#3a8a3a':'#d63a2a';
     hint.textContent=ok
       ? `✓ 持分合計: ${sum}万円（借入額と一致）`
-      : `⚠ 持分合計: ${sum}万円（借入額${loanAmt}万円と${sum>loanAmt?'+':''}${sum-loanAmt}万円ズレています）`;
+      : `持分合計: ${sum}万円（借入額${loanAmt}万円と${sum>loanAmt?'+':''}${sum-loanAmt}万円ズレています）`;
   }
 }
 window.syncJointShare = syncJointShare;

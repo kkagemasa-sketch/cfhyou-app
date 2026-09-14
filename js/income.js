@@ -147,9 +147,9 @@ function calcTakeHomeBase(gross, resultId, detailId, isFuyo, age, spouseDed, fuy
     }
     // 扶養内パートで壁を超えている場合に注意表示
     if(isFuyo && gross > 130){
-      html += `<div style="color:#d63a2a;font-weight:600;margin-top:4px">⚠ 年収130万超：社会保険の扶養から外れる可能性があります</div>`;
+      html += `<div style="color:#d63a2a;font-weight:600;margin-top:4px">年収130万超：社会保険の扶養から外れる可能性があります</div>`;
     } else if(isFuyo && gross > 106){
-      html += `<div style="color:#e67e22;font-weight:600;margin-top:4px">⚠ 年収106万超：週20時間以上の勤務なら社保加入の可能性あり（2026年10月から賃金要件が撤廃され、加入対象は順次拡大中）</div>`;
+      html += `<div style="color:#e67e22;font-weight:600;margin-top:4px">年収106万超：週20時間以上の勤務なら社保加入の可能性あり（2026年10月から賃金要件が撤廃され、加入対象は順次拡大中）</div>`;
     }
     detail.innerHTML = html;
   }
@@ -268,13 +268,13 @@ function updatePensionAdjustHint(person){
     return;
   }
   const sign = pct>0?'+':'';
-  const label = receiveAge<65?'🔻 繰上げ':'🔺 繰下げ';
+  const label = receiveAge<65?'▼ 繰上げ':'▲ 繰下げ';
   const noAdj = noAdjustCb?.checked;
   let mainText='';
   if(noAdj){
     // 自動調整OFFのとき: 「実際に使う値」を強調し、参考として調整後の値を併記
     mainText = `${label} ${receiveAge}歳 受給<br>
-      <strong style="color:#1e3a5f;font-size:12px">📌 CF表には ${baseAmt}万円/年 を基準に反映（自動調整OFF）</strong>
+      <strong style="color:#1e3a5f;font-size:12px">CF表には ${baseAmt}万円/年 を基準に反映（自動調整OFF）</strong>
       <span style="color:#94a3b8;font-size:10px">　参考: 制度どおりの調整なら手取り約 ${adjusted}万円/年${receiveAge<65?`（65歳からは約 ${adjusted65}万円/年）`:''}</span>`;
   } else {
     mainText = `${label} ${receiveAge}歳 受給 → 調整率 <strong>${sign}${pct}%</strong>（額面換算で調整 → 手取り約 ${adjusted}万円/年${receiveAge<65?`、65歳からは控除が増えて約 ${adjusted65}万円/年`:''}）<br>
@@ -282,7 +282,7 @@ function updatePensionAdjustHint(person){
   }
   let beTxt = '';
   if(be){
-    beTxt = `<br>📊 損益分岐: <strong>${be.ageYears}歳${be.ageMonths}ヶ月</strong>頃までに亡くなる場合は65歳受給が有利、それ以降まで生きる場合は${be.advantage}が有利`;
+    beTxt = `<br>損益分岐: <strong>${be.ageYears}歳${be.ageMonths}ヶ月</strong>頃までに亡くなる場合は65歳受給が有利、それ以降まで生きる場合は${be.advantage}が有利`;
   }
   hintEl.innerHTML = mainText + beTxt;
   hintEl.style.display = 'block';
@@ -383,9 +383,9 @@ function addIncomeStep(person){
     <div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border);flex-wrap:wrap">
       <label title="この段階は育休期間" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#d97706;cursor:pointer;white-space:nowrap;background:#fff3e0;border:1px solid #ffb74d;border-radius:4px;padding:3px 6px;user-select:none">
         <input type="checkbox" id="${id}-matleave" onchange="onMatLeaveToggle('${id}');updateIncomeStepSummary('${id}')" style="margin:0;cursor:pointer;accent-color:#d97706">
-        🍼 育休
+        育休
       </label>
-      <button type="button" id="${id}-ml-recalc" title="給付金を再計算（前段階の手取りから）" onclick="applyMatLeaveBenefit('${id}');live()" style="display:none;font-size:10px;background:#fff;border:1px solid #ffb74d;color:#d97706;border-radius:4px;padding:3px 6px;cursor:pointer;white-space:nowrap">♻ 給付金再計算</button>
+      <button type="button" id="${id}-ml-recalc" title="給付金を再計算（前段階の手取りから）" onclick="applyMatLeaveBenefit('${id}');live()" style="display:none;font-size:10px;background:#fff;border:1px solid #ffb74d;color:#d97706;border-radius:4px;padding:3px 6px;cursor:pointer;white-space:nowrap">給付金再計算</button>
       <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap">イベント</span>
       <input id="${id}-leave" class="inp" oninput="live()" onblur="updateIncomeStepSummary('${id}')" style="font-size:11px;padding:4px 8px;border-radius:5px;flex:1;min-width:120px" placeholder="例:産休・育休、時短、転職 等" value="">
       <span style="font-size:10px;color:var(--muted);white-space:nowrap">← CF表のイベント行に表示</span>
@@ -433,7 +433,7 @@ function onIncomeModeChange(){
 window.applyIncomeModeLabels=applyIncomeModeLabels;
 window.onIncomeModeChange=onIncomeModeChange;
 
-// ===== 額面→手取りの計算フローポップアップ（収入ステップの🔍ボタンから） =====
+// ===== 額面→手取りの計算フローポップアップ（収入ステップのボタンから） =====
 // explain-core.js の _buildPopup / closeExplainPopup を流用してその場に表示する
 function showGrossFlowPopup(stepId, btnEl){
   if(typeof _buildPopup!=='function'){alert('表示部品の読み込みに失敗しました');return;}
@@ -466,14 +466,14 @@ function showGrossFlowPopup(stepId, btnEl){
   if(fuyo.n19_22>0)_fuyoParts.push(`19〜22歳×${fuyo.n19_22}人`);
   const simple=`
     <div style="font-size:12px">
-      ${_row(`📥 額面年収（${fromAge}歳・${wtLabel}）`,`<strong>${bd.gross.toLocaleString()}万円</strong>`)}
+      ${_row(`額面年収（${fromAge}歳・${wtLabel}）`,`<strong>${bd.gross.toLocaleString()}万円</strong>`)}
       ${bd.workType==='part'
         ?_row('社会保険料','0円（配偶者の社保に加入）','#3a8a3a')
         :_row(`− 社会保険料（${(bd.shakaiRate*100).toFixed(2)}%）`,`▲${bd.shakai.toLocaleString()}万円`,'#b91c1c')}
       ${_row(`− 所得税`,`▲${bd.itax.toLocaleString()}万円`,'#b91c1c')}
       ${_row(`− 住民税`,`▲${bd.jumin.toLocaleString()}万円`,'#b91c1c')}
       <div style="display:flex;justify-content:space-between;padding:5px 0 2px;border-top:2px solid #1e3a5f;font-weight:700;margin-top:4px">
-        <span>💴 手取り年収</span><span style="color:#1e3a5f;font-size:15px">${Math.round(bd.net).toLocaleString()}万円</span>
+        <span>手取り年収</span><span style="color:#1e3a5f;font-size:15px">${Math.round(bd.net).toLocaleString()}万円</span>
       </div>
       <div style="font-size:10px;color:#94a3b8;margin-top:2px;text-align:right">額面の ${pct}%</div>
     </div>`;
@@ -493,7 +493,7 @@ function showGrossFlowPopup(stepId, btnEl){
   // 同じボタンをもう一度押したら閉じる（トグル）
   if(typeof _explainPopupEl!=='undefined'&&_explainPopupEl&&_explainPopupEl.dataset.row==='grossFlow-'+stepId){closeExplainPopup();return;}
   closeExplainPopup();
-  _buildPopup(btnEl,'grossFlow-'+stepId,0,{title:`💴 ${label} 額面→手取りの計算`,simple,detail});
+  _buildPopup(btnEl,'grossFlow-'+stepId,0,{title:`${label} 額面→手取りの計算`,simple,detail});
   setTimeout(()=>{
     document.addEventListener('click',_explainOutsideClick,true);
     document.addEventListener('keydown',_explainEscKey,true);
@@ -525,7 +525,7 @@ function updateIncomeStepSummary(id){
   const mlOn=document.getElementById(`${id}-matleave`)?.checked;
   const evName=(document.getElementById(`${id}-leave`)?.value||'').trim();
   const tags=[];
-  if(mlOn) tags.push('🍼育休');
+  if(mlOn) tags.push('育休');
   if(evName) tags.push(evName.length>10 ? evName.slice(0,10)+'…' : evName);
   const parts=[ageRange, amtPart, ...tags].filter(Boolean);
   summaryEl.textContent = parts.length ? parts.join(' / ') : '（未入力）';
@@ -620,9 +620,9 @@ function calcStepHint(id){
         const wt=getWorkType(person);
         const netF=nf>0?Math.round(grossToNetYearly(nf,af||40,wt,false,0,0)):0;
         const netT=nt>0?Math.round(grossToNetYearly(nt,at||af||40,wt,false,0,0)):netF;
-        txt+=`<br>💰 手取り換算: 約 ${netF.toLocaleString()}万 → ${netT.toLocaleString()}万円/年
+        txt+=`<br>手取り換算: 約 ${netF.toLocaleString()}万 → ${netT.toLocaleString()}万円/年
           <button type="button" onclick="event.stopPropagation();showGrossFlowPopup('${id}',this)"
-            style="font-size:10px;background:#eef5ff;border:1px solid #b8d4f8;color:#2d7dd2;border-radius:4px;padding:2px 7px;cursor:pointer;margin-left:4px;font-family:inherit">🔍 計算の内訳</button>`;
+            style="font-size:10px;background:#eef5ff;border:1px solid #b8d4f8;color:#2d7dd2;border-radius:4px;padding:2px 7px;cursor:pointer;margin-left:4px;font-family:inherit">計算の内訳</button>`;
       }
       hint.innerHTML=txt;
     }
@@ -812,7 +812,7 @@ function updateDCTaxHint(p){
   const hint=document.getElementById(`dc-${p}-tax-hint`);
   if(hint){
     if(saving.total>0){
-      hint.textContent=`💰 年間約${saving.total}万円の節税効果（所得税${saving.incomeTax}万＋住民税${saving.residentTax}万）`;
+      hint.textContent=`年間約${saving.total}万円の節税効果（所得税${saving.incomeTax}万＋住民税${saving.residentTax}万）`;
     }else{hint.textContent='';}
   }
   // 受取方法ヒント

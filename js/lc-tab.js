@@ -85,8 +85,8 @@ function renderLCTab(){
   const _scenNm=(typeof _activeScenName==='function')?_activeScenName():'';
   let h=`<div style="max-width:600px;margin:20px auto;font-family:inherit">
   ${_scenNm?`<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-    <div style="font-size:14px;font-weight:800;color:#1e293b">💰 生活費</div>
-    <div style="font-size:11.5px;font-weight:700;color:#64748b">📄 ${_scenNm}</div>
+    <div style="font-size:14px;font-weight:800;color:#1e293b">生活費</div>
+    <div style="font-size:11.5px;font-weight:700;color:#64748b">${_scenNm}</div>
   </div>`:''}
   <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
     <tr style="background:#fff8c4">

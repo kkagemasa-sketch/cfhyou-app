@@ -134,12 +134,12 @@ function mspRenderShockList(){
     const eventVal=sh.timing?.type==='event'?sh.timing.key:'';
     const isEvent=sh.timing?.type==='event';
     const eventOpts=[
-      {k:'h-retire',label:'🎯 ご主人の退職時'},
-      {k:'w-retire',label:'🎯 奥様の退職時'},
-      {k:'h-pension',label:'🎯 ご主人の年金開始時'},
-      {k:'child1-univ',label:'🎯 第一子の大学入学時'},
-      {k:'child2-univ',label:'🎯 第二子の大学入学時'},
-      {k:'now',label:'🎯 現在（1年目）'}
+      {k:'h-retire',label:'ご主人の退職時'},
+      {k:'w-retire',label:'奥様の退職時'},
+      {k:'h-pension',label:'ご主人の年金開始時'},
+      {k:'child1-univ',label:'第一子の大学入学時'},
+      {k:'child2-univ',label:'第二子の大学入学時'},
+      {k:'now',label:'現在（1年目）'}
     ].map(e=>`<option value="${e.k}"${eventVal===e.k?' selected':''}>${e.label}</option>`).join('');
     // タイミング解決結果の表示
     const startI = mspResolveStartIdx(sh, hAge, wAge);
@@ -176,9 +176,9 @@ function mspRenderShockList(){
         <div class="msp-shock-field">
           <label>モード</label>
           <select onchange="mspSetMode('${sh.id}',this.value)">
-            <option value="historical"${mode==='historical'?' selected':''}>📜 過去相場再生（単発ショック）</option>
-            <option value="replay50"${mode==='replay50'?' selected':''}>📅 過去50年ヒストリカル全期間再生</option>
-            <option value="manual"${mode==='manual'?' selected':''}>✏️ 手動指定</option>
+            <option value="historical"${mode==='historical'?' selected':''}>過去相場再生（単発ショック）</option>
+            <option value="replay50"${mode==='replay50'?' selected':''}>過去50年ヒストリカル全期間再生</option>
+            <option value="manual"${mode==='manual'?' selected':''}>手動指定</option>
           </select>
         </div>
         ${mode==='historical'?(function(){
@@ -189,7 +189,7 @@ function mspRenderShockList(){
             <label>プリセット</label>
             <select onchange="mspSetShockPreset('${sh.id}',this.value)">${presetOpts}</select>
           </div>
-          ${desc?`<div style="font-size:10px;color:#475569;background:#f1f5f9;border-left:3px solid #c2185b;padding:5px 8px;margin:2px 0 6px;line-height:1.5;border-radius:0 5px 5px 0">📖 ${desc}</div>`:''}
+          ${desc?`<div style="font-size:10px;color:#475569;background:#f1f5f9;border-left:3px solid #c2185b;padding:5px 8px;margin:2px 0 6px;line-height:1.5;border-radius:0 5px 5px 0">${desc}</div>`:''}
         `;})():mode==='replay50'?(function(){
           const histStart = sh.historicalStartYear||1976;
           const yrOpts = HISTORICAL_50YR.years.map(y=>`<option value="${y}"${y===histStart?' selected':''}>${y}年〜</option>`).join('');
@@ -197,7 +197,7 @@ function mspRenderShockList(){
             <div class="msp-shock-field">
               <label>開始年</label>
               <select onchange="mspSetHistoricalStart('${sh.id}',this.value)" style="flex:1">${yrOpts}</select>
-              <button type="button" onclick="mspShowHistoricalTable('${sh.id}')" style="margin-left:6px;padding:4px 10px;background:#1e3a5f;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;white-space:nowrap">📊 過去データを見る</button>
+              <button type="button" onclick="mspShowHistoricalTable('${sh.id}')" style="margin-left:6px;padding:4px 10px;background:#1e3a5f;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;white-space:nowrap">過去データを見る</button>
             </div>
             <div style="font-size:10px;color:#64748b;padding:3px 6px;line-height:1.4">
               CF表1年目から、上記の開始年以降の実際のリターンを順番に適用します。<br>
@@ -649,7 +649,7 @@ function mspShowHistoricalTable(shId){
     <div style="background:#fff;border-radius:10px;max-width:920px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);font-family:'Meiryo','Yu Gothic UI',sans-serif">
       <div style="background:#1e3a5f;color:#fff;padding:12px 18px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-size:15px;font-weight:700">📊 過去50年の運用データ（1976-2025）</div>
+          <div style="font-size:15px;font-weight:700">過去50年の運用データ（1976-2025）</div>
           <div style="font-size:11px;opacity:0.85;margin-top:3px">
             選択中の開始年: <b>${startY}年</b> → CF表 ${cYear}年〜${cYear+(2025-startY)}年 に適用（${2025-startY+1}年分）
           </div>
@@ -660,9 +660,9 @@ function mspShowHistoricalTable(shId){
         ${statBadge('sp500')}${statBadge('acwi')}${statBadge('nikkei')}${statBadge('usdjpy')}
       </div>
       <div style="padding:8px 18px 4px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;line-height:1.5">
-        💡 <b>青背景=選択中の開始年</b>／薄青=適用範囲／灰色=適用外（開始年より前）<br>
+        <b>青背景=選択中の開始年</b>／薄青=適用範囲／灰色=適用外（開始年より前）<br>
         <span style="color:#dc2626">赤枠</span>=各資産の最悪年／<span style="color:#059669">緑枠</span>=各資産の最良年<br>
-        ✍️ <b>CF表対応列は編集可能</b>：例えば「リーマン2008年をCF表2030年に」と入力すると、開始年が自動計算されます
+        <b>CF表対応列は編集可能</b>：例えば「リーマン2008年をCF表2030年に」と入力すると、開始年が自動計算されます
       </div>
       <div data-scroll style="flex:1;overflow:auto;padding:0 18px 14px">
         <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px">

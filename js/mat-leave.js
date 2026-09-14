@@ -77,7 +77,7 @@ function applyMatLeaveBenefit(stepId){
   if(ntEl){ ntEl.value = benefit; ntEl._rawValue = benefit; }
   const hint = document.getElementById(`${stepId}-hint`);
   if(hint){
-    const label = person === 'w' ? '🍼 産休・育休給付金' : '🍼 育休給付金';
+    const label = person === 'w' ? '産休・育休給付金' : '育休給付金';
     hint.innerHTML = `${label}：前段階手取り <strong>${prevTH}</strong>万 × 平均${avgRate}% = <strong>${benefit}</strong>万円（非課税）<br><span style="font-weight:400;color:var(--muted)">内訳: ${breakdown}</span>`;
   }
   if(typeof calcStepHint === 'function') calcStepHint(stepId);
@@ -164,9 +164,9 @@ function updateMatLeaveJointHint(){
       let msg = '';
       const overlap = !(hr.endYear < wr.startYear || wr.endYear < hr.startYear);
       if(overlap){
-        msg = '👫 夫婦同時期 → 🆕 出生後休業支援給付金（80%・最大28日）の対象になり得ます';
+        msg = '夫婦同時期 → 出生後休業支援給付金（80%・最大28日）の対象になり得ます';
       } else if(Math.abs(hr.startYear - (wr.endYear+1)) === 0 || Math.abs(wr.startYear - (hr.endYear+1)) === 0){
-        msg = '👫 夫婦連続取得 → パパ・ママ育休プラスの対象になり得ます';
+        msg = '夫婦連続取得 → パパ・ママ育休プラスの対象になり得ます';
       }
       if(!msg) return;
       [hr.id, wr.id].forEach(cardId=>{

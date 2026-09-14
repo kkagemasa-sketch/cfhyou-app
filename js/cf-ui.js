@@ -41,7 +41,7 @@ function toggleFinAsset(){
   finAssetVisible=!finAssetVisible;
   _applyFinAssetVisibility();
   const btn=document.getElementById('btn-fin-toggle');
-  if(btn)btn.textContent=finAssetVisible?'👁 金融資産行を隠す':'👁 金融資産行を表示';
+  if(btn)btn.textContent=finAssetVisible?'金融資産行を隠す':'金融資産行を表示';
 }
 function _applyFinAssetVisibility(){
   document.querySelectorAll('.fin-asset-row').forEach(tr=>{
@@ -126,7 +126,7 @@ function validate(){
   const _baseAgeChk = _isPairChk ? Math.max(ha, _waChk) : ha;
   const loanEndAge = _baseAgeChk + deliveryChk + _loanYrsChk;
   if(_loanYrsChk>0 && loanEndAge>80){
-    errs.push({id:_whichField, msg:`⚠️ ローン完済時${loanEndAge}歳 — 80歳を超えています（銀行審査に影響する可能性）`});
+    errs.push({id:_whichField, msg:`ローン完済時${loanEndAge}歳 — 80歳を超えています（銀行審査に影響する可能性）`});
   }
   // 収入ステップは任意入力のためvalidation省略
   document.querySelectorAll('.inp.err').forEach(e=>e.classList.remove('err'));
@@ -141,7 +141,7 @@ function renderMemo(){
   const txt=scen?.memo||'';
   const rb=$('right-body');
   rb.innerHTML=`<div style="padding:16px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px">
-    <div style="font-size:12px;font-weight:700;color:var(--navy)">📝 メモ <span style="font-size:10px;font-weight:400;color:var(--muted)">${scen?.name||''}のメモ</span></div>
+    <div style="font-size:12px;font-weight:700;color:var(--navy)">メモ <span style="font-size:10px;font-weight:400;color:var(--muted)">${scen?.name||''}のメモ</span></div>
     <textarea id="memo-area" placeholder="自由にメモを入力できます" oninput="saveMemo()"
       style="flex:1;resize:none;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-family:inherit;color:var(--navy);outline:none;line-height:1.6">${txt}</textarea>
   </div>`;
@@ -230,7 +230,7 @@ function _renderMansionList(){
   const box=document.getElementById('mansion-mgmt-box');
   if(!box)return;
   let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
-  h+='<div style="font-size:16px;font-weight:700;color:#1e3a5f">🏢 マンション管理</div>';
+  h+='<div style="font-size:16px;font-weight:700;color:#1e3a5f">マンション管理</div>';
   h+='<div style="display:flex;gap:8px">';
   h+='<button onclick="addMansion()" style="background:#0d9488;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">＋ 新規追加</button>';
   h+='<button onclick="closeMansionMgmt()" style="background:#94a3b8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer">閉じる</button>';
@@ -253,7 +253,7 @@ function _renderMansionList(){
       const rs=Array.isArray(m.repSteps)?m.repSteps:[];
       if(rs.length>0){
         const sorted=[...rs].sort((a,b)=>a.fromYear-b.fromYear);
-        h+='<div style="font-size:10px;color:#0369a1;margin-top:4px;padding:4px 8px;background:#f0f9ff;border-radius:4px">📈 値上げ: ';
+        h+='<div style="font-size:10px;color:#0369a1;margin-top:4px;padding:4px 8px;background:#f0f9ff;border-radius:4px">値上げ: ';
         h+=sorted.map(s=>s.fromYear+'年目〜'+s.unit+'円').join('、 ');
         h+='</div>';
       }
@@ -262,7 +262,7 @@ function _renderMansionList(){
       // 最終編集者表示
       if(m.lastEditor||m.lastEditedAt){
         h+='<div style="font-size:10px;color:#64748b;margin-top:6px;padding:3px 8px;background:#f1f5f9;border-radius:4px">';
-        h+='📝 最終編集: <strong>'+_escH(m.lastEditor||'（未入力）')+'</strong>'+(m.lastEditedAt?' — '+_fmtEditDate(m.lastEditedAt):'');
+        h+='最終編集: <strong>'+_escH(m.lastEditor||'（未入力）')+'</strong>'+(m.lastEditedAt?' — '+_fmtEditDate(m.lastEditedAt):'');
         h+='</div>';
       }
       h+='</div>';
@@ -297,9 +297,9 @@ function editMansion(id){
     +'</div>'
     // 修繕積立金 値上げステップ
     +'<div style="border-top:1px dashed #cbd5e1;padding-top:10px;margin-top:4px">'
-    +'<div style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:6px">📈 修繕積立金 値上げステップ</div>'
+    +'<div style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:6px">修繕積立金 値上げステップ</div>'
     +'<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:10px;color:#92400e;line-height:1.5">'
-    +'⚠️ 「〇年目」は<strong>CF表の1年目を基準</strong>とします（購入時=1年目）。<br>'
+    +'「〇年目」は<strong>CF表の1年目を基準</strong>とします（購入時=1年目）。<br>'
     +'<strong>※ 現在からの経過年ではありません。</strong>ご注意ください。'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
@@ -325,7 +325,7 @@ function editMansion(id){
     +'</div></div>'
     // 編集者・日付
     +'<div style="border-top:1px dashed #cbd5e1;padding-top:10px;margin-top:4px">'
-    +'<div style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:6px">📝 編集情報</div>'
+    +'<div style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:6px">編集情報</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">'
     +'<div><label style="font-size:10px;font-weight:600;color:#64748b">編集者名</label>'
     +'<input id="med-editor-'+id+'" class="inp" style="font-size:12px" value="'+_escH((document.getElementById('pi-name')?.value||localStorage.getItem('cf_mansion_editor')||'').trim())+'" placeholder="例: 田中"></div>'
@@ -364,7 +364,7 @@ function _renderMansionEditHistory(id){
     return;
   }
   let h='<div style="padding:6px 8px;background:#f8fafc;border-radius:4px">';
-  h+='<div style="font-weight:600;color:#475569;margin-bottom:3px">📜 編集履歴（最新'+hist.length+'件）</div>';
+  h+='<div style="font-weight:600;color:#475569;margin-bottom:3px">編集履歴（最新'+hist.length+'件）</div>';
   hist.forEach((e,i)=>{
     h+='<div style="padding:1px 0;'+(i===0?'color:#0369a1;font-weight:600':'color:#64748b')+'">'
       +(i===0?'● ':'○ ')+_escH(e.name||'（未入力）')+' — '+_fmtEditDate(e.at)

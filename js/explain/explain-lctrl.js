@@ -19,7 +19,7 @@
 
     const year = ctx.year;
     const elapsed = ctx.elapsed;
-    const titleText = `🏠 住宅ローン控除（${year}年・経過${elapsed}年目）`;
+    const titleText = `住宅ローン控除（${year}年・経過${elapsed}年目）`;
 
     // セル手動上書きの場合は自動計算値と並べて表示
     if(ctx.isOverridden){
@@ -32,7 +32,7 @@
       const diffStr = diffVal === 0 ? '' : (diffVal > 0 ? ` (+${explainFmt(Math.abs(diffVal),'万円')})` : ` (-${explainFmt(Math.abs(diffVal),'万円')})`);
       const simple = `
         <div style="background:#fff9e0;border:1px solid #f0c040;border-radius:6px;padding:8px 10px;margin-bottom:8px">
-          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">📝 セルが手動上書きされています</div>
+          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">セルが手動上書きされています</div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:1px dashed #f0c040">
             <span>元の自動計算値</span>
             <strong style="color:#1e3a5f">${autoStr}</strong>
@@ -129,13 +129,13 @@
       simple = `
         <div style="display:flex;flex-direction:column;gap:4px;font-size:12px">
           <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e2e8f0">
-            <span>👔 ご主人様の控除</span><span>${explainFmt(bd.hApplied,'万円')}</span>
+            <span>ご主人様の控除</span><span>${explainFmt(bd.hApplied,'万円')}</span>
           </div>
           <div style="font-size:10px;color:#64748b;padding-left:16px;line-height:1.4">
             = min(残高${explainFmt(bd.hBal,'万円')}×0.7%=${explainFmt(bd.hCalcAmount,'万円')}, 税額上限${explainFmt(bd.taxCapTotal,'万円')})
           </div>
           <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e2e8f0">
-            <span>👩 奥様の控除</span><span>${explainFmt(bd.wApplied,'万円')}</span>
+            <span>奥様の控除</span><span>${explainFmt(bd.wApplied,'万円')}</span>
           </div>
           <div style="font-size:10px;color:#64748b;padding-left:16px;line-height:1.4">
             = min(残高${explainFmt(bd.wBal,'万円')}×0.7%=${explainFmt(bd.wCalcAmount,'万円')}, 税額上限${explainFmt(bd.wTaxCapTotal,'万円')})
@@ -186,12 +186,12 @@
         <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ ローン内訳（ペアローン・各自独立計算）</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
           <div style="background:#f0f6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px">
-            <div style="font-weight:700;color:#1e5a9a;margin-bottom:3px">👔 ご主人様</div>
+            <div style="font-weight:700;color:#1e5a9a;margin-bottom:3px">ご主人様</div>
             <div>年末残高: ${explainFmt(bd.hBal,'万円')}</div>
             <div>計算上の控除: ${explainFmt(bd.hCalcAmount,'万円')}</div>
             <div style="margin-top:4px;padding-top:4px;border-top:1px dashed #bfdbfe">推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
             <div>課税所得: ${explainFmt(bd.taxableBase,'万円')}</div>
-            ${bd.hMatLeave?'<div style="color:#d97706;font-weight:600">🍼 育休年（給付金主体・所得税0扱い）</div>':''}
+            ${bd.hMatLeave?'<div style="color:#d97706;font-weight:600">育休年（給付金主体・所得税0扱い）</div>':''}
             <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
             <div>本来の住民税額: ${explainFmt(bd.jumin,'万円')} <span style="color:#94a3b8">（参考）</span></div>
             <div>住民税上限: ${explainFmt(bd.juminCtrlMax,'万円')}</div>
@@ -199,12 +199,12 @@
             <div style="font-weight:700;margin-top:3px;padding-top:3px;border-top:2px solid #1e5a9a;color:#1e5a9a">適用: ${explainFmt(bd.hApplied,'万円')}</div>
           </div>
           <div style="background:#fff0f6;border:1px solid #fbcfe8;border-radius:6px;padding:6px 8px">
-            <div style="font-weight:700;color:#9a1e5a;margin-bottom:3px">👩 奥様</div>
+            <div style="font-weight:700;color:#9a1e5a;margin-bottom:3px">奥様</div>
             <div>年末残高: ${explainFmt(bd.wBal,'万円')}</div>
             <div>計算上の控除: ${explainFmt(bd.wCalcAmount,'万円')}</div>
             <div style="margin-top:4px;padding-top:4px;border-top:1px dashed #fbcfe8">推定額面年収: ${explainFmt(bd.wGrossEst,'万円')}</div>
             <div>課税所得: ${explainFmt(bd.wTaxableBase,'万円')}</div>
-            ${bd.wMatLeave?'<div style="color:#d97706;font-weight:600">🍼 育休年（給付金主体・所得税0扱い）</div>':''}
+            ${bd.wMatLeave?'<div style="color:#d97706;font-weight:600">育休年（給付金主体・所得税0扱い）</div>':''}
             <div>所得税: ${explainFmt(bd.wItax,'万円')}</div>
             <div>本来の住民税額: ${explainFmt(bd.wJumin,'万円')} <span style="color:#94a3b8">（参考）</span></div>
             <div>住民税上限: ${explainFmt(bd.wJuminCtrlMax,'万円')}</div>
@@ -223,7 +223,7 @@
         <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 税額計算（ご主人様）</div>
         <div>推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
         <div>課税所得ベース: ${explainFmt(bd.taxableBase,'万円')}</div>
-        ${bd.hMatLeave?'<div style="color:#d97706;font-weight:600">🍼 育休年（給付金主体・所得税0扱い）</div>':''}
+        ${bd.hMatLeave?'<div style="color:#d97706;font-weight:600">育休年（給付金主体・所得税0扱い）</div>':''}
         <div>所得税: ${explainFmt(bd.itax,'万円')}</div>
         <div>本来の住民税額: ${explainFmt(bd.jumin,'万円')} <span style="color:#94a3b8">（参考・所得割10%＋均等割5,000円）</span></div>
         <div>住民税控除上限: ${explainFmt(bd.juminCtrlMax,'万円')} <span style="color:#94a3b8">（課税所得×5%、上限9.75万円）</span></div>

@@ -45,7 +45,7 @@ function addChild(){
     </div>
     <div style="padding-top:2px;border-top:1px solid #a7f3d0;margin-bottom:8px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-size:10px;font-weight:700;color:#1a6b2e">🍼 保育料（万円/年・実費入力）</div>
+        <div style="font-size:10px;font-weight:700;color:#1a6b2e">保育料（万円/年・実費入力）</div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <select class="sel" id="hoiku-type-${id}" onchange="live()" style="font-size:10px;padding:3px 5px;width:auto">
             <option value="hoikuen" selected>保育園</option>
@@ -86,7 +86,7 @@ function addChild(){
       </div>
       <div style="font-size:9px;color:#5a6a7e;text-align:right">単位：万円/年</div>
     </div>
-    <div style="font-size:10px;font-weight:700;color:#1a6b2e;margin-bottom:5px">📚 進学コース</div>
+    <div style="font-size:10px;font-weight:700;color:#1a6b2e;margin-bottom:5px">進学コース</div>
     <div class="g4">
       <div class="fg"><label class="lbl" style="font-size:9px">小学校</label>
         <select class="sel" id="ce-${id}" onfocus="scrollToCFRowEduStage(${id},'elem')" onblur="cfRowBlur()" onchange="scrollToCFRowEduStage(${id},'elem');live()" style="font-size:11px;padding:4px 6px">
@@ -127,13 +127,13 @@ function addChild(){
     </div>
     <div id="cprev-${id}" style="margin-top:5px;font-size:10px;color:var(--muted)"></div>
     <div class="divider" style="margin:8px 0"></div>
-    <div style="font-size:10px;font-weight:700;color:#1a6b2e;margin-bottom:5px">🎓 奨学金</div>
+    <div style="font-size:10px;font-weight:700;color:#1a6b2e;margin-bottom:5px">奨学金</div>
     <div style="display:flex;gap:8px;margin-bottom:6px" id="scholarship-toggle-${id}">
       <div class="tc on" id="sc-no-${id}" onclick="setScholarship(${id},false)" style="flex:1;padding:5px 8px;gap:4px">
-        <span style="font-size:12px">❌</span><div><div class="tc-lbl" style="font-size:10px">不要</div></div>
+        <span style="font-size:12px"></span><div><div class="tc-lbl" style="font-size:10px">不要</div></div>
       </div>
       <div class="tc" id="sc-yes-${id}" onclick="setScholarship(${id},true)" style="flex:1;padding:5px 8px;gap:4px">
-        <span style="font-size:12px">✅</span><div><div class="tc-lbl" style="font-size:10px">必要</div></div>
+        <span style="font-size:12px"></span><div><div class="tc-lbl" style="font-size:10px">必要</div></div>
       </div>
     </div>
     <div id="sc-fields-${id}" style="display:none">
@@ -145,13 +145,13 @@ function addChild(){
       </div>
       <span class="hint" style="font-size:9px">※ 子どもの収入からの返済のため保護者負担なし（参考情報として表示）</span>
     </div>
-    <div style="font-size:10px;font-weight:700;color:#1a6b2e;margin-bottom:5px;margin-top:8px">💒 結婚のお祝い</div>
+    <div style="font-size:10px;font-weight:700;color:#1a6b2e;margin-bottom:5px;margin-top:8px">結婚のお祝い</div>
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <div class="tc on" id="wed-no-${id}" onclick="setWedding(${id},false)" style="flex:1;padding:5px 8px;gap:4px">
-        <span style="font-size:12px">❌</span><div><div class="tc-lbl" style="font-size:10px">不要</div></div>
+        <span style="font-size:12px"></span><div><div class="tc-lbl" style="font-size:10px">不要</div></div>
       </div>
       <div class="tc" id="wed-yes-${id}" onclick="setWedding(${id},true)" style="flex:1;padding:5px 8px;gap:4px">
-        <span style="font-size:12px">✅</span><div><div class="tc-lbl" style="font-size:10px">必要</div></div>
+        <span style="font-size:12px"></span><div><div class="tc-lbl" style="font-size:10px">必要</div></div>
       </div>
     </div>
     <div id="wed-fields-${id}" style="display:none">

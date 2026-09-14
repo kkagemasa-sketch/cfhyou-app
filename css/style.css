@@ -1316,7 +1316,7 @@ body.market-sim-on #btn-market-sim{
   position:relative;
 }
 .cf thead th.shock-year::after{
-  content:'📉';
+  content:'▼';
   position:absolute;top:1px;right:1px;font-size:8px;opacity:.8;
 }
 /* その他金融資産セルの下落ハイライト */

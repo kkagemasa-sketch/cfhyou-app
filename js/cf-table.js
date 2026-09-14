@@ -15,7 +15,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     if(rArr.length<=1)return '';
     return rArr.slice(1).map(s=>{
       const yr=s.from+1;
-      return chip('📈',`${yr}年目〜`,`${s.rate.toFixed(2)}%`);
+      return chip('',`${yr}年目〜`,`${s.rate.toFixed(2)}%`);
     }).join('');
   };
 
@@ -38,7 +38,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const _togLabel = _cfSumHidden ? '▸ 詳細を表示' : '▾ 詳細を隠す';
   // 自動取崩し ON/OFF 状態
   const _autoLiqOffTop = (()=>{try{return localStorage.getItem('cf_auto_liq_off')==='1'}catch(e){return false}})();
-  const _liqBtnLabel = _autoLiqOffTop ? '📤 自動取崩し OFF' : '📤 自動取崩し ON';
+  const _liqBtnLabel = _autoLiqOffTop ? '自動取崩し OFF' : '自動取崩し ON';
   const _liqBtnStyle = _autoLiqOffTop
     ? 'background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1'
     : 'background:#ecfdf5;color:#047857;border:1px solid #6ee7b7';
@@ -47,7 +47,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   let h=`<div class="r-summary"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;flex-wrap:wrap;gap:6px">
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <span style="background:var(--navy);color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${nm} 様</span>
-      <span style="background:${isM?'var(--teal)':'var(--green)'};color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${isM?'🏢 マンション':'🏡 戸建て'}</span>
+      <span style="background:${isM?'var(--teal)':'var(--green)'};color:#fff;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:600">${isM?'マンション':'戸建て'}</span>
       <span style="font-size:11px;color:var(--muted)">全${total}年間 / ご主人様 ${hAge}〜${hAge+total-1}歳</span>
     </div>
     <div style="display:flex;gap:6px;align-items:center">
@@ -83,28 +83,28 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
 
   // 行1：自己資金の内訳
   h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:6px;background:#fff">
-    <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">💰 自己資金の内訳</div>
+    <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">自己資金の内訳</div>
     <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-      ${chip('🏦','現預金合計',`${cashTotal.toLocaleString()}万円`)}
+      ${chip('','現預金合計',`${cashTotal.toLocaleString()}万円`)}
       ${arrow}
       ${downType==='gift'
-        ? chip('🎁','頭金（贈与）',`${downPay.toLocaleString()}万円`,'#2d7dd2')
+        ? chip('','頭金（贈与）',`${downPay.toLocaleString()}万円`,'#2d7dd2')
         : downType==='other'
-          ? chip('📝',`頭金（${_downOtherText||'その他'}）`,`${downPay.toLocaleString()}万円`,'#7c3aed')
-          : chip('💴','頭金（自己資金）',`${downPay.toLocaleString()}万円`,'var(--red)')
+          ? chip('',`頭金（${_downOtherText||'その他'}）`,`${downPay.toLocaleString()}万円`,'#7c3aed')
+          : chip('','頭金（自己資金）',`${downPay.toLocaleString()}万円`,'var(--red)')
       }
       ${_costTypeDisp==='loan'
-        ? chip('📋','諸費用（ローン組込）',`${houseCostV.toLocaleString()}万円`,'#2d7dd2')
+        ? chip('','諸費用（ローン組込）',`${houseCostV.toLocaleString()}万円`,'#2d7dd2')
         : _costTypeDisp==='other'
-          ? chip('📝',`諸費用（${_costOtherText||'その他'}）`,`${houseCostV.toLocaleString()}万円`,'#7c3aed')
-          : chip('📋','諸費用',`${houseCostV.toLocaleString()}万円`,'var(--red)')
+          ? chip('',`諸費用（${_costOtherText||'その他'}）`,`${houseCostV.toLocaleString()}万円`,'#7c3aed')
+          : chip('','諸費用',`${houseCostV.toLocaleString()}万円`,'var(--red)')
       }
       ${_moveType==='other'
-        ? chip('📝',`引越・家具（${_moveOtherText||'その他'}）`,`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'#7c3aed')
-        : chip('🚚','引越・家具（引き渡し年に計上）',`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'#2d7dd2')
+        ? chip('',`引越・家具（${_moveOtherText||'その他'}）`,`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'#7c3aed')
+        : chip('','引越・家具（引き渡し年に計上）',`${(movingCostV+furnitureInitV).toLocaleString()}万円`,'#2d7dd2')
       }
       ${arrow}
-      ${chip('✅','購入後残高',`${cashAfter.toLocaleString()}万円`,cashAfterColor)}
+      ${chip('','購入後残高',`${cashAfter.toLocaleString()}万円`,cashAfterColor)}
     </div>
   </div>`;
 
@@ -144,7 +144,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   });
   if(_secItems.length>0){
     const _secTotal=_secItems.reduce((s,it)=>s+it.val,0);
-    const _iconFor=(it)=>it.isZaikei?'🏛️':it.isStock?(it.isNisa?'📈':'📊'):(it.isNisa?'🌱':'💹');
+    const _iconFor=(it)=>it.isZaikei?'':it.isStock?(it.isNisa?'':''):(it.isNisa?'':'');
     const _colorFor=(it)=>it.isZaikei?'#7c5e1a':it.isNisa?'#059669':'#1e5a9a';
     let chips='';
     _secItems.forEach(it=>{
@@ -152,11 +152,11 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       chips+=chip(_iconFor(it),lbl,`${it.val.toLocaleString()}万円`,_colorFor(it));
     });
     h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:6px;background:#fff">
-      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">📊 その他金融資産（現時点）</div>
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">その他金融資産（現時点）</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
         ${chips}
         ${arrow}
-        ${chip('💰','金融資産合計',`${_secTotal.toLocaleString()}万円`,'var(--navy)')}
+        ${chip('','金融資産合計',`${_secTotal.toLocaleString()}万円`,'var(--navy)')}
       </div>
     </div>`;
   }
@@ -168,10 +168,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       let _swChips='';
       _swEv.forEach((sw,idx)=>{
         const _label = `${sw.age}歳: ${sw.sell.toLocaleString()}万 → ${sw.price.toLocaleString()}万`;
-        _swChips += chip('🔄',`買替${idx+1}`,_label,'#b45309');
+        _swChips += chip('',`買替${idx+1}`,_label,'#b45309');
       });
       h+=`<div style="border:1.5px solid #f59e0b;border-radius:var(--rs);overflow:hidden;margin-bottom:6px;background:#fff">
-        <div style="background:#fef3e2;padding:3px 12px;font-size:9px;font-weight:700;color:#92400e;letter-spacing:.06em;border-bottom:1px solid #f59e0b">🔄 買い替え・住替え予定</div>
+        <div style="background:#fef3e2;padding:3px 12px;font-size:9px;font-weight:700;color:#92400e;letter-spacing:.06em;border-bottom:1px solid #f59e0b">買い替え・住替え予定</div>
         <div style="display:flex;flex-wrap:wrap;align-items:stretch">${_swChips}</div>
       </div>`;
     }
@@ -185,75 +185,75 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
     const rHBaseV=fv('rate-h-base')||0.5, rWBaseV=fv('rate-w-base')||0.5;
     const lhYrsV=iv('loan-h-yrs')||35, lwYrsV=iv('loan-w-yrs')||35;
     h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
-      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（ペアローン）</div>
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">住宅ローン条件（ペアローン）</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
-        ${chip('🏦','借入総額',`${(lhAmtV+lwAmtV).toLocaleString()}万円`)}
-        ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
+        ${chip('','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('','借入総額',`${(lhAmtV+lwAmtV).toLocaleString()}万円`)}
+        ${deliveryYrV>0?chip('','引き渡し',`${deliveryYrV}年`):''}
       </div>
-      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ${_rl('age-h','ご主人様')}</div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">${_rl('age-h','ご主人様')}</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${chip('🏦','借入額',`${lhAmtV.toLocaleString()}万円`)}
-        ${chip('📊','当初金利',`${rHBaseV}%`)}
+        ${chip('','借入額',`${lhAmtV.toLocaleString()}万円`)}
+        ${chip('','当初金利',`${rHBaseV}%`)}
         ${_rateChips(getPairRates('h'))}
-        ${chip('📅','期間',`${lhYrsV}年`)}
+        ${chip('','期間',`${lhYrsV}年`)}
       </div>
-      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">👩 ${_rl('age-w','奥様')}</div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">${_rl('age-w','奥様')}</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${chip('🏦','借入額',`${lwAmtV.toLocaleString()}万円`)}
-        ${chip('📊','当初金利',`${rWBaseV}%`)}
+        ${chip('','借入額',`${lwAmtV.toLocaleString()}万円`)}
+        ${chip('','当初金利',`${rWBaseV}%`)}
         ${_rateChips(getPairRates('w'))}
-        ${chip('📅','期間',`${lwYrsV}年`)}
+        ${chip('','期間',`${lwYrsV}年`)}
       </div>
     </div>`;
   } else if(_isFlat_t&&pairLoanMode){
     const _fhAmtV=fv('flat-loan-h-amt')||0, _fwAmtV=fv('flat-loan-w-amt')||0;
     const _fhYrsV=iv('flat-loan-h-yrs')||35, _fwYrsV=iv('flat-loan-w-yrs')||35;
     h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
-      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（${_flatLabel} ペアローン）</div>
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">住宅ローン条件（${_flatLabel} ペアローン）</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
-        ${chip('🏦','借入総額',`${(_fhAmtV+_fwAmtV).toLocaleString()}万円`)}
-        ${chip('📊','ベース金利',`${rateBaseV}%`)}
-        ${_flatPt>0?chip('⭐','ポイント',`${_flatPt}pt`,'#d63a2a'):''}
+        ${chip('','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('','借入総額',`${(_fhAmtV+_fwAmtV).toLocaleString()}万円`)}
+        ${chip('','ベース金利',`${rateBaseV}%`)}
+        ${_flatPt>0?chip('','ポイント',`${_flatPt}pt`,'#d63a2a'):''}
         ${_rateChips(rates)}
-        ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
+        ${deliveryYrV>0?chip('','引き渡し',`${deliveryYrV}年`):''}
       </div>
-      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">👔 ${_rl('age-h','ご主人様')}</div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#1e5a9a;background:#f0f6ff">${_rl('age-h','ご主人様')}</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${chip('🏦','借入額',`${_fhAmtV.toLocaleString()}万円`)}
-        ${chip('📅','期間',`${_fhYrsV}年`)}
+        ${chip('','借入額',`${_fhAmtV.toLocaleString()}万円`)}
+        ${chip('','期間',`${_fhYrsV}年`)}
       </div>
-      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">👩 ${_rl('age-w','奥様')}</div>
+      <div style="border-top:1px solid #dce6f0;padding:2px 8px;font-size:9px;font-weight:700;color:#9a1e5a;background:#fff0f6">${_rl('age-w','奥様')}</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${chip('🏦','借入額',`${_fwAmtV.toLocaleString()}万円`)}
-        ${chip('📅','期間',`${_fwYrsV}年`)}
+        ${chip('','借入額',`${_fwAmtV.toLocaleString()}万円`)}
+        ${chip('','期間',`${_fwYrsV}年`)}
       </div>
     </div>`;
   } else if(_isFlat_t){
     const _red=getFlat35Reductions(_flatPt);
     h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
-      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件（${_flatLabel}）</div>
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">住宅ローン条件（${_flatLabel}）</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
-        ${chip('🏦','借入総額',`${loanAmt.toLocaleString()}万円`)}
-        ${chip('📊','ベース金利',`${rateBaseV}%`)}
-        ${_flatPt>0?chip('⭐','ポイント',`${_flatPt}pt`,'#d63a2a'):''}
+        ${chip('','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('','借入総額',`${loanAmt.toLocaleString()}万円`)}
+        ${chip('','ベース金利',`${rateBaseV}%`)}
+        ${_flatPt>0?chip('','ポイント',`${_flatPt}pt`,'#d63a2a'):''}
         ${_rateChips(rates)}
-        ${chip('📅','借入期間',`${loanYrsV}年`)}
-        ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
+        ${chip('','借入期間',`${loanYrsV}年`)}
+        ${deliveryYrV>0?chip('','引き渡し',`${deliveryYrV}年`):''}
       </div>
     </div>`;
   } else {
     h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
-      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">🏦 住宅ローン条件</div>
+      <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">住宅ローン条件</div>
       <div style="display:flex;flex-wrap:wrap;align-items:stretch">
-        ${chip('🏠','住宅価格',`${housePrice.toLocaleString()}万円`)}
-        ${chip('🏦','借入総額',`${loanAmt.toLocaleString()}万円`)}
-        ${chip('📊','当初金利',`${rateBaseV}%`)}
+        ${chip('','住宅価格',`${housePrice.toLocaleString()}万円`)}
+        ${chip('','借入総額',`${loanAmt.toLocaleString()}万円`)}
+        ${chip('','当初金利',`${rateBaseV}%`)}
         ${_rateChips(rates)}
-        ${chip('📅','借入期間',`${loanYrsV}年`)}
-        ${deliveryYrV>0?chip('🔑','引き渡し',`${deliveryYrV}年`):''}
+        ${chip('','借入期間',`${loanYrsV}年`)}
+        ${deliveryYrV>0?chip('','引き渡し',`${deliveryYrV}年`):''}
       </div>
     </div>`;
   }
@@ -261,7 +261,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 自由記入欄（自己資金・住宅ローン条件についての注釈／Excel出力にも反映）
   const _cfNote = window._cfSummaryNote||''; // ★各CF表(シナリオ)ごとに独立（保存データに含まれる）
   h+=`<div style="border:1.5px solid #c8d6e8;border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:#fff">
-    <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">📝 注釈・補足メモ（Excel出力にも反映）</div>
+    <div style="background:#eef5ff;padding:3px 12px;font-size:9px;font-weight:700;color:#2d5282;letter-spacing:.06em;border-bottom:1px solid #c8d6e8">注釈・補足メモ（Excel出力にも反映）</div>
     <textarea id="cf-summary-note" oninput="saveCfSummaryNote(this.value)" placeholder="自己資金や住宅ローン条件についての補足・前提条件などを自由に記入できます" style="width:100%;min-height:48px;padding:6px 10px;border:none;outline:none;font-family:inherit;font-size:11px;line-height:1.5;color:#1a3a6a;resize:vertical;box-sizing:border-box;background:#fff">${_cfNote.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
   </div>`;
   h+=`</div><!-- /cf-summary-detail --></div><div class="tbl-wrap"><table class="cf"><thead>`;
@@ -272,7 +272,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="ryr"><th>カテゴリ</th><th>項目</th>`;
   for(let i=0;i<disp;i++){
     if(i===0){
-      h+=`<th style="padding:0;background:var(--navy)" title="クリックして開始年を変更"><div style="font-size:8px;font-weight:500;background:#fbbf24;color:#1a1a1a;padding:1px 2px;line-height:1.15;letter-spacing:-.02em;white-space:nowrap">📅開始年を設定</div><div contenteditable="true" data-cf-start-year="1" style="cursor:text;padding:3px 4px;outline:none;color:#fff;background:var(--navy)" onfocus="selectAll(this)" onblur="setCfStartYearFromCell(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${R.yr[i]}</div></th>`;
+      h+=`<th style="padding:0;background:var(--navy)" title="クリックして開始年を変更"><div style="font-size:8px;font-weight:500;background:#fbbf24;color:#1a1a1a;padding:1px 2px;line-height:1.15;letter-spacing:-.02em;white-space:nowrap">開始年を設定</div><div contenteditable="true" data-cf-start-year="1" style="cursor:text;padding:3px 4px;outline:none;color:#fff;background:var(--navy)" onfocus="selectAll(this)" onblur="setCfStartYearFromCell(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${R.yr[i]}</div></th>`;
     }else{
       h+=`<th>${R.yr[i]}</th>`;
     }
@@ -364,7 +364,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rcat inc-cat"><td></td><td>収　　入</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   const _hasExplain=(typeof isExplainEnabled==='function')?isExplainEnabled:(()=>false);
   const _explainIcon=(typeof explainIconHtml==='function')?explainIconHtml:(()=>'');
-  const iRow=(lbl,arr,rowKey,mlFlags,forceShow)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(!forceShow&&tot===0&&vals.every(v=>v===0||v===undefined))return'';const _exp=_hasExplain(rowKey);let r=`<tr class="rinc"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;const _hasValue=dv>0;const _showIcon=_exp&&_hasValue;const _icon=_showIcon?_explainIcon(rowKey,i,'cf'):'';const _isML=mlFlags&&mlFlags[i];const _mlAttr=_isML?` title="🍼 育休期間（給付金・非課税）" data-matleave="1"`:'';const _mlIcon=_isML?'<span style="color:#d97706;font-size:10px;margin-right:2px" aria-hidden="true">🍼</span>':'';const _mlCls=_isML?' cell-matleave':'';r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${_showIcon?' has-explain':''}${_mlCls}${getColCls(i)}"${_mlAttr} contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_mlIcon}${dv>0?ri(dv).toLocaleString():'-'}${_icon}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
+  const iRow=(lbl,arr,rowKey,mlFlags,forceShow)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(!forceShow&&tot===0&&vals.every(v=>v===0||v===undefined))return'';const _exp=_hasExplain(rowKey);let r=`<tr class="rinc"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;const _hasValue=dv>0;const _showIcon=_exp&&_hasValue;const _icon=_showIcon?_explainIcon(rowKey,i,'cf'):'';const _isML=mlFlags&&mlFlags[i];const _mlAttr=_isML?` title="育休期間（給付金・非課税）" data-matleave="1"`:'';const _mlIcon=_isML?'<span style="color:#d97706;font-size:10px;margin-right:2px" aria-hidden="true"></span>':'';const _mlCls=_isML?' cell-matleave':'';r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${_showIcon?' has-explain':''}${_mlCls}${getColCls(i)}"${_mlAttr} contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_mlIcon}${dv>0?ri(dv).toLocaleString():'-'}${_icon}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
   // 収入行：年収 → 退職金 → 年金系 → 金融商品解約系 → 奨学金 → 児童手当 → 控除
   const _hLbl=_isSingle_t?'手取年収':'ご主人様手取年収';
   h+=iRow(_hLbl,R.hInc,'hInc',R.mlH,true);
@@ -389,10 +389,10 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
   h+=iRow('奨学金',R.scholarship,'scholarship')+iRow('児童手当',R.teate,'teate')+iRow('住宅ローン控除',R.lCtrl,'lCtrl');
   // 買い替えイベント：旧住宅の売却額
-  if(R.swapSell&&R.swapSell.some(v=>v>0))h+=iRow('🔄 旧住宅売却額',R.swapSell,'swapSell');
+  if(R.swapSell&&R.swapSell.some(v=>v>0))h+=iRow('旧住宅売却額',R.swapSell,'swapSell');
   // 自動資産取崩し（預貯金マイナス補填、有価証券からの取崩し額）
   if(R.autoLiq&&R.autoLiq.some(v=>v>0)){
-    h+=iRow('📤 自動資産取崩し',R.autoLiq,'autoLiq');
+    h+=iRow('自動資産取崩し',R.autoLiq,'autoLiq');
   }
   // カスタム収入行
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{h+=_customRow(r,disp,'rinc');});
@@ -446,24 +446,24 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   // 支出行：生活費 → 住宅系 → 教育費 → 車 → 駐車場 → 積立投資 → その他
   h+=eRow('生活費',R.lc,'lc')+eRow('家賃（引渡前）',R.rent,'rent');
   // 引越・家具家電（引き渡し年に一括計上。外部資金なら0で行ごと非表示）
-  h+=eRow('🚚 引越・家具家電',R.moveInCost,'moveInCost');
+  h+=eRow('引越・家具家電',R.moveInCost,'moveInCost');
   if(pairLoanMode&&!_isSingle_t){h+=eRow('ローン返済(ご主人様)',R.lRepH,'lRepH')+eRow('ローン返済(奥様)',R.lRepW,'lRepW');}
   else{h+=eRow('住宅ローン返済',R.lRep,'lRep');}
   // 繰上返済（実行年のみ値が入る。ペアは所有者別行）
   if(pairLoanMode&&!_isSingle_t){
-    if(R.prepayExpH&&R.prepayExpH.some(v=>v>0))h+=eRow('🔁 繰上返済(ご主人様)',R.prepayExpH,'prepayExpH');
-    if(R.prepayExpW&&R.prepayExpW.some(v=>v>0))h+=eRow('🔁 繰上返済(奥様)',R.prepayExpW,'prepayExpW');
+    if(R.prepayExpH&&R.prepayExpH.some(v=>v>0))h+=eRow('繰上返済(ご主人様)',R.prepayExpH,'prepayExpH');
+    if(R.prepayExpW&&R.prepayExpW.some(v=>v>0))h+=eRow('繰上返済(奥様)',R.prepayExpW,'prepayExpW');
   } else if(R.prepayExp&&R.prepayExp.some(v=>v>0)){
-    h+=eRow('🔁 繰上返済',R.prepayExp,'prepayExp');
+    h+=eRow('繰上返済',R.prepayExp,'prepayExp');
   }
-  if(R.housePurchase&&R.housePurchase.some(v=>v>0))h+=eRow('💵 住宅購入（一括）',R.housePurchase,'housePurchase');
+  if(R.housePurchase&&R.housePurchase.some(v=>v>0))h+=eRow('住宅購入（一括）',R.housePurchase,'housePurchase');
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))h+=eRow('地代',R.chidai,'chidai');
   if(R.kaitai&&R.kaitai.some(v=>v>0))h+=eRow('解体準備金',R.kaitai,'kaitai');
   // 買い替えイベント：旧ローン残債一括返済・譲渡所得税・新居買付費用
-  if(R.swapPayoff&&R.swapPayoff.some(v=>v>0))h+=eRow('🔄 旧ローン一括返済',R.swapPayoff,'swapPayoff');
-  if(R.swapTax&&R.swapTax.some(v=>v>0))h+=eRow('🔄 譲渡所得税',R.swapTax,'swapTax');
-  if(R.swapBuy&&R.swapBuy.some(v=>v>0))h+=eRow('🔄 新居買付費用',R.swapBuy,'swapBuy');
+  if(R.swapPayoff&&R.swapPayoff.some(v=>v>0))h+=eRow('旧ローン一括返済',R.swapPayoff,'swapPayoff');
+  if(R.swapTax&&R.swapTax.some(v=>v>0))h+=eRow('譲渡所得税',R.swapTax,'swapTax');
+  if(R.swapBuy&&R.swapBuy.some(v=>v>0))h+=eRow('新居買付費用',R.swapBuy,'swapBuy');
   if(isM)h+=eRow('修繕積立金',R.rep,'rep');
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
   // 退職後の税・社保（退職翌年の住民税・国民年金保険料・国保概算）— 値がある年のみ表示
@@ -523,7 +523,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   if(R.extRows&&R.extRows.length>1){R.extRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=eRow(row.lbl,row.vals,row.key);});}else if(R.extRows&&R.extRows.length===1){h+=eRow(R.extRows[0].lbl,R.extRows[0].vals,R.extRows[0].key);}else{h+=eRow('特別支出',R.ext,'ext');}
   // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
   if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)){
-    h+=eRow('💰 譲渡益課税(自動取崩し)',R.autoLiqTax,'autoLiqTax');
+    h+=eRow('譲渡益課税(自動取崩し)',R.autoLiqTax,'autoLiqTax');
   }
   // カスタム支出行
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{h+=_customRow(r,disp,'rexp');});

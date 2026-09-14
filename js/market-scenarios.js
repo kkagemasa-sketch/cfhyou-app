@@ -294,6 +294,6 @@ const INDEX_OPTIONS = [
 
 // プリセットのカテゴリ表示用
 const SCENARIO_CATEGORIES = {
-  fx:    { label: '💱 為替専用（ドル建て保険向け）', order: 1 },
-  stock: { label: '📈 株式（複合シナリオ、為替も連動）', order: 2 }
+  fx:    { label: '為替専用（ドル建て保険向け）', order: 1 },
+  stock: { label: '株式（複合シナリオ、為替も連動）', order: 2 }
 };

@@ -1515,7 +1515,7 @@ async function openSlotPanel(){
       +'・プライベート(シークレット)ウィンドウで開いている\n'
       +'・ブラウザ設定でサイトデータの保存がブロックされている\n'
       +'などが主な原因です。\n\n'
-      +'代わりに「📤 ファイルに保存」「📥 ファイルから復元」ボタンをご利用ください。\n\n'
+      +'代わりに「ファイルに保存」「ファイルから復元」ボタンをご利用ください。\n\n'
       +'（技術情報: '+((err&&err.message)||err)+'）');
     return;
   }
@@ -1532,7 +1532,7 @@ async function openSlotPanel(){
           <div style="font-size:10px;color:#94a3b8;margin-top:1px">${_fmtDate(s.updatedAt)} 保存</div>
         </div>
         <button onclick="loadSlot('${s.name.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 12px;background:#2d7dd2;color:#fff;border:none;border-radius:5px;cursor:pointer;white-space:nowrap;font-weight:600">読込</button>
-        <button onclick="deleteSlot('${s.name.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 8px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:5px;cursor:pointer" title="削除">🗑</button>
+        <button onclick="deleteSlot('${s.name.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 8px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:5px;cursor:pointer" title="削除">削除</button>
       </div>`).join('');
 
   const modal=document.createElement('div');
@@ -1541,7 +1541,7 @@ async function openSlotPanel(){
   modal.innerHTML=`
     <div style="background:#fff;border-radius:14px;padding:24px;width:480px;max-width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:16px">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:800;font-size:15px;color:#1e3a5f">💾 お客様データ管理</div>
+        <div style="font-weight:800;font-size:15px;color:#1e3a5f">お客様データ管理</div>
         <button onclick="document.getElementById('slot-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0 4px" title="閉じる">✕</button>
       </div>
 
@@ -1571,8 +1571,8 @@ async function openSlotPanel(){
       <div style="border-top:1px solid #f1f5f9;padding-top:12px">
         <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:.04em">バックアップ</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="exportAllJSON()" style="font-size:11px;padding:5px 12px;background:#fff7ed;color:#92400e;border:1px solid #fed7aa;border-radius:6px;cursor:pointer;font-weight:600">📦 全件一括バックアップ</button>
-          <button onclick="document.getElementById('slot-modal').remove();document.getElementById('json-bulk-import-input').click()" style="font-size:11px;padding:5px 12px;background:#fff7ed;color:#92400e;border:1px solid #fed7aa;border-radius:6px;cursor:pointer;font-weight:600">📦 一括バックアップ復元</button>
+          <button onclick="exportAllJSON()" style="font-size:11px;padding:5px 12px;background:#fff7ed;color:#92400e;border:1px solid #fed7aa;border-radius:6px;cursor:pointer;font-weight:600">全件一括バックアップ</button>
+          <button onclick="document.getElementById('slot-modal').remove();document.getElementById('json-bulk-import-input').click()" style="font-size:11px;padding:5px 12px;background:#fff7ed;color:#92400e;border:1px solid #fed7aa;border-radius:6px;cursor:pointer;font-weight:600">一括バックアップ復元</button>
         </div>
       </div>
     </div>`;

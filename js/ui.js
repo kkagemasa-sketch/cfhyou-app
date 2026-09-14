@@ -23,7 +23,7 @@ function setHouseholdType(type){
   }
   // ラベル変更
   const hLabel=single?'ご本人':'ご主人様';
-  const hIcon=single?'👤':'👔';
+  const hIcon=single?'':'';
   const el=id=>document.getElementById(id);
   if(el('lbl-h-age'))el('lbl-h-age').innerHTML=`${hLabel} 現在年齢<span class="req">*</span>`;
   if(el('lbl-h-death'))el('lbl-h-death').textContent=`${hLabel} ご逝去想定`;
@@ -450,7 +450,7 @@ function toggleCfFullscreen(){
   const on=document.body.classList.toggle('cf-full');
   const b=document.getElementById('btn-cf-full');
   if(b){
-    b.textContent=on?'✕ 全画面をやめる':'🖥 全画面';
+    b.textContent=on?'✕ 全画面をやめる':'全画面';
     b.title=on?'元のレイアウトに戻る（Escでも戻れます）':'ヘッダーと入力パネルを隠してCF表を画面いっぱいに表示';
     b.classList.toggle('on',on);
   }

@@ -66,9 +66,17 @@ async function openApp(browser, origin, errors){
   const page=await browser.newPage();
   // ★ 外部通信を全遮断（本番Firebase・Sentry等に絶対に触れない）
   await page.setRequestInterception(true);
-  page.on('request',req=>{ req.url().startsWith(origin)?req.continue():req.abort().catch(()=>{}); });
+  // ★ sw.js も遮断: 初回SW有効化(controllerchange)による自動リロードがテスト途中に発火し
+  //   「Execution context was destroyed」で落ちるのを防ぐ（テストにSWは不要）
+  page.on('request',req=>{ (req.url().startsWith(origin)&&!req.url().includes('/sw.js'))?req.continue():req.abort().catch(()=>{}); });
   // パスワード画面をスキップ（テスト用一時プロファイル内のみ）
-  await page.evaluateOnNewDocument(()=>{ try{ localStorage.setItem('cf-auth-exp', String(Date.now()+86400000)); }catch(e){} });
+  // ★ Service Workerも無効化: 初回SW有効化(controllerchange)の自動リロードが
+  //   テスト途中に発火して「Execution context was destroyed」で落ちるのを防ぐ。
+  //   'serviceWorker' in navigator が false になり、アプリのSW関連コードは丸ごとスキップされる。
+  await page.evaluateOnNewDocument(()=>{
+    try{ localStorage.setItem('cf-auth-exp', String(Date.now()+86400000)); }catch(e){}
+    try{ delete Navigator.prototype.serviceWorker; }catch(e){}
+  });
   page.on('pageerror',e=>{
     const m=String(e&&e.message||e);
     // 外部遮断に伴う既知の無害エラーは無視（firebaseモジュール読込失敗等）

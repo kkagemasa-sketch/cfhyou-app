@@ -283,7 +283,7 @@ function renderLoanTab(){
     loanAmtB=0;loanRateB=loanRate;loanYrsB=loanYrs;
   }
   let h=`<div style="padding:16px;max-width:1400px">
-    <h2 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px">🏦 返済計画シミュレーション${(typeof _activeScenName==='function'&&_activeScenName())?`<span style="font-size:11.5px;font-weight:700;color:var(--muted);margin-left:10px">📄 ${_activeScenName()}</span>`:''}</h2>
+    <h2 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px">返済計画シミュレーション${(typeof _activeScenName==='function'&&_activeScenName())?`<span style="font-size:11.5px;font-weight:700;color:var(--muted);margin-left:10px">${_activeScenName()}</span>`:''}</h2>
     <!-- ペアローン切替 -->
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <button class="btn-tog on" id="lp-single-btn" onclick="togglePairLoan(false)" style="font-size:11px;padding:5px 14px">単独ローン</button>
@@ -307,16 +307,16 @@ function renderLoanTab(){
           <span style="font-size:11px;color:var(--muted)">円</span>
         </div>
         <div style="margin-top:8px;padding:10px;background:#fff8e6;border:1.5px solid #ffc000;border-radius:8px">
-          <div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px">📈 金利変更スケジュール</div>
+          <div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px">金利変更スケジュール</div>
           <div id="lp-rate-cont-a"></div>
           <button class="btn-add" onclick="addLPRate('a')" style="font-size:11px;padding:5px 12px;margin-top:5px">＋ 金利変更を追加</button>
         </div>
         <div style="margin-top:8px;padding:10px;background:#eef5ff;border:1.5px solid #c8d6e8;border-radius:8px">
-          <div style="font-size:12px;font-weight:700;color:#2d5282;margin-bottom:8px">⚙️ 詳細オプション</div>
+          <div style="font-size:12px;font-weight:700;color:#2d5282;margin-bottom:8px">詳細オプション</div>
           <!-- ボーナス併用払い -->
           <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px;margin-bottom:8px">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;color:#2d5282">
-              <input type="checkbox" id="lp-bonus-on-a" onchange="document.getElementById('lp-bonus-detail-a').style.display=this.checked?'':'none';renderLoanCalc()"> 🏦 ボーナス併用払い
+              <input type="checkbox" id="lp-bonus-on-a" onchange="document.getElementById('lp-bonus-detail-a').style.display=this.checked?'':'none';renderLoanCalc()"> ボーナス併用払い
             </label>
             <div id="lp-bonus-detail-a" style="display:none;padding-left:22px">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -328,14 +328,14 @@ function renderLoanTab(){
           <!-- 5年ルール -->
           <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px;margin-bottom:8px">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#2d5282">
-              <input type="checkbox" id="lp-5yr-rule-a" onchange="renderLoanCalc()"> 📅 5年ルール適用
+              <input type="checkbox" id="lp-5yr-rule-a" onchange="renderLoanCalc()"> 5年ルール適用
             </label>
             <div style="font-size:10px;color:#64748b;margin-top:3px;margin-left:22px">変動金利向け：金利が変わっても月額を5年間据置（利息計算は実利率で実施）</div>
           </div>
           <!-- 125%ルール -->
           <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#2d5282">
-              <input type="checkbox" id="lp-125-rule-a" onchange="renderLoanCalc()"> 🎯 125%ルール適用
+              <input type="checkbox" id="lp-125-rule-a" onchange="renderLoanCalc()"> 125%ルール適用
             </label>
             <div style="font-size:10px;color:#64748b;margin-top:3px;margin-left:22px">5年経過時の月額再計算で旧月額×1.25を上限（5年ルールと併用が一般的）</div>
           </div>
@@ -357,15 +357,15 @@ function renderLoanTab(){
           <span style="font-size:11px;color:var(--muted)">円</span>
         </div>
         <div style="margin-top:8px;padding:10px;background:#fff8e6;border:1.5px solid #ffc000;border-radius:8px">
-          <div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px">📈 金利変更スケジュール</div>
+          <div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px">金利変更スケジュール</div>
           <div id="lp-rate-cont-b"></div>
           <button class="btn-add" onclick="addLPRate('b')" style="font-size:11px;padding:5px 12px;margin-top:5px">＋ 金利変更を追加</button>
         </div>
         <div style="margin-top:8px;padding:10px;background:#eef5ff;border:1.5px solid #c8d6e8;border-radius:8px">
-          <div style="font-size:12px;font-weight:700;color:#2d5282;margin-bottom:8px">⚙️ 詳細オプション</div>
+          <div style="font-size:12px;font-weight:700;color:#2d5282;margin-bottom:8px">詳細オプション</div>
           <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px;margin-bottom:8px">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;color:#2d5282">
-              <input type="checkbox" id="lp-bonus-on-b" onchange="document.getElementById('lp-bonus-detail-b').style.display=this.checked?'':'none';renderLoanCalc()"> 🏦 ボーナス併用払い
+              <input type="checkbox" id="lp-bonus-on-b" onchange="document.getElementById('lp-bonus-detail-b').style.display=this.checked?'':'none';renderLoanCalc()"> ボーナス併用払い
             </label>
             <div id="lp-bonus-detail-b" style="display:none;padding-left:22px">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -376,13 +376,13 @@ function renderLoanTab(){
           </div>
           <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px;margin-bottom:8px">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#2d5282">
-              <input type="checkbox" id="lp-5yr-rule-b" onchange="renderLoanCalc()"> 📅 5年ルール適用
+              <input type="checkbox" id="lp-5yr-rule-b" onchange="renderLoanCalc()"> 5年ルール適用
             </label>
             <div style="font-size:10px;color:#64748b;margin-top:3px;margin-left:22px">変動金利向け：金利が変わっても月額を5年間据置</div>
           </div>
           <div style="background:white;border:1px solid #c8d6e8;border-radius:6px;padding:8px">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#2d5282">
-              <input type="checkbox" id="lp-125-rule-b" onchange="renderLoanCalc()"> 🎯 125%ルール適用
+              <input type="checkbox" id="lp-125-rule-b" onchange="renderLoanCalc()"> 125%ルール適用
             </label>
             <div style="font-size:10px;color:#64748b;margin-top:3px;margin-left:22px">5年経過時の月額再計算で旧月額×1.25を上限</div>
           </div>
@@ -391,7 +391,7 @@ function renderLoanTab(){
     </div>
     <!-- 住宅ローン控除 -->
     <details style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:16px" id="lp-deduction-card">
-      <summary style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px;cursor:pointer;user-select:none">🏠 住宅ローン控除</summary>
+      <summary style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px;cursor:pointer;user-select:none">住宅ローン控除</summary>
       <div style="font-size:10px;color:var(--muted);margin-bottom:8px">入居年・住宅種別・世帯属性により借入限度額が変わります。控除額＝年末残高（上限以内）×0.7%<br><span style="color:#b45309">※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。</span></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">
         <div class="fg"><label class="lbl">入居（引渡）予定年</label>
@@ -440,10 +440,10 @@ function renderLoanTab(){
     <!-- 繰上返済 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px">
-        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px">🔄 繰上返済シミュレーション</div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px">繰上返済シミュレーション</div>
         <!-- A側（単独ローン時もこちらを使う） -->
         <div id="pp-section-a">
-          <div id="pp-section-a-title" style="font-size:11px;font-weight:700;color:#1e5a9a;margin-bottom:4px;display:none">👤 ご本人（A）</div>
+          <div id="pp-section-a-title" style="font-size:11px;font-weight:700;color:#1e5a9a;margin-bottom:4px;display:none">ご本人（A）</div>
           <div style="display:flex;gap:6px;margin-bottom:8px">
             <button class="btn-tog on" id="pp-type-term" onclick="setPPType('term','a')" style="flex:1;font-size:11px;padding:5px">期間短縮型</button>
             <button class="btn-tog" id="pp-type-reduce" onclick="setPPType('reduce','a')" style="flex:1;font-size:11px;padding:5px">返済額軽減型</button>
@@ -468,7 +468,7 @@ function renderLoanTab(){
         <!-- B側（ペアローン時のみ表示） -->
         <div id="pp-section-b" style="display:none;border-top:1px dashed var(--border);margin-top:12px;padding-top:10px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <div style="font-size:11px;font-weight:700;color:#9a1e5a">👫 配偶者（B）</div>
+            <div style="font-size:11px;font-weight:700;color:#9a1e5a">配偶者（B）</div>
             <label style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer">
               <input type="checkbox" id="pp-sync-b" onchange="onPPSyncBToggle()" style="cursor:pointer"> Aと同じ
             </label>
@@ -496,7 +496,7 @@ function renderLoanTab(){
         </div>
       </div>
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px">
-        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">💰 繰上返済効果</div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">繰上返済効果</div>
         <div id="lp-effect" style="font-size:12px;color:var(--muted)">繰上返済を設定すると効果が表示されます</div>
       </div>
     </div>
@@ -650,10 +650,10 @@ function updateLPDedHint(){
   const hint=$('lp-ded-hint');
   if(!hint)return;
   if(lmt===0){
-    hint.innerHTML=`<span style="color:var(--red)">⚠️ <strong>${yr}年入居・${typeNames[tp]}（${hhName}）は住宅ローン控除の対象外です</strong></span>`;
+    hint.innerHTML=`<span style="color:var(--red)"><strong>${yr}年入居・${typeNames[tp]}（${hhName}）は住宅ローン控除の対象外です</strong></span>`;
   }else{
     const maxCtrl=Math.round(lmt*0.007);
-    hint.innerHTML=`<span style="color:#1a3a6a">📋 ${yr}年入居 / ${typeNames[tp]} / ${hhName}<br>借入上限：<strong>${lmt.toLocaleString()}万円</strong>　年最大控除：<strong>${maxCtrl}万円</strong>　控除期間：<strong>${yrs}年間</strong></span>`;
+    hint.innerHTML=`<span style="color:#1a3a6a">${yr}年入居 / ${typeNames[tp]} / ${hhName}<br>借入上限：<strong>${lmt.toLocaleString()}万円</strong>　年最大控除：<strong>${maxCtrl}万円</strong>　控除期間：<strong>${yrs}年間</strong></span>`;
   }
 }
 // ★ A/B 独立タイプ管理
@@ -754,7 +754,7 @@ function renderLoanCalc(){
     const total = _bonusAmtA * 2 * yrsA;
     const ratioPct = (_bonusRatioA*100).toFixed(1);
     const rawA = _bonusRatioRaw(_bonusAmtA, amtA, rateA, yrsA);
-    const warnA = rawA > 0.5 ? ` <span style="color:#dc2626;font-weight:700">⚠ 50%上限を超えるため自動調整されました（要望: ${(rawA*100).toFixed(1)}%）</span>` : '';
+    const warnA = rawA > 0.5 ? ` <span style="color:#dc2626;font-weight:700">50%上限を超えるため自動調整されました（要望: ${(rawA*100).toFixed(1)}%）</span>` : '';
     const hintEl = document.getElementById('lp-bonus-hint-a');
     if(hintEl) hintEl.innerHTML = `総額 = ${_bonusAmtA.toLocaleString()}円 × 2回 × ${yrsA}年 = <strong>${total.toLocaleString()}</strong>円（元金の${ratioPct}%）${warnA}`;
   }
@@ -762,7 +762,7 @@ function renderLoanCalc(){
     const total = _bonusAmtB * 2 * yrsB;
     const ratioPct = (_bonusRatioB*100).toFixed(1);
     const rawB = _bonusRatioRaw(_bonusAmtB, amtB, rateB, yrsB);
-    const warnB = rawB > 0.5 ? ` <span style="color:#dc2626;font-weight:700">⚠ 50%上限を超えるため自動調整されました（要望: ${(rawB*100).toFixed(1)}%）</span>` : '';
+    const warnB = rawB > 0.5 ? ` <span style="color:#dc2626;font-weight:700">50%上限を超えるため自動調整されました（要望: ${(rawB*100).toFixed(1)}%）</span>` : '';
     const hintEl = document.getElementById('lp-bonus-hint-b');
     if(hintEl) hintEl.innerHTML = `総額 = ${_bonusAmtB.toLocaleString()}円 × 2回 × ${yrsB}年 = <strong>${total.toLocaleString()}</strong>円（元金の${ratioPct}%）${warnB}`;
   }
@@ -974,15 +974,15 @@ function renderLoanCalc(){
     const showPairDed=pairLoanMode&&amtB>0;
     const tp='padding:3px 6px;text-align:right;font-size:10px;white-space:nowrap';
     const th2='padding:3px 5px;font-size:9px;white-space:nowrap';
-    let dt=`<details open style="margin-top:4px"><summary style="font-size:11px;font-weight:700;color:var(--navy);cursor:pointer;user-select:none">📋 控除額の年別内訳（${dedYrs}年間）</summary>
+    let dt=`<details open style="margin-top:4px"><summary style="font-size:11px;font-weight:700;color:var(--navy);cursor:pointer;user-select:none">控除額の年別内訳（${dedYrs}年間）</summary>
       <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:10px">
       <thead>`;
     // 2行ヘッダー
     if(showPairDed){
       dt+=`<tr style="background:var(--navy);color:#fff">
         <th rowspan="2" style="${th2};text-align:center;width:28px">年</th>
-        <th colspan="${hasTaxLimit?4:3}" style="${th2};text-align:center;background:#1e40af;border-bottom:1px solid rgba(255,255,255,.3)">🅰 ご本人様</th>
-        <th colspan="${hasTaxLimitW?4:3}" style="${th2};text-align:center;background:#92400e;border-bottom:1px solid rgba(255,255,255,.3)">🅱 配偶者</th>
+        <th colspan="${hasTaxLimit?4:3}" style="${th2};text-align:center;background:#1e40af;border-bottom:1px solid rgba(255,255,255,.3)">A ご本人様</th>
+        <th colspan="${hasTaxLimitW?4:3}" style="${th2};text-align:center;background:#92400e;border-bottom:1px solid rgba(255,255,255,.3)">B 配偶者</th>
         <th rowspan="2" style="${th2};text-align:right;background:#065f46">合計</th>
       </tr><tr style="background:var(--navy);color:#fff;font-size:9px">
         <th style="${th2};background:#1e40af">年末残高</th><th style="${th2};background:#1e40af">所得税</th><th style="${th2};background:#1e40af">住民税</th>`;
@@ -1096,8 +1096,8 @@ function renderLoanCalc(){
     const _colsB_pair = 4 + (_showBonusColB_pair?2:0);
     t+=`<tr style="background:var(--navy);color:#fff">
       <th rowspan="2" style="${thS};width:30px;text-align:center;border-right:1px solid rgba(255,255,255,.2)">年</th>
-      <th colspan="${_colsA_pair}" style="${thG};background:#1e40af;border-right:1px solid rgba(255,255,255,.3)">🅰 ご本人様</th>
-      <th colspan="${_colsB_pair}" style="${thG};background:#92400e;border-right:1px solid rgba(255,255,255,.3)">🅱 配偶者</th>
+      <th colspan="${_colsA_pair}" style="${thG};background:#1e40af;border-right:1px solid rgba(255,255,255,.3)">A ご本人様</th>
+      <th colspan="${_colsB_pair}" style="${thG};background:#92400e;border-right:1px solid rgba(255,255,255,.3)">B 配偶者</th>
       <th colspan="2" style="${thG};background:#065f46;border-right:1px solid rgba(255,255,255,.3)">合計</th>
       <th colspan="3" style="${thG};background:#059669;border-right:${withPPA?'1px solid rgba(255,255,255,.3)':'none'}">ローン控除</th>`;
     if(withPPA)t+=`<th colspan="2" style="${thG};background:#6b21a8">繰上効果</th>`;

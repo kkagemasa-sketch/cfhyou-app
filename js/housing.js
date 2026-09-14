@@ -333,7 +333,7 @@ function addSwapEvent(data){
   card.style.cssText='background:#fef3e2;border:1.5px solid #f59e0b;border-radius:7px;padding:10px;margin-bottom:8px;position:relative';
   card.innerHTML=`
     <button class="btn-rm" onclick="removeSwapEvent(${id})" style="position:absolute;top:6px;right:6px;font-size:10px">× 削除</button>
-    <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">🔄 買い替えイベント ${existing+1}</div>
+    <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">買い替えイベント ${existing+1}</div>
     <div class="g3" style="margin-bottom:6px">
       <div class="fg"><label class="lbl" style="font-size:9px">実行年齢（ご主人様）</label>
         <div class="suf"><input class="inp age-inp" id="sw-${id}-age" type="number" value="${d.age||''}" placeholder="例:60" min="25" max="95" oninput="live()"><span class="sl">歳</span></div></div>
@@ -365,7 +365,7 @@ function addSwapEvent(data){
       </div>
     </div>
     <div id="sw-${id}-loan-pair-body" style="display:none">
-      <div class="sub" style="font-size:10px;margin-top:4px">👤 ご主人様</div>
+      <div class="sub" style="font-size:10px;margin-top:4px">ご主人様</div>
       <div class="g3">
         <div class="fg"><label class="lbl" style="font-size:9px">借入額</label>
           <div class="suf"><input class="inp amt-inp" id="sw-${id}-loanAmtH" type="number" value="${d.loanAmtH||''}" min="0" oninput="live()"><span class="sl">万円</span></div></div>
@@ -374,7 +374,7 @@ function addSwapEvent(data){
         <div class="fg"><label class="lbl" style="font-size:9px">金利</label>
           <div class="suf"><input class="inp" id="sw-${id}-loanRateH" type="number" value="${d.loanRateH||'1.2'}" min="0" max="10" step="0.01" oninput="live()" style="font-size:11px"><span class="sl">%</span></div></div>
       </div>
-      <div class="sub" style="font-size:10px;margin-top:4px">👩 奥様</div>
+      <div class="sub" style="font-size:10px;margin-top:4px">奥様</div>
       <div class="g3">
         <div class="fg"><label class="lbl" style="font-size:9px">借入額</label>
           <div class="suf"><input class="inp amt-inp" id="sw-${id}-loanAmtW" type="number" value="${d.loanAmtW||''}" min="0" oninput="live()"><span class="sl">万円</span></div></div>
@@ -409,7 +409,7 @@ function removeSwapEvent(id){
   // 再番号付け（表示用）
   document.querySelectorAll('#swap-events-cont .swap-event').forEach((c,i)=>{
     const titleEl=c.querySelector('div[style*="font-weight:700"]');
-    if(titleEl)titleEl.textContent=`🔄 買い替えイベント ${i+1}`;
+    if(titleEl)titleEl.textContent=`買い替えイベント ${i+1}`;
   });
   if(typeof live==='function')live();
 }
@@ -471,10 +471,10 @@ function setDownType(t){
   const hint=document.getElementById('down-type-hint');
   if(hint){
     if(t==='gift'){
-      hint.textContent='🎁 贈与のため自己資金は減りません';
+      hint.textContent='贈与のため自己資金は減りません';
       hint.style.color='#2d7dd2';
     } else if(t==='other'){
-      hint.textContent='📝 その他の資金源（自己資金は減りません）';
+      hint.textContent='その他の資金源（自己資金は減りません）';
       hint.style.color='#7c3aed';
     } else {
       hint.textContent='自己資金から支出';
@@ -531,10 +531,10 @@ function setMoveType(t){
   const hint=document.getElementById('move-type-hint');
   if(hint){
     if(t==='other'){
-      hint.textContent='📝 その他の資金源（自己資金は減りません・CF表には出ません）';
+      hint.textContent='その他の資金源（自己資金は減りません・CF表には出ません）';
       hint.style.color='#7c3aed';
     } else {
-      hint.textContent='💰 引き渡しの年にCF表の支出として反映されます';
+      hint.textContent='引き渡しの年にCF表の支出として反映されます';
       hint.style.color='var(--muted)';
     }
   }
@@ -783,12 +783,12 @@ function updateLctrlHint(){
   const hhName=isK?'子育て・若者夫婦世帯':'一般世帯';
   if(lmt<=0){
     lctrlHint.style.background='#fee9e7';
-    lctrlHint.innerHTML=`<span style="color:var(--red)">⚠️ <strong>${yr}年入居・${typeNames[tp]}（${hhName}）は住宅ローン控除の対象外です</strong><br>2024年以降の建築確認を受けた新築一般住宅は省エネ基準適合が必須です。</span>`;
+    lctrlHint.innerHTML=`<span style="color:var(--red)"><strong>${yr}年入居・${typeNames[tp]}（${hhName}）は住宅ローン控除の対象外です</strong><br>2024年以降の建築確認を受けた新築一般住宅は省エネ基準適合が必須です。</span>`;
   } else {
     lctrlHint.style.background='#e8f2fc';
-    const note=(yr>=2028&&tp==='new_eco')?'<br><span style="color:#d63a2a;font-size:9px">⚠️ 2028年以降の省エネ基準適合新築は借入限度額2,000万・控除10年に縮小</span>':'';
+    const note=(yr>=2028&&tp==='new_eco')?'<br><span style="color:#d63a2a;font-size:9px">2028年以降の省エネ基準適合新築は借入限度額2,000万・控除10年に縮小</span>':'';
     const note2=(yr>=2026)?'<span style="color:#2d7dd2;font-size:9px">　令和8年度税制改正適用</span>':'';
-    lctrlHint.innerHTML=`<span style="color:#1a3a6a">📋 ${yr}年入居 / ${typeNames[tp]} / ${hhName}${note2}<br>借入上限：<strong>${lmt.toLocaleString()}万円</strong>　年最大控除：<strong>${maxCtrl}万円</strong>　控除期間：<strong>${yrs}年間</strong>（所得税・住民税上限内で計算）${note}</span>`;
+    lctrlHint.innerHTML=`<span style="color:#1a3a6a">${yr}年入居 / ${typeNames[tp]} / ${hhName}${note2}<br>借入上限：<strong>${lmt.toLocaleString()}万円</strong>　年最大控除：<strong>${maxCtrl}万円</strong>　控除期間：<strong>${yrs}年間</strong>（所得税・住民税上限内で計算）${note}</span>`;
   }
 }
 

@@ -208,7 +208,7 @@ function _renderMansionFilesInEdit(mansionId){
   const files=Array.isArray(m.files)?m.files:[];
   const count=files.length;
   let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-  h+='<div style="font-size:11px;font-weight:700;color:#1e3a5f">📎 添付ファイル（'+count+'/'+MANSION_FILE_MAX_COUNT+'）</div>';
+  h+='<div style="font-size:11px;font-weight:700;color:#1e3a5f">添付ファイル（'+count+'/'+MANSION_FILE_MAX_COUNT+'）</div>';
   h+='<button onclick="pickMansionFiles(\''+mansionId+'\')" '+(count>=MANSION_FILE_MAX_COUNT?'disabled':'')+' style="background:'+(count>=MANSION_FILE_MAX_COUNT?'#cbd5e1':'#0ea5e9')+';color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:11px;cursor:'+(count>=MANSION_FILE_MAX_COUNT?'not-allowed':'pointer')+'">＋ 追加</button>';
   h+='</div>';
   if(count===0){
@@ -233,7 +233,7 @@ function _mfFileThumbHTML(mansionId,f,edit){
       +'<img src="'+f.url+'" alt="'+nm+'" style="max-width:100%;max-height:100%;object-fit:cover">'
       +'</div>';
   }else{
-    inner='<a href="'+f.url+'" target="_blank" rel="noopener" style="text-decoration:none;display:block;background:#fee2e2;height:60px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#991b1b;font-size:22px">📄</a>';
+    inner='<a href="'+f.url+'" target="_blank" rel="noopener" style="text-decoration:none;display:block;background:#fee2e2;height:60px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#991b1b;font-size:22px"></a>';
   }
   let h='<div style="position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:5px;padding:4px" title="'+nm+'">';
   h+=inner;
@@ -257,7 +257,7 @@ function _mfFilesDisplayHTML(mansionId){
     if(f.type==='image'){
       h+='<img src="'+f.url+'" alt="'+_mfEsc(f.name)+'" onclick="event.stopPropagation();previewMansionImage(\''+f.url+'\',\''+_mfEsc(f.name).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" style="width:34px;height:34px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;cursor:zoom-in" title="'+_mfEsc(f.name)+'">';
     }else{
-      h+='<a href="'+f.url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="'+_mfEsc(f.name)+'" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:#fee2e2;color:#991b1b;border-radius:4px;font-size:16px;text-decoration:none;border:1px solid #fecaca">📄</a>';
+      h+='<a href="'+f.url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="'+_mfEsc(f.name)+'" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:#fee2e2;color:#991b1b;border-radius:4px;font-size:16px;text-decoration:none;border:1px solid #fecaca"></a>';
     }
   });
   h+='</div>';

@@ -15,7 +15,7 @@
 <!-- Sentry エラー監視（DSN未設定時はローカルログのみ動作） -->
 <script src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js" crossorigin="anonymous"></script>
 <script src="js/error-monitor.js?v=2"></script>
-<link rel="stylesheet" href="css/style.css?v=61">
+<link rel="stylesheet" href="css/style.css?v=62">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -31,7 +31,7 @@ if(localStorage.getItem('cf-auth-exp')&&Date.now()<Number(localStorage.getItem('
 </script>
 <div id="pw-lock" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#1e3a5f 0%,#0f2744 100%);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0">
   <div style="background:#fff;border-radius:16px;padding:36px 32px;width:420px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;margin:auto">
-    <div style="font-size:36px;margin-bottom:12px">🔒</div>
+    <div style="font-size:36px;margin-bottom:12px"></div>
     <div style="font-size:18px;font-weight:800;color:#1e3a5f;margin-bottom:4px">HouseFit</div>
     <div style="font-size:12px;color:#64748b;margin-bottom:20px">CF表作成アプリ</div>
 
@@ -87,16 +87,16 @@ function checkPW(){
 <button class="btn-h" id="btn-undo" onclick="undoState()" title="元に戻す (Ctrl+Z)">◀ 戻る</button>
     <button class="btn-h" id="btn-redo" onclick="redoState()" title="やり直す (Ctrl+Y)">進む ▶</button>
     <button class="btn-h" onclick="resetOverrides()" title="CF表の手動上書きをすべてリセット">↺ 上書きリセット</button>
-    <button class="btn-h" id="btn-presenter-mode" onclick="togglePresenterMode()" title="プレゼンモード: オレンジのポインタがマウスに追従" style="background:rgba(255,140,0,.25);border-color:rgba(255,140,0,.55)">🎯 プレゼンモード</button>
-    <button class="btn-h" id="btn-talk-memo" onclick="openTalkMemo()" title="オンラインメモ: 別ウィンドウでチェックリスト＆メモ（画面共有時は自分だけ見える）" style="background:rgba(245,158,11,.3);border-color:rgba(245,158,11,.6)">📝 オンラインメモ</button>
-    <button class="btn-h" id="btn-market-sim" onclick="toggleMarketSimPanel()" title="過去の相場シナリオを適用してCF表・グラフを再計算" style="background:rgba(200,30,60,.3);border-color:rgba(255,80,110,.55)">📈 運用シミュ</button>
+    <button class="btn-h" id="btn-presenter-mode" onclick="togglePresenterMode()" title="プレゼンモード: オレンジのポインタがマウスに追従" style="background:rgba(255,140,0,.25);border-color:rgba(255,140,0,.55)">プレゼンモード</button>
+    <button class="btn-h" id="btn-talk-memo" onclick="openTalkMemo()" title="オンラインメモ: 別ウィンドウでチェックリスト＆メモ（画面共有時は自分だけ見える）" style="background:rgba(245,158,11,.3);border-color:rgba(245,158,11,.6)">オンラインメモ</button>
+    <button class="btn-h" id="btn-market-sim" onclick="toggleMarketSimPanel()" title="過去の相場シナリオを適用してCF表・グラフを再計算" style="background:rgba(200,30,60,.3);border-color:rgba(255,80,110,.55)">運用シミュ</button>
     <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="onJSONImport(this)">
     <input type="file" id="json-bulk-import-input" accept=".json" style="display:none" onchange="onBulkJSONImport(this)">
-    <button class="btn-h" onclick="newCFSheet()" title="全項目を白紙にして新しいCF表を作成" style="background:rgba(180,60,0,.3);border-color:rgba(255,120,50,.5)">📄 新規作成</button>
-    <button class="btn-h" onclick="openSlotPanel()" title="お客様データの保存・読込・バックアップ" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">💾 保存 / 読込</button>
-    <button class="btn-h" onclick="exportJSON()" title="現在のデータをJSONファイルとしてPCに保存（バックアップ）" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">📤 ファイルに保存</button>
-    <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">📥 ファイルから復元</button>
-    <button class="btn-h" id="btn-mansion-mgmt" onclick="openMansionMgmt()" title="マンションマスターデータの登録・編集" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">🏢 マンション管理</button>
+    <button class="btn-h" onclick="newCFSheet()" title="全項目を白紙にして新しいCF表を作成" style="background:rgba(180,60,0,.3);border-color:rgba(255,120,50,.5)">新規作成</button>
+    <button class="btn-h" onclick="openSlotPanel()" title="お客様データの保存・読込・バックアップ" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">保存 / 読込</button>
+    <button class="btn-h" onclick="exportJSON()" title="現在のデータをJSONファイルとしてPCに保存（バックアップ）" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">ファイルに保存</button>
+    <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">ファイルから復元</button>
+    <button class="btn-h" id="btn-mansion-mgmt" onclick="openMansionMgmt()" title="マンションマスターデータの登録・編集" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">マンション管理</button>
     <button class="btn-h" onclick="openAboutModal()" title="バージョン情報・ライセンス・規約類" style="background:rgba(100,116,139,.25);border-color:rgba(148,163,184,.4)">ⓘ</button>
 
   </div>
@@ -111,47 +111,47 @@ function checkPW(){
     </div>
     <div style="padding:20px 24px">
       <div style="font-size:13px;color:#1a3a6a;line-height:1.7;margin-bottom:16px">
-        <div style="font-weight:700;font-size:15px;color:#1e3a5f;margin-bottom:4px">🏠 HouseFit</div>
+        <div style="font-weight:700;font-size:15px;color:#1e3a5f;margin-bottom:4px">HouseFit</div>
         <div style="font-size:12px;color:#475569">住宅購入のキャッシュフローシミュレーションツール</div>
       </div>
       <div style="border-top:1px solid #e2e8f0;padding-top:14px;display:flex;flex-direction:column;gap:8px">
         <a href="help.html" onclick="closeAboutModal()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #fcd34d;border-radius:6px;text-decoration:none;color:#7a5000;font-size:13px;background:#fffbeb;font-weight:600">
-          <span style="font-size:16px">📚</span>
+          <span style="font-size:16px"></span>
           <span style="flex:1">使い方ガイド・FAQ</span>
           <span style="color:#d97706;font-size:11px">→</span>
         </a>
         <a href="disclaimer.html" onclick="closeAboutModal()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #fca5a5;border-radius:6px;text-decoration:none;color:#7a1a1a;font-size:13px;background:#fff5f5">
-          <span style="font-size:16px">⚠️</span>
+          <span style="font-size:16px"></span>
           <span style="flex:1">詳細な免責事項</span>
           <span style="color:#dc2626;font-size:11px">→</span>
         </a>
         <a href="terms.html" onclick="closeAboutModal()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #c8d6e8;border-radius:6px;text-decoration:none;color:#1e3a5f;font-size:13px;background:#eff6ff">
-          <span style="font-size:16px">📄</span>
+          <span style="font-size:16px"></span>
           <span style="flex:1">利用規約</span>
           <span style="color:#2563eb;font-size:11px">→</span>
         </a>
         <a href="privacy.html" onclick="closeAboutModal()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #86efac;border-radius:6px;text-decoration:none;color:#064e3b;font-size:13px;background:#f0fdf4">
-          <span style="font-size:16px">🔒</span>
+          <span style="font-size:16px"></span>
           <span style="flex:1">プライバシーポリシー</span>
           <span style="color:#10b981;font-size:11px">→</span>
         </a>
         <a href="tokushoho.html" onclick="closeAboutModal()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #ddd6fe;border-radius:6px;text-decoration:none;color:#4c1d95;font-size:13px;background:#f5f3ff">
-          <span style="font-size:16px">📋</span>
+          <span style="font-size:16px"></span>
           <span style="flex:1">特定商取引法に基づく表記</span>
           <span style="color:#7c3aed;font-size:11px">→</span>
         </a>
         <a href="licenses.html" onclick="closeAboutModal()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#1e3a5f;font-size:13px;background:#f8fafc">
-          <span style="font-size:16px">📜</span>
+          <span style="font-size:16px"></span>
           <span style="flex:1">オープンソースライセンス</span>
           <span style="color:#94a3b8;font-size:11px">→</span>
         </a>
       </div>
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;gap:6px;flex-wrap:wrap">
-        <button onclick="downloadErrorLog()" style="flex:1;padding:8px 10px;border:1px solid #fcd34d;background:#fffbeb;color:#7a5000;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" title="エラーログをダウンロードしてサポートに送信できます">🐛 エラーログを送信</button>
-        <button onclick="clearErrorLog()" style="padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit" title="ローカルに保存されたエラーログを削除">🗑️</button>
+        <button onclick="downloadErrorLog()" style="flex:1;padding:8px 10px;border:1px solid #fcd34d;background:#fffbeb;color:#7a5000;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" title="エラーログをダウンロードしてサポートに送信できます">エラーログを送信</button>
+        <button onclick="clearErrorLog()" style="padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit" title="ローカルに保存されたエラーログを削除">削除</button>
       </div>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;line-height:1.6">
-        ⚠️ 本ツールの試算結果は参考値です。実際の資金計画は税理士・ファイナンシャルプランナー等の専門家にご相談ください。
+        本ツールの試算結果は参考値です。実際の資金計画は税理士・ファイナンシャルプランナー等の専門家にご相談ください。
       </div>
     </div>
   </div>
@@ -178,7 +178,7 @@ window.closeAboutModal=closeAboutModal;
   <div class="fi">
 
   <div class="err-bar" id="err-bar">
-    <strong style="font-size:11px;color:var(--red)">⚠ 確認してください：</strong>
+    <strong style="font-size:11px;color:var(--red)">確認してください：</strong>
     <ul id="err-list"></ul>
   </div>
 
@@ -187,11 +187,11 @@ window.closeAboutModal=closeAboutModal;
     <div style="font-size:10px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:5px;letter-spacing:.08em">物件タイプを選択してください</div>
     <div class="type-row" style="gap:6px">
       <div class="tc on" id="tc-m" onclick="setType('mansion')" style="padding:8px 10px;gap:6px">
-        <span class="tc-icon" style="font-size:20px">🏢</span>
+        <span class="tc-icon" style="font-size:20px"></span>
         <div><div class="tc-lbl" style="font-size:12px">マンション</div><div class="tc-desc" style="font-size:9px">管理費あり</div></div>
       </div>
       <div class="tc" id="tc-k" onclick="setType('kodate')" style="padding:8px 10px;gap:6px">
-        <span class="tc-icon" style="font-size:20px">🏡</span>
+        <span class="tc-icon" style="font-size:20px"></span>
         <div><div class="tc-lbl" style="font-size:12px">戸建て</div><div class="tc-desc" style="font-size:9px">修繕費あり</div></div>
       </div>
     </div>
@@ -199,7 +199,7 @@ window.closeAboutModal=closeAboutModal;
     <div style="margin-top:6px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;font-weight:700;color:#7c5e1a;background:#fff8ee;border:1px solid #ffb74d;border-radius:6px;padding:5px 8px">
         <input type="checkbox" id="leasehold-on" onchange="toggleLeasehold()" style="cursor:pointer;accent-color:#d97706">
-        🏛️ 定期借地権付き物件
+        定期借地権付き物件
         <span style="font-weight:400;color:var(--muted);font-size:9px;margin-left:auto">（土地は借地、地代発生）</span>
       </label>
     </div>
@@ -220,7 +220,7 @@ window.closeAboutModal=closeAboutModal;
 
   <!-- 基本情報 -->
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#3a6a8a"><span class="sh-tab" style="background:#3a6a8a">①家族</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">1</span>👨‍👩‍👧 家族構成<span class="stog on">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#3a6a8a"><span class="sh-tab" style="background:#3a6a8a">①家族</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">1</span>家族構成<span class="stog on">▾</span></div>
     <div class="sb">
       <div class="g2" style="margin-bottom:8px">
         <div class="fg" style="grid-column:span 2"><label class="lbl">お客様氏名<span class="req">*</span></label>
@@ -228,8 +228,8 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <!-- 世帯タイプ -->
       <div style="display:flex;gap:6px;margin-bottom:10px">
-        <button class="btn-tog" id="ht-couple" onclick="setHouseholdType('couple')" style="flex:1">👫 夫婦世帯</button>
-        <button class="btn-tog" id="ht-single" onclick="setHouseholdType('single')" style="flex:1">👤 単身世帯</button>
+        <button class="btn-tog" id="ht-couple" onclick="setHouseholdType('couple')" style="flex:1">夫婦世帯</button>
+        <button class="btn-tog" id="ht-single" onclick="setHouseholdType('single')" style="flex:1">単身世帯</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div class="fg"><label class="lbl" style="font-size:9px" id="lbl-h-age">ご主人様 現在年齢<span class="req">*</span></label>
@@ -256,11 +256,11 @@ window.closeAboutModal=closeAboutModal;
   </div>
 
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#0d8a20"><span class="sh-tab" style="background:#0d8a20">②資産</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">2</span>💰 自己資産<span class="stog on">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#0d8a20"><span class="sh-tab" style="background:#0d8a20">②資産</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">2</span>自己資産<span class="stog on">▾</span></div>
     <div class="sb">
 
       <!-- 1. 現預金 -->
-      <div class="sub">🏦 現預金</div>
+      <div class="sub">現預金</div>
       <div class="g3">
         <div class="fg"><label class="lbl" style="font-size:9px" id="lbl-cash-h">ご主人様</label>
           <div class="suf"><input class="inp amt-inp" id="cash-h" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
@@ -278,22 +278,22 @@ window.closeAboutModal=closeAboutModal;
       <!-- ペルソナタブ -->
       <div style="display:flex;gap:6px;margin-bottom:10px">
         <div class="tc on" id="asset-tab-h" onclick="setAssetTab('h')" style="flex:1;padding:7px;gap:5px">
-          <span style="font-size:15px" id="icon-asset-h">👔</span>
+          <span style="font-size:15px" id="icon-asset-h"></span>
           <div class="tc-lbl" style="font-size:11px" id="lbl-asset-h">ご主人様</div>
         </div>
         <div class="tc wife-only" id="asset-tab-w" onclick="setAssetTab('w')" style="flex:1;padding:7px;gap:5px">
-          <span style="font-size:15px">👗</span>
+          <span style="font-size:15px"></span>
           <div class="tc-lbl" style="font-size:11px">奥様</div>
         </div>
       </div>
 
       <!-- ご主人様パネル -->
       <div id="asset-panel-h">
-        <div class="sub">📋 積み立て保険（ご主人様）</div>
+        <div class="sub">積み立て保険（ご主人様）</div>
         <div id="ins-savings-cont-h"></div>
         <button class="btn-add" onclick="addInsSaving('h')">＋ 積み立て保険を追加</button>
         <div class="divider"></div>
-        <div class="sub">🏢 財形貯蓄（ご主人様）</div>
+        <div class="sub">財形貯蓄（ご主人様）</div>
         <div class="g3">
           <div class="fg"><label class="lbl" style="font-size:9px">現時点の残高</label>
             <div class="suf"><input class="inp amt-inp" id="zaikei-h-bal" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
@@ -305,7 +305,7 @@ window.closeAboutModal=closeAboutModal;
             <div class="suf"><input class="inp age-inp" id="zaikei-h-redeem" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
         </div>
         <div class="divider"></div>
-        <div class="sub">📈 有価証券（ご主人様）</div>
+        <div class="sub">有価証券（ご主人様）</div>
         <div id="securities-cont-h"></div>
         <button class="btn-add" onclick="addSecurity('h')">＋ 有価証券を追加</button>
         <div id="nisa-summary-h" class="nisa-summary" style="margin-top:8px"></div>
@@ -313,11 +313,11 @@ window.closeAboutModal=closeAboutModal;
 
       <!-- 奥様パネル -->
       <div id="asset-panel-w" style="display:none">
-        <div class="sub">📋 積み立て保険（奥様）</div>
+        <div class="sub">積み立て保険（奥様）</div>
         <div id="ins-savings-cont-w"></div>
         <button class="btn-add" onclick="addInsSaving('w')">＋ 積み立て保険を追加</button>
         <div class="divider"></div>
-        <div class="sub">🏢 財形貯蓄（奥様）</div>
+        <div class="sub">財形貯蓄（奥様）</div>
         <div class="g3">
           <div class="fg"><label class="lbl" style="font-size:9px">現時点の残高</label>
             <div class="suf"><input class="inp amt-inp" id="zaikei-w-bal" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
@@ -329,7 +329,7 @@ window.closeAboutModal=closeAboutModal;
             <div class="suf"><input class="inp age-inp" id="zaikei-w-redeem" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
         </div>
         <div class="divider"></div>
-        <div class="sub">📈 有価証券（奥様）</div>
+        <div class="sub">有価証券（奥様）</div>
         <div id="securities-cont-w"></div>
         <button class="btn-add" onclick="addSecurity('w')">＋ 有価証券を追加</button>
         <div id="nisa-summary-w" class="nisa-summary" style="margin-top:8px"></div>
@@ -339,14 +339,14 @@ window.closeAboutModal=closeAboutModal;
   </div>
 
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#2d7dd2"><span class="sh-tab" style="background:#2d7dd2">③収入</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">3</span>💰 収入設定<span class="stog on">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#2d7dd2"><span class="sh-tab" style="background:#2d7dd2">③収入</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">3</span>収入設定<span class="stog on">▾</span></div>
     <div class="sb">
 
       <!-- 収入の入力方法（額面/手取り）— 夫婦それぞれ選択（2026-09-13〜） -->
       <div style="background:#eef5ff;border:1.5px solid #b8d4f8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
         <label class="lbl">収入の入力方法（ご主人様・奥様で別々に選べます）</label>
         <div class="g2" style="margin-top:4px">
-          <div class="fg"><label class="lbl" style="font-size:9px">👨 ご主人様</label>
+          <div class="fg"><label class="lbl" style="font-size:9px">ご主人様</label>
             <select class="sel" id="h-income-mode" oninput="onIncomeModeChange()">
               <option value="net" selected>手取り年収で入力</option>
               <option value="gross">額面年収で入力</option>
@@ -359,7 +359,7 @@ window.closeAboutModal=closeAboutModal;
                 <option value="part">扶養内パート</option>
               </select>
             </span></div>
-          <div class="fg wife-only"><label class="lbl" style="font-size:9px">👩 奥様</label>
+          <div class="fg wife-only"><label class="lbl" style="font-size:9px">奥様</label>
             <select class="sel" id="w-income-mode" oninput="onIncomeModeChange()">
               <option value="net" selected>手取り年収で入力</option>
               <option value="gross">額面年収で入力</option>
@@ -376,11 +376,11 @@ window.closeAboutModal=closeAboutModal;
         <span class="hint" style="font-size:9px">額面モードでは社会保険料・所得税・住民税（配偶者控除・お子様の扶養控除・iDeCo等を考慮）を毎年自動計算して手取り化します。源泉徴収票の「支払金額」をそのまま転記できます。自営業の方は手取り入力をご利用ください（次回対応予定）</span>
       </div>
 
-      <!-- 🧮 手取り計算機トグルボタン（押すと下にポップアップ表示） -->
+      <!-- 手取り計算機トグルボタン（押すと下にポップアップ表示） -->
       <div style="position:relative;margin-bottom:12px">
         <button type="button" id="calc-toggle-btn" onclick="toggleCalcPopup()"
                 style="width:100%;background:linear-gradient(135deg,#eef5ff,#dbeafe);border:1.5px solid #b8d4f8;border-radius:var(--r);padding:8px 12px;font-size:11px;font-weight:700;color:#2d7dd2;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s">
-          <span style="font-size:14px">🧮</span>
+          <span style="font-size:14px"></span>
           <span>手取り計算機を開く</span>
           <span id="calc-arrow" style="font-size:10px;color:#94a3b8">▼</span>
         </button>
@@ -390,14 +390,14 @@ window.closeAboutModal=closeAboutModal;
           <div id="calc-popup-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:move;touch-action:none" title="ドラッグで移動">
             <div style="font-size:11px;font-weight:700;color:#2d7dd2;display:flex;align-items:center;gap:4px">
               <span style="font-size:9px;color:#94a3b8;letter-spacing:.5px">⋮⋮</span>
-              <span>🧮 手取り計算機（参考用）</span>
+              <span>手取り計算機（参考用）</span>
             </div>
             <button type="button" onclick="toggleCalcPopup()" title="閉じる" style="font-size:14px;line-height:1;color:#94a3b8;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px">×</button>
           </div>
           <div id="calc-body">
             <div style="display:flex;gap:3px;margin-bottom:8px">
-              <button class="btn-tog on" id="calc-type-emp" onclick="setCalcType('h','emp')" style="font-size:10px;padding:3px 10px">💼 正社員</button>
-              <button class="btn-tog" id="calc-type-fuyo" onclick="setCalcType('h','fuyo')" style="font-size:10px;padding:3px 10px">🏠 扶養内パート</button>
+              <button class="btn-tog on" id="calc-type-emp" onclick="setCalcType('h','emp')" style="font-size:10px;padding:3px 10px">正社員</button>
+              <button class="btn-tog" id="calc-type-fuyo" onclick="setCalcType('h','fuyo')" style="font-size:10px;padding:3px 10px">扶養内パート</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center">
               <div class="fg">
@@ -530,10 +530,10 @@ window.closeAboutModal=closeAboutModal;
         })();
       </script>
 
-      <!-- 👔 ご主人様カード -->
+      <!-- ご主人様カード -->
       <div style="border:2px solid #b8d4f8;border-radius:var(--r);overflow:hidden;margin-bottom:12px">
         <div style="background:#2d7dd2;padding:8px 12px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px" id="icon-h-card">👔</span>
+          <span style="font-size:18px" id="icon-h-card"></span>
           <span style="font-size:13px;font-weight:700;color:#fff" id="lbl-h-card">ご主人様</span>
         </div>
         <div style="padding:12px">
@@ -569,7 +569,7 @@ window.closeAboutModal=closeAboutModal;
           <!-- 退職金 -->
           <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-              <div style="font-size:11px;font-weight:700;color:var(--navy)">💴 退職金</div>
+              <div style="font-size:11px;font-weight:700;color:var(--navy)">退職金</div>
               <div style="display:flex;gap:4px">
                 <div class="tc on" id="rp-yes" onclick="setRetirePay(true)" style="padding:2px 10px;min-height:0;opacity:1;transform:none">
                   <div class="tc-lbl" style="font-size:10px">あり</div>
@@ -593,7 +593,7 @@ window.closeAboutModal=closeAboutModal;
           <!-- DC・iDeCo（ご主人様） -->
           <div style="background:#f0f8f4;border:1px solid #b8e8c8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-              <div style="font-size:11px;font-weight:700;color:#1a6a3a">🏢 企業型DC・iDeCo</div>
+              <div style="font-size:11px;font-weight:700;color:#1a6a3a">企業型DC・iDeCo</div>
               <button onclick="this.parentElement.nextElementSibling.style.display=this.parentElement.nextElementSibling.style.display==='none'?'':'none';this.textContent=this.textContent.includes('▼')?'▶ 開く':'▼ 閉じる'" style="font-size:10px;color:#1a6a3a;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">▼ 閉じる</button>
             </div>
             <div>
@@ -670,7 +670,7 @@ window.closeAboutModal=closeAboutModal;
 
           <!-- 年金 -->
           <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
-            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🏦 老齢年金</div>
+            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">老齢年金</div>
             <div class="g3">
               <div class="fg"><label class="lbl" style="font-size:9px">加入開始年齢</label>
                 <div class="suf"><input class="inp age-inp" id="pension-h-start" type="number" onfocus="scrollToCFRow('pS',65)" onblur="cfRowBlur()" value="22" min="18" max="40" oninput="calcPension('h')" style="font-size:11px"><span class="sl">歳</span></div></div>
@@ -680,8 +680,8 @@ window.closeAboutModal=closeAboutModal;
                 <div class="suf"><input class="inp amt-inp" id="pension-h" type="number" onfocus="scrollToCFRow('pS',iv('pension-h-receive')||65)" onblur="cfRowBlur()" value="186" min="0" oninput="updatePensionAdjustHint('h');live()" style="font-size:11px"><span class="sl">万円</span></div></div>
             </div>
             <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <button onclick="calcPension('h')" style="background:#e8f2fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#1a4a6a;cursor:pointer;font-family:inherit;font-weight:600">🔄 概算計算</button>
-              <label style="font-size:10px;color:#5a4000;cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#f5f5f5;border:1px solid #ccc;border-radius:var(--rs);padding:4px 8px" title="繰上げ・繰下げの自動調整はデフォルトONです。チェックすると旧挙動（入力額をそのまま使用）に戻します。"><input type="checkbox" id="pension-h-noadjust" onchange="updatePensionAdjustHint('h');live(true)" style="margin:0">⚙️ 自動調整しない（入力額をそのまま使用）</label>
+              <button onclick="calcPension('h')" style="background:#e8f2fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#1a4a6a;cursor:pointer;font-family:inherit;font-weight:600">概算計算</button>
+              <label style="font-size:10px;color:#5a4000;cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#f5f5f5;border:1px solid #ccc;border-radius:var(--rs);padding:4px 8px" title="繰上げ・繰下げの自動調整はデフォルトONです。チェックすると旧挙動（入力額をそのまま使用）に戻します。"><input type="checkbox" id="pension-h-noadjust" onchange="updatePensionAdjustHint('h');live(true)" style="margin:0">自動調整しない（入力額をそのまま使用）</label>
             </div>
             <div id="h-pension-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">65歳〜 受給</div>
             <div id="h-pension-adjust-hint" style="font-size:10px;color:#7a5000;margin-top:4px;display:none"></div>
@@ -702,18 +702,18 @@ window.closeAboutModal=closeAboutModal;
         </div>
       </div>
 
-      <!-- 👗 奥様カード -->
+      <!-- 奥様カード -->
       <div class="wife-only" style="border:2px solid #b8d4f8;border-radius:var(--r);overflow:hidden;margin-bottom:16px">
         <div style="background:#2d7dd2;padding:8px 12px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">👗</span>
+          <span style="font-size:18px"></span>
           <span style="font-size:13px;font-weight:700;color:#fff">奥様</span>
         </div>
         <div style="padding:12px">
-          <!-- 🧮 手取り計算機（奥様）トグルボタン -->
+          <!-- 手取り計算機（奥様）トグルボタン -->
           <div style="position:relative;margin-bottom:12px">
             <button type="button" id="w-calc-toggle-btn" onclick="toggleWCalcPopup()"
                     style="width:100%;background:linear-gradient(135deg,#eef5ff,#dbeafe);border:1.5px solid #b8d4f8;border-radius:var(--r);padding:8px 12px;font-size:11px;font-weight:700;color:#2d7dd2;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s">
-              <span style="font-size:14px">🧮</span>
+              <span style="font-size:14px"></span>
               <span>手取り計算機を開く</span>
               <span id="w-calc-arrow" style="font-size:10px;color:#94a3b8">▼</span>
             </button>
@@ -723,14 +723,14 @@ window.closeAboutModal=closeAboutModal;
               <div id="w-calc-popup-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:move;touch-action:none" title="ドラッグで移動">
                 <div style="font-size:11px;font-weight:700;color:#2d7dd2;display:flex;align-items:center;gap:4px">
                   <span style="font-size:9px;color:#94a3b8;letter-spacing:.5px">⋮⋮</span>
-                  <span>🧮 手取り計算機（奥様）</span>
+                  <span>手取り計算機（奥様）</span>
                 </div>
                 <button type="button" onclick="toggleWCalcPopup()" title="閉じる" style="font-size:14px;line-height:1;color:#94a3b8;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px">×</button>
               </div>
               <div id="w-calc-body">
                 <div style="display:flex;gap:3px;margin-bottom:8px">
-                  <button class="btn-tog on" id="w-calc-type-emp" onclick="setCalcType('w','emp')" style="font-size:10px;padding:3px 10px">💼 正社員</button>
-                  <button class="btn-tog" id="w-calc-type-fuyo" onclick="setCalcType('w','fuyo')" style="font-size:10px;padding:3px 10px">🏠 扶養内パート</button>
+                  <button class="btn-tog on" id="w-calc-type-emp" onclick="setCalcType('w','emp')" style="font-size:10px;padding:3px 10px">正社員</button>
+                  <button class="btn-tog" id="w-calc-type-fuyo" onclick="setCalcType('w','fuyo')" style="font-size:10px;padding:3px 10px">扶養内パート</button>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center">
                   <div class="fg">
@@ -873,7 +873,7 @@ window.closeAboutModal=closeAboutModal;
           <!-- 奥様退職金 -->
           <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-              <div style="font-size:11px;font-weight:700;color:var(--navy)">💴 退職金（奥様）</div>
+              <div style="font-size:11px;font-weight:700;color:var(--navy)">退職金（奥様）</div>
               <div style="display:flex;gap:4px">
                 <div class="tc on" id="w-rp-yes" onclick="setWRetirePay(true)" style="padding:2px 10px;min-height:0;opacity:1;transform:none">
                   <div class="tc-lbl" style="font-size:10px">あり</div>
@@ -897,7 +897,7 @@ window.closeAboutModal=closeAboutModal;
           <!-- DC・iDeCo（奥様） -->
           <div style="background:#f0f8f4;border:1px solid #b8e8c8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-              <div style="font-size:11px;font-weight:700;color:#1a6a3a">🏢 企業型DC・iDeCo（奥様）</div>
+              <div style="font-size:11px;font-weight:700;color:#1a6a3a">企業型DC・iDeCo（奥様）</div>
               <button onclick="this.parentElement.nextElementSibling.style.display=this.parentElement.nextElementSibling.style.display==='none'?'':'none';this.textContent=this.textContent.includes('▼')?'▶ 開く':'▼ 閉じる'" style="font-size:10px;color:#1a6a3a;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">▼ 閉じる</button>
             </div>
             <div>
@@ -974,7 +974,7 @@ window.closeAboutModal=closeAboutModal;
 
           <!-- 奥様年金 -->
           <div style="background:#f0f4f8;border:1px solid #c8d6e8;border-radius:var(--rs);padding:10px">
-            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🏦 老齢年金</div>
+            <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">老齢年金</div>
             <div class="g3">
               <div class="fg"><label class="lbl" style="font-size:9px">加入開始年齢</label>
                 <div class="suf"><input class="inp age-inp" id="pension-w-start" onfocus="scrollToCFRow('pW',iv('pension-w-receive')||65)" onblur="cfRowBlur()" type="number" value="22" min="18" max="40" oninput="calcPension('w')" style="font-size:11px"><span class="sl">歳</span></div></div>
@@ -984,8 +984,8 @@ window.closeAboutModal=closeAboutModal;
                 <div class="suf"><input class="inp amt-inp" id="pension-w" type="number" onfocus="scrollToCFRow('pW',iv('pension-w-receive')||65)" onblur="cfRowBlur()" value="66" min="0" oninput="updatePensionAdjustHint('w');live()" style="font-size:11px"><span class="sl">万円</span></div></div>
             </div>
             <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <button onclick="calcPension('w')" style="background:#e8f2fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#1a4a6a;cursor:pointer;font-family:inherit;font-weight:600">🔄 概算計算</button>
-              <label style="font-size:10px;color:#5a4000;cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#f5f5f5;border:1px solid #ccc;border-radius:var(--rs);padding:4px 8px" title="繰上げ・繰下げの自動調整はデフォルトONです。チェックすると旧挙動（入力額をそのまま使用）に戻します。"><input type="checkbox" id="pension-w-noadjust" onchange="updatePensionAdjustHint('w');live(true)" style="margin:0">⚙️ 自動調整しない（入力額をそのまま使用）</label>
+              <button onclick="calcPension('w')" style="background:#e8f2fc;border:1px solid #b8d8ee;border-radius:var(--rs);padding:5px 12px;font-size:11px;color:#1a4a6a;cursor:pointer;font-family:inherit;font-weight:600">概算計算</button>
+              <label style="font-size:10px;color:#5a4000;cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#f5f5f5;border:1px solid #ccc;border-radius:var(--rs);padding:4px 8px" title="繰上げ・繰下げの自動調整はデフォルトONです。チェックすると旧挙動（入力額をそのまま使用）に戻します。"><input type="checkbox" id="pension-w-noadjust" onchange="updatePensionAdjustHint('w');live(true)" style="margin:0">自動調整しない（入力額をそのまま使用）</label>
             </div>
             <div id="w-pension-hint" style="font-size:10px;color:#3a8a3a;margin-top:4px">65歳〜 受給</div>
             <div id="w-pension-adjust-hint" style="font-size:10px;color:#7a5000;margin-top:4px;display:none"></div>
@@ -996,7 +996,7 @@ window.closeAboutModal=closeAboutModal;
 
       <!-- その他収入 -->
       <!-- その他収入 -->
-      <div class="sub">💼 その他収入（副業・不動産・株式配当など）</div>
+      <div class="sub">その他収入（副業・不動産・株式配当など）</div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:6px">毎年継続する収入を入力してください。</div>
       <div id="other-income-cont"></div>
       <button class="btn-add" onclick="addOtherIncome('')">＋ その他収入を追加</button>
@@ -1006,42 +1006,42 @@ window.closeAboutModal=closeAboutModal;
 
   <!-- 車 -->
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#6b5ea8"><span class="sh-tab" style="background:#6b5ea8">④車</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">4</span>🚗 車<span class="stog on">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#6b5ea8"><span class="sh-tab" style="background:#6b5ea8">④車</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">4</span>車<span class="stog on">▾</span></div>
     <div class="sb">
 
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <div class="tc on" id="car-yes" onclick="setCarOwn(true)" style="flex:1;padding:10px;flex-direction:column;align-items:center;text-align:center;gap:4px">
-          <span style="font-size:28px">🚗</span><div class="tc-lbl">車あり</div>
+          <span style="font-size:28px"></span><div class="tc-lbl">車あり</div>
         </div>
         <div class="tc" id="car-no" onclick="setCarOwn(false)" style="flex:1;padding:10px;flex-direction:column;align-items:center;text-align:center;gap:4px">
-          <span style="font-size:28px">🚶</span><div class="tc-lbl">車なし</div>
+          <span style="font-size:28px"></span><div class="tc-lbl">車なし</div>
         </div>
       </div>
 
       <div id="car-list-container">
         <!-- 現在乗っている車（既保有）セクション -->
         <div style="background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:6px">🚙 現在乗っている車（既保有）</div>
+          <div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:6px">現在乗っている車（既保有）</div>
           <div style="font-size:10px;color:#5a4000;margin-bottom:6px">過去に購入済の車。ローン残債と車検が今後の費用に反映されます。</div>
           <div id="existing-car-list"></div>
           <button type="button" onclick="addExistingCar()" style="width:100%;padding:8px;background:#fff3d0;border:2px dashed #ffc000;border-radius:var(--rs);color:#7a5000;font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">＋ 現有車を追加</button>
         </div>
         <!-- 将来購入予定の車（既存機能） -->
-        <div style="font-size:11px;font-weight:700;color:#6b5ea8;margin-bottom:6px">🛒 将来購入予定の車</div>
+        <div style="font-size:11px;font-weight:700;color:#6b5ea8;margin-bottom:6px">将来購入予定の車</div>
         <div id="car-list"></div>
         <button type="button" onclick="addCar()" style="width:100%;padding:10px;background:#f0ecff;border:2px dashed #c4b0e8;border-radius:var(--rs);color:#6b5ea8;font-weight:700;font-size:12px;cursor:pointer;margin-bottom:10px;font-family:inherit">＋ 車を追加</button>
       </div>
 
       <!-- 駐車場代 -->
       <div class="divider"></div>
-      <div class="sub">🅿️ 駐車場代</div>
+      <div class="sub">駐車場代</div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div class="tc on" id="park-yes" onclick="setParkOwn(true)" style="flex:1;padding:8px 10px;gap:6px">
-          <span style="font-size:16px">🅿️</span>
+          <span style="font-size:16px"></span>
           <div><div class="tc-lbl" style="font-size:11px">駐車場あり</div></div>
         </div>
         <div class="tc" id="park-no" onclick="setParkOwn(false)" style="flex:1;padding:8px 10px;gap:6px">
-          <span style="font-size:16px">🚶</span>
+          <span style="font-size:16px"></span>
           <div><div class="tc-lbl" style="font-size:11px">駐車場なし</div></div>
         </div>
       </div>
@@ -1060,11 +1060,11 @@ window.closeAboutModal=closeAboutModal;
   </div>
 
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#0e7490"><span class="sh-tab" style="background:#0e7490">⑤住宅</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">5</span>🏠 住宅<span class="stog on">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#0e7490"><span class="sh-tab" style="background:#0e7490">⑤住宅</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">5</span>住宅<span class="stog on">▾</span></div>
     <div class="sb">
 
       <!-- 引き渡し年 -->
-      <div class="sub">📅 引き渡し・家賃</div>
+      <div class="sub">引き渡し・家賃</div>
       <div class="g3" style="margin-bottom:8px">
         <div class="fg"><label class="lbl">引き渡し年</label>
           <div class="suf"><input class="inp amt-inp" id="delivery-year" type="number" onfocus="scrollToCFRow('rent')" onblur="cfRowBlur()" value="" placeholder="例：2025" min="2024" max="2035" oninput="calcDelivery()"><span class="sl">年</span></div>
@@ -1077,7 +1077,7 @@ window.closeAboutModal=closeAboutModal;
       <!-- 家賃（引き渡し前） -->
       <div id="rent-row" style="display:none;margin-bottom:10px">
         <div style="background:#fff9e6;border:1px solid #ffc000;border-radius:var(--rs);padding:8px 12px">
-          <div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:6px">🏠 引き渡し前の家賃</div>
+          <div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:6px">引き渡し前の家賃</div>
           <div class="g2">
             <div class="fg"><label class="lbl">月額家賃</label>
               <div class="suf"><input class="inp amt-inp" id="rent-before" type="number" onfocus="scrollToCFRow('rent')" onblur="cfRowBlur()" value="8" min="0" step="0.1" oninput="live()"><span class="sl">万円/月</span></div></div>
@@ -1090,7 +1090,7 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- 住宅ローン控除設定（引き渡しの次に配置） -->
-      <div class="sub" id="lctrl-sub" title="入居年・住宅種別・世帯属性により借入限度額が変わります。&#10;控除額＝年末残高（上限以内）×0.7%　所得税＋住民税の上限内で計算&#10;※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。" style="cursor:help">🏦 住宅ローン控除設定 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
+      <div class="sub" id="lctrl-sub" title="入居年・住宅種別・世帯属性により借入限度額が変わります。&#10;控除額＝年末残高（上限以内）×0.7%　所得税＋住民税の上限内で計算&#10;※本計算は概算であり実際の控除額とは異なる場合があります。詳細は税理士にご相談ください。" style="cursor:help">住宅ローン控除設定 <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
       <div id="lctrl-box" style="background:#f0f6ff;border:1.5px solid #b8d4f8;border-radius:var(--r);padding:10px 12px;margin-bottom:10px">
         <div class="g3" style="margin-bottom:8px">
           <div class="fg"><label class="lbl">引渡予定</label>
@@ -1135,21 +1135,21 @@ window.closeAboutModal=closeAboutModal;
       <!-- ★ Group 1: 物件価格・自己資金 -->
       <div class="hg-group" id="hg-basic" data-collapsed="false">
         <div class="hg-header" onclick="toggleHousingGroup('basic')">
-          <span class="hg-arrow">▼</span> 🏠 物件価格・自己資金
+          <span class="hg-arrow">▼</span> 物件価格・自己資金
         </div>
         <div class="hg-body">
 
       <!-- 物件価格・資金計画 -->
-      <div class="sub">💴 物件価格・資金計画</div>
+      <div class="sub">物件価格・資金計画</div>
       <!-- モード切替: 詳細設定 / 住宅ローン総額 / 現金一括購入 -->
       <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-        <button type="button" class="btn-tog on" id="funding-mode-detail" onclick="setFundingMode('detail')">📋 詳細設定</button>
-        <button type="button" class="btn-tog" id="funding-mode-loan" onclick="setFundingMode('loanOnly')">💰 住宅ローン総額</button>
-        <button type="button" class="btn-tog" id="funding-mode-cash" onclick="setFundingMode('cash')">💵 現金一括購入</button>
+        <button type="button" class="btn-tog on" id="funding-mode-detail" onclick="setFundingMode('detail')">詳細設定</button>
+        <button type="button" class="btn-tog" id="funding-mode-loan" onclick="setFundingMode('loanOnly')">住宅ローン総額</button>
+        <button type="button" class="btn-tog" id="funding-mode-cash" onclick="setFundingMode('cash')">現金一括購入</button>
       </div>
       <!-- 現金一括購入モードの案内（cashモード時のみ表示） -->
       <div id="funding-cash-note" style="display:none;font-size:10px;color:#0a6b3a;background:#eafaf0;border:1px solid #b8e8c8;border-radius:var(--rs);padding:6px 8px;margin-bottom:8px">
-        💵 ローンを組まず、引き渡し年に「物件価格＋諸費用」を現金で支払う想定です。預貯金で足りない分は自動で資産（有価証券）を取り崩して充当します。相続・贈与は「収入」の一時金でその年に受け取ってください。
+        ローンを組まず、引き渡し年に「物件価格＋諸費用」を現金で支払う想定です。預貯金で足りない分は自動で資産（有価証券）を取り崩して充当します。相続・贈与は「収入」の一時金でその年に受け取ってください。
       </div>
       <input type="hidden" id="funding-mode" value="detail">
       <!-- 詳細設定モード（従来通り） -->
@@ -1162,13 +1162,13 @@ window.closeAboutModal=closeAboutModal;
           <div class="suf"><input class="inp amt-inp" id="house-cost" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="200" min="0" oninput="onFundingChange();toggleCostOpts()"><span class="sl">万円</span></div>
           <div id="cost-opts" style="display:flex;gap:4px;margin-top:4px">
             <div class="tc on" id="cost-cash" onclick="setCostType('cash')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
-              <div class="tc-lbl" style="font-size:10px">💴 現金払い</div>
+              <div class="tc-lbl" style="font-size:10px">現金払い</div>
             </div>
             <div class="tc" id="cost-loan" onclick="setCostType('loan')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
-              <div class="tc-lbl" style="font-size:10px">🏦 ローン組込</div>
+              <div class="tc-lbl" style="font-size:10px">ローン組込</div>
             </div>
             <div class="tc" id="cost-other" onclick="setCostType('other')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
-              <div class="tc-lbl" style="font-size:10px">📝 その他</div>
+              <div class="tc-lbl" style="font-size:10px">その他</div>
             </div>
           </div>
           <div id="cost-other-wrap" style="display:none;margin-top:4px">
@@ -1181,13 +1181,13 @@ window.closeAboutModal=closeAboutModal;
           <div class="suf"><input class="inp amt-inp" id="down-payment" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="500" min="0" oninput="onFundingChange();toggleDownOpts()"><span class="sl">万円</span></div>
           <div id="down-opts" style="display:flex;gap:4px;margin-top:4px">
             <div class="tc on" id="down-own" onclick="setDownType('own')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
-              <div class="tc-lbl" style="font-size:10px">💰 自己資金</div>
+              <div class="tc-lbl" style="font-size:10px">自己資金</div>
             </div>
             <div class="tc" id="down-gift" onclick="setDownType('gift')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
-              <div class="tc-lbl" style="font-size:10px">🎁 住宅資金贈与</div>
+              <div class="tc-lbl" style="font-size:10px">住宅資金贈与</div>
             </div>
             <div class="tc" id="down-other" onclick="setDownType('other')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
-              <div class="tc-lbl" style="font-size:10px">📝 その他</div>
+              <div class="tc-lbl" style="font-size:10px">その他</div>
             </div>
           </div>
           <div id="down-other-wrap" style="display:none;margin-top:4px">
@@ -1201,7 +1201,7 @@ window.closeAboutModal=closeAboutModal;
         <div class="fg"><label class="lbl">住宅ローン総額<span class="req">*</span></label>
           <div class="suf"><input class="inp amt-inp" id="loan-total-simple" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="4500" min="0" oninput="onLoanTotalSimpleChange()"><span class="sl">万円</span></div></div>
         <div class="hint" style="font-size:10px;color:var(--muted);margin-top:6px;padding:6px 8px;background:#fef9e7;border-left:3px solid #f1c40f;border-radius:4px">
-          💡 簡易シミュレーション用。住宅価格=ローン総額、頭金=0、諸費用=0として扱われます。
+          簡易シミュレーション用。住宅価格=ローン総額、頭金=0、諸費用=0として扱われます。
         </div>
       </div>
       <!-- 借入金額（自動計算） -->
@@ -1219,24 +1219,24 @@ window.closeAboutModal=closeAboutModal;
       <!-- ★ Group 2: 住宅ローン・控除 -->
       <div class="hg-group" id="hg-loan" data-collapsed="false">
         <div class="hg-header" onclick="toggleHousingGroup('loan')">
-          <span class="hg-arrow">▼</span> 🏦 住宅ローン
+          <span class="hg-arrow">▼</span> 住宅ローン
         </div>
         <div class="hg-body">
 
       <!-- ローン設定 -->
-      <div class="sub">🏦 住宅ローン設定</div>
+      <div class="sub">住宅ローン設定</div>
       <!-- ローン種別トグル（先に種別を選ぶ） -->
       <div id="loan-mode-toggle" style="display:flex;gap:8px;margin-bottom:10px">
         <div class="tc on" id="loan-single-tab" onclick="setLoanMode('single')" style="flex:1;padding:7px 10px">
-          <span style="font-size:15px">👤</span>
+          <span style="font-size:15px"></span>
           <div><div class="tc-lbl" style="font-size:11px">単独ローン</div></div>
         </div>
         <div class="tc" id="loan-pair-tab" onclick="setLoanMode('pair')" style="flex:1;padding:7px 10px">
-          <span style="font-size:15px">👥</span>
+          <span style="font-size:15px"></span>
           <div><div class="tc-lbl" style="font-size:11px">ペアローン</div></div>
         </div>
         <div class="tc" id="loan-joint-tab" onclick="setLoanMode('joint')" style="flex:1;padding:7px 10px">
-          <span style="font-size:15px">🤝</span>
+          <span style="font-size:15px"></span>
           <div><div class="tc-lbl" style="font-size:11px">連帯債務</div></div>
         </div>
       </div>
@@ -1251,14 +1251,14 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <!-- 連帯債務 追加設定（単独ローンbody内に表示・joint時のみ） -->
       <div id="loan-joint-extra" style="display:none;background:#fff8e6;border:1px solid #ffc000;border-radius:var(--rs);padding:10px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:8px">🤝 連帯債務の追加設定</div>
+        <div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:8px">連帯債務の追加設定</div>
         <div style="font-size:10px;color:#5a4000;margin-bottom:8px">
           ※ 借入は1本ですが、住宅ローン控除を持分按分でご主人・奥様それぞれの税額から控除します。
         </div>
         <div class="g2" style="margin-bottom:8px">
-          <div class="fg"><label class="lbl" style="font-size:10px">👨 ご主人 持分額</label>
+          <div class="fg"><label class="lbl" style="font-size:10px">ご主人 持分額</label>
             <div class="suf"><input class="inp amt-inp" id="joint-share-h" type="number" value="2700" min="0" step="1" oninput="syncJointShare('h');live()"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:10px">👩 奥様 持分額</label>
+          <div class="fg"><label class="lbl" style="font-size:10px">奥様 持分額</label>
             <div class="suf"><input class="inp amt-inp" id="joint-share-w" type="number" value="1800" min="0" step="1" oninput="syncJointShare('w');live()"><span class="sl">万円</span></div></div>
         </div>
         <div id="joint-share-hint" style="font-size:10px;color:#3a8a3a;margin-bottom:8px">✓ 持分合計: 4500万円（借入額と一致）</div>
@@ -1306,7 +1306,7 @@ window.closeAboutModal=closeAboutModal;
       <!-- ペアローン設定 -->
       <div id="loan-pair-body" style="display:none">
         <div style="background:#eef5ff;border:1px solid #c0d8f8;border-radius:var(--rs);padding:10px;margin-bottom:8px">
-          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">👨 ご主人様ローン</div>
+          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">ご主人様ローン</div>
           <div class="g3">
             <div class="fg"><label class="lbl">借入額</label>
               <div class="suf"><input class="inp amt-inp" id="loan-h-amt" type="number" value="2250" min="0" step="1" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" oninput="onPairLoanInput('h',false)"><span class="sl">万円</span></div></div>
@@ -1332,7 +1332,7 @@ window.closeAboutModal=closeAboutModal;
           </div>
         </div>
         <div style="background:#fff0f6;border:1px solid #f8c0d8;border-radius:var(--rs);padding:10px;margin-bottom:8px">
-          <div style="font-size:11px;font-weight:700;color:#8b1a4a;margin-bottom:8px">👩 奥様ローン</div>
+          <div style="font-size:11px;font-weight:700;color:#8b1a4a;margin-bottom:8px">奥様ローン</div>
           <div class="g3">
             <div class="fg"><label class="lbl">借入額</label>
               <div class="suf"><input class="inp amt-inp" id="loan-w-amt" type="number" value="2250" min="0" step="1" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" oninput="onPairLoanInput('w',false)"><span class="sl">万円</span></div></div>
@@ -1397,7 +1397,7 @@ window.closeAboutModal=closeAboutModal;
         <!-- フラット35 ペアローン -->
         <div id="flat-pair-panel" style="display:none">
           <div style="background:#f0f6ff;border:1px solid #b8d0f0;border-radius:var(--rs);padding:10px;margin-bottom:8px">
-            <div style="font-size:10px;font-weight:700;color:#1e5a9a;margin-bottom:6px">👔 ご主人</div>
+            <div style="font-size:10px;font-weight:700;color:#1e5a9a;margin-bottom:6px">ご主人</div>
             <div class="g3">
               <div class="fg"><label class="lbl">借入額</label>
                 <div class="suf"><input class="inp amt-inp" id="flat-loan-h-amt" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" placeholder="例:2500" min="0" oninput="onPairLoanInput('h',true)"><span class="sl">万円</span></div></div>
@@ -1411,7 +1411,7 @@ window.closeAboutModal=closeAboutModal;
             </div>
           </div>
           <div style="background:#fff0f6;border:1px solid #f0b8d0;border-radius:var(--rs);padding:10px;margin-bottom:8px">
-            <div style="font-size:10px;font-weight:700;color:#9a1e5a;margin-bottom:6px">👩 奥様</div>
+            <div style="font-size:10px;font-weight:700;color:#9a1e5a;margin-bottom:6px">奥様</div>
             <div class="g3">
               <div class="fg"><label class="lbl">借入額</label>
                 <div class="suf"><input class="inp amt-inp" id="flat-loan-w-amt" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" placeholder="例:1500" min="0" oninput="onPairLoanInput('w',true)"><span class="sl">万円</span></div></div>
@@ -1438,7 +1438,7 @@ window.closeAboutModal=closeAboutModal;
         </div>
         <div class="divider"></div>
         <!-- ポイント制 金利引き下げ -->
-        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">📊 ポイント制 金利引き下げ</div>
+        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">ポイント制 金利引き下げ</div>
         <div style="background:#f0f4ff;border:1px solid #b8d0f0;border-radius:var(--rs);padding:12px;margin-bottom:10px">
           <!-- 住宅性能 -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -1513,9 +1513,9 @@ window.closeAboutModal=closeAboutModal;
         </div>
       </div><!-- /flat35-body -->
 
-      <!-- 🔁 繰上返済シミュレーション -->
+      <!-- 繰上返済シミュレーション -->
       <div class="divider"></div>
-      <div class="sub" title="4パターン: 期間短縮型(金額指定→短縮年数を自動計算/年数指定→必要額を逆算)・返済額軽減型(金額指定→新月額を自動計算/目標月額指定→必要額を逆算)" style="cursor:help">🔁 繰上返済シミュレーション <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
+      <div class="sub" title="4パターン: 期間短縮型(金額指定→短縮年数を自動計算/年数指定→必要額を逆算)・返済額軽減型(金額指定→新月額を自動計算/目標月額指定→必要額を逆算)" style="cursor:help">繰上返済シミュレーション <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
       <div style="background:#f4faf4;border:1px solid #b8dcc0;border-radius:var(--rs);padding:10px;margin-bottom:10px">
         <div style="font-size:10px;color:#2a6a3a;margin-bottom:8px">返済開始から「何年目」に実行するかを指定します。CF表の返済額・ローン残高・住宅ローン控除・預貯金にすべて反映されます。</div>
         <div id="pp-wrap-s">
@@ -1523,10 +1523,10 @@ window.closeAboutModal=closeAboutModal;
           <button type="button" class="btn-add" onclick="addPrepayRow('s')">＋ 繰上返済を追加</button>
         </div>
         <div id="pp-wrap-pair" style="display:none">
-          <div style="font-size:11px;font-weight:700;color:var(--navy);margin:2px 0 4px">👔 ご主人様ローン</div>
+          <div style="font-size:11px;font-weight:700;color:var(--navy);margin:2px 0 4px">ご主人様ローン</div>
           <div id="pp-cont-h"></div>
           <button type="button" class="btn-add" onclick="addPrepayRow('h')" style="margin-bottom:8px">＋ 繰上返済を追加（ご主人様）</button>
-          <div style="font-size:11px;font-weight:700;color:#8b1a4a;margin:2px 0 4px">👩 奥様ローン</div>
+          <div style="font-size:11px;font-weight:700;color:#8b1a4a;margin:2px 0 4px">奥様ローン</div>
           <div id="pp-cont-w"></div>
           <button type="button" class="btn-add" onclick="addPrepayRow('w')">＋ 繰上返済を追加（奥様）</button>
         </div>
@@ -1537,13 +1537,13 @@ window.closeAboutModal=closeAboutModal;
       <!-- ★ Group 3: その他費用（定借・引越・保有期間中） — 既定で開いて常に表示 -->
       <div class="hg-group" id="hg-other" data-collapsed="false">
         <div class="hg-header" onclick="toggleHousingGroup('other')">
-          <span class="hg-arrow">▼</span> 🔨 その他費用（定借・引越・保有期間中）
+          <span class="hg-arrow">▼</span> その他費用（定借・引越・保有期間中）
         </div>
         <div class="hg-body">
 
       <!-- 定期借地権付き物件 入力欄（上部チェックボックスON時に表示） -->
       <div id="leasehold-body" style="display:none;background:#fff8ee;border:1px solid #ffb74d;border-radius:6px;padding:8px 10px;margin-bottom:8px">
-        <div class="sub" style="color:#7c5e1a;margin-bottom:6px">🏛️ 定期借地権 設定</div>
+        <div class="sub" style="color:#7c5e1a;margin-bottom:6px">定期借地権 設定</div>
         <div class="g3">
           <div class="fg"><label class="lbl" style="font-size:9px">月額地代</label>
             <div class="suf"><input class="inp amt-inp" id="leasehold-chidai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:3" min="0" step="0.1" oninput="live()"><span class="sl">万円/月</span></div></div>
@@ -1556,28 +1556,28 @@ window.closeAboutModal=closeAboutModal;
           <label class="lbl" style="font-size:9px">前払い地代（任意）<span style="font-weight:400;color:var(--muted)">— 契約時に一括前払い</span></label>
           <div class="suf"><input class="inp amt-inp" id="leasehold-maeharai" type="number" onfocus="scrollToCFRow('lRep')" onblur="cfRowBlur()" value="" placeholder="例:300" min="0" oninput="live()"><span class="sl">万円</span></div>
         </div>
-        <div style="font-size:9px;color:#7c5e1a;margin-top:6px">💡 借地期間終了後は地代・解体準備金がゼロになります。期間終了時の住替えはイベントとして別途追加してください。</div>
+        <div style="font-size:9px;color:#7c5e1a;margin-top:6px">借地期間終了後は地代・解体準備金がゼロになります。期間終了時の住替えはイベントとして別途追加してください。</div>
       </div>
 
       <!-- 引っ越し・家具家電 初期費用（統合） -->
       <div class="divider"></div>
-      <div class="sub">🚚 引っ越し・家具家電 初期費用</div>
+      <div class="sub">引っ越し・家具家電 初期費用</div>
       <div style="margin-bottom:8px">
         <div class="fg"><label class="lbl">引越・家具家電</label>
           <div class="suf"><input class="inp amt-inp" id="moving-cost" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="100" min="0" oninput="live()"><span class="sl">万円</span></div>
           <div id="move-opts" style="display:flex;gap:4px;margin-top:4px">
             <div class="tc on" id="move-own" onclick="setMoveType('own')" style="flex:1;padding:3px 8px;gap:3px;min-height:0;opacity:1;transform:none">
-              <div class="tc-lbl" style="font-size:10px">💰 自己資金</div>
+              <div class="tc-lbl" style="font-size:10px">自己資金</div>
             </div>
             <div class="tc" id="move-other" onclick="setMoveType('other')" style="flex:1;padding:3px 8px;gap:3px;min-height:0">
-              <div class="tc-lbl" style="font-size:10px">📝 その他</div>
+              <div class="tc-lbl" style="font-size:10px">その他</div>
             </div>
           </div>
           <div id="move-other-wrap" style="display:none;margin-top:4px">
             <input class="inp" id="move-other-text" type="text" placeholder="例：株式売却、親からの援助、退職金など" oninput="onMoveOtherTextChange()" style="font-size:11px;padding:4px 8px;width:100%">
             <span class="hint" style="font-size:9px;color:var(--muted)">※ 入力した内容が「自己資金の内訳」に反映されます</span>
           </div>
-          <span class="hint" id="move-type-hint" style="font-size:9px;color:var(--muted)">💰 引き渡しの年にCF表の支出として反映されます</span>
+          <span class="hint" id="move-type-hint" style="font-size:9px;color:var(--muted)">引き渡しの年にCF表の支出として反映されます</span>
         </div>
         <!-- 旧データ互換: 家具・家電を内部的にゼロにしておく（_collectSaveDataで持続） -->
         <input type="hidden" id="furniture-init" value="0">
@@ -1589,14 +1589,14 @@ window.closeAboutModal=closeAboutModal;
       <div id="m-fields">
         <div class="divider"></div>
 
-        <div class="sub">🔧 修繕積立金</div>
+        <div class="sub">修繕積立金</div>
         <!-- モード選択トグル -->
         <div style="display:flex;gap:4px;margin-bottom:8px">
           <div class="tc on" id="rep-mode-auto" onclick="setRepMode('auto')" style="flex:1;padding:4px 8px;min-height:0;opacity:1;transform:none">
-            <div class="tc-lbl" style="font-size:10px">📊 自動計算</div>
+            <div class="tc-lbl" style="font-size:10px">自動計算</div>
           </div>
           <div class="tc" id="rep-mode-manual" onclick="setRepMode('manual')" style="flex:1;padding:4px 8px;min-height:0">
-            <div class="tc-lbl" style="font-size:10px">✏️ 手入力</div>
+            <div class="tc-lbl" style="font-size:10px">手入力</div>
           </div>
         </div>
         <!-- 自動計算表示 -->
@@ -1643,7 +1643,7 @@ window.closeAboutModal=closeAboutModal;
       <!-- 固定資産税 -->
       <div class="divider"></div>
       <div class="g2">
-        <div class="fg"><label class="lbl">🏛️ 固定資産税（年額）</label>
+        <div class="fg"><label class="lbl">固定資産税（年額）</label>
           <div class="suf"><input class="inp amt-inp" id="prop-tax" type="number" onfocus="scrollToCFRow('ptx')" onblur="cfRowBlur()" value="15" min="0" step="0.1" oninput="live()"><span class="sl">万円/年</span></div>
           <span class="hint ok">✓ 軽減期間は自動適用</span></div>
         <div></div>
@@ -1651,7 +1651,7 @@ window.closeAboutModal=closeAboutModal;
 
       <!-- 家具家電買い替え -->
       <div class="divider"></div>
-      <div class="sub" title="引き渡し年を起点に、設定した周期で費用が発生します" style="cursor:help">🪑 家具家電の買い替え <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
+      <div class="sub" title="引き渡し年を起点に、設定した周期で費用が発生します" style="cursor:help">家具家電の買い替え <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
       <div class="g2">
         <div class="fg"><label class="lbl">買い替え周期</label>
           <div class="suf"><input class="inp age-inp" id="furn-cycle" type="number" onfocus="scrollToCFRow('furn')" onblur="cfRowBlur()" value="10" min="1" max="30" oninput="live()"><span class="sl">年に1回</span></div>
@@ -1663,7 +1663,7 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- 修繕費（マンション：専有部分／戸建て：修繕費） -->
-      <div class="sub" id="repair-sub" title="引き渡し年を起点に、設定した周期で修繕費が発生します" style="cursor:help">🔨 <span id="repair-sub-lbl">専有部分の修繕費</span> <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
+      <div class="sub" id="repair-sub" title="引き渡し年を起点に、設定した周期で修繕費が発生します" style="cursor:help"><span id="repair-sub-lbl">専有部分の修繕費</span> <span style="font-size:9px;color:var(--muted);font-weight:400">ⓘ</span></div>
       <div id="repair-cont"></div>
       <button class="btn-add" onclick="addRepairCycle()" id="btn-add-repair" style="font-size:11px;margin-bottom:7px">＋ 修繕周期を追加</button>
 
@@ -1672,7 +1672,7 @@ window.closeAboutModal=closeAboutModal;
       <!-- ★ Group 4: 将来の買い替え -->
       <div class="hg-group" id="hg-swap" data-collapsed="true">
         <div class="hg-header" onclick="toggleHousingGroup('swap')">
-          <span class="hg-arrow">▶</span> 🔄 将来の買い替え（最大2回）
+          <span class="hg-arrow">▶</span> 将来の買い替え（最大2回）
         </div>
         <div class="hg-body" hidden>
 
@@ -1686,10 +1686,10 @@ window.closeAboutModal=closeAboutModal;
 
 
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#b45309"><span class="sh-tab" style="background:#b45309">⑥生活</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">6</span>🛒 生活費・支出<span class="stog on">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#b45309"><span class="sh-tab" style="background:#b45309">⑥生活</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">6</span>生活費・支出<span class="stog on">▾</span></div>
     <div class="sb">
-      <button type="button" onclick="clearLivingCosts()" style="width:100%;margin-bottom:8px;padding:7px 10px;background:#fff5f5;border:1.5px dashed #f0a0a0;border-radius:var(--rs);color:#b91c1c;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🗑 生活費の金額を一括クリア</button>
-      <div class="sub">📅 毎月の固定費（円/月）</div>
+      <button type="button" onclick="clearLivingCosts()" style="width:100%;margin-bottom:8px;padding:7px 10px;background:#fff5f5;border:1.5px dashed #f0a0a0;border-radius:var(--rs);color:#b91c1c;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">生活費の金額を一括クリア</button>
+      <div class="sub">毎月の固定費（円/月）</div>
       <div class="g3">
         <div class="fg"><label class="lbl">食費</label><div class="suf"><input class="inp lc-m amt-inp" id="lc-food" type="text" inputmode="numeric" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="40000"><span class="sl">円</span></div></div>
         <div class="fg"><label class="lbl">水道代</label><div class="suf"><input class="inp lc-m amt-inp" id="lc-water" type="text" inputmode="numeric" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="1500"><span class="sl">円</span></div></div>
@@ -1716,7 +1716,7 @@ window.closeAboutModal=closeAboutModal;
         <div class="fg"><label class="lbl">その他４（月）</label><input class="inp" id="lc-other-m4-name" placeholder="項目名" style="font-size:11px;padding:3px 6px;margin-bottom:2px" oninput="live()"><div class="suf"><input class="inp lc-m amt-inp" id="lc-other-m4" type="text" inputmode="numeric" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0"><span class="sl">円</span></div></div>
       </div>
       <div class="divider"></div>
-      <div class="sub">📆 年間の変動費（円/年）</div>
+      <div class="sub">年間の変動費（円/年）</div>
       <div class="g3">
         <div class="fg"><label class="lbl">娯楽・旅行</label><div class="suf"><input class="inp lc-y amt-inp" id="lc-travel" type="text" inputmode="numeric" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" value="600000"><span class="sl">円</span></div></div>
         <div class="fg"><label class="lbl">交際費</label><div class="suf"><input class="inp lc-y amt-inp" id="lc-social" type="text" inputmode="numeric" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" placeholder="0"><span class="sl">円</span></div></div>
@@ -1739,9 +1739,9 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <div class="divider"></div>
       <div class="lc-change-card">
-        <div class="sub">📊 生活費の変化設定</div>
+        <div class="sub">生活費の変化設定</div>
         <div class="lc-desc">ライフステージごとの生活費の変化（子どもの独立・退職後の減額など）を必ずご設定ください。<br>各段階で「〇年〜〇年 / 万円/年 / 上昇率」を設定。追加時は前段階の翌年が自動入力されます。終了年を空欄にすると以降ずっと継続。</div>
-        <div id="lc-empty-hint" class="lc-empty-hint" style="display:none">⚠ まだ段階が未設定です。現在の生活費が一生涯続く前提で計算されています</div>
+        <div id="lc-empty-hint" class="lc-empty-hint" style="display:none">まだ段階が未設定です。現在の生活費が一生涯続く前提で計算されています</div>
         <div id="lc-steps-cont"></div>
         <button class="btn-add" onclick="addLCStep()">＋ 段階を追加</button>
       </div>
@@ -1751,7 +1751,7 @@ window.closeAboutModal=closeAboutModal;
   </div>
   <!-- ===== セクション7：その他支出 ===== -->
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#7c3aed"><span class="sh-tab" style="background:#7c3aed">⑦支出</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">7</span>💸 その他支出<span class="stog on">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#7c3aed"><span class="sh-tab" style="background:#7c3aed">⑦支出</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">7</span>その他支出<span class="stog on">▾</span></div>
     <div class="sb">
       <div id="extra-cont"></div>
       <button class="btn-add" onclick="addExtraItem()">＋ その他支出を追加</button>
@@ -1760,13 +1760,13 @@ window.closeAboutModal=closeAboutModal;
 
   <!-- ===== セクション8：万が一シミュレーション ===== -->
   <div class="sec">
-    <div class="sh" onclick="tog(this)" style="background:#c2185b"><span class="sh-tab" style="background:#c2185b">⑧万一</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">8</span>🛡️ 万が一シミュレーション<span class="stog">▾</span></div>
+    <div class="sh" onclick="tog(this)" style="background:#c2185b"><span class="sh-tab" style="background:#c2185b">⑧万一</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">8</span>万が一シミュレーション<span class="stog">▾</span></div>
     <div class="sb col">
       <!-- 旧UI（Q&A一本化に伴い非表示） -->
       <div id="mg-legacy-ui" style="display:none">
 
       <!-- 対象選択 -->
-      <div class="sub">⚠️ シミュレーション対象</div>
+      <div class="sub">シミュレーション対象</div>
       <div class="g2">
         <div class="fg"><label class="lbl">万が一の対象</label>
           <div style="display:flex;gap:6px">
@@ -1781,7 +1781,7 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- 団信 -->
-      <div class="sub">🏦 団体信用生命保険（団信）</div>
+      <div class="sub">団体信用生命保険（団信）</div>
       <div id="mg-dansin-normal" style="display:none">
         <div class="g2">
           <div class="fg"><label class="lbl">団信加入</label>
@@ -1814,14 +1814,14 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- 死亡保険金 -->
-      <div class="sub">💰 死亡保険金</div>
+      <div class="sub">死亡保険金</div>
       <div id="mg-insurance-cont"></div>
       <button class="btn-add" onclick="addMGInsurance()">＋ 保険を追加</button>
 
       <div class="divider"></div>
 
       <!-- 死亡時の被保険者区分（300月みなし／遺族厚生年金の有無に影響） -->
-      <div class="sub">🏛 死亡時の加入年金</div>
+      <div class="sub">死亡時の加入年金</div>
       <div class="g2" style="margin-bottom:6px">
         <div class="fg"><label class="lbl">亡くなる方の年金区分</label>
           <div style="display:flex;gap:6px">
@@ -1835,7 +1835,7 @@ window.closeAboutModal=closeAboutModal;
       </div>
 
       <!-- 遺族年金 -->
-      <div class="sub">📋 遺族年金</div>
+      <div class="sub">遺族年金</div>
       <div class="g2">
         <div class="fg"><label class="lbl">遺族年金の設定</label>
           <div style="display:flex;gap:6px">
@@ -1861,7 +1861,7 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- 生活費の変化 -->
-      <div class="sub">🏠 死亡後の生活費</div>
+      <div class="sub">死亡後の生活費</div>
       <div style="display:flex;gap:4px;margin-bottom:8px">
         <button type="button" class="btn-tog on" onclick="this.classList.add('on');this.nextElementSibling.classList.remove('on');document.getElementById('mg-lc-ratio-fields').style.display='';document.getElementById('mg-lc-step-fields').style.display='none';live()" id="mg-lc-mode-ratio">割合で設定</button>
         <button type="button" class="btn-tog" onclick="this.classList.add('on');this.previousElementSibling.classList.remove('on');document.getElementById('mg-lc-ratio-fields').style.display='none';document.getElementById('mg-lc-step-fields').style.display='';live()" id="mg-lc-mode-step">段階で設定</button>
@@ -1897,7 +1897,7 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- 奨学金 -->
-      <div class="sub">🎓 奨学金</div>
+      <div class="sub">奨学金</div>
       <div class="g2" style="margin-bottom:8px">
         <div class="fg"><label class="lbl">奨学金</label>
           <div style="display:flex;gap:4px">
@@ -1918,7 +1918,7 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- 車両費・駐車場 -->
-      <div class="sub">🚗 車両費・駐車場</div>
+      <div class="sub">車両費・駐車場</div>
       <div class="g2" style="margin-bottom:8px">
         <div class="fg"><label class="lbl">車両</label>
           <div style="display:flex;gap:4px">
@@ -1933,12 +1933,12 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <!-- ご主人様の万が一（遺族＝奥様） -->
       <div id="mg-car-fields-h">
-        <div style="font-size:10px;font-weight:700;color:#1a5fa0;margin-bottom:4px">🚗 奥様基準</div>
+        <div style="font-size:10px;font-weight:700;color:#1a5fa0;margin-bottom:4px">奥様基準</div>
         <div style="display:flex;gap:6px;margin-bottom:6px">
           <div class="tc on" id="mg-car-h-new" onclick="setMGCarType('h','new')" style="flex:1;padding:5px 6px;gap:2px">
-            <span style="font-size:13px">✨</span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検:初回3年・以降2年</div></div>
+            <span style="font-size:13px"></span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検:初回3年・以降2年</div></div>
           <div class="tc" id="mg-car-h-used" onclick="setMGCarType('h','used')" style="flex:1;padding:5px 6px;gap:2px">
-            <span style="font-size:13px">🔄</span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検:2年ごと</div></div>
+            <span style="font-size:13px"></span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検:2年ごと</div></div>
         </div>
         <div class="g3" style="margin-bottom:6px">
           <div class="fg"><label class="lbl">車両価格</label>
@@ -1957,12 +1957,12 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <!-- 奥様の万が一（遺族＝ご主人様） -->
       <div id="mg-car-fields-w">
-        <div style="font-size:10px;font-weight:700;color:#a01a5f;margin-bottom:4px">🚗 ご主人様基準</div>
+        <div style="font-size:10px;font-weight:700;color:#a01a5f;margin-bottom:4px">ご主人様基準</div>
         <div style="display:flex;gap:6px;margin-bottom:6px">
           <div class="tc on" id="mg-car-w-new" onclick="setMGCarType('w','new')" style="flex:1;padding:5px 6px;gap:2px">
-            <span style="font-size:13px">✨</span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検:初回3年・以降2年</div></div>
+            <span style="font-size:13px"></span><div class="tc-lbl" style="font-size:10px">新車</div><div class="tc-desc" style="font-size:9px">車検:初回3年・以降2年</div></div>
           <div class="tc" id="mg-car-w-used" onclick="setMGCarType('w','used')" style="flex:1;padding:5px 6px;gap:2px">
-            <span style="font-size:13px">🔄</span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検:2年ごと</div></div>
+            <span style="font-size:13px"></span><div class="tc-lbl" style="font-size:10px">中古車</div><div class="tc-desc" style="font-size:9px">車検:2年ごと</div></div>
         </div>
         <div class="g3" style="margin-bottom:6px">
           <div class="fg"><label class="lbl">車両価格</label>
@@ -1986,7 +1986,7 @@ window.closeAboutModal=closeAboutModal;
           <div></div>
         </div>
         <div id="mg-park-age-h">
-          <div style="font-size:10px;font-weight:700;color:#1a5fa0;margin-bottom:4px">🅿️ 奥様基準</div>
+          <div style="font-size:10px;font-weight:700;color:#1a5fa0;margin-bottom:4px">奥様基準</div>
           <div class="g2">
             <div class="fg"><label class="lbl">開始年齢（奥様）</label>
               <div class="suf"><input class="inp age-inp" id="mg-park-h-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" onfocus="scrollToCFRowSelf('wAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('wAge',this);live()"><span class="sl">歳</span></div></div>
@@ -1995,7 +1995,7 @@ window.closeAboutModal=closeAboutModal;
           </div>
         </div>
         <div id="mg-park-age-w">
-          <div style="font-size:10px;font-weight:700;color:#a01a5f;margin-bottom:4px">🅿️ ご主人様基準</div>
+          <div style="font-size:10px;font-weight:700;color:#a01a5f;margin-bottom:4px">ご主人様基準</div>
           <div class="g2">
             <div class="fg"><label class="lbl">開始年齢（ご主人様）</label>
               <div class="suf"><input class="inp age-inp" id="mg-park-w-from-age" type="number" placeholder="現在年齢" min="20" max="100" step="1" onfocus="scrollToCFRowSelf('hAge',this)" onblur="cfRowBlur()" oninput="scrollToCFRowSelf('hAge',this);live()"><span class="sl">歳</span></div></div>
@@ -2008,7 +2008,7 @@ window.closeAboutModal=closeAboutModal;
       <div class="divider"></div>
 
       <!-- シミュレーション実行（旧UI。Q&A一本化に伴い非表示） -->
-      <button class="btn-add" id="mg-run-btn" onclick="renderContingency()" style="display:none;background:#c2185b;color:#fff;border-color:#a01550;padding:8px 16px;font-size:12px;margin-top:8px;width:100%;border-radius:var(--r)">🛡️ 万が一CF表を生成</button>
+      <button class="btn-add" id="mg-run-btn" onclick="renderContingency()" style="display:none;background:#c2185b;color:#fff;border-color:#a01550;padding:8px 16px;font-size:12px;margin-top:8px;width:100%;border-radius:var(--r)">万が一CF表を生成</button>
 
       </div><!-- /mg-legacy-ui -->
 
@@ -2024,13 +2024,13 @@ window.closeAboutModal=closeAboutModal;
 
       <!-- ===== Q&A形式 万が一シミュレーション（複数タブ対応） ===== -->
       <div style="padding:10px;border:2px dashed #f59e0b;border-radius:8px;background:#fffbeb;margin-top:10px">
-        <div style="font-size:11px;font-weight:700;color:#b45309;margin-bottom:6px">🛡️ 万が一シミュレーションを追加</div>
+        <div style="font-size:11px;font-weight:700;color:#b45309;margin-bottom:6px">万が一シミュレーションを追加</div>
         <div style="font-size:10px;color:#92400e;margin-bottom:8px;line-height:1.5">
           押すたびに新しい万が一CF表タブが追加されます（何度でも・複数可）。<br>
           タブを開くと、このすぐ下にそのタブ専用のQ&amp;A入力パネルが表示されます。
         </div>
-        <button class="btn-add" onclick="mgQA_addTab('h')" style="background:#3b82f6;color:#fff;border-color:#1d4ed8;padding:6px 12px;font-size:11px;margin:2px;border-radius:var(--r);cursor:pointer">🛡️ ご主人様 万が一</button>
-        <button class="btn-add wife-only" onclick="mgQA_addTab('w')" style="background:#ec4899;color:#fff;border-color:#be185d;padding:6px 12px;font-size:11px;margin:2px;border-radius:var(--r);cursor:pointer">🛡️ 奥様 万が一</button>
+        <button class="btn-add" onclick="mgQA_addTab('h')" style="background:#3b82f6;color:#fff;border-color:#1d4ed8;padding:6px 12px;font-size:11px;margin:2px;border-radius:var(--r);cursor:pointer">ご主人様 万が一</button>
+        <button class="btn-add wife-only" onclick="mgQA_addTab('w')" style="background:#ec4899;color:#fff;border-color:#be185d;padding:6px 12px;font-size:11px;margin:2px;border-radius:var(--r);cursor:pointer">奥様 万が一</button>
       </div>
 
       <!-- Q&A入力パネル（アクティブな万が一タブがある時だけ表示） -->
@@ -2055,14 +2055,14 @@ window.closeAboutModal=closeAboutModal;
   <div style="height:20px"></div>
 </div>
 <div class="sec-jump" id="sec-jump">
-  <button class="sec-jump-btn" onclick="scrollToSec(0)" style="background:#3a6a8a"><span class="sj-em">👨‍👩‍👧</span><span class="sj-lbl">①家族</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(1)" style="background:#0d8a20"><span class="sj-em">💰</span><span class="sj-lbl">②資産</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(2)" style="background:#2d7dd2"><span class="sj-em">💴</span><span class="sj-lbl">③収入</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(3)" style="background:#6b5ea8"><span class="sj-em">🚗</span><span class="sj-lbl">④車</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(4)" style="background:#0e7490"><span class="sj-em">🏠</span><span class="sj-lbl">⑤住宅</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(5)" style="background:#b45309"><span class="sj-em">🛒</span><span class="sj-lbl">⑥生活</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(6)" style="background:#7c3aed"><span class="sj-em">💸</span><span class="sj-lbl">⑦支出</span></button>
-  <button class="sec-jump-btn" onclick="scrollToSec(7)" style="background:#c2185b"><span class="sj-em">🛡️</span><span class="sj-lbl">⑧万一</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(0)" style="background:#3a6a8a"><span class="sj-em"></span><span class="sj-lbl">①家族</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(1)" style="background:#0d8a20"><span class="sj-em"></span><span class="sj-lbl">②資産</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(2)" style="background:#2d7dd2"><span class="sj-em"></span><span class="sj-lbl">③収入</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(3)" style="background:#6b5ea8"><span class="sj-em"></span><span class="sj-lbl">④車</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(4)" style="background:#0e7490"><span class="sj-em"></span><span class="sj-lbl">⑤住宅</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(5)" style="background:#b45309"><span class="sj-em"></span><span class="sj-lbl">⑥生活</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(6)" style="background:#7c3aed"><span class="sj-em"></span><span class="sj-lbl">⑦支出</span></button>
+  <button class="sec-jump-btn" onclick="scrollToSec(7)" style="background:#c2185b"><span class="sj-em"></span><span class="sj-lbl">⑧万一</span></button>
 </div>
 </div><!-- /panel-l -->
 
@@ -2076,12 +2076,12 @@ window.closeAboutModal=closeAboutModal;
   <div class="r-tabs" style="justify-content:space-between">
     <div class="rtab-strip" style="display:flex;align-items:flex-end;gap:4px">
       <div class="scen-tabs" id="scen-tabs"></div>
-      <button class="rtab" id="rt-lctab" onclick="setRTab('lctab')">💰 生活費</button>
-      <button class="rtab" id="rt-graph" onclick="setRTab('graph')">📈 グラフ</button>
-      <button class="rtab" id="rt-loan" onclick="setRTab('loan')">🏦 返済計画</button>
-      <button class="rtab" id="rt-memo" onclick="setRTab('memo')">📝 メモ</button>
-      <button class="rtab" id="rt-mg-h" onclick="setRTab('mg-h')" style="display:none"><span id="rt-mg-h-label">🛡️ 万が一（ご主人様）</span><span class="stab-rm" onclick="event.stopPropagation();closeMgTab('h')" title="この万が一CF表を閉じる">×</span></button>
-      <button class="rtab" id="rt-mg-w" onclick="setRTab('mg-w')" style="display:none"><span id="rt-mg-w-label">🛡️ 万が一（奥様）</span><span class="stab-rm" onclick="event.stopPropagation();closeMgTab('w')" title="この万が一CF表を閉じる">×</span></button>
+      <button class="rtab" id="rt-lctab" onclick="setRTab('lctab')">生活費</button>
+      <button class="rtab" id="rt-graph" onclick="setRTab('graph')">グラフ</button>
+      <button class="rtab" id="rt-loan" onclick="setRTab('loan')">返済計画</button>
+      <button class="rtab" id="rt-memo" onclick="setRTab('memo')">メモ</button>
+      <button class="rtab" id="rt-mg-h" onclick="setRTab('mg-h')" style="display:none"><span id="rt-mg-h-label">万が一（ご主人様）</span><span class="stab-rm" onclick="event.stopPropagation();closeMgTab('h')" title="この万が一CF表を閉じる">×</span></button>
+      <button class="rtab" id="rt-mg-w" onclick="setRTab('mg-w')" style="display:none"><span id="rt-mg-w-label">万が一（奥様）</span><span class="stab-rm" onclick="event.stopPropagation();closeMgTab('w')" title="この万が一CF表を閉じる">×</span></button>
       <!-- Q&A形式 万が一タブのコンテナ（動的に追加される） -->
       <span id="mg-qa-tabs-container" style="display:contents"></span>
     </div>
@@ -2089,7 +2089,7 @@ window.closeAboutModal=closeAboutModal;
       <div style="display:flex;align-items:center;gap:4px;margin-right:6px" title="CF表のズーム">
         <!-- 全体表示ボタン: ユーザー要望(2026-08-06)により非表示。機能(cfZoomFit)は残置。戻す時は display:none を外す -->
         <button onclick="cfZoomFit()" id="btn-zoom-fit"
-          style="display:none;background:rgba(79,172,254,.3);color:#fff;border:1px solid rgba(79,172,254,.5);border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">📐 全体表示</button>
+          style="display:none;background:rgba(79,172,254,.3);color:#fff;border:1px solid rgba(79,172,254,.5);border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">全体表示</button>
         <span style="font-size:10px;color:rgba(255,255,255,.7);cursor:pointer" onclick="setCfZoom(Math.max(20,cfZoomLevel-5))">−</span>
         <input type="range" id="cf-zoom-slider" min="20" max="100" value="100" step="1"
           oninput="setCfZoom(+this.value)"
@@ -2100,17 +2100,17 @@ window.closeAboutModal=closeAboutModal;
       </div>
       <button id="btn-fin-toggle" onclick="toggleFinAsset()"
         style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;transition:.15s"
-        title="その他金融資産（有価証券・保険）の行を表示/非表示">👁 金融資産行を隠す</button>
+        title="その他金融資産（有価証券・保険）の行を表示/非表示">金融資産行を隠す</button>
       <button id="btn-cf-full" onclick="toggleCfFullscreen()"
         style="background:rgba(79,172,254,.3);color:#fff;border:1px solid rgba(79,172,254,.6);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap"
-        title="ヘッダーと入力パネルを隠してCF表を画面いっぱいに表示">🖥 全画面</button>
+        title="ヘッダーと入力パネルを隠してCF表を画面いっぱいに表示">全画面</button>
       <button id="btn-tab-excel" onclick="exportCurrentTab()"
-        style="background:rgba(0,128,0,.3);color:#fff;border:1px solid rgba(0,200,0,.5);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">📊 Excel出力</button>
+        style="background:rgba(0,128,0,.3);color:#fff;border:1px solid rgba(0,200,0,.5);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">Excel出力</button>
     </div>
   </div>
   <div class="r-body" id="right-body">
     <div class="empty">
-      <div class="empty-ic">📊</div>
+      <div class="empty-ic"></div>
       <div style="font-size:15px;font-weight:700;margin-bottom:6px">入力すると自動で表示されます</div>
       <div style="font-size:12px">左のフォームに入力するとリアルタイムでCF表が生成されます</div>
     </div>
@@ -2123,41 +2123,41 @@ window.closeAboutModal=closeAboutModal;
 <!-- v2 モジュール読み込み -->
 <script src="js/state.js?v=19"></script>
 <script src="js/constants.js?v=29"></script>
-<script src="js/market-scenarios.js?v=3"></script>
-<script src="js/market-sim.js?v=7"></script>
-<script src="js/utils.js?v=34"></script>
-<script src="js/family.js?v=5"></script>
-<script src="js/income.js?v=29"></script>
-<script src="js/mat-leave.js?v=7"></script>
+<script src="js/market-scenarios.js?v=4"></script>
+<script src="js/market-sim.js?v=8"></script>
+<script src="js/utils.js?v=35"></script>
+<script src="js/family.js?v=6"></script>
+<script src="js/income.js?v=30"></script>
+<script src="js/mat-leave.js?v=8"></script>
 <script src="js/education.js?v=6"></script>
-<script src="js/housing.js?v=43"></script>
+<script src="js/housing.js?v=44"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=4"></script>
-<script src="js/assets.js?v=21"></script>
+<script src="js/assets.js?v=22"></script>
 <script src="js/extras.js?v=2"></script>
-<script src="js/contingency.js?v=103"></script>
-<script src="js/cf-ui.js?v=26"></script>
-<script src="js/cf-calc.js?v=89"></script>
-<script src="js/cf-table.js?v=74"></script>
+<script src="js/contingency.js?v=104"></script>
+<script src="js/cf-ui.js?v=28"></script>
+<script src="js/cf-calc.js?v=90"></script>
+<script src="js/cf-table.js?v=75"></script>
 <script src="js/cf-highlight.js?v=3"></script>
-<script src="js/graphs.js?v=8"></script>
-<script src="js/export.js?v=74"></script>
-<script src="js/loan-plan.js?v=21"></script>
-<script src="js/lc-tab.js?v=5"></script>
-<script src="js/scenario.js?v=7"></script>
-<script src="js/save-load.js?v=86"></script>
+<script src="js/graphs.js?v=9"></script>
+<script src="js/export.js?v=75"></script>
+<script src="js/loan-plan.js?v=22"></script>
+<script src="js/lc-tab.js?v=6"></script>
+<script src="js/scenario.js?v=8"></script>
+<script src="js/save-load.js?v=87"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
-<script src="js/explain/explain-lctrl.js?v=8"></script>
-<script src="js/explain/explain-pension.js?v=1"></script>
-<script src="js/explain/explain-income.js?v=6"></script>
-<script src="js/explain/explain-financial.js?v=2"></script>
+<script src="js/explain/explain-lctrl.js?v=9"></script>
+<script src="js/explain/explain-pension.js?v=2"></script>
+<script src="js/explain/explain-income.js?v=7"></script>
+<script src="js/explain/explain-financial.js?v=3"></script>
 <script src="js/explain/explain-edu.js?v=1"></script>
-<script src="js/mg-qa.js?v=16"></script>
-<script src="js/ui.js?v=16"></script>
+<script src="js/mg-qa.js?v=17"></script>
+<script src="js/ui.js?v=17"></script>
 <script src="js/app.js?v=42"></script>
 <!-- Firebase (マンションマスター共有) -->
 <script type="module" src="js/firebase-init.js?v=3"></script>
-<script src="js/mansion-files.js?v=1"></script>
+<script src="js/mansion-files.js?v=2"></script>
 <script>
 if('serviceWorker' in navigator){
   let _swRefreshing=false;
@@ -2166,7 +2166,7 @@ if('serviceWorker' in navigator){
     if(_swRefreshing)return; _swRefreshing=true; location.reload();
   });
 
-  // 「🔄 新しいバージョンがあります」バナーを表示（更新内容つき）
+  // 「新しいバージョンがあります」バナーを表示（更新内容つき）
   // ★2026-09-13: 「後で」を押した版は localStorage に記録し、同じ版では再表示しない。
   //   （更新が続いた時期に、開くたび・タブごとにバナーが出続けるのを防ぐ。
   //     新しい版が公開されれば版名が変わるので、また1回だけ表示される）
@@ -2185,7 +2185,7 @@ if('serviceWorker' in navigator){
     bar.id='cf-update-banner';
     bar.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#1e3a5f;color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic UI","Meiryo",sans-serif;font-size:14px;max-width:min(92vw,440px)';
     bar.innerHTML='<div style="display:flex;align-items:center;gap:14px">'+
-      '<span>🔄 新しいバージョンがあります</span>'+
+      '<span>新しいバージョンがあります</span>'+
       '<button id="cf-update-btn" style="background:#22c55e;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">今すぐ更新</button>'+
       '<button id="cf-update-later" style="background:transparent;color:#cbd5e1;border:none;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap">後で</button>'+
       '</div><div id="cf-update-notes" style="display:none;font-size:11.5px;line-height:1.7;color:#dbe6f5;border-top:1px solid rgba(255,255,255,.2);padding-top:7px"></div>';
@@ -2194,7 +2194,7 @@ if('serviceWorker' in navigator){
     try{
       const el=document.getElementById('cf-update-notes');
       if(el&&v&&Array.isArray(v.notes)&&v.notes.length>0){
-        el.innerHTML='<div style="font-weight:700;color:#fff;margin-bottom:2px">📋 今回の更新内容</div>'+
+        el.innerHTML='<div style="font-weight:700;color:#fff;margin-bottom:2px">今回の更新内容</div>'+
           v.notes.slice(0,5).map(n=>'・'+String(n).replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>');
         el.style.display='';
       }
@@ -2249,14 +2249,14 @@ if('serviceWorker' in navigator){
 <!-- 運用シミュレーションパネル（案C サイドパネル） -->
 <div id="market-sim-panel" class="market-sim-panel" style="display:none">
   <div class="msp-header">
-    <div class="msp-title">📈 運用シミュレーション</div>
+    <div class="msp-title">運用シミュレーション</div>
     <button class="msp-close" onclick="toggleMarketSimPanel()" title="閉じる">✕</button>
   </div>
   <div class="msp-body">
     <div class="msp-section" style="padding:12px;background:linear-gradient(135deg,#fff5f8 0%,#ffe4ec 100%);border:2px solid #c2185b;border-radius:8px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div>
-          <div style="font-size:13px;font-weight:700;color:#c2185b">📈 運用シナリオ</div>
+          <div style="font-size:13px;font-weight:700;color:#c2185b">運用シナリオ</div>
           <div id="msp-enabled-hint" style="font-size:10px;color:#64748b;margin-top:2px"></div>
         </div>
         <button id="msp-enabled-btn" class="msp-enable-btn" onclick="mspToggleEnabled(!marketShockEnabled)">適用</button>
@@ -2282,12 +2282,12 @@ if('serviceWorker' in navigator){
     <div class="msp-section">
       <div class="msp-sec-title">一括操作</div>
       <div style="display:flex;flex-direction:column;gap:4px">
-        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('sp500')">🇺🇸 全ての有価証券に S&P500 を割当</button>
-        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('acwi')">🌎 全ての有価証券にオルカンを割当</button>
-        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('nikkei')">🎌 全ての有価証券に日経平均を割当</button>
-        <button class="msp-btn-clear" onclick="mspBulkAssignInsurance('usdjpy')">💱 全ての保険に USD/JPY を割当</button>
-        <button class="msp-btn-clear" onclick="mspClearIndexAssign()">❌ 指数割当を全解除</button>
-        <button class="msp-btn-clear" onclick="mspClearAll()" style="background:#fef2f2;color:#b91c1c">🔄 全シナリオを解除</button>
+        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('sp500')">全ての有価証券に S&P500 を割当</button>
+        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('acwi')">全ての有価証券にオルカンを割当</button>
+        <button class="msp-btn-clear" onclick="mspBulkAssignIndex('nikkei')">全ての有価証券に日経平均を割当</button>
+        <button class="msp-btn-clear" onclick="mspBulkAssignInsurance('usdjpy')">全ての保険に USD/JPY を割当</button>
+        <button class="msp-btn-clear" onclick="mspClearIndexAssign()">指数割当を全解除</button>
+        <button class="msp-btn-clear" onclick="mspClearAll()" style="background:#fef2f2;color:#b91c1c">全シナリオを解除</button>
       </div>
     </div>
   </div>

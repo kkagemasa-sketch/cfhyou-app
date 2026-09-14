@@ -418,7 +418,7 @@ function showAutoLiqHelp(){
   modal.innerHTML=`
     <div style="background:#fff;border-radius:10px;max-width:780px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
       <div style="background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;padding:16px 24px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:16px;font-weight:700">📤 自動資産取崩しの計算ルール</div>
+        <div style="font-size:16px;font-weight:700">自動資産取崩しの計算ルール</div>
         <button onclick="document.getElementById('auto-liq-help-modal').remove()" style="background:transparent;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 12px;font-size:12px;cursor:pointer">✕ 閉じる</button>
       </div>
       <div style="padding:20px 24px;font-size:13px;line-height:1.7;color:#1a3a6a">
@@ -442,7 +442,7 @@ function showAutoLiqHelp(){
             税率 = 含み益率 × 20.315%<br>
             <small style="color:#475569">※20.315% = 所得税15% + 住民税5% + 復興特別所得税0.315%</small>
           </div>
-          <div style="font-size:11px;color:#475569">📌 取得原価は「取得価格累計（basis）」が入力されていればそれを使用、なければ現在評価額で代用（含み益0で計算）</div>
+          <div style="font-size:11px;color:#475569">取得原価は「取得価格累計（basis）」が入力されていればそれを使用、なければ現在評価額で代用（含み益0で計算）</div>
         </div>
 
         <h3 style="font-size:14px;font-weight:700;color:#dc2626;border-left:4px solid #dc2626;padding-left:10px;margin:24px 0 12px">▍ 取崩し額の計算フロー</h3>
@@ -462,8 +462,8 @@ function showAutoLiqHelp(){
 
           <div style="margin-bottom:8px"><strong>③ 結果</strong></div>
           <div style="font-family:'Cascadia Code',Consolas,monospace;font-size:11px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:8px">
-            CF表上の収入「📤 自動資産取崩し」 = gross（取崩し総額）<br>
-            CF表上の支出「💰 譲渡益課税」 = gross × 税率<br>
+            CF表上の収入「自動資産取崩し」 = gross（取崩し総額）<br>
+            CF表上の支出「譲渡益課税」 = gross × 税率<br>
             預貯金残高への補填額 = gross − 税額（= 当初の不足額）
           </div>
         </div>

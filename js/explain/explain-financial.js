@@ -20,12 +20,12 @@
     const R=ctx.R;
     const i=ctx.colIndex;
     const bd=(R.insMatBd&&R.insMatBd[i])||null;
-    const titleText=`🎁 保険満期金（${ctx.year}年）`;
+    const titleText=`保険満期金（${ctx.year}年）`;
     if(ctx.isOverridden){
       const autoVal=bd?bd.total:ctx.autoValue;
       const simple=`
         <div style="background:#fff9e0;border:1px solid #f0c040;border-radius:6px;padding:8px 10px;margin-bottom:8px">
-          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">📝 セルが手動上書きされています</div>
+          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">セルが手動上書きされています</div>
           <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #f0c040">
             <span>元の自動計算値</span><strong>${explainFmt(autoVal,'万円')}</strong>
           </div>
@@ -108,14 +108,14 @@
     const i=ctx.colIndex;
     const rowKey=ctx.rowKey;
     const bd=(R.secRedeemBd&&R.secRedeemBd[rowKey]&&R.secRedeemBd[rowKey][i])||null;
-    const titleText=`💹 有価証券解約（${ctx.year}年）`;
+    const titleText=`有価証券解約（${ctx.year}年）`;
     if(ctx.isOverridden){
       const autoVal=bd?bd.net:ctx.autoValue;
       return {
         title:titleText,
         simple:`
           <div style="background:#fff9e0;border:1px solid #f0c040;border-radius:6px;padding:8px 10px;margin-bottom:8px">
-            <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">📝 セルが手動上書きされています</div>
+            <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">セルが手動上書きされています</div>
             <div style="display:flex;justify-content:space-between">
               <span>元の自動計算値</span><strong>${explainFmt(autoVal,'万円')}</strong>
             </div>
@@ -141,16 +141,16 @@
           <span style="font-weight:700">${bd.lbl} (${typeLbl})</span>${_nisaBadge(bd.isNisa)}
         </div>
         <div style="display:flex;justify-content:space-between">
-          <span>💰 元本（投資額）</span><span>${explainFmt(bd.principal,'万円')}</span>
+          <span>元本（投資額）</span><span>${explainFmt(bd.principal,'万円')}</span>
         </div>
         <div style="display:flex;justify-content:space-between">
-          <span>📈 評価額（解約時）</span><span>${explainFmt(bd.evaluation,'万円')}</span>
+          <span>評価額（解約時）</span><span>${explainFmt(bd.evaluation,'万円')}</span>
         </div>
         <div style="display:flex;justify-content:space-between;color:${_gainColor(bd.gain)}">
           <span>　運用損益</span><span>${_gainSign(bd.gain)}${explainFmt(bd.gain,'万円')}</span>
         </div>
         ${bd.isNisa
-          ? `<div style="font-size:11px;color:#1e40af;margin:2px 0">✨ NISA口座のため譲渡益は非課税</div>`
+          ? `<div style="font-size:11px;color:#1e40af;margin:2px 0">NISA口座のため譲渡益は非課税</div>`
           : `<div style="display:flex;justify-content:space-between;color:#b91c1c">
               <span>− 譲渡益税（20.315%）</span><span>${explainFmt(bd.tax,'万円')}</span>
             </div>`}
@@ -179,7 +179,7 @@
         <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 税金計算</div>
         <div>運用益: ${explainFmt(bd.gain,'万円')}</div>
         ${bd.isNisa
-          ? `<div style="color:#1e40af">✨ NISA非課税のため税額0円</div>`
+          ? `<div style="color:#1e40af">NISA非課税のため税額0円</div>`
           : `<div>譲渡益税 = 運用益 × 20.315%（所得税15%+復興税0.315%+住民税5%）</div>
              <div>= <strong>${explainFmt(bd.tax,'万円')}</strong></div>`
         }
@@ -240,11 +240,11 @@
         }).join('');
         const evName = _HIST_EVENT_MAP[histYear];
         const evBadge = evName
-          ? `<div style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:3px">⚠️ ${evName}</div>`
+          ? `<div style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:3px">${evName}</div>`
           : '';
         rows.push(`
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:6px;font-size:11px">
-            <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">📅 過去50年再生：${histYear}年相当（CF${i+1}年目）</div>
+            <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">過去50年再生：${histYear}年相当（CF${i+1}年目）</div>
             ${evBadge}
             <div style="line-height:1.6;margin-top:3px">${rets}</div>
           </div>`);
@@ -268,7 +268,7 @@
           }else continue;
           rows.push(`
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:6px;font-size:11px">
-              <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">📅 手動シナリオ：${offset+1}年目</div>
+              <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">手動シナリオ：${offset+1}年目</div>
               <div><span style="color:#64748b">${idxLabel[idxK]||idxK}</span> ${line}</div>
             </div>`);
         }else{
@@ -286,7 +286,7 @@
           }).join('');
           rows.push(`
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:6px;font-size:11px">
-              <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">📅 ${sc.label}：${offset+1}年目${histYear?`（${histYear}年相当）`:''}</div>
+              <div style="font-weight:700;color:#1e3a5f;margin-bottom:3px">${sc.label}：${offset+1}年目${histYear?`（${histYear}年相当）`:''}</div>
               <div style="line-height:1.6">${rets}</div>
             </div>`);
         }
@@ -301,7 +301,7 @@
     const rowKey=ctx.rowKey;
     const lbl=rowKey.replace(/^fin-/,''); // ラベル名復元
     const bd=(R.finAssetBd&&R.finAssetBd[lbl]&&R.finAssetBd[lbl][i])||null;
-    const titleText=`💎 ${lbl}（${ctx.year}年末）`;
+    const titleText=`${lbl}（${ctx.year}年末）`;
     // 運用シナリオの影響チェック
     const row=(R.finAssetRows||[]).find(r=>r.lbl===lbl);
     const shockVal = row?.vals?.[i] ?? null;
@@ -312,7 +312,7 @@
     const simYearInfo = _buildSimYearInfo(i);
     const shockBadge = (hasShock && Math.abs(diff)>=1) ? `
       <div style="background:${diff<0?'#fee2e2':'#dcfce7'};border:1px solid ${diff<0?'#fca5a5':'#86efac'};border-radius:6px;padding:6px 8px;margin-bottom:8px;font-size:11px">
-        <div style="font-weight:700;color:${diff<0?'#b91c1c':'#059669'};margin-bottom:3px">${diff<0?'📉':'📈'} 運用シナリオ適用中</div>
+        <div style="font-weight:700;color:${diff<0?'#b91c1c':'#059669'};margin-bottom:3px">${diff<0?'':''} 運用シナリオ適用中</div>
         <div style="display:flex;justify-content:space-between"><span>通常想定</span><strong>${explainFmt(baseVal,'万円')}</strong></div>
         <div style="display:flex;justify-content:space-between"><span>シナリオ込み</span><strong>${explainFmt(shockVal,'万円')}</strong></div>
         <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px dashed ${diff<0?'#fca5a5':'#86efac'};margin-top:3px">
@@ -356,10 +356,10 @@
           <span style="font-weight:700">${lbl}</span>${nisaTag}
         </div>
         <div style="display:flex;justify-content:space-between">
-          <span>💰 積立額（元本累計）</span><span>${explainFmt(bd.principalTotal,'万円')}</span>
+          <span>積立額（元本累計）</span><span>${explainFmt(bd.principalTotal,'万円')}</span>
         </div>
         <div style="display:flex;justify-content:space-between">
-          <span>📈 評価額</span><span>${explainFmt(bd.total,'万円')}</span>
+          <span>評価額</span><span>${explainFmt(bd.total,'万円')}</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding-top:5px;border-top:2px solid #1e3a5f;font-weight:700">
           <span>運用損益</span>

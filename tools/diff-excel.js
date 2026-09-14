@@ -78,7 +78,7 @@ async function pageCollectAndDiff(){
     if(bad.length)diffs.push({label:sr.label,count:bad.length,sample:bad.slice(0,3)});
   });
   // Excel側だけにある「条件メモ行」（計算行ではない情報ブロック）は差分として扱わない
-  const INFO_ROWS=['💰 頭金の内訳','🏦 住宅ローン条件','👔 ご主人様','👩 奥様','📝 注釈・補足'];
+  const INFO_ROWS=['頭金の内訳','住宅ローン条件','ご主人様のローン','奥様のローン','注釈・補足'];
   excel.forEach((er,i)=>{
     if(excelUsed.has(i))return;
     if(INFO_ROWS.some(p=>er.label.startsWith(p)))return;

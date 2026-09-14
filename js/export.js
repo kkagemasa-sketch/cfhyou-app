@@ -132,11 +132,11 @@ function showExportModal(exportType){
   modal.innerHTML=`
     <div style="background:#fff;border-radius:14px;padding:24px;width:520px;max-width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:800;font-size:15px;color:#1e3a5f">${exportType==='mg'?'📊 万が一CF表 Excel出力':exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</div>
+        <div style="font-weight:800;font-size:15px;color:#1e3a5f">${exportType==='mg'?'万が一CF表 Excel出力':exportType==='excel'?'Excel出力':exportType==='pdf'?'PDF出力':'印刷'}</div>
         <button onclick="document.getElementById('export-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0 4px">✕</button>
       </div>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
-        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:10px;letter-spacing:.04em">👤 使用者情報</div>
+        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:10px;letter-spacing:.04em">使用者情報</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${fld('name','氏名・役職',pi.name,'')}
           ${fld('company','会社名',pi.company,'')}
@@ -144,7 +144,7 @@ function showExportModal(exportType){
           ${fld('tel','電話番号',pi.tel,'')}
           ${fld('email','メールアドレス',pi.email,'')}
           <div class="fg">
-            <label style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px;display:block">📅 作成日</label>
+            <label style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px;display:block">作成日</label>
             <input id="em-date" type="date" value="${_exportExtra.date||new Date().toISOString().slice(0,10)}"
               style="width:100%;font-size:12px;padding:6px 8px;border:1.5px solid #cbd5e1;border-radius:6px;font-family:inherit;outline:none;box-sizing:border-box"
               onfocus="this.style.borderColor='#2d7dd2'" onblur="this.style.borderColor='#cbd5e1'">
@@ -156,14 +156,14 @@ function showExportModal(exportType){
         <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:#1e3a5f">
           <input type="checkbox" id="em-include-disclaimer" ${_exportExtra.includeDisclaimer!==false?'checked':''} style="margin-top:2px;cursor:pointer">
           <span>
-            <span style="font-weight:700">📋 末尾に「ご確認事項」シートを追加する</span>
+            <span style="font-weight:700">末尾に「ご確認事項」シートを追加する</span>
             <span style="display:block;font-size:10px;color:#64748b;margin-top:2px">お客様提示用の免責事項・注意喚起ページをA4縦の別シートで末尾に追加します</span>
           </span>
         </label>
       </div>`:''}
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button onclick="document.getElementById('export-modal').remove()" style="font-size:12px;padding:8px 16px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-weight:600">キャンセル</button>
-        <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='mg'?'📊 Excel出力':exportType==='excel'?'📊 Excel出力':exportType==='pdf'?'📄 PDF出力':'🖨️ 印刷'}</button>
+        <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='mg'?'Excel出力':exportType==='excel'?'Excel出力':exportType==='pdf'?'PDF出力':'印刷'}</button>
       </div>
     </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -273,7 +273,7 @@ async function exportExcelMG(){
   //   Excel にも 1行 info として出力する。営業資料での印象が大きく変わる。
   const _needCov = MR.needCoverage || 0;
   if(_needCov > 0){
-    const needRow = ['⚠️ 必要保障額','',`${_needCov.toLocaleString()}万円`];
+    const needRow = ['必要保障額','',`${_needCov.toLocaleString()}万円`];
     while(needRow.length < disp+3) needRow.push('');
     push(needRow, 'info');
   }
@@ -281,7 +281,7 @@ async function exportExcelMG(){
   // ── 頭金の内訳（通常CFと同じ個別セル形式） ──
   // info行：ラベル:値を1セルに統合しinfoSpan列分統合（隠れ防止）
   const _pad=(n)=>Array(n-1).fill('');
-  const infoRow1=['💰 頭金の内訳','',
+  const infoRow1=['頭金の内訳','',
     `現預金: ${cashTotal}万円`,..._pad(infoSpan),
     `${downType==='gift'?'頭金(贈与)':downType==='other'?`頭金(${(()=>{try{return localStorage.getItem('cf_down_other_text')||'その他'}catch(e){return 'その他'}})()})`:'頭金'}: ${downPay}万円`,..._pad(infoSpan),
     `${costTypeV_mg==='loan'?'諸費用(込)':costTypeV_mg==='other'?`諸費用(${(()=>{try{return localStorage.getItem('cf_cost_other_text')||'その他'}catch(e){return 'その他'}})()})`:'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
@@ -293,7 +293,7 @@ async function exportExcelMG(){
   push(infoRow1,'info');
 
   // ── 住宅ローン条件 ──
-  const infoRow2=['🏦 住宅ローン条件','',
+  const infoRow2=['住宅ローン条件','',
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
   ];
   const infoDataLens=[infoRow1Len];
@@ -306,12 +306,12 @@ async function exportExcelMG(){
     const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join(''):'';
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    const rowH=['👔 ご主人様','',
+    const rowH=['ご主人様のローン','',
       `借入額: ${fhAmt}万円`,..._pad(infoSpan),
       `期間: ${fhYrs}年`,..._pad(infoSpan),
       `金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan),
     ];
-    const rowW=['👩 奥様','',
+    const rowW=['奥様のローン','',
       `借入額: ${fwAmt}万円`,..._pad(infoSpan),
       `期間: ${fwYrs}年`,..._pad(infoSpan),
       `金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan),
@@ -330,12 +330,12 @@ async function exportExcelMG(){
     if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
     let wRateLabel=`金利: 1年目〜${rWBase}%`;
     if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
-    const rowH=['👔 ご主人様','',
+    const rowH=['ご主人様のローン','',
       `借入額: ${lhAmt}万円`,..._pad(infoSpan),
       `期間: ${lhYrs}年`,..._pad(infoSpan),
       hRateLabel,..._pad(infoSpan),
     ];
-    const rowW=['👩 奥様','',
+    const rowW=['奥様のローン','',
       `借入額: ${lwAmt}万円`,..._pad(infoSpan),
       `期間: ${lwYrs}年`,..._pad(infoSpan),
       wRateLabel,..._pad(infoSpan),
@@ -390,7 +390,7 @@ async function exportExcelMG(){
   });
   if(_secItems_mg.length>0){
     const _secTotal_mg=_secItems_mg.reduce((s,it)=>s+it.val,0);
-    const secInfoRow=['📊 その他金融資産','',];
+    const secInfoRow=['その他金融資産','',];
     _secItems_mg.forEach(it=>{
       const lbl=it.custom||`${it.catLbl}(${it.pLbl})`;
       secInfoRow.push(`${lbl}: ${it.val}万円`,..._pad(infoSpan));
@@ -406,7 +406,7 @@ async function exportExcelMG(){
   const _cfNote_mg = window._cfSummaryNote||''; // ★各CF表(シナリオ)ごとに独立
   let _noteRowIdx_mg = -1;
   if(_cfNote_mg && _cfNote_mg.trim()){
-    const noteRow = ['📝 注釈・補足','',_cfNote_mg];
+    const noteRow = ['注釈・補足','',_cfNote_mg];
     while(noteRow.length<disp+3)noteRow.push('');
     push(noteRow,'info');
     _noteRowIdx_mg = rows.length-1;
@@ -537,7 +537,7 @@ async function exportExcelMG(){
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
   // 自動資産取崩し（万一CF用）
-  if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) addI('📤 自動資産取崩し',MR.autoLiq);
+  if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) addI('自動資産取崩し',MR.autoLiq);
   mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...MR.incT.slice(0,disp).map(v=>ri(v)),ri(MR.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -556,10 +556,10 @@ async function exportExcelMG(){
   };
   addE(_rl('mg-lc','生活費'),MR.lc);
   addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent,null);
-  addESkip(_rl('mg-moveInCost','🚚 引越・家具家電'),MR.moveInCost,null);
+  addESkip(_rl('mg-moveInCost','引越・家具家電'),MR.moveInCost,null);
   if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(ご主人様)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
   else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
-  if(MR.prepayExp&&MR.prepayExp.some(v=>v>0))addE(_rl('mg-prepayExp','🔁 繰上返済'),MR.prepayExp);
+  if(MR.prepayExp&&MR.prepayExp.some(v=>v>0))addE(_rl('mg-prepayExp','繰上返済'),MR.prepayExp);
   // 定期借地権付き物件：地代・解体準備金
   if(MR.chidai&&MR.chidai.some(v=>v>0))addE(_rl('mg-chidai','地代'),MR.chidai);
   if(MR.kaitai&&MR.kaitai.some(v=>v>0))addE(_rl('mg-kaitai','解体準備金'),MR.kaitai);
@@ -622,7 +622,7 @@ async function exportExcelMG(){
   else if(N.extRows&&N.extRows.length===1){addESkip(N.extRows[0].lbl,N.extRows[0].vals,N.extRows[0].vals);}
   else{addESkip(_rl('mg-ext','特別支出'),MR.ext,null);}
   // 譲渡益課税（自動取崩しに伴う 20.315% 課税）— 万一CF
-  if(MR.autoLiqTax&&MR.autoLiqTax.some(v=>v>0)) addE('💰 譲渡益課税(自動取崩し)',MR.autoLiqTax);
+  if(MR.autoLiqTax&&MR.autoLiqTax.some(v=>v>0)) addE('譲渡益課税(自動取崩し)',MR.autoLiqTax);
   mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...MR.expT.slice(0,disp).map(v=>ri(v)),ri(MR.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
@@ -990,10 +990,10 @@ async function exportExcelMG(){
       // ペアローン行: ご主人様(青)/奥様(ピンク)
       if(tp==='info'&&row[0]){
         const r0=String(row[0]);
-        if(/👔/.test(r0)){
+        if(/ご主人様/.test(r0)){
           if(isFixed)bgColor='FF2563a6'; // ご主人様 = 少し明るめ青
           else bgColor='FFe8f2fc';
-        }else if(/👩/.test(r0)){
+        }else if(/奥様/.test(r0)){
           if(isFixed)bgColor='FFc53d5a'; // 奥様 = ピンク
           else bgColor='FFfce8ef';
         }
@@ -1083,7 +1083,7 @@ async function exportExcelMG(){
       // blank/footer行・範囲外セルは塗りつぶしなし
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const finalAlign=cell._centerAlign?'center':hAlign;
-      // ペアローン行（👔/👩）は1行表示にしたいのでwrap無効＋shrinkで縮小
+      // ペアローン行（/）は1行表示にしたいのでwrap無効＋shrinkで縮小
       const isPairRow=tp==='info'&&row[0]&&/[\u{1F454}\u{1F469}]/u.test(String(row[0]));
       const wrapText=(tp==='info'&&c>=2&&!isPairRow);
       // shrinkToFitはペア行（高さ23pt固定で1行表示）のみ。通常info行は折り返し表示にする。
@@ -1136,7 +1136,7 @@ function _appendDisclaimerToCFSheet(ws, startRow, lastCol, clientName){
     ['spacer', ''],
     ['lead', '本資料は、お客様からご提供いただいた情報および作成時点で確認可能な情報をもとに作成した、将来の家計収支・資産推移等のシミュレーション資料です。今後のライフプランを考える際の参考資料としてご活用いただくことを目的としており、税制、社会保障制度、金利、物価、保険内容、運用環境、収入・支出、ご家族の状況等の変化により、将来の結果は実際と異なる場合があります。重要なご判断にあたっては、最新の制度、契約内容、商品資料等をご確認ください。'],
     ['spacer', ''],
-    ['alert', '⚠  本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
+    ['alert', ' 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
     ['spacer', ''],
     ['section', '1.  本シミュレーションの位置づけ'],
     ['body-bullet', '・本資料は、住まい・家計・保障・資産形成等について考えるための参考資料です'],
@@ -1294,7 +1294,7 @@ function _appendDisclaimerSheet(wb, clientName){
     ['spacer', ''],
     ['lead', '本資料は、お客様からご提供いただいた情報および作成時点で確認可能な情報をもとに作成した、将来の家計収支・資産推移等のシミュレーション資料です。今後のライフプランを考える際の参考資料としてご活用いただくことを目的としており、税制、社会保障制度、金利、物価、保険内容、運用環境、収入・支出、ご家族の状況等の変化により、将来の結果は実際と異なる場合があります。重要なご判断にあたっては、最新の制度、契約内容、商品資料等をご確認ください。'],
     ['spacer', ''],
-    ['alert', '⚠  本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
+    ['alert', ' 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
     ['spacer', ''],
     ['section', '1.  本シミュレーションの位置づけ'],
     ['body-bullet', '・本資料は、住まい・家計・保障・資産形成等について考えるための参考資料です'],
@@ -1498,7 +1498,7 @@ async function exportExcel(){
 
   // info行：ラベル:値を1セルに統合しinfoSpan列分統合（隠れ防止）
   const _pad=(n)=>Array(n-1).fill('');
-  const infoRow1=['💰 頭金の内訳','',
+  const infoRow1=['頭金の内訳','',
     `現預金: ${cashTotal}万円`,..._pad(infoSpan),
     `${downType==='gift'?'頭金(贈与)':downType==='other'?`頭金(${(()=>{try{return localStorage.getItem('cf_down_other_text')||'その他'}catch(e){return 'その他'}})()})`:'頭金'}: ${downPay}万円`,..._pad(infoSpan),
     `${costTypeV==='loan'?'諸費用(込)':costTypeV==='other'?`諸費用(${(()=>{try{return localStorage.getItem('cf_cost_other_text')||'その他'}catch(e){return 'その他'}})()})`:'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
@@ -1511,7 +1511,7 @@ async function exportExcel(){
   push(infoRow1,'info');
 
   // 住宅ローン条件
-  const infoRow2=['🏦 住宅ローン条件','',
+  const infoRow2=['住宅ローン条件','',
     `物件価格: ${housePrice}万円`,..._pad(infoSpan),
   ];
   const extraPairRows2=[];
@@ -1522,8 +1522,8 @@ async function exportExcel(){
     const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join(''):'';
     infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
     if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    extraPairRows2.push(['','👔 ご主人様',`借入額: ${fhAmt}万円`,..._pad(infoSpan),`期間: ${fhYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
-    extraPairRows2.push(['','👩 奥様',`借入額: ${fwAmt}万円`,..._pad(infoSpan),`期間: ${fwYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
+    extraPairRows2.push(['','ご主人様のローン',`借入額: ${fhAmt}万円`,..._pad(infoSpan),`期間: ${fhYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
+    extraPairRows2.push(['','奥様のローン',`借入額: ${fwAmt}万円`,..._pad(infoSpan),`期間: ${fwYrs}年`,..._pad(infoSpan),`金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan)]);
   } else if(pairLoanMode){
     const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
     const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
@@ -1536,8 +1536,8 @@ async function exportExcel(){
     if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
     let wRateLabel=`金利: 1年目〜${rWBase}%`;
     if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
-    extraPairRows2.push(['','👔 ご主人様',`借入額: ${lhAmt}万円`,..._pad(infoSpan),`期間: ${lhYrs}年`,..._pad(infoSpan),hRateLabel,..._pad(infoSpan)]);
-    extraPairRows2.push(['','👩 奥様',`借入額: ${lwAmt}万円`,..._pad(infoSpan),`期間: ${lwYrs}年`,..._pad(infoSpan),wRateLabel,..._pad(infoSpan)]);
+    extraPairRows2.push(['','ご主人様のローン',`借入額: ${lhAmt}万円`,..._pad(infoSpan),`期間: ${lhYrs}年`,..._pad(infoSpan),hRateLabel,..._pad(infoSpan)]);
+    extraPairRows2.push(['','奥様のローン',`借入額: ${lwAmt}万円`,..._pad(infoSpan),`期間: ${lwYrs}年`,..._pad(infoSpan),wRateLabel,..._pad(infoSpan)]);
   } else {
     infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
     infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
@@ -1579,7 +1579,7 @@ async function exportExcel(){
   });
   if(_secItems_e.length>0){
     const _secTotal_e=_secItems_e.reduce((s,it)=>s+it.val,0);
-    const secInfoRow=['📊 その他金融資産','',];
+    const secInfoRow=['その他金融資産','',];
     _secItems_e.forEach(it=>{
       const lbl=it.custom||`${it.catLbl}(${it.pLbl})`;
       secInfoRow.push(`${lbl}: ${it.val}万円`,..._pad(infoSpan));
@@ -1595,7 +1595,7 @@ async function exportExcel(){
   const _cfNote_e = window._cfSummaryNote||''; // ★各CF表(シナリオ)ごとに独立
   let _noteRowIdx_n = -1;
   if(_cfNote_e && _cfNote_e.trim()){
-    const noteRow = ['📝 注釈・補足','',_cfNote_e];
+    const noteRow = ['注釈・補足','',_cfNote_e];
     while(noteRow.length<disp+3)noteRow.push('');
     push(noteRow,'info');
     _noteRowIdx_n = rows.length-1;
@@ -1675,9 +1675,9 @@ async function exportExcel(){
   if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addI(_rl(row.key||row.lbl,row.lbl),row.vals);});}
   addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
   // 自動資産取崩し（預貯金マイナス補填）
-  if(R.autoLiq&&R.autoLiq.some(v=>v>0)) addI('📤 自動資産取崩し',R.autoLiq);
+  if(R.autoLiq&&R.autoLiq.some(v=>v>0)) addI('自動資産取崩し',R.autoLiq);
   // ★ A2修正: 買い替えイベントの収入行（旧住宅売却額）— アプリ画面と同じ
-  if(R.swapSell&&R.swapSell.some(v=>v>0)) addI('🔄 旧住宅売却額',R.swapSell);
+  if(R.swapSell&&R.swapSell.some(v=>v>0)) addI('旧住宅売却額',R.swapSell);
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
@@ -1691,24 +1691,24 @@ async function exportExcel(){
   // 支出行順序：CF表(cf-table.js)と同じ順序で出力
   addE(_rl('lc','生活費'),R.lc);
   addE(_rl('rent','家賃（引渡前）'),R.rent);
-  addE(_rl('moveInCost','🚚 引越・家具家電'),R.moveInCost);
+  addE(_rl('moveInCost','引越・家具家電'),R.moveInCost);
   if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(ご主人様)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
   else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
   // 繰上返済（画面と同一行構成）
   if(pairLoanMode&&!_isSingle_e){
-    if(R.prepayExpH&&R.prepayExpH.some(v=>v>0)) addE(_rl('prepayExpH','🔁 繰上返済(ご主人様)'),R.prepayExpH);
-    if(R.prepayExpW&&R.prepayExpW.some(v=>v>0)) addE(_rl('prepayExpW','🔁 繰上返済(奥様)'),R.prepayExpW);
+    if(R.prepayExpH&&R.prepayExpH.some(v=>v>0)) addE(_rl('prepayExpH','繰上返済(ご主人様)'),R.prepayExpH);
+    if(R.prepayExpW&&R.prepayExpW.some(v=>v>0)) addE(_rl('prepayExpW','繰上返済(奥様)'),R.prepayExpW);
   } else if(R.prepayExp&&R.prepayExp.some(v=>v>0)){
-    addE(_rl('prepayExp','🔁 繰上返済'),R.prepayExp);
+    addE(_rl('prepayExp','繰上返済'),R.prepayExp);
   }
-  if(R.housePurchase&&R.housePurchase.some(v=>v>0)) addE('💵 住宅購入（一括）',R.housePurchase);
+  if(R.housePurchase&&R.housePurchase.some(v=>v>0)) addE('住宅購入（一括）',R.housePurchase);
   // 定期借地権付き物件：地代・解体準備金
   if(R.chidai&&R.chidai.some(v=>v>0))addE(_rl('chidai','地代'),R.chidai);
   if(R.kaitai&&R.kaitai.some(v=>v>0))addE(_rl('kaitai','解体準備金'),R.kaitai);
   // ★ A2修正: 買い替えイベントの支出行（旧ローン一括返済・譲渡所得税・新居買付）
-  if(R.swapPayoff&&R.swapPayoff.some(v=>v>0)) addE('🔄 旧ローン一括返済',R.swapPayoff);
-  if(R.swapTax&&R.swapTax.some(v=>v>0)) addE('🔄 譲渡所得税',R.swapTax);
-  if(R.swapBuy&&R.swapBuy.some(v=>v>0)) addE('🔄 新居買付費用',R.swapBuy);
+  if(R.swapPayoff&&R.swapPayoff.some(v=>v>0)) addE('旧ローン一括返済',R.swapPayoff);
+  if(R.swapTax&&R.swapTax.some(v=>v>0)) addE('譲渡所得税',R.swapTax);
+  if(R.swapBuy&&R.swapBuy.some(v=>v>0)) addE('新居買付費用',R.swapBuy);
   if(isM)addE(_rl('rep','修繕積立金'),R.rep);
   addE(_rl('ptx','固定資産税'),R.ptx);addE(_rl('furn','家具家電買替'),R.furn);
   addE(_rl('senyu',isM?'専有部分修繕費':'修繕費'),R.senyu);
@@ -1743,7 +1743,7 @@ async function exportExcel(){
   if(R.zaikeiRows&&R.zaikeiRows.length>0){R.zaikeiRows.forEach(row=>{if(row.vals.some(v=>v>0))addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}
   if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('特別支出',R.ext);}
   // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
-  if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)) addE('💰 譲渡益課税(自動取崩し)',R.autoLiqTax);
+  if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)) addE('譲渡益課税(自動取崩し)',R.autoLiqTax);
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
@@ -2224,7 +2224,7 @@ async function exportExcel(){
       // blank/footer行・範囲外セルは塗りつぶしなし
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill);
-      // ペアローン行（👔/👩）は1行表示にしたいのでwrap無効＋shrinkで縮小
+      // ペアローン行（/）は1行表示にしたいのでwrap無効＋shrinkで縮小
       const isPairRow=tp==='info'&&row[0]&&/[\u{1F454}\u{1F469}]/u.test(String(row[0]));
       const wrapText=(tp==='info'&&c>=2&&!isPairRow);
       cell.s={

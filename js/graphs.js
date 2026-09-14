@@ -86,14 +86,14 @@ function renderGraphsMG(MR,disp,isM,hAge,targetLabel){
   const _rbg=$('right-body');const _gTop=_rbg?_rbg.scrollTop:0;const _gLeft=_rbg?_rbg.scrollLeft:0;
   const _scenNmMG=(typeof _activeScenName==='function')?_activeScenName():'';
   $('right-body').innerHTML=
-    (_scenNmMG?`<div style="font-size:11.5px;font-weight:800;color:var(--navy);opacity:.8;margin:2px 0 8px">📄 ${_scenNmMG} のグラフ</div>`:'')+
+    (_scenNmMG?`<div style="font-size:11.5px;font-weight:800;color:var(--navy);opacity:.8;margin:2px 0 8px">${_scenNmMG} のグラフ</div>`:'')+
     `<div class="sum-row" id="graph-sum-row" style="margin-bottom:12px">${sumHtml}</div>`+
-    `<div style="background:#c2185b;color:#fff;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:700;margin-bottom:12px;display:inline-block">🛡️ 万が一（${targetLabel}死亡）</div>`+
+    `<div style="background:#c2185b;color:#fff;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:700;margin-bottom:12px;display:inline-block">万が一（${targetLabel}死亡）</div>`+
     `<div id="ch-graph-grid" class="ch-grid">`+
-    `<div class="ch-card"><div class="ch-title">📊 収入・支出・年間収支</div><div class="ch-wrap"><canvas id="c1"></canvas></div></div>`+
-    `<div class="ch-card"><div class="ch-title">🏦 資産推移</div><div class="ch-wrap"><canvas id="c2"></canvas></div></div>`+
-    `<div class="ch-card"><div class="ch-title">📚 支出内訳</div><div class="ch-wrap"><canvas id="c4"></canvas></div></div>`+
-    `<div class="ch-card"><div class="ch-title">💰 収入内訳</div><div class="ch-wrap"><canvas id="c5"></canvas></div></div>`+
+    `<div class="ch-card"><div class="ch-title">収入・支出・年間収支</div><div class="ch-wrap"><canvas id="c1"></canvas></div></div>`+
+    `<div class="ch-card"><div class="ch-title">資産推移</div><div class="ch-wrap"><canvas id="c2"></canvas></div></div>`+
+    `<div class="ch-card"><div class="ch-title">支出内訳</div><div class="ch-wrap"><canvas id="c4"></canvas></div></div>`+
+    `<div class="ch-card"><div class="ch-title">収入内訳</div><div class="ch-wrap"><canvas id="c5"></canvas></div></div>`+
     `</div>`;
   if(_rbg&&(_gTop>0||_gLeft>0)){_rbg.scrollTop=_gTop;_rbg.scrollLeft=_gLeft;}
   charts.c1=new Chart($('c1'),{type:'bar',data:{labels:lbls,datasets:d1},options:opt});
@@ -193,13 +193,13 @@ function renderGraphs(R,disp,isM,total,hAge){
     const _rbg=$('right-body');const _gTop=_rbg?_rbg.scrollTop:0;const _gLeft=_rbg?_rbg.scrollLeft:0;
     const _scenNm=(typeof _activeScenName==='function')?_activeScenName():'';
     $('right-body').innerHTML=
-      (_scenNm?`<div id="graph-scen-name" style="font-size:11.5px;font-weight:800;color:var(--navy);opacity:.8;margin:2px 0 8px">📄 ${_scenNm} のグラフ</div>`:'')+
+      (_scenNm?`<div id="graph-scen-name" style="font-size:11.5px;font-weight:800;color:var(--navy);opacity:.8;margin:2px 0 8px">${_scenNm} のグラフ</div>`:'')+
       `<div class="sum-row" id="graph-sum-row" style="margin-bottom:12px">${sumHtml}</div>`+
       `<div id="ch-graph-grid" class="ch-grid">`+
-      `<div class="ch-card"><div class="ch-title">📊 収入・支出・年間収支</div><div class="ch-wrap"><canvas id="c1"></canvas></div></div>`+
-      `<div class="ch-card"><div class="ch-title">🏦 資産推移</div><div class="ch-wrap"><canvas id="c2"></canvas></div></div>`+
-      `<div class="ch-card"><div class="ch-title">📚 支出内訳</div><div class="ch-wrap"><canvas id="c4"></canvas></div></div>`+
-      `<div class="ch-card"><div class="ch-title">💰 収入内訳</div><div class="ch-wrap"><canvas id="c5"></canvas></div></div>`+
+      `<div class="ch-card"><div class="ch-title">収入・支出・年間収支</div><div class="ch-wrap"><canvas id="c1"></canvas></div></div>`+
+      `<div class="ch-card"><div class="ch-title">資産推移</div><div class="ch-wrap"><canvas id="c2"></canvas></div></div>`+
+      `<div class="ch-card"><div class="ch-title">支出内訳</div><div class="ch-wrap"><canvas id="c4"></canvas></div></div>`+
+      `<div class="ch-card"><div class="ch-title">収入内訳</div><div class="ch-wrap"><canvas id="c5"></canvas></div></div>`+
       `</div>`;
     if(_rbg&&(_gTop>0||_gLeft>0)){_rbg.scrollTop=_gTop;_rbg.scrollLeft=_gLeft;}
     charts.c1=new Chart($('c1'),{type:'bar',data:{labels:lbls,datasets:d1},options:opt});
@@ -214,7 +214,7 @@ function renderGraphs(R,disp,isM,total,hAge){
     //   表示してしまう事故を防ぐ。
     const _dsSig=a=>a.map(d=>d.label).join('|');
     const _gsn=$('graph-scen-name');
-    if(_gsn&&typeof _activeScenName==='function')_gsn.textContent=`📄 ${_activeScenName()} のグラフ`;
+    if(_gsn&&typeof _activeScenName==='function')_gsn.textContent=`${_activeScenName()} のグラフ`;
     $('graph-sum-row').innerHTML=sumHtml;
     charts.c1.data.labels=lbls;
     d1.forEach((ds,i)=>{if(charts.c1.data.datasets[i])charts.c1.data.datasets[i].data=ds.data;});

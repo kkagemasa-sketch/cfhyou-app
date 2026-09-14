@@ -15,7 +15,7 @@
 
     const year=ctx.year;
     const labelSelf=person==='h'?'ご主人':'奥様';
-    const titleText=`💰 ${labelSelf}年金受給額（${year}年）`;
+    const titleText=`${labelSelf}年金受給額（${year}年）`;
 
     // セル手動上書き
     if(ctx.isOverridden){
@@ -26,7 +26,7 @@
       const diffStr=diff===0?'':(diff>0?` (+${explainFmt(Math.abs(diff),'万円')})`:` (-${explainFmt(Math.abs(diff),'万円')})`);
       const simple=`
         <div style="background:#fff9e0;border:1px solid #f0c040;border-radius:6px;padding:8px 10px;margin-bottom:8px">
-          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">📝 セルが手動上書きされています</div>
+          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">セルが手動上書きされています</div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:1px dashed #f0c040">
             <span>元の自動計算値</span>
             <strong style="color:#1e3a5f">${autoStr}</strong>
@@ -76,14 +76,14 @@
     if(pOwn>0){
       rows.push(`
         <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e2e8f0">
-          <span>🏛️ ${labelSelf}老齢年金</span><span>${explainFmt(pOwn,'万円')}</span>
+          <span>${labelSelf}老齢年金</span><span>${explainFmt(pOwn,'万円')}</span>
         </div>
       `);
     }
     if(survThis>0){
       rows.push(`
         <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e2e8f0">
-          <span>🕊️ 遺族年金</span><span>${explainFmt(survThis,'万円')}</span>
+          <span>遺族年金</span><span>${explainFmt(survThis,'万円')}</span>
         </div>
       `);
     }

@@ -1936,7 +1936,7 @@ function render(){
         if(!_carKeyMap.has(rowKey)){
           const carLblEl=document.getElementById('car-'+cIdx+'-label');
           const carLblTxt=carLblEl?.value?.trim()||`${R.carRows.length+1}台目`;
-          const newRow={key:rowKey,lbl:'🚗 '+carLblTxt,vals:new Array(i).fill(0)};
+          const newRow={key:rowKey,lbl:''+carLblTxt,vals:new Array(i).fill(0)};
           R.carRows.push(newRow);
           _carKeyMap.set(rowKey,newRow);
         }
@@ -1990,7 +1990,7 @@ function render(){
         _carOwnBk[_carOwner]+=thisTotal;
       });
       // 現有車（既保有）の計算: ローン残債継続 + 車検 + 手放し
-      // 全現有車を「🚗 車両費」1行に集約するため、carRows ではなく carBuyAmt/carInspAmt に加算
+      // 全現有車を「車両費」1行に集約するため、carRows ではなく carBuyAmt/carInspAmt に加算
       (_ecarEls||document.querySelectorAll('#existing-car-list>[id^="ecar-"]')).forEach(ecEl=>{
         const ecIdx=ecEl.id.replace('ecar-','');
         const ecType=ecEl.dataset.type||'new';

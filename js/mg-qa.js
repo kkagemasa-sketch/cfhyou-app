@@ -1,8 +1,8 @@
-// ===== 🧪 Q&A形式 万が一機能 =====
+// ===== Q&A形式 万が一機能 =====
 // 既存コード（setRTab, renderContingency, mgTarget等）は一切変更せず、
 // 専用の名前空間 mgQA_* で実装する
 
-// 🧪 syncMGCarFromNormal を無効化（Q&A側で車・駐車場を直接設定するため）
+// syncMGCarFromNormal を無効化（Q&A側で車・駐車場を直接設定するため）
 // 旧UIは非表示化されているので副作用なし
 window.addEventListener('load', function(){
   if(typeof window.syncMGCarFromNormal === 'function'){
@@ -160,9 +160,9 @@ function mgQA_renderTabs(){
     const btn = document.createElement('button');
     btn.className = 'rtab mgqa-tab' + (t.target==='w'?' pink':'');
     btn.id = `rt-${t.id}`;
-    // 🛡️ アイコン
+    // アイコン
     const icon = document.createElement('span');
-    icon.textContent = '🛡️ ';
+    icon.textContent = '';
     icon.style.cssText = 'pointer-events:none';
     btn.appendChild(icon);
     // ★ 名前入力（CF表タブと同じ：ダブルクリックで編集可能）
@@ -339,7 +339,7 @@ function mgQA_calcAndRender(tab, immediate){
   // タブ別にHTMLを保存
   tab.renderedHTML = html;
 
-  // 🧪 テスト版：新UIに一本化するため、既存の rt-mg-h/rt-mg-w は常に非表示
+  // テスト版：新UIに一本化するため、既存の rt-mg-h/rt-mg-w は常に非表示
   const oldH = document.getElementById('rt-mg-h');
   const oldW = document.getElementById('rt-mg-w');
   if(oldH) oldH.style.display = 'none';
@@ -372,7 +372,7 @@ function mgQA_showRightError(tab, msg){
   rb.innerHTML = `
     <div style="padding:40px 24px;max-width:760px;margin:0 auto">
       <div style="background:#fef2f2;border:2px solid #fca5a5;border-radius:12px;padding:24px">
-        <div style="font-size:16px;font-weight:800;color:#b91c1c;margin-bottom:12px">⚠️ 計算できませんでした</div>
+        <div style="font-size:16px;font-weight:800;color:#b91c1c;margin-bottom:12px">計算できませんでした</div>
         <div style="font-size:13px;color:#7f1d1d;line-height:1.7;margin-bottom:12px">${mgQA_escHtml(msg)}</div>
         <div style="font-size:12px;color:#64748b">まず通常CF表の入力（①家族〜⑦支出）を埋めてCF表が生成される状態にしてください。</div>
       </div>
@@ -757,32 +757,32 @@ function mgQA_buildPanel(tab){
 
   return `
     <div class="persona" style="background:#fdf2f8;border-color:#f9a8d4;margin-bottom:8px">
-      <span class="persona-icon">🛡️</span>
+      <span class="persona-icon"></span>
       <input type="text" class="inp" style="flex:1;min-width:0;font-weight:700" value="${mgQA_escHtml(tab.name)}"
         onchange="mgQA_renameTab('${tab.id}', this.value)" title="クリックで名前を編集">
-      <button class="btn-tog" onclick="mgQA_duplicateTab('${tab.id}')" style="padding:4px 8px;font-size:11px">📋複製</button>
-      <button class="btn-tog" onclick="mgQA_deleteTab('${tab.id}')" style="padding:4px 8px;font-size:11px;color:#dc2626;border-color:#fca5a5">🗑削除</button>
+      <button class="btn-tog" onclick="mgQA_duplicateTab('${tab.id}')" style="padding:4px 8px;font-size:11px">複製</button>
+      <button class="btn-tog" onclick="mgQA_deleteTab('${tab.id}')" style="padding:4px 8px;font-size:11px;color:#dc2626;border-color:#fca5a5">削除</button>
     </div>
 
-    ${card(1,'#dc2626','⚠️ 逝去時期',`
+    ${card(1,'#dc2626','逝去時期',`
       <div class="g2">
         <div class="fg"><label class="lbl">${deceased}のご逝去は何年後？</label>
           <div class="suf"><input class="inp age-inp" type="number" min="1" max="50" value="${s.deathYear}" data-k="deathYear" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}" data-cf-to="${hAge+(s.deathYear||1)-1}"><span class="sl">年後</span></div>
         </div>
       </div>
-      <div class="hint">💡 「1年後」=今から1年以内（最も厳しい条件でのシミュレーション）</div>
+      <div class="hint">「1年後」=今から1年以内（最も厳しい条件でのシミュレーション）</div>
     `)}
 
-    ${card(2,'#059669','💰 死亡保険金',`
-      <div class="hint" style="margin-bottom:6px">💡 複数契約している場合は「+保険を追加」で複数登録。一時金=一括受取 / 年金型=毎年受取</div>
+    ${card(2,'#059669','死亡保険金',`
+      <div class="hint" style="margin-bottom:6px">複数契約している場合は「+保険を追加」で複数登録。一時金=一括受取 / 年金型=毎年受取</div>
       <div id="mgqa-ins-${tab.id}">
         ${s.insurances.map((ins,i)=>mgQA_renderIns(tab.id, i, ins)).join('')}
       </div>
       <button class="btn-add" onclick="mgQA_addIns('${tab.id}')" style="margin-top:4px">＋ 保険を追加</button>
     `)}
 
-    ${card(3,'#0284c7','📋 遺族年金',`
-      <div class="hint" style="margin-bottom:6px">💡 通常時の年収・家族構成から自動計算（遺族厚生年金＋遺族基礎年金＋中高齢寡婦加算）</div>
+    ${card(3,'#0284c7','遺族年金',`
+      <div class="hint" style="margin-bottom:6px">通常時の年収・家族構成から自動計算（遺族厚生年金＋遺族基礎年金＋中高齢寡婦加算）</div>
       <div class="g2">
         <div class="fg"><label class="lbl">遺族年金の設定</label>
           <div style="display:flex;gap:6px">
@@ -797,8 +797,8 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(4,'#16a34a',`💴 ${spouse}の就労収入`,`
-      <div class="hint" style="margin-bottom:6px">💡 通常時の${spouse}の年収: 約${spouseIncomeHint}万/年（左の③収入で編集）。万が一時に変更する場合は段階設定可</div>
+    ${card(4,'#16a34a',`${spouse}の就労収入`,`
+      <div class="hint" style="margin-bottom:6px">通常時の${spouse}の年収: 約${spouseIncomeHint}万/年（左の③収入で編集）。万が一時に変更する場合は段階設定可</div>
       <div class="fg">
         <label class="lbl">万が一後の${spouse}の収入</label>
         <div style="display:flex;gap:6px">
@@ -811,8 +811,8 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(5,'#d97706','🛒 死亡後の生活費',`
-      <div class="hint" style="margin-bottom:6px">💡 通常時の${lcHint}万円/月を基準に、万が一時の生活費を設定（割合 or 段階）</div>
+    ${card(5,'#d97706','死亡後の生活費',`
+      <div class="hint" style="margin-bottom:6px">通常時の${lcHint}万円/月を基準に、万が一時の生活費を設定（割合 or 段階）</div>
       <div class="g2">
         <div class="fg"><label class="lbl">設定方式</label>
           <div style="display:flex;gap:6px">
@@ -830,8 +830,8 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(6,'#ea580c','🏠 住居',`
-      <div class="hint" style="margin-bottom:6px">💡 団信加入ローンの場合は完済、賃貸への引越しや段階的切替も可能</div>
+    ${card(6,'#ea580c','住居',`
+      <div class="hint" style="margin-bottom:6px">団信加入ローンの場合は完済、賃貸への引越しや段階的切替も可能</div>
       <div class="fg">
         <label class="lbl">住居モード</label>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -851,8 +851,8 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(7,'#9333ea','🎓 お子様の奨学金',`
-      <div class="hint" style="margin-bottom:6px">💡 高校入学時(16歳)・大学入学時(19歳)のタイミングでお子様ごとに設定</div>
+    ${card(7,'#9333ea','お子様の奨学金',`
+      <div class="hint" style="margin-bottom:6px">高校入学時(16歳)・大学入学時(19歳)のタイミングでお子様ごとに設定</div>
       <div class="fg">
         <label class="lbl">万が一時の奨学金</label>
         <div style="display:flex;gap:6px">
@@ -865,8 +865,8 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(8,'#4f46e5',`🚗 車両費（${spouse}基準）`,`
-      <div class="hint" style="margin-bottom:6px">💡 通常時の車設定をそのまま使うか、万一時のみ変更するかを選択</div>
+    ${card(8,'#4f46e5',`車両費（${spouse}基準）`,`
+      <div class="hint" style="margin-bottom:6px">通常時の車設定をそのまま使うか、万一時のみ変更するかを選択</div>
       <div class="fg">
         <label class="lbl">万一時の車</label>
         <div style="display:flex;gap:6px">
@@ -879,8 +879,8 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(9,'#475569',`🅿️ 駐車場（${spouse}基準）`,`
-      <div class="hint" style="margin-bottom:6px">💡 通常時の駐車場設定をそのまま使うか、万一時のみ変更するかを選択</div>
+    ${card(9,'#475569',`駐車場（${spouse}基準）`,`
+      <div class="hint" style="margin-bottom:6px">通常時の駐車場設定をそのまま使うか、万一時のみ変更するかを選択</div>
       <div class="fg">
         <label class="lbl">万一時の駐車場</label>
         <div style="display:flex;gap:6px">
@@ -915,7 +915,7 @@ function mgQA_buildPanel(tab){
     `)}
 
     <div class="hint" style="text-align:center;margin-top:12px;padding:8px;background:#f8fafc;border-radius:6px">
-      💨 入力停止から約0.6秒後に自動で再計算されます
+      入力停止から約0.6秒後に自動で再計算されます
     </div>
   `;
 }
@@ -1096,7 +1096,7 @@ function mgQA_buildMgCars(tab){
   let html = '';
   // 現有車セクション
   html += `<div style="background:#fff8e6;border:1px solid #ffc000;border-radius:8px;padding:10px;margin-bottom:10px">`;
-  html += `<div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:6px">🚙 現有車（既保有）</div>`;
+  html += `<div style="font-size:11px;font-weight:700;color:#7a5000;margin-bottom:6px">現有車（既保有）</div>`;
   if(ec.length===0){
     html += `<div style="padding:6px;color:#94a3b8;font-size:11px">未登録</div>`;
   } else {
@@ -1108,7 +1108,7 @@ function mgQA_buildMgCars(tab){
   html += `</div>`;
   // 将来車セクション
   html += `<div style="background:#f0ecff;border:1px solid #c4b0e8;border-radius:8px;padding:10px">`;
-  html += `<div style="font-size:11px;font-weight:700;color:#6b5ea8;margin-bottom:6px">🛒 将来購入予定の車</div>`;
+  html += `<div style="font-size:11px;font-weight:700;color:#6b5ea8;margin-bottom:6px">将来購入予定の車</div>`;
   if(fc.length===0){
     html += `<div style="padding:6px;color:#94a3b8;font-size:11px">未登録</div>`;
   } else {
@@ -1130,12 +1130,12 @@ function mgQA_buildExistingCarCard(tabId,i,c){
         <button class="mgqa-btn danger" onclick="mgQA_removeMgExistingCar('${tabId}',${i})">×</button>
       </div>
       <div style="display:flex;gap:4px;margin-bottom:4px">
-        <button type="button" class="btn-tog ${!isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'type','new')">✨新車</button>
-        <button type="button" class="btn-tog ${isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'type','used')">🔄中古</button>
+        <button type="button" class="btn-tog ${!isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'type','new')">新車</button>
+        <button type="button" class="btn-tog ${isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'type','used')">中古</button>
       </div>
       <div style="display:flex;gap:4px;margin-bottom:4px">
-        <button type="button" class="btn-tog ${!isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'pay','cash')">💴現金一括</button>
-        <button type="button" class="btn-tog ${isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'pay','loan')">🏦ローン中</button>
+        <button type="button" class="btn-tog ${!isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'pay','cash')">現金一括</button>
+        <button type="button" class="btn-tog ${isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'pay','loan')">ローン中</button>
       </div>
       <div class="g3" style="margin-bottom:4px">
         <div class="fg"><label class="lbl" style="font-size:10px">購入時期</label>
@@ -1154,11 +1154,11 @@ function mgQA_buildExistingCarCard(tabId,i,c){
         return `
         <div style="background:#fff3d0;border:1px solid #ffc000;border-radius:6px;padding:6px;margin-top:4px">
           <div style="display:flex;gap:4px;margin-bottom:4px">
-            <button type="button" class="btn-tog ${loanMode==='original'?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'loanInputMode','original')">📋 当初借入条件から</button>
-            <button type="button" class="btn-tog ${loanMode==='reverse'?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'loanInputMode','reverse')">🔄 現在の支払いから逆算</button>
+            <button type="button" class="btn-tog ${loanMode==='original'?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'loanInputMode','original')">当初借入条件から</button>
+            <button type="button" class="btn-tog ${loanMode==='reverse'?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','existing',${i},'loanInputMode','reverse')">現在の支払いから逆算</button>
           </div>
           ${loanMode==='reverse' ? `
-            <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🔄 現在の支払い情報</div>
+            <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">現在の支払い情報</div>
             <div class="g3">
               <div class="fg"><label class="lbl" style="font-size:9px">月々の支払い</label>
                 <div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${c.loanMonthly||3}" data-k="mgExistingCars.${i}.loanMonthly" data-cf-row="carTotal"><span class="sl">万円/月</span></div></div>
@@ -1169,7 +1169,7 @@ function mgQA_buildExistingCarCard(tabId,i,c){
             </div>
             <div style="font-size:9px;color:#475569;margin-top:3px">※ボーナスは年2回想定。年額=月々×12+ボーナス×2</div>
           ` : `
-            <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">🏦 当初ローン条件</div>
+            <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:4px">当初ローン条件</div>
             <div class="g3">
               <div class="fg"><label class="lbl" style="font-size:9px">当初頭金</label>
                 <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.down||50}" data-k="mgExistingCars.${i}.down" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
@@ -1193,12 +1193,12 @@ function mgQA_buildFutureCarCard(tabId,i,c){
         <button class="mgqa-btn danger" onclick="mgQA_removeMgFutureCar('${tabId}',${i})">×</button>
       </div>
       <div style="display:flex;gap:4px;margin-bottom:4px">
-        <button type="button" class="btn-tog ${!isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'type','new')">✨新車</button>
-        <button type="button" class="btn-tog ${isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'type','used')">🔄中古</button>
+        <button type="button" class="btn-tog ${!isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'type','new')">新車</button>
+        <button type="button" class="btn-tog ${isUsed?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'type','used')">中古</button>
       </div>
       <div style="display:flex;gap:4px;margin-bottom:4px">
-        <button type="button" class="btn-tog ${!isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'pay','cash')">💴現金一括</button>
-        <button type="button" class="btn-tog ${isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'pay','loan')">🏦ローン</button>
+        <button type="button" class="btn-tog ${!isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'pay','cash')">現金一括</button>
+        <button type="button" class="btn-tog ${isLoan?'on':''}" style="font-size:10px;padding:3px 8px" onclick="mgQA_setMgCarField('${tabId}','future',${i},'pay','loan')">ローン</button>
       </div>
       <div class="g3" style="margin-bottom:4px">
         <div class="fg"><label class="lbl" style="font-size:10px">車両価格</label>
@@ -1216,7 +1216,7 @@ function mgQA_buildFutureCarCard(tabId,i,c){
       </div>
       ${isLoan ? `
         <div style="background:#f0ecff;border:1px solid #c4b0e8;border-radius:6px;padding:6px;margin-top:4px">
-          <div style="font-size:10px;font-weight:700;color:#6b5ea8;margin-bottom:4px">🏦 ローン条件</div>
+          <div style="font-size:10px;font-weight:700;color:#6b5ea8;margin-bottom:4px">ローン条件</div>
           <div class="g3">
             <div class="fg"><label class="lbl" style="font-size:9px">頭金</label>
               <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.down||50}" data-k="mgFutureCars.${i}.down" data-cf-row="carTotal"><span class="sl">万円</span></div></div>
@@ -1302,9 +1302,9 @@ function mgQA_buildIncomeSteps(tab){
       ${spouse}の就労収入を段階的に設定します（通常時と同じ形式: 開始年齢〜終了年齢、開始金額〜終了金額の線形補間）。
       <br>入力は<strong>手取り年収</strong>です。額面から手取りを計算したいときは下の計算機をご利用ください。
     </div>
-    <!-- 🧮 手取り計算機（参考ツール） -->
+    <!-- 手取り計算機（参考ツール） -->
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px;margin-bottom:8px">
-      <div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:4px">🧮 手取り計算機（参考）</div>
+      <div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:4px">手取り計算機（参考）</div>
       <div style="display:flex;gap:6px;margin-bottom:6px;font-size:11px">
         <label><input type="radio" name="mgqa-nc-${tab.id}" value="emp" checked
           onchange="mgQA_recalcNet('${tab.id}','emp')"> 正社員</label>
@@ -1431,14 +1431,14 @@ function mgQA_buildScholarshipChildren(tab){
         <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:4px;flex-wrap:wrap">
           <input type="checkbox" ${sc.hs.on?'checked':''}
             data-k="scholarships.${idx}.hs.on"
-            data-v-bool="true" data-cf-row="scholarship" data-cf-from="${hsFromAge}"> 🎒 高校入学時 ${hsNote}
+            data-v-bool="true" data-cf-row="scholarship" data-cf-from="${hsFromAge}"> 高校入学時 ${hsNote}
           <input type="number" value="${sc.hs.amount||0}" min="0" style="width:80px"
             data-k="scholarships.${idx}.hs.amount" data-cf-row="scholarship" data-cf-from="${hsFromAge}" ${!sc.hs.on?'disabled':''}> 万円
         </label>
         <label style="display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap">
           <input type="checkbox" ${sc.univ.on?'checked':''}
             data-k="scholarships.${idx}.univ.on"
-            data-v-bool="true" data-cf-row="scholarship" data-cf-from="${univFromAge}"> 🎓 大学入学時 ${univNote}
+            data-v-bool="true" data-cf-row="scholarship" data-cf-from="${univFromAge}"> 大学入学時 ${univNote}
           <input type="number" value="${sc.univ.amount||0}" min="0" style="width:80px"
             data-k="scholarships.${idx}.univ.amount" data-cf-row="scholarship" data-cf-from="${univFromAge}" ${!sc.univ.on?'disabled':''}> 万円
         </label>

@@ -43,11 +43,11 @@ function renderScenarioTabs(){
   addBtn.className='stab-add';addBtn.textContent='＋';addBtn.title='CF表を追加';
   addBtn.addEventListener('click',()=>showScenarioModal());
   cont.appendChild(addBtn);
-  // 🗑 削除したCF表の復元（ゴミ箱に中身があるときだけ表示）
+  // 削除したCF表の復元（ゴミ箱に中身があるときだけ表示）
   try{
     if(_loadScenTrash().length>0){
       const tb=document.createElement('button');
-      tb.className='stab-add';tb.textContent='🗑';
+      tb.className='stab-add';tb.textContent='復元';
       tb.title='削除したCF表を元に戻す（30日間保持）';
       tb.addEventListener('click',()=>showScenarioTrash());
       cont.appendChild(tb);
@@ -111,7 +111,7 @@ function deleteScenario(id){
   if(scenarios.length<=1)return;
   const target=scenarios.find(s=>s.id===id);
   const name=target?target.name:'このCF表';
-  if(!confirm('「'+name+'」を削除しますか？\n\n（削除しても、CF表タブ横の 🗑 から30日間は元に戻せます）'))return;
+  if(!confirm('「'+name+'」を削除しますか？\n\n（削除しても、CF表タブ横の「復元」から30日間は元に戻せます）'))return;
   // ★ 削除前に必ず控えを取る（アクティブなCF表は最新の入力を取り込んでから）
   if(target){
     if(activeScenarioId===id){
@@ -155,7 +155,7 @@ function showScenarioTrash(){
   }
   ov.innerHTML='<div style="background:#fff;border-radius:10px;padding:16px 18px;width:min(92vw,420px);max-height:80vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.3)" onclick="event.stopPropagation()">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    +'<div style="font-size:14px;font-weight:800;color:#1e293b">🗑 削除したCF表</div>'
+    +'<div style="font-size:14px;font-weight:800;color:#1e293b">削除したCF表</div>'
     +'<button onclick="document.getElementById(\'scen-trash-overlay\').remove()" style="background:none;border:none;font-size:16px;cursor:pointer;color:#64748b">✕</button></div>'
     +rows+'</div>';
   document.body.appendChild(ov);
@@ -189,8 +189,8 @@ function showScenarioModal(){
           <input id="scen-new-name" class="inp" placeholder="例：奥様パートver" style="width:100%;font-size:13px;padding:7px 10px">
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-          <button onclick="execAddScenario(false)" style="background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">📄 新規で作成</button>
-          <button onclick="execAddScenario(true)" style="background:#0f766e;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">📋 現在のCF表を複製</button>
+          <button onclick="execAddScenario(false)" style="background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">新規で作成</button>
+          <button onclick="execAddScenario(true)" style="background:#0f766e;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">現在のCF表を複製</button>
         </div>
         <button onclick="document.getElementById('scen-modal-overlay').remove()" style="width:100%;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;padding:8px;font-size:12px;cursor:pointer">キャンセル</button>
       </div>`;

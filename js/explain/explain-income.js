@@ -17,7 +17,7 @@
     const bdKey=person==='h'?'hIncBd':'wIncBd';
     const bd=(R[bdKey]&&R[bdKey][i])||null;
     const labelSelf=person==='h'?'ご主人':'奥様';
-    const titleText=`💴 ${labelSelf}手取年収（${ctx.year}年）`;
+    const titleText=`${labelSelf}手取年収（${ctx.year}年）`;
 
     // 手動上書き
     if(ctx.isOverridden){
@@ -28,7 +28,7 @@
       const diffStr=diff===0?'':(diff>0?` (+${explainFmt(Math.abs(diff),'万円')})`:` (-${explainFmt(Math.abs(diff),'万円')})`);
       const simple=`
         <div style="background:#fff9e0;border:1px solid #f0c040;border-radius:6px;padding:8px 10px;margin-bottom:8px">
-          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">📝 セルが手動上書きされています</div>
+          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">セルが手動上書きされています</div>
           <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #f0c040">
             <span>元の自動計算値</span><strong style="color:#1e3a5f">${autoStr}</strong>
           </div>
@@ -57,7 +57,7 @@
     const simple=diffHtml+`
       <div style="display:flex;flex-direction:column;gap:3px;font-size:12px">
         <div style="display:flex;justify-content:space-between">
-          <span>📥 ${_gm?'額面年収（入力値ベース）':'推定額面年収'}</span><span>${explainFmt(bd.gross,'万円')}</span>
+          <span>${_gm?'額面年収（入力値ベース）':'推定額面年収'}</span><span>${explainFmt(bd.gross,'万円')}</span>
         </div>
         <div style="display:flex;justify-content:space-between;color:#b91c1c">
           <span>− 社会保険料</span><span>${explainFmt(bd.shakai,'万円')}</span>
@@ -94,13 +94,13 @@
     const reasons=[];
     // 額面（入力値）の変化 — 逆算表示の丸め誤差(±2万円未満)は変化とみなさない
     if(Math.abs((bd.gross||0)-(bdPrev.gross||0))>=2){
-      reasons.push(`📈 額面年収が ${explainFmt(Math.round(bdPrev.gross),'万円')} → ${explainFmt(Math.round(bd.gross),'万円')} に変化`);
+      reasons.push(`額面年収が ${explainFmt(Math.round(bdPrev.gross),'万円')} → ${explainFmt(Math.round(bd.gross),'万円')} に変化`);
     }
     // 介護保険料（40歳開始・65歳終了）— お客様に見せる前提の平易な文章で
     if(bd.shakaiRate!==bdPrev.shakaiRate){
       reasons.push(bd.shakaiRate>bdPrev.shakaiRate
-        ?'👤 40歳になったので、介護保険料のお支払いが始まります（その分、手取りが少し減ります）'
-        :'👤 65歳になったので、お給料からの介護保険料の天引きが終わります（その分、手取りが少し増えます）');
+        ?'40歳になったので、介護保険料のお支払いが始まります（その分、手取りが少し減ります）'
+        :'65歳になったので、お給料からの介護保険料の天引きが終わります（その分、手取りが少し増えます）');
     }
     // お子様の扶養控除（16歳で開始・19歳で拡大・23歳で卒業）
     const fPrev=bdPrev.fuyoIt||0, fNow=bd.fuyoIt||0;
@@ -116,13 +116,13 @@
         why='お子様が23歳になり、扶養控除の対象を卒業されました';
       else
         why='お子様の扶養控除の金額が変わりました';
-      reasons.push(`🎓 ${why}（控除 ${fPrev}万円 → ${fNow}万円・手取り${inc?'増':'減'}）`);
+      reasons.push(`${why}（控除 ${fPrev}万円 → ${fNow}万円・手取り${inc?'増':'減'}）`);
     }
     // 配偶者控除の適用/終了
     if(!!bd.hasSpouseDed!==!!bdPrev.hasSpouseDed){
       reasons.push(bd.hasSpouseDed
-        ?'💑 配偶者様の収入が基準内になり、「配偶者控除」で税金が軽くなります（手取り増）'
-        :'💑 配偶者様の収入が基準を超えたため、「配偶者控除」の対象から外れました（手取り減）');
+        ?'配偶者様の収入が基準内になり、「配偶者控除」で税金が軽くなります（手取り増）'
+        :'配偶者様の収入が基準を超えたため、「配偶者控除」の対象から外れました（手取り減）');
     }
     if(dNet===0&&reasons.length===0) return '';
     if(reasons.length===0) return ''; // 理由が特定できない微小変動（丸め）は出さない
@@ -131,7 +131,7 @@
     const prevNet=Math.round(bdPrev.net), nowNet=Math.round(bd.net);
     return `
       <div style="background:#fefce8;border:1px solid #facc15;border-radius:7px;padding:8px 10px;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:800;color:#713f12;margin-bottom:3px">📌 前年からの変化</div>
+        <div style="font-size:11px;font-weight:800;color:#713f12;margin-bottom:3px">前年からの変化</div>
         <div style="font-size:13px;font-weight:800;color:#1c1917;margin-bottom:4px">
           手取り ${prevNet.toLocaleString()}万円 → <span style="color:${col}">${nowNet.toLocaleString()}万円</span>
           <span style="color:${col};font-size:12px">（${sign}${dNet.toLocaleString()}万円）</span>
@@ -204,7 +204,7 @@
     const bdKey=person==='h'?'dcTaxBdH':'dcTaxBdW';
     const bd=(R[bdKey]&&R[bdKey][i])||null;
     const labelSelf=person==='h'?'ご主人':'奥様';
-    const titleText=`🏦 ${labelSelf}DC/iDeCo節税額（${ctx.year}年）`;
+    const titleText=`${labelSelf}DC/iDeCo節税額（${ctx.year}年）`;
 
     if(ctx.isOverridden){
       const autoVal=bd?bd.total:ctx.autoValue;
@@ -212,7 +212,7 @@
       const autoStr=explainFmt(autoVal,'万円');
       const simple=`
         <div style="background:#fff9e0;border:1px solid #f0c040;border-radius:6px;padding:8px 10px;margin-bottom:8px">
-          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">📝 セルが手動上書きされています</div>
+          <div style="font-size:10px;color:#7a5000;font-weight:700;margin-bottom:4px">セルが手動上書きされています</div>
           <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #f0c040">
             <span>元の自動計算値</span><strong style="color:#1e3a5f">${autoStr}</strong>
           </div>
