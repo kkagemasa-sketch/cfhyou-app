@@ -1085,8 +1085,14 @@ function _renderContingencyInner(){
         const _stKey = `accum-${p}-${sid}`;
         const _stMatched = _mgSecurityState.find(s=>s.p===p && s.sid===sid && s.type==='accum');
         if(_stMatched){
-          // _mgEffFV は raw FV から過去取崩しを差し引いた値を返す
-          fv2 = Math.round(_mgEffFV(_stMatched, i, true));
+          // 解約年当年に _mgEffFV を使うと _mgRawFV が「解約年齢以降は残高0」を返すため
+          // 解約収入そのものが0円になる。通常CF(cf-calc.js)と同じく、当年評価額から
+          // 過去年の自動取崩し分（複利成長込み）だけを差し引く。
+          let _redLiqMg=0;
+          for(const liq of _stMatched.liquidations){
+            if(liq.year<i)_redLiqMg+=liq.gross*Math.pow(1+_stMatched.rate,i-liq.year);
+          }
+          fv2=Math.max(0,fv2-Math.round(_redLiqMg));
         }
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
