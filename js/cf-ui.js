@@ -156,6 +156,7 @@ function setRTab(t){
   rTab=t;
   // CF表・万が一タブでflex列レイアウト（thead sticky用）
   $('right-body')?.classList.toggle('cf-mode',t==='cf'||t==='mg-h'||t==='mg-w');
+  $('rt-cf')?.classList.toggle('on',t==='cf');
   $('rt-lctab')?.classList.toggle('on',t==='lctab');
   $('rt-graph')?.classList.toggle('on',t==='graph');
   $('rt-loan')?.classList.toggle('on',t==='loan');

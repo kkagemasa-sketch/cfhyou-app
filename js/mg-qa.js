@@ -210,8 +210,8 @@ function mgQA_switchTab(id){
   // setRTab ラッパーを遅延登録（DOMContentLoaded で失敗している場合のフォールバック）
   if(typeof mgQA_wrapSetRTab === 'function') mgQA_wrapSetRTab();
 
-  // 右タブのアクティブ状態を更新
-  document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('on'));
+  // 右タブのアクティブ状態を更新（二重タブ: 上段のCF表タブは対象外）
+  document.querySelectorAll('.rtab').forEach(b=>{if(!b.closest('.scen-tabs'))b.classList.remove('on');});
   const thisBtn = document.getElementById('rt-'+id);
   if(thisBtn) thisBtn.classList.add('on');
 
@@ -326,8 +326,8 @@ function mgQA_calcAndRender(tab, immediate){
       setCfZoom(cfZoomLevel);
     }
   }
-  // 自タブのタブボタンをアクティブに戻す（setRTab抑制したので手動）
-  document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('on'));
+  // 自タブのタブボタンをアクティブに戻す（setRTab抑制したので手動。二重タブ: 上段は対象外）
+  document.querySelectorAll('.rtab').forEach(b=>{if(!b.closest('.scen-tabs'))b.classList.remove('on');});
   document.getElementById('rt-'+tab.id)?.classList.add('on');
   // rTab グローバル変数も手動で同期（Excel出力等が rTab を参照するため）
   // setRTab を直接呼ぶと右パネルの再描画など副作用があるので変数のみ更新

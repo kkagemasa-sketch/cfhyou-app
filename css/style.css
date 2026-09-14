@@ -101,9 +101,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Mei
 .rtab{padding:9px 20px 8px;border:none;background:rgba(255,255,255,.1);font-family:inherit;font-size:12px;color:rgba(255,255,255,.65);cursor:pointer;border-radius:8px 8px 0 0;transition:.15s;font-weight:600;letter-spacing:.02em;border:1px solid transparent;border-bottom:none;margin-bottom:0;position:relative;top:1px}
 .rtab:hover{background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
 .rtab.on{background:var(--gray-bg);color:var(--navy);border-color:rgba(255,255,255,.15);font-weight:800;top:0;padding-top:10px}
-/* 生活費・グラフ等を開いている間、「どのCF表の内容か」を控えめに示すハイライト */
-.rtab.ctx{background:rgba(255,255,255,.3);color:#fff;border-color:rgba(255,255,255,.3)}
-.rtab.ctx .stab-name{color:#fff}
+/* ===== 二重タブ 上段（CF表＝お客様プランを選ぶ細めの段） ===== */
+.r-tabs-top{background:#152c49;padding:5px 14px 0;justify-content:space-between}
+.r-tabs-top .rtab{padding:4px 16px 3px;font-size:11px;border-radius:7px 7px 0 0}
+.r-tabs-top .rtab.on{background:var(--navy);color:#fff;font-weight:800;top:0;padding-top:5px;box-shadow:inset 0 2px 0 #4facfe}
+.r-tabs-top .rtab.on .stab-name{color:#fff}
+.r-tabs-top .rtab.on .stab-rm{color:rgba(255,255,255,.55)}
+.r-tabs-top .stab-add{padding:2px 8px;font-size:12px;margin-bottom:2px}
+.scen-hint{flex-shrink:0;font-size:10px;color:rgba(255,255,255,.45);padding:0 10px 5px;white-space:nowrap;align-self:flex-end}
+/* 下段: 幅が足りない時は右側コントロールを2行目に折り返し、ページタブを潰さない */
+#r-tabs-pages{flex-wrap:wrap}
+#page-tab-strip{flex:1 1 auto}
 /* シナリオタブ（CF表1, CF表2, ...） */
 .scen-tabs{display:flex;align-items:flex-end;gap:3px}
 .scen-tabs .rtab{display:inline-flex;align-items:center;gap:4px}

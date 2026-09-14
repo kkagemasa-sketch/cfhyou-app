@@ -10,11 +10,10 @@ function renderScenarioTabs(){
   const cont=document.getElementById('scen-tabs');
   if(!cont)return;
   cont.innerHTML='';
-  const _shared=_isScenSharedTab(rTab);
   scenarios.forEach(s=>{
     const btn=document.createElement('button');
-    // CF表表示中は従来どおり on、生活費・グラフ等の表示中は「どのCF表か」を ctx で控えめに示す
-    btn.className='rtab'+(s.id===activeScenarioId?(rTab==='cf'?' on':(_shared?' ctx':'')):'');
+    // 二重タブ: 上段は「どのCF表（プラン）を開いているか」を常に示す
+    btn.className='rtab'+(s.id===activeScenarioId?' on':'');
     btn.id='stab-'+s.id;
     // 名前表示（ダブルクリックで編集可能）
     const inp=document.createElement('input');
@@ -56,11 +55,9 @@ function renderScenarioTabs(){
 }
 
 function switchScenarioAndShow(id){
+  // 二重タブ: 上段はCF表（プラン）の選択だけ。ページの切替は下段タブで行う
   if(id!==activeScenarioId){
     switchScenario(id);
-  } else if(rTab!=='cf' || window._mgQA_activeTabId){
-    // Q&A万が一タブがアクティブな場合も CF に戻す
-    setRTab('cf');
   }
   // renderScenarioTabs()はsetRTab内で呼ばれる
 }
