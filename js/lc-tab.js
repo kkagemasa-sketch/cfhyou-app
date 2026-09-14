@@ -82,7 +82,12 @@ function renderLCTab(){
   const mYearTotal=mTotal*12;
   const grandTotal=mYearTotal+yTotal;
 
+  const _scenNm=(typeof _activeScenName==='function')?_activeScenName():'';
   let h=`<div style="max-width:600px;margin:20px auto;font-family:inherit">
+  ${_scenNm?`<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+    <div style="font-size:14px;font-weight:800;color:#1e293b">💰 生活費</div>
+    <div style="font-size:11.5px;font-weight:700;color:#64748b">📄 ${_scenNm}</div>
+  </div>`:''}
   <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
     <tr style="background:#fff8c4">
       <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">毎月の固定費</td>

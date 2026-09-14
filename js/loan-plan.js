@@ -283,7 +283,7 @@ function renderLoanTab(){
     loanAmtB=0;loanRateB=loanRate;loanYrsB=loanYrs;
   }
   let h=`<div style="padding:16px;max-width:1400px">
-    <h2 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px">🏦 返済計画シミュレーション</h2>
+    <h2 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px">🏦 返済計画シミュレーション${(typeof _activeScenName==='function'&&_activeScenName())?`<span style="font-size:11.5px;font-weight:700;color:var(--muted);margin-left:10px">📄 ${_activeScenName()}</span>`:''}</h2>
     <!-- ペアローン切替 -->
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <button class="btn-tog on" id="lp-single-btn" onclick="togglePairLoan(false)" style="font-size:11px;padding:5px 14px">単独ローン</button>

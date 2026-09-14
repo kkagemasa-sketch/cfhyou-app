@@ -46,7 +46,12 @@ async function launchEdge(puppeteer, edgeExe){
   const dbgPort=9222+Math.floor(Math.random()*500);
   spawn(edgeExe,[
     '--headless','--disable-gpu','--no-first-run','--no-default-browser-check',
-    '--disable-extensions',`--remote-debugging-port=${dbgPort}`,`--user-data-dir=${udd}`,'about:blank'
+    '--disable-extensions',
+    // ★ バックグラウンドタブのタイマー抑制を無効化。
+    //   抑制が効くと、アプリ側のonload後100msの「デフォルト値投入」タイマーが
+    //   高負荷時に数秒遅れてシナリオ設定後に発火し、結果が揺れる（偽差分の根因）。
+    '--disable-background-timer-throttling','--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding',
+    `--remote-debugging-port=${dbgPort}`,`--user-data-dir=${udd}`,'about:blank'
   ],{detached:false,stdio:'ignore'});
   const browserURL=`http://127.0.0.1:${dbgPort}`;
   for(let i=0;i<30;i++){
@@ -73,6 +78,9 @@ async function openApp(browser, origin, errors){
   });
   await page.goto(`${origin}/index.html`,{waitUntil:'load',timeout:60000});
   await page.waitForFunction("typeof live==='function'&&typeof _resetSheetState==='function'&&typeof render==='function'&&typeof addIncomeStep==='function'",{timeout:30000});
+  // ★ onload後100msの「デフォルト値投入」を先回りで無効化（_autoSaveRestoredガードを立てる）。
+  //   タイマーが高負荷でどれだけ遅れて発火しても、シナリオ入力を上書きできなくなる。
+  await page.evaluate("_autoSaveRestored=true");
   await new Promise(r=>setTimeout(r,2000)); // onloadのデフォルト投入(setTimeout)を待ってから上書き（稀な競合フレーク対策で1.2s→2s）
   return page;
 }
@@ -80,6 +88,10 @@ async function openApp(browser, origin, errors){
 /* ---------- ページ内で実行する共通セットアップ（決定的な入力） ----------
  * 全テスト共通の土台。開始年は2026固定（年が変わっても正解表が壊れないように） */
 function pageBaseSetup(){
+  // ★ 決定化: 前シナリオの残デバウンス(live()の800msタイマー等)が
+  //   このセットアップの途中に発火して途中状態でupdateHints/calcLC等が走ると、
+  //   低速環境で結果が揺れる（例: MR.pW 66⇔156）。必ずキャンセルしてから始める。
+  try{ if(typeof timer!=='undefined') clearTimeout(timer); }catch(e){}
   _resetSheetState();
   _cfStartYear = 2026;
   const $=id=>document.getElementById(id);

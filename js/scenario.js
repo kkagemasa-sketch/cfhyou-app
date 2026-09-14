@@ -1,12 +1,20 @@
 // scenario.js — シナリオ管理
 // ===== シナリオ管理 =====
+// 今アクティブなCF表の名前（生活費・グラフ等のページ見出しに表示する用）
+function _activeScenName(){
+  try{const s=scenarios.find(x=>x.id===activeScenarioId);return s?s.name:'';}catch(e){return '';}
+}
+// 生活費・グラフ・返済計画・メモ＝「どのCF表の内容か」があるページ
+function _isScenSharedTab(t){return t==='lctab'||t==='graph'||t==='loan'||t==='memo';}
 function renderScenarioTabs(){
   const cont=document.getElementById('scen-tabs');
   if(!cont)return;
   cont.innerHTML='';
+  const _shared=_isScenSharedTab(rTab);
   scenarios.forEach(s=>{
     const btn=document.createElement('button');
-    btn.className='rtab'+(s.id===activeScenarioId&&rTab==='cf'?' on':'');
+    // CF表表示中は従来どおり on、生活費・グラフ等の表示中は「どのCF表か」を ctx で控えめに示す
+    btn.className='rtab'+(s.id===activeScenarioId?(rTab==='cf'?' on':(_shared?' ctx':'')):'');
     btn.id='stab-'+s.id;
     // 名前表示（ダブルクリックで編集可能）
     const inp=document.createElement('input');
@@ -58,6 +66,9 @@ function switchScenarioAndShow(id){
 }
 
 function switchScenario(id){
+  // 生活費・グラフ・返済計画・メモを開いたまま切り替えた場合は、そのページのまま中身だけ切り替える
+  // （_applyData内部のsetRTab('cf')でrTabが書き換わる前に記憶しておく）
+  const _keep=_isScenSharedTab(rTab)?rTab:'cf';
   // 現在の状態を保存
   const cur=scenarios.find(s=>s.id===activeScenarioId);
   if(cur)cur.data=_collectSaveData();
@@ -72,7 +83,8 @@ function switchScenario(id){
     if(typeof live==='function') live();
     if(typeof render==='function') render();
   }
-  setRTab('cf'); // setRTab内でrenderScenarioTabs()も呼ばれる
+  window._lastCFTab='cf'; // 前のCF表で万が一グラフを見ていた場合の引きずり防止
+  setRTab(_keep); // setRTab内でrenderScenarioTabs()も呼ばれる
 }
 
 // ===== 削除したCF表のゴミ箱（誤削除からの復元用・この端末に30日保持） =====
