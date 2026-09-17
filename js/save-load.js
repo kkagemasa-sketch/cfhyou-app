@@ -896,7 +896,7 @@ async function dbEstimateSize(){
 // ===== スロット保存・読込（IndexedDB版） =====
 
 function _collectSaveData(){
-  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],mgQACounter:(typeof mgQA_counter!=='undefined')?{h:(mgQA_counter.h||0),w:(mgQA_counter.w||0)}:null,cfStartYear:_cfStartYear,version:'10'};
+  const d={type:ST.type,fields:{},dynamic:_collectDynamic(),cfOverrides:JSON.parse(JSON.stringify(cfOverrides)),mgOverrides:JSON.parse(JSON.stringify(mgOverrides)),cfCustomRows:JSON.parse(JSON.stringify(cfCustomRows)),mgCustomRows:JSON.parse(JSON.stringify(mgCustomRows)),_cfCustomId:_cfCustomId,loanCategory:loanCategory,flat35Sub:flat35Sub,householdType:householdType,_selectedMansionId:_selectedMansionId,mgQATabs:(typeof mgQA_tabs!=='undefined'&&Array.isArray(mgQA_tabs))?JSON.parse(JSON.stringify(mgQA_tabs)):[],mgQACounter:(typeof mgQA_counter!=='undefined')?{h:(mgQA_counter.h||0),w:(mgQA_counter.w||0)}:null,cfStartYear:_cfStartYear,version:'11'};
   _STATIC_FIELDS.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')d.fields[id]=el.checked;else d.fields[id]=(el.classList.contains('lc-m')||el.classList.contains('lc-y')||el.classList.contains('amt-inp'))?String(el.value).replace(/,/g,''):el.value;}});
   d.cfSummaryNote=window._cfSummaryNote||''; // 注釈・補足メモ（各CF表=シナリオごとに独立）
   d.hoikuDefaultsVer=window._hoikuDefaultsVer||'2'; // 保育料デフォルトの世代（旧データは'1'を維持）
@@ -1013,6 +1013,15 @@ function _migrateYenToManV10(d){
   });
   d.version='10';
 }
+// ═══ v11互換: 「退職後の税・社保」を既定OFFへ戻す ═══
+// 2026-09-11〜17の間は既定ONだったため、既存CF表の退職前後の数字が従来から
+// 変わって見えた（メンバーから「お客様に説明しづらい」との声）。v10以前の
+// 保存データは一律OFFへ戻し、v11以降に本人がONにして保存したものは尊重する。
+function _migrateRetireTaxOffV11(d){
+  if((parseInt(d.version)||0)>=11)return;
+  if(d.fields&&d.fields['retire-tax-on']!==undefined)d.fields['retire-tax-on']=false;
+  d.version='11';
+}
 // ===== 静的フィールドのHTML初期値ヘルパー =====
 // input: defaultValue / checkbox: defaultChecked / select: selected属性付きoption(なければ先頭)
 function _staticFieldDefault(el){
@@ -1046,6 +1055,8 @@ function _applyData(d){
     try{ _scrub(d); }catch(e){}
     // 旧データ互換: 円入力だった項目を万円へ換算（v10）
     try{ _migrateYenToManV10(d); }catch(e){}
+    // 旧データ互換: 退職後の税・社保を既定OFFへ（v11）
+    try{ _migrateRetireTaxOffV11(d); }catch(e){}
     setType(d.type||'mansion');
     var _defs={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
     // 旧データ互換: 引越費用と家具・家電を統合（moving-cost に合算、furniture-init を0に）
@@ -1639,7 +1650,7 @@ async function deleteSlot(name){
 async function exportAllJSON(){
   const slots=await dbGetAll();
   if(slots.length===0){alert('保存データがありません');return;}
-  const json=JSON.stringify({version:'10',exportedAt:_fmtDate(new Date()),slots},null,2);
+  const json=JSON.stringify({version:'11',exportedAt:_fmtDate(new Date()),slots},null,2);
   const fileName=`CF表_全件バックアップ_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.json`;
   if(window.showSaveFilePicker){
     try{
