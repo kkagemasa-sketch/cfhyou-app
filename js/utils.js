@@ -267,7 +267,14 @@ function secRowLabel(p, sid, baseLbl, suffix){
 // - 19〜22歳: 特定親族特別控除 63万円（住民税45万円）※子の収入150万以下を前提とした簡略
 // children: [{age:現在年齢}...], yearOffset: 何年後か
 // 戻り値: {it:所得税控除計, ju:住民税控除計, n16_18, n19_22}
+// ★ 自動適用スイッチ（2026-09-17 メンバー要望でOFF）
+//   「お子様が16/19/23歳になる年に手取りが変わり、お客様への説明がややこしい」ため停止中。
+//   false の間は控除0を返し、額面モードの変換・手取り計算機・🔍計算フローサマリー・
+//   CF表ⓘの扶養控除表示がすべて連動して消える（表示側は控除額>0ガード済み）。
+//   復活させるときはこの1行を true に戻すだけ。配偶者控除・扶養内パートは対象外（従来どおり）。
+var FUYO_DED_AUTO = false;
 function calcFuyoDed(children, yearOffset){
+  if(!FUYO_DED_AUTO) return {it:0, ju:0, n16_18:0, n19_22:0};
   let n16_18=0, n19_22=0;
   (children||[]).forEach(c=>{
     const a=(c.age||0)+(yearOffset||0);
