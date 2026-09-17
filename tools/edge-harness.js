@@ -100,6 +100,10 @@ function pageBaseSetup(){
   //   このセットアップの途中に発火して途中状態でupdateHints/calcLC等が走ると、
   //   低速環境で結果が揺れる（例: MR.pW 66⇔156）。必ずキャンセルしてから始める。
   try{ if(typeof timer!=='undefined') clearTimeout(timer); }catch(e){}
+  // ★ 決定化: 収入ステップ変更が仕込む年金自動再計算(400ms, income.js calcStepHint)も
+  //   キャンセルする。これが残るとスナップショットのタイミング次第で pension-w が
+  //   「入力値」⇔「自動計算値」に揺れる（例: MR.pW 66⇔156 のフレークの正体）。
+  try{ clearTimeout(window._pensionRecalcTimer); }catch(e){}
   _resetSheetState();
   _cfStartYear = 2026;
   const $=id=>document.getElementById(id);

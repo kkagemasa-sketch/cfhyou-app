@@ -152,6 +152,9 @@ const SCENARIOS = {
 
 /* ---------- ページ内スナップショット関数 ---------- */
 function pageSnapshot(){
+  // ★ 決定化: シナリオ設定が仕込んだ年金自動再計算(400ms)が発火する前に必ず打ち切る。
+  //   正解表は「自動計算が発火していない状態」を正とする（pension欄は入力値のまま）。
+  try{ clearTimeout(window._pensionRecalcTimer); }catch(e){}
   if(typeof render==='function') render();
   if(typeof renderContingency==='function'){ try{ renderContingency(); }catch(e){} }
   const out={};
