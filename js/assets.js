@@ -191,6 +191,25 @@ function addSecurity(person){
           <input class="inp age-inp" id="sec-stk-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
       </div>
     </div>
+    <div id="sec-draw-wrap-${person}-${id}" style="margin-top:6px;border-top:1px dashed var(--border);padding-top:6px">
+      <label class="lbl" style="font-size:9px;color:#0e7a4a">取り崩し設定（任意）— 老後などに毎年少しずつ受け取る</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr 1fr;gap:6px;align-items:end;margin-top:2px">
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">開始年齢(歳)</label>
+          <input class="inp age-inp" id="sec-draw-start-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">終了年齢(歳)</label>
+          <input class="inp age-inp" id="sec-draw-end-${person}-${id}" type="number" value="" placeholder="空欄=尽きるまで" min="20" max="110" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">方式</label>
+          <div style="display:flex;gap:4px">
+            <div class="tc on" id="sec-draw-rate-${person}-${id}" onclick="setSecDrawMode('${person}',${id},'pct')" style="flex:1;padding:3px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">定率</div></div>
+            <div class="tc" id="sec-draw-fix-${person}-${id}" onclick="setSecDrawMode('${person}',${id},'amt')" style="flex:1;padding:3px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">定額</div></div>
+          </div></div>
+        <div class="fg"><span id="sec-draw-pct-wrap-${person}-${id}"><label class="lbl" style="font-size:9px;white-space:nowrap">毎年 残高の(%)</label>
+          <input class="inp amt-inp" id="sec-draw-pct-${person}-${id}" type="number" value="" placeholder="例:4" min="0" max="100" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></span>
+          <span id="sec-draw-amt-wrap-${person}-${id}" style="display:none"><label class="lbl" style="font-size:9px;white-space:nowrap">毎年(万円)</label>
+          <input class="inp amt-inp" id="sec-draw-amt-${person}-${id}" type="number" value="" placeholder="例:120" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></span></div>
+      </div>
+      <span class="hint" style="font-size:9px">開始年齢を入れると有効になります。毎月の積立は開始年齢で自動終了。課税口座は利益部分に20.315%の税金を自動考慮（NISAは非課税）。解約年齢も入れた場合は、その年に残りを一括で受け取ります</span>
+    </div>
     <div id="sec-bond-fields-${person}-${id}" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">
         <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">投資額(万)</label>
@@ -338,9 +357,23 @@ function setSecType(person,id,t){
   document.getElementById(`sec-stock-fields-${person}-${id}`).style.display=t==='stock'?'':'none';
   const bondF=document.getElementById(`sec-bond-fields-${person}-${id}`);
   if(bondF)bondF.style.display=t==='bond'?'':'none';
+  // 取り崩し設定は積立型・一括投資のみ（債券は満期保有前提のため非表示）
+  const drawW=document.getElementById(`sec-draw-wrap-${person}-${id}`);
+  if(drawW)drawW.style.display=t==='bond'?'none':'';
   live();
   if(typeof validateNisaLimits==='function') validateNisaLimits();
 }
+// 取り崩し方式切替（pct=定率 / amt=定額）
+function setSecDrawMode(person,id,m){
+  document.getElementById(`sec-draw-rate-${person}-${id}`)?.classList.toggle('on',m==='pct');
+  document.getElementById(`sec-draw-fix-${person}-${id}`)?.classList.toggle('on',m==='amt');
+  const pctW=document.getElementById(`sec-draw-pct-wrap-${person}-${id}`);
+  const amtW=document.getElementById(`sec-draw-amt-wrap-${person}-${id}`);
+  if(pctW)pctW.style.display=m==='pct'?'':'none';
+  if(amtW)amtW.style.display=m==='amt'?'':'none';
+  live();
+}
+window.setSecDrawMode=setSecDrawMode;
 // 債券の利払いタイプ切替（int=利息を毎年受け取る / reinv=再投資・複利）
 function setBondPay(person,id,t){
   document.getElementById(`sec-bond-pay-${person}-${id}`)?.classList.toggle('on',t==='int');

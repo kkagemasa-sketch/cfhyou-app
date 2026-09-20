@@ -390,6 +390,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=iRow(_isSingle_t?'iDeCo受取':'iDeCo受取(ご主人様)',R.idecoReceiptH,'idecoReceiptH');
   if(!_isSingle_t)h+=iRow('iDeCo受取(奥様)',R.idecoReceiptW,'idecoReceiptW');
   h+=iRow('保険満期金',R.insMat,'insMat');
+  // 有価証券の取り崩し：銘柄ごとに個別行で表示
+  if(R.secDrawRows){R.secDrawRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
   // 債券利息：銘柄ごとに個別行で表示
   if(R.bondIntRows){R.bondIntRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
   // 有価証券解約：銘柄ごとに個別行で表示

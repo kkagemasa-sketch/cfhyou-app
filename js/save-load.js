@@ -204,7 +204,10 @@ function _collectDynamic(){
         bal:_rawVal(`sec-bal-${p}-${id}`),monthly:_rawVal(`sec-monthly-${p}-${id}`),end:_rawVal(`sec-end-${p}-${id}`),rate:_rawVal(`sec-rate-${p}-${id}`),redeem:_rawVal(`sec-redeem-${p}-${id}`),
         stkBal:_rawVal(`sec-stk-bal-${p}-${id}`),stkAge:_rawVal(`sec-stk-age-${p}-${id}`),div:_rawVal(`sec-div-${p}-${id}`),stkRedeem:_rawVal(`sec-stk-redeem-${p}-${id}`),
         bondBal:_rawVal(`sec-bond-bal-${p}-${id}`),bondAge:_rawVal(`sec-bond-age-${p}-${id}`),bondRate:_rawVal(`sec-bond-rate-${p}-${id}`),bondMat:_rawVal(`sec-bond-mat-${p}-${id}`),
-        bondPay:$(`sec-bond-reinv-${p}-${id}`)?.classList.contains('on')?'reinv':'int'});
+        bondPay:$(`sec-bond-reinv-${p}-${id}`)?.classList.contains('on')?'reinv':'int',
+        drawStart:_rawVal(`sec-draw-start-${p}-${id}`),drawEnd:_rawVal(`sec-draw-end-${p}-${id}`),
+        drawMode:$(`sec-draw-fix-${p}-${id}`)?.classList.contains('on')?'amt':'pct',
+        drawPct:_rawVal(`sec-draw-pct-${p}-${id}`),drawAmt:_rawVal(`sec-draw-amt-${p}-${id}`)});
     });
   });
   // その他収入
@@ -541,6 +544,11 @@ function _restoreDynamic(d){
     if($(`sec-bond-rate-${p}-${id}`))$(`sec-bond-rate-${p}-${id}`).value=s.bondRate||'';
     if($(`sec-bond-mat-${p}-${id}`))$(`sec-bond-mat-${p}-${id}`).value=s.bondMat||'';
     if(s.bondPay&&typeof setBondPay==='function')setBondPay(p,id,s.bondPay==='reinv'?'reinv':'int');
+    if($(`sec-draw-start-${p}-${id}`))$(`sec-draw-start-${p}-${id}`).value=s.drawStart||'';
+    if($(`sec-draw-end-${p}-${id}`))$(`sec-draw-end-${p}-${id}`).value=s.drawEnd||'';
+    if($(`sec-draw-pct-${p}-${id}`))$(`sec-draw-pct-${p}-${id}`).value=s.drawPct||'';
+    if($(`sec-draw-amt-${p}-${id}`))$(`sec-draw-amt-${p}-${id}`).value=s.drawAmt||'';
+    if(s.drawMode&&typeof setSecDrawMode==='function')setSecDrawMode(p,id,s.drawMode==='amt'?'amt':'pct');
     if($(`sec-bal-${p}-${id}`))$(`sec-bal-${p}-${id}`).value=s.bal;
     if($(`sec-monthly-${p}-${id}`))$(`sec-monthly-${p}-${id}`).value=s.monthly;
     if($(`sec-end-${p}-${id}`))$(`sec-end-${p}-${id}`).value=s.end;

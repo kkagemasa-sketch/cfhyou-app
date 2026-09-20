@@ -287,6 +287,70 @@ function calcFuyoDed(children, yearOffset){
   return {it:n16_18*38+n19_22*63, ju:n16_18*33+n19_22*45, n16_18, n19_22};
 }
 
+// ═══ 有価証券の取り崩しプラン（定率/定額）═══
+// 通常CF(cf-calc.js)・万一CF(contingency.js)共通の純粋関数。
+// 取り崩し開始前の残高推移は既存の閉形式（積立=月複利・endAge inclusive、一括=年複利・
+// 投資年は成長なし）と厳密一致する逐次計算 → 設定を入れても開始前の数字は変わらない。
+// 年末に「成長 → 取り崩し」の順。課税口座は利益按分に20.315%課税・取得原価も按分減少。
+// 解約年齢の年は取り崩しせず残額を一括受取（redeemGross/Net/Cost）。
+// cfg: {type:'accum'|'stock', bal, monthly, endAge, rate(年率小数), baseAge, investAge,
+//       drawStart, drawEnd(0=尽きるまで), drawMode('pct'|'amt'), drawPct, drawAmt,
+//       redeemAge, isNisa, basisInput, totalYrs, returnAt(任意: k=>年次利回り|null)}
+function computeSecDrawPlan(cfg){
+  const N=cfg.totalYrs;
+  const balPre=new Array(N).fill(0), balEnd=new Array(N).fill(0), costEnd=new Array(N).fill(0);
+  const costPre=new Array(N).fill(0); // その年の取り崩し前の取得原価（死亡時現金化の課税用）
+  const drawGross=new Array(N).fill(0), drawNet=new Array(N).fill(0);
+  let bal=0, cost=0, started=false, done=false;
+  let redeemYear=-1, redeemGross=0, redeemNet=0, redeemCost=0;
+  const isStock=cfg.type==='stock';
+  if(!isStock){ bal=cfg.bal; cost=(cfg.basisInput>0?cfg.basisInput:cfg.bal); started=true; }
+  for(let k=0;k<N;k++){
+    const pAge=cfg.baseAge+k;
+    if(isStock&&!started){
+      if(cfg.investAge>0&&pAge<cfg.investAge)continue; // 未投資
+      bal=cfg.bal; cost=(cfg.basisInput>0?cfg.basisInput:cfg.bal); started=true;
+    }
+    if(done)continue;
+    // 成長
+    const _rRaw=cfg.returnAt?cfg.returnAt(k):null;
+    const r=(_rRaw!==null&&_rRaw!==undefined)?_rRaw:cfg.rate;
+    if(isStock){
+      if(!(cfg.investAge>0&&pAge===cfg.investAge))bal=bal*(1+r);
+    }else{
+      const mr=r/12; const cpd=Math.pow(1+mr,12);
+      const contrib=((cfg.endAge===0||pAge<=cfg.endAge)&&(cfg.drawStart===0||pAge<cfg.drawStart))?cfg.monthly:0;
+      bal=bal*cpd+(mr>0?contrib*(cpd-1)/mr:contrib*12);
+      cost+=contrib*12;
+    }
+    balPre[k]=bal; costPre[k]=cost;
+    // 解約年: 残額一括受取
+    if(cfg.redeemAge>0&&pAge===cfg.redeemAge){
+      redeemYear=k; redeemGross=bal; redeemCost=cost;
+      const gain=Math.max(0,bal-cost);
+      redeemNet=cfg.isNisa?bal:(bal-gain*0.20315);
+      bal=0; cost=0; done=true;
+      balEnd[k]=0; costEnd[k]=0;
+      continue;
+    }
+    // 取り崩し
+    if(cfg.drawStart>0&&pAge>=cfg.drawStart&&(cfg.drawEnd===0||pAge<=cfg.drawEnd)&&bal>0){
+      const g=cfg.drawMode==='amt'?Math.min(cfg.drawAmt,bal):bal*cfg.drawPct/100;
+      if(g>0.01){
+        const gainRatio=bal>0?Math.max(0,(bal-cost)/bal):0;
+        const tax=cfg.isNisa?0:g*gainRatio*0.20315;
+        drawGross[k]=g; drawNet[k]=g-tax;
+        cost=Math.max(0,cost-cost*(g/bal));
+        bal-=g;
+        if(bal<0.01){bal=0;cost=0;}
+      }
+    }
+    balEnd[k]=bal; costEnd[k]=cost;
+  }
+  return {drawStart:cfg.drawStart,balPre,balEnd,costEnd,costPre,drawGross,drawNet,redeemYear,redeemGross,redeemNet,redeemCost,isNisa:cfg.isNisa};
+}
+window.computeSecDrawPlan=computeSecDrawPlan;
+
 // 老齢年金の手取り → 額面 逆算（65歳以上想定）
 // breakdownPension65plus を使い二分探索で厳密逆算
 // ★ 旧: 110万以下は「非課税相当」として額面=手取りのショートカットがあったが、
