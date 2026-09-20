@@ -143,7 +143,7 @@ function addSecurity(person){
           <input class="inp amt-inp" id="sec-nisa-annual-${person}-${id}" type="number" value="" placeholder="例:120" min="0"
             oninput="syncNisaAnnualToMonthly('${person}',${id});live();validateNisaLimits&&validateNisaLimits()"
             style="font-size:11px;padding:4px 6px;width:100%;max-width:180px">
-          <span style="font-size:9px;color:#475569;margin-left:6px">※内部で月額に換算して計算</span>
+          <span style="font-size:9px;color:#475569;margin-left:6px">※毎月の積立額と連動（どちらを入力してもOK）</span>
         </div>
       </div>
     </div>
@@ -170,7 +170,7 @@ function addSecurity(person){
         <div class="fg" data-f="bal"><label class="lbl" style="font-size:9px;white-space:nowrap">現時点の評価額(万)</label>
           <input class="inp amt-inp" id="sec-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:200" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
         <div class="fg" data-f="monthly"><label class="lbl" style="font-size:9px;white-space:nowrap">毎月の積立額(万)</label>
-          <input class="inp amt-inp" id="sec-monthly-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="例:5" min="0" oninput="live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%"></div>
+          <input class="inp amt-inp" id="sec-monthly-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="例:5" min="0" oninput="syncNisaMonthlyToAnnual('${person}',${id});live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%"></div>
         <div class="fg" data-f="rate"><label class="lbl" style="font-size:9px;white-space:nowrap">想定利回り(%)</label>
           <input class="inp amt-inp" id="sec-rate-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
         <div class="fg" data-f="end"><label class="lbl" style="font-size:9px;white-space:nowrap">積立終了年齢(歳)</label>
@@ -284,14 +284,14 @@ function setSecNisaFrame(person,id,f){
              : document.getElementById(`sec-frame-tsumi-${person}-${id}`)?.classList.contains('on') ? 'tsumi' : null;
   document.getElementById(`sec-frame-tsumi-${person}-${id}`)?.classList.toggle('on',f==='tsumi');
   document.getElementById(`sec-frame-grow-${person}-${id}`)?.classList.toggle('on',f==='grow');
-  // 枠切替時に前の枠の入力値をクリア（隠れたまま計算に混入するのを防ぐ）
+  // 枠切替時の入力値の扱い
   if(prev && prev!==f){
     if(f==='grow'){
-      // 成長枠へ: つみたて用の毎月積立額をクリア
-      const monthlyEl=document.getElementById(`sec-monthly-${person}-${id}`);
-      if(monthlyEl) monthlyEl.value='';
+      // 成長枠へ: 毎月の積立額は成長枠でも正規の入力欄になった（2026-09-20）ため
+      // 引き継ぎ、年間投資予定額を月額×12で連動セットする
+      if(typeof syncNisaMonthlyToAnnual==='function')syncNisaMonthlyToAnnual(person,id);
     } else {
-      // つみたて枠へ: 成長枠の年間投資予定額をクリア
+      // つみたて枠へ: 成長枠の年間投資予定額をクリア（つみたて枠では非表示＝混入防止）
       const annualEl=document.getElementById(`sec-nisa-annual-${person}-${id}`);
       if(annualEl) annualEl.value='';
     }
@@ -303,14 +303,11 @@ function setSecNisaFrame(person,id,f){
 function applyNisaFrameVisibility(person, id, frame){
   const accumFields = document.getElementById(`sec-accum-fields-${person}-${id}`);
   if(accumFields){
-    // 成長枠: 毎月の積立額(monthly)のみ隠す（年間投資予定額から自動換算のため）。
+    // ★2026-09-20修正: 成長枠でも毎月の積立額(monthly)を表示（積立設定を直接入力可能に）。
+    //   年間投資予定額と双方向連動（syncNisaAnnualToMonthly / syncNisaMonthlyToAnnual）。
     // ★2026-09-13修正: 旧実装は想定利回り・積立終了/解約年齢まで隠していたため
     //   成長枠で年利を入力する場所がなかった（計算には使われていたのに変更不可だった）
-    accumFields.querySelectorAll('[data-f]').forEach(el=>{
-      const f = el.dataset.f;
-      if(frame==='grow') el.style.display = (f==='monthly') ? 'none' : '';
-      else el.style.display = '';
-    });
+    accumFields.querySelectorAll('[data-f]').forEach(el=>{ el.style.display=''; });
   }
   const growExtra = document.getElementById(`sec-nisa-grow-extra-${person}-${id}`);
   if(growExtra) growExtra.style.display = (frame==='grow') ? '' : 'none';
@@ -324,6 +321,15 @@ function syncNisaAnnualToMonthly(person, id){
   const rateEl = document.getElementById(`sec-rate-${person}-${id}`);
   if(rateEl && !rateEl.value) rateEl.value = 5;
 }
+// 成長枠で毎月の積立額を直接入力したとき、年間投資予定額の表示を連動更新（月額×12）
+function syncNisaMonthlyToAnnual(person, id){
+  const isGrow = document.getElementById(`sec-frame-grow-${person}-${id}`)?.classList.contains('on');
+  if(!isGrow) return;
+  const monthly = parseFloat(document.getElementById(`sec-monthly-${person}-${id}`)?.value)||0;
+  const annualEl = document.getElementById(`sec-nisa-annual-${person}-${id}`);
+  if(annualEl) annualEl.value = monthly > 0 ? String(Math.round(monthly*12*10)/10) : '';
+}
+window.syncNisaMonthlyToAnnual = syncNisaMonthlyToAnnual;
 function setSecType(person,id,t){
   document.getElementById(`sec-acc-${person}-${id}`).classList.toggle('on',t==='accum');
   document.getElementById(`sec-stock-${person}-${id}`).classList.toggle('on',t==='stock');
