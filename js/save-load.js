@@ -197,11 +197,14 @@ function _collectDynamic(){
       const id=el.id.split('-').pop();
       const isNisa=$(`sec-nisa-${p}-${id}`)?.classList.contains('on')||false;
       const isStock=$(`sec-stock-${p}-${id}`)?.classList.contains('on')||false;
+      const isBond=$(`sec-bond-${p}-${id}`)?.classList.contains('on')||false;
       const nisaFrame = $(`sec-frame-grow-${p}-${id}`)?.classList.contains('on') ? 'grow' : 'tsumi';
-      d.securities.push({person:p,label:$(`sec-label-${p}-${id}`)?.value||'',taxType:isNisa?'nisa':'taxable',secType:isStock?'stock':'accum',
+      d.securities.push({person:p,label:$(`sec-label-${p}-${id}`)?.value||'',taxType:isNisa?'nisa':'taxable',secType:isBond?'bond':(isStock?'stock':'accum'),
         nisaFrame, basis:_rawVal(`sec-basis-${p}-${id}`), nisaAnnual:_rawVal(`sec-nisa-annual-${p}-${id}`),
         bal:_rawVal(`sec-bal-${p}-${id}`),monthly:_rawVal(`sec-monthly-${p}-${id}`),end:_rawVal(`sec-end-${p}-${id}`),rate:_rawVal(`sec-rate-${p}-${id}`),redeem:_rawVal(`sec-redeem-${p}-${id}`),
-        stkBal:_rawVal(`sec-stk-bal-${p}-${id}`),stkAge:_rawVal(`sec-stk-age-${p}-${id}`),div:_rawVal(`sec-div-${p}-${id}`),stkRedeem:_rawVal(`sec-stk-redeem-${p}-${id}`)});
+        stkBal:_rawVal(`sec-stk-bal-${p}-${id}`),stkAge:_rawVal(`sec-stk-age-${p}-${id}`),div:_rawVal(`sec-div-${p}-${id}`),stkRedeem:_rawVal(`sec-stk-redeem-${p}-${id}`),
+        bondBal:_rawVal(`sec-bond-bal-${p}-${id}`),bondAge:_rawVal(`sec-bond-age-${p}-${id}`),bondRate:_rawVal(`sec-bond-rate-${p}-${id}`),bondMat:_rawVal(`sec-bond-mat-${p}-${id}`),
+        bondPay:$(`sec-bond-reinv-${p}-${id}`)?.classList.contains('on')?'reinv':'int'});
     });
   });
   // その他収入
@@ -532,6 +535,12 @@ function _restoreDynamic(d){
       syncNisaAnnualToMonthly(p,id);
     }
     if(s.secType==='stock')setSecType(p,id,'stock');
+    if(s.secType==='bond')setSecType(p,id,'bond');
+    if($(`sec-bond-bal-${p}-${id}`))$(`sec-bond-bal-${p}-${id}`).value=s.bondBal||'';
+    if($(`sec-bond-age-${p}-${id}`))$(`sec-bond-age-${p}-${id}`).value=s.bondAge||'';
+    if($(`sec-bond-rate-${p}-${id}`))$(`sec-bond-rate-${p}-${id}`).value=s.bondRate||'';
+    if($(`sec-bond-mat-${p}-${id}`))$(`sec-bond-mat-${p}-${id}`).value=s.bondMat||'';
+    if(s.bondPay&&typeof setBondPay==='function')setBondPay(p,id,s.bondPay==='reinv'?'reinv':'int');
     if($(`sec-bal-${p}-${id}`))$(`sec-bal-${p}-${id}`).value=s.bal;
     if($(`sec-monthly-${p}-${id}`))$(`sec-monthly-${p}-${id}`).value=s.monthly;
     if($(`sec-end-${p}-${id}`))$(`sec-end-${p}-${id}`).value=s.end;

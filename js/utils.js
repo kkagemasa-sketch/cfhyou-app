@@ -251,8 +251,11 @@ function secRowLabel(p, sid, baseLbl, suffix){
   const custom = document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim() || '';
   let name = custom;
   if(!name){
+    const isBond = document.getElementById(`sec-bond-${p}-${sid}`)?.classList.contains('on');
     const isNisa = document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
-    if(isNisa){
+    if(isBond){
+      name = '債券'; // 債券は課税口座のみ対応（NISA枠名は使わない）
+    } else if(isNisa){
       const isGrow = document.getElementById(`sec-frame-grow-${p}-${sid}`)?.classList.contains('on');
       name = isGrow ? 'NISA成長枠' : 'NISAつみたて枠';
     } else {

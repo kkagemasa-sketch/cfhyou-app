@@ -155,6 +155,9 @@ function addSecurity(person){
       <div class="tc" id="sec-stock-${person}-${id}" onclick="setSecType('${person}',${id},'stock')" style="flex:1;padding:4px 8px;gap:4px">
         <div class="tc-lbl" style="font-size:10px">一括投資</div>
       </div>
+      <div class="tc" id="sec-bond-${person}-${id}" onclick="setSecType('${person}',${id},'bond')" style="flex:1;padding:4px 8px;gap:4px">
+        <div class="tc-lbl" style="font-size:10px">債券</div>
+      </div>
     </div>
     <div id="sec-accum-fields-${person}-${id}">
       <div id="sec-nisa-basis-row-${person}-${id}" style="margin-bottom:6px">
@@ -187,6 +190,28 @@ function addSecurity(person){
         <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">解約年齢(歳)</label>
           <input class="inp age-inp" id="sec-stk-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
       </div>
+    </div>
+    <div id="sec-bond-fields-${person}-${id}" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">投資額(万)</label>
+          <input class="inp amt-inp" id="sec-bond-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:500" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">購入年齢(歳)</label>
+          <input class="inp age-inp" id="sec-bond-age-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="空欄=保有中" min="20" max="90" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">利回り(%/年)</label>
+          <input class="inp amt-inp" id="sec-bond-rate-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:3" min="0" max="20" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
+        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">償還(満期)年齢(歳)</label>
+          <input class="inp age-inp" id="sec-bond-mat-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:50" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+        <label class="lbl" style="font-size:9px;white-space:nowrap;margin:0">利息の受け取り方</label>
+        <div class="tc on" id="sec-bond-pay-${person}-${id}" onclick="setBondPay('${person}',${id},'int')" style="flex:1;padding:3px 8px;gap:4px">
+          <div class="tc-lbl" style="font-size:10px">利息を毎年受け取る</div>
+        </div>
+        <div class="tc" id="sec-bond-reinv-${person}-${id}" onclick="setBondPay('${person}',${id},'reinv')" style="flex:1;padding:3px 8px;gap:4px">
+          <div class="tc-lbl" style="font-size:10px">受け取らず再投資（複利）</div>
+        </div>
+      </div>
+      <span class="hint" style="font-size:9px">「利息を毎年受け取る」は毎年の利息（税引後）がCF表の収入に入り、償還年に元本が戻ります。「再投資」は償還年に元本＋複利分をまとめて受け取ります（利息・利益に20.315%の税金を考慮。債券は課税口座のみ対応）</span>
     </div>`;
   document.getElementById(`securities-cont-${person||'h'}`).appendChild(el);live();
 }
@@ -202,13 +227,16 @@ function setSecTax(person,id,t){
   if(basisRow) basisRow.style.display = '';
   if(typeof updateBasisHint==='function') updateBasisHint(person, id);
   if(t==='nisa'){
-    // NISAは制度上積立型に固定（一括は不可）
+    // NISAは制度上積立型に固定（一括・債券は不可）
     document.getElementById(`sec-acc-${person}-${id}`)?.classList.add('on');
     document.getElementById(`sec-stock-${person}-${id}`)?.classList.remove('on');
+    document.getElementById(`sec-bond-${person}-${id}`)?.classList.remove('on');
     const accF=document.getElementById(`sec-accum-fields-${person}-${id}`);
     const stkF=document.getElementById(`sec-stock-fields-${person}-${id}`);
+    const bondF2=document.getElementById(`sec-bond-fields-${person}-${id}`);
     if(accF) accF.style.display='';
     if(stkF) stkF.style.display='none';
+    if(bondF2) bondF2.style.display='none';
     // 新規でNISAを選んだとき、枠未選択なら「つみたて」を既定
     const tsumi=document.getElementById(`sec-frame-tsumi-${person}-${id}`);
     const grow=document.getElementById(`sec-frame-grow-${person}-${id}`);
@@ -299,11 +327,21 @@ function syncNisaAnnualToMonthly(person, id){
 function setSecType(person,id,t){
   document.getElementById(`sec-acc-${person}-${id}`).classList.toggle('on',t==='accum');
   document.getElementById(`sec-stock-${person}-${id}`).classList.toggle('on',t==='stock');
+  document.getElementById(`sec-bond-${person}-${id}`)?.classList.toggle('on',t==='bond');
   document.getElementById(`sec-accum-fields-${person}-${id}`).style.display=t==='accum'?'':'none';
   document.getElementById(`sec-stock-fields-${person}-${id}`).style.display=t==='stock'?'':'none';
+  const bondF=document.getElementById(`sec-bond-fields-${person}-${id}`);
+  if(bondF)bondF.style.display=t==='bond'?'':'none';
   live();
   if(typeof validateNisaLimits==='function') validateNisaLimits();
 }
+// 債券の利払いタイプ切替（int=利息を毎年受け取る / reinv=再投資・複利）
+function setBondPay(person,id,t){
+  document.getElementById(`sec-bond-pay-${person}-${id}`)?.classList.toggle('on',t==='int');
+  document.getElementById(`sec-bond-reinv-${person}-${id}`)?.classList.toggle('on',t==='reinv');
+  live();
+}
+window.setBondPay=setBondPay;
 
 // ===== NISA 上限判定 =====
 // 年次上限: つみたて枠120万/年、成長枠240万/年

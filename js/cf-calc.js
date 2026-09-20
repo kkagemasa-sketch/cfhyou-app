@@ -346,7 +346,7 @@ function render(){
     swapSell:[],swapTax:[],swapPayoff:[],swapBuy:[],
     // 現金一括購入（引き渡し年に物件価格＋諸費用を一括支出）
     housePurchase:[],
-    expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,totalAsset:[],totalAssetBase:[],
+    expT:[],bal:[],sav:[],savExtra:[],lBal:[],lBalH:[],lBalW:[],finAsset:[],finAssetBase:[],finAssetRows:null,secRedeemRows:null,bondInt:[],bondIntRows:null,totalAsset:[],totalAssetBase:[],
     // 自動資産取崩し: 預貯金マイナス時に有価証券から自動取崩し
     // autoLiq: 当年取崩し総額の配列
     // autoLiqTax: 当年譲渡益課税の配列
@@ -876,6 +876,7 @@ function render(){
   //   ローカル Map で O(1) 検索する。push と同時に Map にも set する。
   //   keyMap_xxx: row.key → row オブジェクトへの参照
   const _secRedeemKeyMap = new Map();
+  const _bondIntKeyMap = new Map();
   const _secInvestKeyMap = new Map();
   const _zaikeiKeyMap = new Map();
   const _zaikeiRedeemKeyMap = new Map();
@@ -1587,6 +1588,49 @@ function render(){
         secRedeemMap[_insKey]={lbl,val:insRedeemVal};
       });
     });
+    // ─── 債券（利息収入・満期償還。課税口座のみ・満期保有前提・自動取崩し対象外） ───
+    if(!R.bondIntRows)R.bondIntRows=[];
+    let bondIntTotal=0;
+    const bondIntMap={};
+    ['h','w'].forEach(p=>{
+      const pAge=p==='h'?ha:wa;
+      document.querySelectorAll(`[id^="sec-bond-bal-${p}-"]`).forEach(el=>{
+        const sid=el.id.split('-').pop();
+        if(!document.getElementById(`sec-bond-${p}-${sid}`)?.classList.contains('on'))return;
+        const bal=fv(`sec-bond-bal-${p}-${sid}`)||0;if(bal<=0)return;
+        const buyAge=iv(`sec-bond-age-${p}-${sid}`)||0;
+        const rate=(fv(`sec-bond-rate-${p}-${sid}`)||0)/100;
+        const matAge=iv(`sec-bond-mat-${p}-${sid}`)||0;
+        if(matAge>0&&buyAge>0&&matAge<=buyAge)return; // 不正入力（償還≦購入）は無視
+        const isReinv=document.getElementById(`sec-bond-reinv-${p}-${sid}`)?.classList.contains('on');
+        if(buyAge>0&&pAge<=buyAge)return;   // 購入年までは利息・償還なし（購入年の支出はsecBuyで計上）
+        if(matAge>0&&pAge>matAge)return;    // 償還後
+        if(!isReinv&&rate>0){
+          const net=Math.round(bal*rate*(1-0.20315)*10)/10; // 利子は源泉分離課税20.315%
+          bondIntMap[`bondint-${p}-${sid}`]={lbl:secRowLabel(p,sid,'債券','利息'),val:net};
+          bondIntTotal+=net;
+        }
+        if(matAge>0&&pAge===matAge){
+          let redeemVal=bal;
+          if(isReinv){
+            const yrsHeld=buyAge>0?(matAge-buyAge):(i+1);
+            const fvB=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+            redeemVal=Math.round(fvB-Math.max(0,fvB-bal)*0.20315); // 償還差益に課税
+          }
+          secRedeemMap[`bond-${p}-${sid}`]={lbl:secRowLabel(p,sid,'債券','償還'),val:redeemVal};
+          secRedeemTotal+=redeemVal;
+        }
+      });
+    });
+    Object.keys(bondIntMap).forEach(k=>{
+      if(!_bondIntKeyMap.has(k)){
+        const row={key:k,lbl:bondIntMap[k].lbl,vals:new Array(i).fill(0)};
+        R.bondIntRows.push(row);
+        _bondIntKeyMap.set(k,row);
+      }
+    });
+    R.bondIntRows.forEach(row=>{row.vals.push(ri(bondIntMap[row.key]?.val||0));});
+    R.bondInt.push(ri(bondIntTotal));
     // per-security 行を追跡（finAssetRows と同パターン）
     Object.keys(secRedeemMap).forEach(k=>{
       if(!_secRedeemKeyMap.has(k)){
@@ -1597,7 +1641,7 @@ function render(){
     });
     R.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap[row.key]?.val||0));});
     R.secRedeem.push(ri(secRedeemTotal));
-    R.incT.push(ri(hInc)+ri(wInc)+ri(hDCSaving)+ri(wDCSaving)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+_pTotH+_pTotW+t+_pushLc2);
+    R.incT.push(ri(hInc)+ri(wInc)+ri(hDCSaving)+ri(wDCSaving)+(ha===retPayAge?ri(retPay):0)+(wa===wRetPayAge?ri(wRetPay):0)+ri(oiTotal)+scTotal+insMatTotal+ri(secRedeemTotal)+ri(bondIntTotal)+_pTotH+_pTotW+t+_pushLc2);
     // DC・iDeCo受取は後でfinRowMap計算後にincTに加算される（Pass2でincKeysに含む）
 
     // ─── 生活費（段階別複利計算） ───
@@ -1714,6 +1758,17 @@ function render(){
         const investAge=_s.investAge||0;
         if(investAge<=0||pAge!==investAge)return;
         secBuyTotal+=_s.bal;
+      });
+      // 債券の購入（購入年齢の年に投資額を支出計上。空欄=既に保有中→支出なし）
+      document.querySelectorAll(`[id^="sec-bond-bal-${p}-"]`).forEach(el=>{
+        const sid=el.id.split('-').pop();
+        if(!document.getElementById(`sec-bond-${p}-${sid}`)?.classList.contains('on'))return;
+        const bal=fv(`sec-bond-bal-${p}-${sid}`)||0;if(bal<=0)return;
+        const buyAge=iv(`sec-bond-age-${p}-${sid}`)||0;
+        const matAge=iv(`sec-bond-mat-${p}-${sid}`)||0;
+        if(matAge>0&&buyAge>0&&matAge<=buyAge)return; // 不正入力は無視
+        if(buyAge<=0||pAge!==buyAge)return;
+        secBuyTotal+=bal;
       });
     });
     R.secBuy.push(ri(secBuyTotal));
@@ -2356,6 +2411,37 @@ function render(){
         finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;
       });
     });
+    // 【債券】残高（利息受取型=元本のまま / 再投資型=複利成長。償還年以降は0＝償還金は収入へ）
+    ['h','w'].forEach(p=>{
+      const pAge=p==='h'?ha:wa;
+      document.querySelectorAll(`[id^="sec-bond-bal-${p}-"]`).forEach(el=>{
+        const sid=el.id.split('-').pop();
+        if(!document.getElementById(`sec-bond-${p}-${sid}`)?.classList.contains('on'))return;
+        const bal=fv(`sec-bond-bal-${p}-${sid}`)||0;if(bal<=0)return;
+        const buyAge=iv(`sec-bond-age-${p}-${sid}`)||0;
+        const rate=(fv(`sec-bond-rate-${p}-${sid}`)||0)/100;
+        const matAge=iv(`sec-bond-mat-${p}-${sid}`)||0;
+        if(matAge>0&&buyAge>0&&matAge<=buyAge)return; // 不正入力は無視
+        if(buyAge>0&&pAge<buyAge)return;   // 未購入
+        if(matAge>0&&pAge>=matAge)return;  // 償還年以降
+        const isReinv=document.getElementById(`sec-bond-reinv-${p}-${sid}`)?.classList.contains('on');
+        let val=bal;
+        if(isReinv&&rate>0){
+          const yrsHeld=buyAge>0?(pAge-buyAge):(i+1);
+          val=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+        }
+        const lbl=secRowLabel(p,sid,'債券');
+        finRowMap[lbl]=(finRowMap[lbl]||0)+val;
+        finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+val;
+        if(!R.finAssetBd[lbl])R.finAssetBd[lbl]={};
+        if(!R.finAssetBd[lbl][i])R.finAssetBd[lbl][i]={items:[],total:0,principalTotal:0,gainTotal:0};
+        R.finAssetBd[lbl][i].items.push({type:'bond',person:p,isNisa:false,principal:bal,evaluation:val,gain:Math.round((val-bal)*10)/10,rate:rate*100});
+        R.finAssetBd[lbl][i].total+=val;
+        R.finAssetBd[lbl][i].principalTotal+=bal;
+        R.finAssetBd[lbl][i].gainTotal+=Math.round((val-bal)*10)/10;
+        finRowPerson[lbl]=finRowPerson[lbl]&&finRowPerson[lbl]!==p?'both':p;
+      });
+    });
     // 【DC・iDeCo運用残高】
     ['h','w'].forEach(p=>{
       const d=dcIdeco[p];
@@ -2725,6 +2811,12 @@ function render(){
         Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
       });
     }
+    if(R.bondIntRows){
+      R.bondIntRows.forEach(row=>{
+        if(!cfOverrides[row.key])return;
+        Object.entries(cfOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});
+      });
+    }
     // 車両費の個別行（複数台）への上書きを反映（表示用。carRowsは将来車のみのため
     // ここからcarTotalを再集計しない ★旧コードは carRows のみで再集計→現有車の費用が
     // 合算から抜け落ちる潜在バグだったため撤去）
@@ -2799,6 +2891,7 @@ function render(){
         // 取崩し抜きの本当の収支を集計
         let tInc=_incKeysNoLiq.reduce((s,k)=>s+(R[k]?.[i]||0),0);
         if(R.secRedeemRows)R.secRedeemRows.forEach(row=>tInc+=(row.vals[i]||0));
+        if(R.bondIntRows)R.bondIntRows.forEach(row=>tInc+=(row.vals[i]||0));
         cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{tInc+=(cfOverrides[r.id]?.[i]||0);});
         let tExp=_expKeysNoLiq.reduce((s,k)=>s+(R[k]?.[i]||0),0);
         children.forEach((_ch,ci)=>tExp+=(R.edu[ci]?.[i]||0));
@@ -2819,7 +2912,7 @@ function render(){
           securityState.forEach(s=>{(_oldLiqsBk.get(s)||[]).forEach(q=>{if(q.year===i)s.liquidations.push(q);});});
         }
         if(_incPinned){R.incT[i]=cfOverrides['incT'][i];}
-        else{let t=incKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);if(R.secRedeemRows)R.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.incT[i]=t;}
+        else{let t=incKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);if(R.secRedeemRows)R.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));if(R.bondIntRows)R.bondIntRows.forEach(row=>t+=(row.vals[i]||0));cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.incT[i]=t;}
         if(_expPinned){R.expT[i]=cfOverrides['expT'][i];}
         else{let t=expKeys.reduce((s,k)=>s+(R[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(R.edu[ci]?.[i]||0));cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(cfOverrides[r.id]?.[i]||0);});R.expT[i]=t;}
       }

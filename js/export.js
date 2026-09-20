@@ -530,6 +530,7 @@ async function exportExcelMG(){
   addISkip('iDeCo受取(ご主人様)',MR.idecoReceiptH,N.idecoReceiptH);
   addISkip('iDeCo受取(奥様)',MR.idecoReceiptW,N.idecoReceiptW);
   addISkip('保険満期金',MR.insMat,N.insMat);
+  if(MR.bondIntRows)MR.bondIntRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.lbl,row.vals);});
   if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.lbl,row.vals);});
   // 財形解約（個別行：実額がある人のみ）
   if(N.zaikeiRedeemRows&&N.zaikeiRedeemRows.length>0){N.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addISkip(row.lbl,row.vals);});}
@@ -1670,6 +1671,7 @@ async function exportExcel(){
   if(!_isSingle_e)addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW);
   addI(_rl('insMat','保険満期金'),R.insMat);
   // ★ B5修正: 個別行も _rl で行ラベル編集を反映
+  if(R.bondIntRows)R.bondIntRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals);});
   if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals);});
   // 財形解約（個別行：実額がある人のみ）
   if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addI(_rl(row.key||row.lbl,row.lbl),row.vals);});}

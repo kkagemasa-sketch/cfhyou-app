@@ -443,7 +443,7 @@ function _renderContingencyInner(){
   // MR._deathOffset / _targetIsH はレンダリング前に設定（HTML生成時に参照されるため）
   const MR={_deathOffset:deathYearOffset,_targetIsH:targetIsH,yr:[],hA:[],wA:[],
     hInc:[],wInc:[],dcTaxSavingH:[],dcTaxSavingW:[],rPay:[],wRPay:[],survPension:[],insPayArr:[],insAnnuityRows:[],finLiquid:[],otherInc:[],scholarship:[],
-    lCtrl:[],lCtrlBreakdown:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,
+    lCtrl:[],lCtrlBreakdown:[],pS:[],pW:[],pTotalH:[],pTotalW:[],pensionBd:[],teate:[],insMat:[],secRedeem:[],secRedeemRows:null,bondInt:[],bondIntRows:null,
     dcReceiptH:[],dcReceiptW:[],idecoReceiptH:[],idecoReceiptW:[],incT:[],
     lc:[],lRep:[],lRepH:[],lRepW:[],rep:[],ptx:[],furn:[],senyu:[],retireTax:[],edu:[],rent:[],
     secInvest:[],secBuy:[],insMonthly:[],insLumpExp:[],
@@ -519,6 +519,26 @@ function _renderContingencyInner(){
     let val=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
     const isNisa=document.getElementById(`sec-nisa-${_deadP}-${sid}`)?.classList.contains('on');
     if(!isNisa){const gain=Math.max(0,val-bal);val=Math.round(val-gain*0.20315);}
+    _deadFinTotal+=val;
+  });
+  // 債券（死亡者分 — 死亡時点の価値で現金化。死亡年＝償還年の年は現金化側で受ける）
+  document.querySelectorAll(`[id^="sec-bond-bal-${_deadP}-"]`).forEach(el=>{
+    const sid=el.id.split('-').pop();
+    if(!document.getElementById(`sec-bond-${_deadP}-${sid}`)?.classList.contains('on'))return;
+    const bal=fv(`sec-bond-bal-${_deadP}-${sid}`)||0;if(bal<=0)return;
+    const buyAge=iv(`sec-bond-age-${_deadP}-${sid}`)||0;
+    const rate=(fv(`sec-bond-rate-${_deadP}-${sid}`)||0)/100;
+    const matAge=iv(`sec-bond-mat-${_deadP}-${sid}`)||0;
+    if(matAge>0&&buyAge>0&&matAge<=buyAge)return; // 不正入力は無視
+    if(buyAge>0&&_deadDeathAge<buyAge)return;  // 未購入
+    if(matAge>0&&_deadDeathAge>matAge)return;  // 償還済み（等号は現金化側で受ける）
+    const isReinv=document.getElementById(`sec-bond-reinv-${_deadP}-${sid}`)?.classList.contains('on');
+    let val=bal;
+    if(isReinv&&rate>0){
+      const yrs=buyAge>0?(_deadDeathAge-buyAge):_yrsAtDeath;
+      const fvB=Math.round(bal*Math.pow(1+rate,Math.max(0,yrs)));
+      val=Math.round(fvB-Math.max(0,fvB-bal)*0.20315);
+    }
     _deadFinTotal+=val;
   });
   // DC・iDeCo（死亡者分 — 受取前なら残高を現金化）
@@ -1069,8 +1089,11 @@ function _renderContingencyInner(){
 
     // 有価証券解約（生存者のみ）
     if(!MR.secRedeemRows)MR.secRedeemRows=[];
+    if(!MR.bondIntRows)MR.bondIntRows=[];
     let secRedeemTotal=0;
     const secRedeemMap_mg={};
+    let bondIntTotal_mg=0;
+    const bondIntMap_mg={};
     _alivePers.forEach(p=>{
       const pAge=p==='h'?ha:wa;const pBaseAge=p==='h'?hAge:wAge;
       document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
@@ -1180,10 +1203,41 @@ function _renderContingencyInner(){
         const lbl=customLbl||`積立保険 解約(${pLabel})`;
         secRedeemMap_mg[`ins-${p}-${iid}`]={lbl,val:insRedeemVal};secRedeemTotal+=insRedeemVal;
       });
+      // 債券（利息収入・満期償還。通常CF cf-calc.js と同一式。死亡者分は死亡時現金化で処理）
+      document.querySelectorAll(`[id^="sec-bond-bal-${p}-"]`).forEach(el=>{
+        const sid=el.id.split('-').pop();
+        if(!document.getElementById(`sec-bond-${p}-${sid}`)?.classList.contains('on'))return;
+        const bal=fv(`sec-bond-bal-${p}-${sid}`)||0;if(bal<=0)return;
+        const buyAge=iv(`sec-bond-age-${p}-${sid}`)||0;
+        const rate=(fv(`sec-bond-rate-${p}-${sid}`)||0)/100;
+        const matAge=iv(`sec-bond-mat-${p}-${sid}`)||0;
+        if(matAge>0&&buyAge>0&&matAge<=buyAge)return; // 不正入力（償還≦購入）は無視
+        const isReinv=document.getElementById(`sec-bond-reinv-${p}-${sid}`)?.classList.contains('on');
+        if(buyAge>0&&pAge<=buyAge)return;
+        if(matAge>0&&pAge>matAge)return;
+        if(!isReinv&&rate>0){
+          const net=Math.round(bal*rate*(1-0.20315)*10)/10;
+          bondIntMap_mg[`bondint-${p}-${sid}`]={lbl:secRowLabel(p,sid,'債券','利息'),val:net};
+          bondIntTotal_mg+=net;
+        }
+        if(matAge>0&&pAge===matAge){
+          let redeemVal=bal;
+          if(isReinv){
+            const yrsHeld=buyAge>0?(matAge-buyAge):(i+1);
+            const fvB=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
+            redeemVal=Math.round(fvB-Math.max(0,fvB-bal)*0.20315);
+          }
+          secRedeemMap_mg[`bond-${p}-${sid}`]={lbl:secRowLabel(p,sid,'債券','償還'),val:redeemVal};
+          secRedeemTotal+=redeemVal;
+        }
+      });
     });
     Object.keys(secRedeemMap_mg).forEach(k=>{if(!MR.secRedeemRows.find(r=>r.key===k))MR.secRedeemRows.push({key:k,lbl:secRedeemMap_mg[k].lbl,vals:new Array(i).fill(0)});});
     MR.secRedeemRows.forEach(row=>{row.vals.push(ri(secRedeemMap_mg[row.key]?.val||0));});
     MR.secRedeem.push(ri(secRedeemTotal));
+    Object.keys(bondIntMap_mg).forEach(k=>{if(!MR.bondIntRows.find(r=>r.key===k))MR.bondIntRows.push({key:k,lbl:bondIntMap_mg[k].lbl,vals:new Array(i).fill(0)});});
+    MR.bondIntRows.forEach(row=>{row.vals.push(ri(bondIntMap_mg[row.key]?.val||0));});
+    MR.bondInt.push(ri(bondIntTotal_mg));
 
     // DC/iDeCo受取
     // ★ A3修正: 旧コードは [_aliveP] のみで死亡者の生存中受取が消えていた。
@@ -1239,7 +1293,7 @@ function _renderContingencyInner(){
     MR.zaikeiRedeem.push(ri(zaikeiRedeemVal));
 
     // 収入合計
-    const incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+insAnnuityTotal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg)+ri(zaikeiRedeemVal);
+    const incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+insAnnuityTotal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(bondIntTotal_mg)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg)+ri(zaikeiRedeemVal);
     MR.incT.push(incTotal);
 
     // ── 支出（個別計算） ──
@@ -1506,6 +1560,17 @@ function _renderContingencyInner(){
           const investAge=iv(`sec-stk-age-${p}-${sid}`)||0;if(investAge<=0||pAge!==investAge)return;
           secBuyVal+=fv(`sec-stk-bal-${p}-${sid}`)||0;
         });
+        // 債券の購入（生存者のみ。死亡者の将来購入は行われない）
+        document.querySelectorAll(`[id^="sec-bond-bal-${p}-"]`).forEach(el=>{
+          const sid=el.id.split('-').pop();
+          if(!document.getElementById(`sec-bond-${p}-${sid}`)?.classList.contains('on'))return;
+          const bal=fv(`sec-bond-bal-${p}-${sid}`)||0;if(bal<=0)return;
+          const buyAge=iv(`sec-bond-age-${p}-${sid}`)||0;
+          const matAge=iv(`sec-bond-mat-${p}-${sid}`)||0;
+          if(matAge>0&&buyAge>0&&matAge<=buyAge)return;
+          if(buyAge<=0||pAge!==buyAge)return;
+          secBuyVal+=bal;
+        });
       });
     }
     MR.secBuy.push(ri(secBuyVal));
@@ -1710,7 +1775,10 @@ function _renderContingencyInner(){
 
   // ── mgOverrides後処理 ──
   if(Object.keys(mgOverrides).length>0){
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','secRedeem','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq'];
+    // ★ 二重加算修正(2026-09-20): 'secRedeem'集計を incKeys から除外。
+    //   Pass2の収入再計算は secRedeemRows（個別行）を別途加算しており、集計も足すと
+    //   セル上書きがあるCF表で解約金が2倍計上されていた（通常CFのincKeysと同じ方式に統一）。
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','moveInCost','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
@@ -1721,6 +1789,7 @@ function _renderContingencyInner(){
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR.edu[ci]&&c2<MR.edu[ci].length)MR.edu[ci][c2]=val;});
     });
     if(MR.secRedeemRows){MR.secRedeemRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});}
+    if(MR.bondIntRows){MR.bondIntRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});}
     // 年金型保険override
     if(MR.insAnnuityRows){MR.insAnnuityRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});}
     // carRows override → carTotal再計算
@@ -1749,6 +1818,7 @@ function _renderContingencyInner(){
       if(_mgReLiq && !_mgIncPinned && !_mgExpPinned){
         let tInc=_mgIncKeysNoLiq.reduce((s,k)=>s+(MR[k]?.[i]||0),0);
         if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>tInc+=(row.vals[i]||0));
+        if(MR.bondIntRows)MR.bondIntRows.forEach(row=>tInc+=(row.vals[i]||0));
         if(MR.insAnnuityRows)MR.insAnnuityRows.forEach(row=>tInc+=(row.vals[i]||0));
         mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{tInc+=(mgOverrides[r.id]?.[i]||0);});
         let tExp=_mgExpKeysNoLiq.reduce((s,k)=>s+(MR[k]?.[i]||0),0);
@@ -1768,7 +1838,7 @@ function _renderContingencyInner(){
           _mgSecurityState.forEach(s=>{(_mgOldLiqsBk.get(s)||[]).forEach(q=>{if(q.year===i)s.liquidations.push(q);});});
         }
         if(_mgIncPinned){MR.incT[i]=mgOverrides['incT'][i];}
-        else{let t=incKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));if(MR.insAnnuityRows)MR.insAnnuityRows.forEach(row=>t+=(row.vals[i]||0));mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.incT[i]=t;}
+        else{let t=incKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>t+=(row.vals[i]||0));if(MR.bondIntRows)MR.bondIntRows.forEach(row=>t+=(row.vals[i]||0));if(MR.insAnnuityRows)MR.insAnnuityRows.forEach(row=>t+=(row.vals[i]||0));mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.incT[i]=t;}
         if(_mgExpPinned){MR.expT[i]=mgOverrides['expT'][i];}
         else{let t=expKeys.reduce((s,k)=>s+(MR[k]?.[i]||0),0);children.forEach((_ch,ci)=>t+=(MR.edu[ci]?.[i]||0));mgCustomRows.filter(r=>r.type==='exp').forEach(r=>{t+=(mgOverrides[r.id]?.[i]||0);});MR.expT[i]=t;}
       }
@@ -2051,6 +2121,7 @@ function _renderContingencyInner(){
   h+=mgRow(_isSingle_mg?'iDeCo受取':'iDeCo受取(ご主人様)',MR.idecoReceiptH,N.idecoReceiptH,'idecoReceiptH');
   if(!_isSingle_mg)h+=mgRow('iDeCo受取(奥様)',MR.idecoReceiptW,N.idecoReceiptW,'idecoReceiptW');
   h+=mgRow('保険満期金',MR.insMat,N.insMat,'insMat');
+  if(MR.bondIntRows)MR.bondIntRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgRow(row.lbl,row.vals,null,row.key);});
   if(MR.secRedeemRows)MR.secRedeemRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgRow(row.lbl,row.vals,null,row.key);});
   // 財形解約（通常CFと同じ：終了年齢到達時の一括解約金）
   if(N.zaikeiRedeemRows&&N.zaikeiRedeemRows.length>0){N.zaikeiRedeemRows.forEach(row=>{if(row.vals.slice(0,mgDisp).some(v=>v>0))h+=mgRow(row.lbl,row.vals,null,row.key);});}

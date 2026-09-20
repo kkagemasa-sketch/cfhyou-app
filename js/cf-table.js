@@ -121,10 +121,17 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
       const sid=m[1];
       const isAcc=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
       const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
+      const isBond=document.getElementById(`sec-bond-${p}-${sid}`)?.classList.contains('on');
       const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
       const custom=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
       let val=0,catLbl='';
-      if(isAcc){
+      if(isBond){
+        // 債券は「現在保有中（購入年齢が空欄）」のものだけ現時点資産に含める
+        const _bBuyAge=iv(`sec-bond-age-${p}-${sid}`)||0;
+        if(_bBuyAge>0)return; // 将来購入分は現時点資産ではない
+        val=fv(`sec-bond-bal-${p}-${sid}`)||0;
+        catLbl='債券';
+      } else if(isAcc){
         val=fv(`sec-bal-${p}-${sid}`)||0;
         catLbl=isNisa?'積立NISA':'課税積立';
       } else if(isStock){
@@ -383,6 +390,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=iRow(_isSingle_t?'iDeCo受取':'iDeCo受取(ご主人様)',R.idecoReceiptH,'idecoReceiptH');
   if(!_isSingle_t)h+=iRow('iDeCo受取(奥様)',R.idecoReceiptW,'idecoReceiptW');
   h+=iRow('保険満期金',R.insMat,'insMat');
+  // 債券利息：銘柄ごとに個別行で表示
+  if(R.bondIntRows){R.bondIntRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
   // 有価証券解約：銘柄ごとに個別行で表示
   if(R.secRedeemRows){R.secRedeemRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))h+=iRow(row.lbl,row.vals,row.key);});}
   // 財形解約：終了年齢到達時の全額一括解約金
