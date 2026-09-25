@@ -389,7 +389,8 @@ function render(){
         ? getMarketReturnAtYear(idx, k, hAge, wAge) : null;
       const r = (scR!==null && scR!==undefined) ? scR : defaultRate;
       // 積立継続期間か? endAgePAge=0 なら常に継続
-      const contribActive = endAgePAge===0 || pAgeCur < endAgePAge;
+      // ★ 境界修正(2026-09-25): 閉形式(終了年齢の年も積立=inclusive)に合わせて <= に統一
+      const contribActive = endAgePAge===0 || pAgeCur <= endAgePAge;
       const annualContrib = contribActive ? monthly*12 : 0;
       // 半年分の運用を乗せて近似（月額積立の平均的な運用期間）
       balance = balance*(1+r) + annualContrib*(r>=0?Math.pow(1+r,0.5):1+r*0.5);
@@ -694,11 +695,19 @@ function render(){
     if(s.type!=='accum'&&s.type!=='stock')return;
     const p=s.p,sid=s.sid;
     const drawStart=iv(`sec-draw-start-${p}-${sid}`)||0;
+    const _warnEl=document.getElementById(`sec-draw-conflict-${p}-${sid}`);
+    if(_warnEl)_warnEl.style.display='none';
     if(drawStart<=0)return;
     const drawMode=document.getElementById(`sec-draw-fix-${p}-${sid}`)?.classList.contains('on')?'amt':'pct';
     const drawPct=fv(`sec-draw-pct-${p}-${sid}`)||0;
     const drawAmt=fv(`sec-draw-amt-${p}-${sid}`)||0;
     if(drawMode==='pct'?drawPct<=0:drawAmt<=0)return;
+    // ★ 衝突警告: 解約年齢が取り崩し開始と同年か早い場合、解約が優先され
+    //   取り崩しが1円も実行されない（解約年齢の旧デフォルト65が残っている事故が多い）
+    //   → 入力欄の下に赤警告＋ワンタッチ解除ボタンを表示
+    if(_warnEl && s.redeemAge>0 && s.redeemAge<=drawStart){
+      _warnEl.style.display='';
+    }
     let drawEnd=iv(`sec-draw-end-${p}-${sid}`)||0;
     if(drawEnd>0&&drawEnd<drawStart)drawEnd=0; // 不正入力は「尽きるまで」扱い
     // 運用シナリオ適用中はシナリオの年次利回りで系列を計算（残高表示との整合）
@@ -1756,7 +1765,10 @@ function render(){
         const endAge=_s.endAge;
         const redeemAge=_s.redeemAge;
         const _dStart=_s.drawPlan?_s.drawPlan.drawStart:0; // 取り崩し開始年齢で積立は自動終了
-        const isActive=(endAge===0||pAge<endAge)&&(redeemAge===0||pAge<redeemAge)&&(_dStart===0||pAge<_dStart);
+        // ★ 境界修正(2026-09-25): 評価額の式は「終了年齢の年まで積立」(inclusive)なのに、
+        //   支出行は前年まで(exclusive)で止まっており、最後の1年分の積立が支出ゼロで
+        //   資産に湧いていた（月5万なら約60万円資産が過大）。式に合わせて <= に統一。
+        const isActive=(endAge===0||pAge<=endAge)&&(redeemAge===0||pAge<=redeemAge)&&(_dStart===0||pAge<_dStart);
         const v=isActive?ri(monthly*12):0;
         let row=_secInvestKeyMap.get(rowKey);
         if(!row){row={lbl,vals:[],key:rowKey};R.secInvestRows.push(row);_secInvestKeyMap.set(rowKey,row);}

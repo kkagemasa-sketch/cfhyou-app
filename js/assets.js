@@ -176,7 +176,7 @@ function addSecurity(person){
         <div class="fg" data-f="end"><label class="lbl" style="font-size:9px;white-space:nowrap">積立終了年齢(歳)</label>
           <input class="inp age-inp" id="sec-end-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="65" placeholder="例:65" min="20" max="90" oninput="live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%"></div>
         <div class="fg" data-f="redeem"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">解約年齢(歳)</label>
-          <input class="inp age-inp" id="sec-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="65" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
+          <input class="inp age-inp" id="sec-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="空欄=持ち続ける" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
       </div>
     </div>
     <div id="sec-stock-fields-${person}-${id}" style="display:none">
@@ -209,6 +209,10 @@ function addSecurity(person){
           <input class="inp amt-inp" id="sec-draw-amt-${person}-${id}" type="number" value="" placeholder="例:120" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></span></div>
       </div>
       <span class="hint" style="font-size:9px">開始年齢を入れると有効になります。毎月の積立は開始年齢で自動終了。課税口座は利益部分に20.315%の税金を自動考慮（NISAは非課税）。解約年齢も入れた場合は、その年に残りを一括で受け取ります</span>
+      <div id="sec-draw-conflict-${person}-${id}" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;margin-top:5px">
+        <div style="font-size:10px;color:#b91c1c;line-height:1.6">⚠ 解約年齢が取り崩し開始と同じか早いため、<strong>取り崩しは実行されず全額一括解約</strong>になります</div>
+        <button onclick="clearSecRedeemForDraw('${person}',${id})" style="margin-top:4px;font-size:10px;padding:4px 10px;background:#2d7dd2;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:600">解約年齢を空にして取り崩しを有効にする</button>
+      </div>
     </div>
     <div id="sec-bond-fields-${person}-${id}" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">
@@ -374,6 +378,15 @@ function setSecDrawMode(person,id,m){
   live();
 }
 window.setSecDrawMode=setSecDrawMode;
+// 取り崩しと解約年齢の衝突警告: 「解約年齢を空にして取り崩しを有効にする」ボタン
+function clearSecRedeemForDraw(person,id){
+  const acc=document.getElementById(`sec-redeem-${person}-${id}`);
+  const stk=document.getElementById(`sec-stk-redeem-${person}-${id}`);
+  if(acc)acc.value='';
+  if(stk)stk.value='';
+  live();
+}
+window.clearSecRedeemForDraw=clearSecRedeemForDraw;
 // 債券の利払いタイプ切替（int=利息を毎年受け取る / reinv=再投資・複利）
 function setBondPay(person,id,t){
   document.getElementById(`sec-bond-pay-${person}-${id}`)?.classList.toggle('on',t==='int');
@@ -424,7 +437,8 @@ function validateNisaLimits(){
     if(it.type==='accum'){
       const annual = it.monthly * 12;
       a.annual += annual;
-      const payYrs = Math.max(0, (it.endAge||it.curAge) - it.curAge);
+      // ★ 境界修正(2026-09-25): 終了年齢の年も積立する(inclusive)ため +1（CF計算式と統一）
+      const payYrs = it.endAge ? Math.max(0, it.endAge - it.curAge + 1) : 0;
       a.future += annual * payYrs;
     } else {
       // 一括: 想定開始年齢が未来なら未来分、現在以下なら既購入扱い（取得価格に含めるべき）
