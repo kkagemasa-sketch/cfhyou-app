@@ -770,13 +770,17 @@ function _restoreDynamic(d){
     if(cont)cont.innerHTML='';
     (d.swapEvents||[]).forEach(ev=>addSwapEvent(ev));
   }
-  if(d.repairCycles&&d.repairCycles.length>0){
+  // ★ バグ修正: 「0件で保存」も尊重して必ずクリアする（Array.isArray判定）。
+  //   旧: length>0 のときだけクリアしていたため、車/修繕周期を全部削除して保存しても
+  //   開き直すと起動時のデフォルト（車1台・修繕周期15年/100万）がクリアされず復活し、
+  //   「閉じると車が勝手に追加される」状態になっていた（フィールド自体が無い旧データは従来どおり）
+  if(Array.isArray(d.repairCycles)){
     document.getElementById('repair-cont').innerHTML='';
     repairCnt=0;
     d.repairCycles.forEach(r=>addRepairCycle(r.cycle,r.cost));
   }
   // 車の復元
-  if(d.cars&&d.cars.length>0){
+  if(Array.isArray(d.cars)){
     document.getElementById('car-list').innerHTML='';
     carCnt=0;
     d.cars.forEach(c=>{
@@ -784,7 +788,7 @@ function _restoreDynamic(d){
     });
   }
   // 現有車の復元
-  if(d.existingCars&&d.existingCars.length>0){
+  if(Array.isArray(d.existingCars)){
     const ecCont=document.getElementById('existing-car-list');
     if(ecCont)ecCont.innerHTML='';
     if(typeof existingCarCnt!=='undefined')existingCarCnt=0;
