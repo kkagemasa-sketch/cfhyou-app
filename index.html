@@ -15,7 +15,7 @@
 <!-- Sentry エラー監視（DSN未設定時はローカルログのみ動作） -->
 <script src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js" crossorigin="anonymous"></script>
 <script src="js/error-monitor.js?v=2"></script>
-<link rel="stylesheet" href="css/style.css?v=63">
+<link rel="stylesheet" href="css/style.css?v=64">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -259,79 +259,94 @@ window.closeAboutModal=closeAboutModal;
     <div class="sh" onclick="tog(this)" style="background:#0d8a20"><span class="sh-tab" style="background:#0d8a20">②資産</span><span style="background:rgba(255,255,255,.2);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">2</span>自己資産<span class="stog on">▾</span></div>
     <div class="sb">
 
-      <!-- 1. 現預金 -->
+      <!-- 1. 現預金（1行・中身幅） -->
       <div class="sub">現預金</div>
-      <div class="g3">
-        <div class="fg"><label class="lbl" style="font-size:9px" id="lbl-cash-h">ご主人様</label>
-          <div class="suf"><input class="inp amt-inp" id="cash-h" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-        <div class="fg wife-only"><label class="lbl" style="font-size:9px">奥様</label>
-          <div class="suf"><input class="inp amt-inp" id="cash-w" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">共有</label>
-          <div class="suf"><input class="inp amt-inp" id="cash-joint" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="300" min="0" oninput="live()"><span class="sl">万円</span></div></div>
+      <div class="frow" style="margin-top:0">
+        <span class="ilb"><span class="pre" id="lbl-cash-h">ご主人様</span><input class="w6" id="cash-h" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="un">万</span></span>
+        <span class="ilb wife-only"><span class="pre">奥様</span><input class="w6" id="cash-w" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="un">万</span></span>
+        <span class="ilb"><span class="pre">共有</span><input class="w6" id="cash-joint" type="number" onfocus="scrollToCFRow('sav')" onblur="cfRowBlur()" value="300" min="0" oninput="live()"><span class="un">万</span></span>
+        <span class="hint ok" id="cash-total-hint" style="font-size:10px;margin:0">合計：300万円</span>
       </div>
-      <span class="hint ok" id="cash-total-hint" style="font-size:10px">合計：300万円</span>
 
       <div class="divider"></div>
 
-      <!-- 2〜4. 積立保険・財形・有価証券（主人/奥様別） -->
-      <div class="divider"></div>
-      <!-- ペルソナタブ -->
+      <!-- ペルソナタブ（資産サマリー付き） -->
       <div style="display:flex;gap:6px;margin-bottom:10px">
         <div class="tc on" id="asset-tab-h" onclick="setAssetTab('h')" style="flex:1;padding:7px;gap:5px">
           <span style="font-size:15px" id="icon-asset-h"></span>
-          <div class="tc-lbl" style="font-size:11px" id="lbl-asset-h">ご主人様</div>
+          <div><div class="tc-lbl" style="font-size:11px" id="lbl-asset-h">ご主人様</div>
+          <div style="font-size:9px;color:var(--light);font-weight:600" id="asset-sum-h"></div></div>
         </div>
         <div class="tc wife-only" id="asset-tab-w" onclick="setAssetTab('w')" style="flex:1;padding:7px;gap:5px">
           <span style="font-size:15px"></span>
-          <div class="tc-lbl" style="font-size:11px">奥様</div>
+          <div><div class="tc-lbl" style="font-size:11px">奥様</div>
+          <div style="font-size:9px;color:var(--light);font-weight:600" id="asset-sum-w"></div></div>
         </div>
       </div>
 
       <!-- ご主人様パネル -->
       <div id="asset-panel-h">
-        <div class="sub">積み立て保険（ご主人様）</div>
-        <div id="ins-savings-cont-h"></div>
-        <button class="btn-add" onclick="addInsSaving('h')">＋ 積み立て保険を追加</button>
-        <div class="divider"></div>
-        <div class="sub">財形貯蓄（ご主人様）</div>
-        <div class="g3">
-          <div class="fg"><label class="lbl" style="font-size:9px">現時点の残高</label>
-            <div class="suf"><input class="inp amt-inp" id="zaikei-h-bal" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">毎月の積立額</label>
-            <div class="suf"><input class="inp amt-inp" id="zaikei-h-monthly" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円/月</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">積立終了年齢</label>
-            <div class="suf"><input class="inp age-inp" id="zaikei-h-end" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:60" min="20" max="80" oninput="live()"><span class="sl">歳</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">解約年齢<span style="font-weight:400;color:var(--muted);font-size:9px">（空欄=積立終了と同時）</span></label>
-            <div class="suf"><input class="inp age-inp" id="zaikei-h-redeem" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+        <div class="sub">保有資産（ご主人様）<span class="a-sum" id="asset-sec-sum-h">計 0万</span></div>
+        <div class="a-legend">
+          <span class="lg"><span class="abdg ab-tax">課税・積立 ▾</span>クリックで種別切替</span>
+          <span class="lg"><span class="a-chip">✎ 設定</span>タップで詳細設定</span>
+          <span class="lg"><span style="color:#c3cddc;font-weight:700">65</span>薄い数字=初期値</span>
+          <span class="lg"><span class="a-chip mod-draw">取崩し設定中</span>取り崩し設定済み</span>
+          <button class="qbtn" onclick="assetGuide(0)">？ 使い方</button>
         </div>
-        <div class="divider"></div>
-        <div class="sub">有価証券（ご主人様）</div>
         <div id="securities-cont-h"></div>
-        <button class="btn-add" onclick="addSecurity('h')">＋ 有価証券を追加</button>
+        <div class="sec-card" id="zaikei-card-h" hidden>
+          <div class="row-head">
+            <span class="nm-static">財形貯蓄</span>
+            <span class="abdg ab-zaikei" title="財形貯蓄（利回り0%・非課税）">財形</span>
+            <button class="btn-rm" onclick="zaikeiClear('h')">× 削除</button>
+          </div>
+          <div class="frow">
+            <span class="ilb"><span class="pre">残高</span><input class="w6" id="zaikei-h-bal" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="un">万</span></span>
+            <span class="ilb"><span class="pre">積立</span><input id="zaikei-h-monthly" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="un">万/月</span></span>
+            <span class="ilb" title="空欄=定年年齢まで"><span class="pre">終了</span><input id="zaikei-h-end" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="定年" min="20" max="80" oninput="live()"><span class="un">歳</span></span>
+            <span class="ilb" title="空欄=積立終了と同時に解約"><span class="pre">解約</span><input id="zaikei-h-redeem" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="終了時" min="20" max="100" oninput="live()"><span class="un">歳</span></span>
+          </div>
+        </div>
+        <div id="ins-savings-cont-h"></div>
+        <div class="a-empty" id="asset-empty-h" hidden>
+          まだ資産が登録されていません。<br>「＋ 資産を追加」を押すと、下の種類がすべてここに入ります
+          <div class="bset"><span class="abdg ab-tax">課税・積立</span><span class="abdg ab-nisa">NISAつみたて</span><span class="abdg ab-grow">NISA成長枠</span><span class="abdg ab-stk">課税・一括</span><span class="abdg ab-bond">債券</span><span class="abdg ab-ins">積立保険</span><span class="abdg ab-zaikei">財形</span></div>
+        </div>
+        <button class="btn-add" onclick="addAsset('h')">＋ 資産を追加（種別は追加後にバッジで変更できます）</button>
         <div id="nisa-summary-h" class="nisa-summary" style="margin-top:8px"></div>
       </div>
 
       <!-- 奥様パネル -->
       <div id="asset-panel-w" style="display:none">
-        <div class="sub">積み立て保険（奥様）</div>
-        <div id="ins-savings-cont-w"></div>
-        <button class="btn-add" onclick="addInsSaving('w')">＋ 積み立て保険を追加</button>
-        <div class="divider"></div>
-        <div class="sub">財形貯蓄（奥様）</div>
-        <div class="g3">
-          <div class="fg"><label class="lbl" style="font-size:9px">現時点の残高</label>
-            <div class="suf"><input class="inp amt-inp" id="zaikei-w-bal" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">毎月の積立額</label>
-            <div class="suf"><input class="inp amt-inp" id="zaikei-w-monthly" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="sl">万円/月</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">積立終了年齢</label>
-            <div class="suf"><input class="inp age-inp" id="zaikei-w-end" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:60" min="20" max="80" oninput="live()"><span class="sl">歳</span></div></div>
-          <div class="fg"><label class="lbl" style="font-size:9px">解約年齢<span style="font-weight:400;color:var(--muted);font-size:9px">（空欄=積立終了と同時）</span></label>
-            <div class="suf"><input class="inp age-inp" id="zaikei-w-redeem" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()"><span class="sl">歳</span></div></div>
+        <div class="sub">保有資産（奥様）<span class="a-sum" id="asset-sec-sum-w">計 0万</span></div>
+        <div class="a-legend">
+          <span class="lg"><span class="abdg ab-tax">課税・積立 ▾</span>クリックで種別切替</span>
+          <span class="lg"><span class="a-chip">✎ 設定</span>タップで詳細設定</span>
+          <span class="lg"><span style="color:#c3cddc;font-weight:700">65</span>薄い数字=初期値</span>
+          <span class="lg"><span class="a-chip mod-draw">取崩し設定中</span>取り崩し設定済み</span>
+          <button class="qbtn" onclick="assetGuide(0)">？ 使い方</button>
         </div>
-        <div class="divider"></div>
-        <div class="sub">有価証券（奥様）</div>
         <div id="securities-cont-w"></div>
-        <button class="btn-add" onclick="addSecurity('w')">＋ 有価証券を追加</button>
+        <div class="sec-card" id="zaikei-card-w" hidden>
+          <div class="row-head">
+            <span class="nm-static">財形貯蓄</span>
+            <span class="abdg ab-zaikei" title="財形貯蓄（利回り0%・非課税）">財形</span>
+            <button class="btn-rm" onclick="zaikeiClear('w')">× 削除</button>
+          </div>
+          <div class="frow">
+            <span class="ilb"><span class="pre">残高</span><input class="w6" id="zaikei-w-bal" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="un">万</span></span>
+            <span class="ilb"><span class="pre">積立</span><input id="zaikei-w-monthly" type="number" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" value="0" min="0" oninput="live()"><span class="un">万/月</span></span>
+            <span class="ilb" title="空欄=定年年齢まで"><span class="pre">終了</span><input id="zaikei-w-end" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="定年" min="20" max="80" oninput="live()"><span class="un">歳</span></span>
+            <span class="ilb" title="空欄=積立終了と同時に解約"><span class="pre">解約</span><input id="zaikei-w-redeem" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="終了時" min="20" max="100" oninput="live()"><span class="un">歳</span></span>
+          </div>
+        </div>
+        <div id="ins-savings-cont-w"></div>
+        <div class="a-empty" id="asset-empty-w" hidden>
+          まだ資産が登録されていません。<br>「＋ 資産を追加」を押すと、下の種類がすべてここに入ります
+          <div class="bset"><span class="abdg ab-tax">課税・積立</span><span class="abdg ab-nisa">NISAつみたて</span><span class="abdg ab-grow">NISA成長枠</span><span class="abdg ab-stk">課税・一括</span><span class="abdg ab-bond">債券</span><span class="abdg ab-ins">積立保険</span><span class="abdg ab-zaikei">財形</span></div>
+        </div>
+        <button class="btn-add" onclick="addAsset('w')">＋ 資産を追加（種別は追加後にバッジで変更できます）</button>
         <div id="nisa-summary-w" class="nisa-summary" style="margin-top:8px"></div>
       </div>
 
@@ -2141,7 +2156,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/housing.js?v=44"></script>
 <script src="js/loan-calc.js?v=4"></script>
 <script src="js/living-cost.js?v=4"></script>
-<script src="js/assets.js?v=26"></script>
+<script src="js/assets.js?v=27"></script>
 <script src="js/extras.js?v=2"></script>
 <script src="js/contingency.js?v=109"></script>
 <script src="js/cf-ui.js?v=29"></script>
@@ -2153,7 +2168,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/loan-plan.js?v=22"></script>
 <script src="js/lc-tab.js?v=6"></script>
 <script src="js/scenario.js?v=9"></script>
-<script src="js/save-load.js?v=91"></script>
+<script src="js/save-load.js?v=92"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=9"></script>
 <script src="js/explain/explain-pension.js?v=2"></script>

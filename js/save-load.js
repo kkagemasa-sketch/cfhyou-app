@@ -1209,6 +1209,9 @@ function _applyData(d){
     if(typeof applyIncomeModeLabels==='function') applyIncomeModeLabels();
     // 読込後は必ずメインCF表タブに戻す
     if(typeof setRTab==='function')setRTab('cf');
+    // ②資産の高密度UI（バッジ・チップ・財形カード表示・薄字）を復元データに合わせて更新
+    ['h','w'].forEach(p=>{const zc=document.getElementById('zaikei-card-'+p);if(zc)zc.dataset.open='';});
+    if(typeof refreshAssetUI==='function')try{refreshAssetUI();}catch(e){}
     live();render();
   }catch(err){
     alert('読み込みに失敗しました。\n\nエラー詳細: '+err.message+'\n発生箇所: '+(err.stack||'').split('\n').slice(0,3).join('\n'));
@@ -1262,6 +1265,8 @@ function _resetSheetState(){
   cfCustomRows=[];
   mgCustomRows=[];
   _cfCustomId=0;
+  // ②資産UI: 財形カードの手動オープン状態もリセット（前のお客様の表示残留防止）
+  ['h','w'].forEach(p=>{const zc=document.getElementById('zaikei-card-'+p);if(zc)zc.dataset.open='';});
   _cfStartYear=null;
   _lcBikou={};
   marketShocks=[];

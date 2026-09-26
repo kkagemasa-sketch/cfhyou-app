@@ -78,40 +78,33 @@ function addInsSaving(person){
   insSavCnt++;const id=insSavCnt;
   const el=document.createElement('div');
   el.id=`ins-${person}-${id}`;
-  el.style.cssText='background:#fdf6ff;border:1px solid #d8b8f0;border-radius:var(--rs);padding:9px 10px;margin-bottom:8px';
+  el.className='sec-card';
   el.innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <input class="inp" id="ins-label-${person}-${id}" type="text" placeholder="保険名（例：学資保険）" oninput="live()" style="font-size:11px;padding:4px 8px;flex:1">
-      <button class="btn-rm" onclick="document.getElementById('ins-${person}-${id}').remove();live()">×</button>
+    <div class="row-head">
+      <input class="nm" id="ins-label-${person}-${id}" type="text" placeholder="保険名（例: 学資保険）" oninput="live()">
+      <button class="abdg ab-ins" id="ins-badge-${person}-${id}" onclick="insPicker('${person}',${id})" title="クリックで種別を変更">積立保険 ▾</button>
+      <button class="btn-rm" onclick="document.getElementById('ins-${person}-${id}').remove();live();refreshAssetUI&&refreshAssetUI()">× 削除</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:start;margin-bottom:6px">
-      <div class="fg">
-        <label class="lbl" style="font-size:9px">加入年齢</label>
-        <div class="suf"><input class="inp age-inp" id="ins-enroll-${person}-${id}" type="number" value="" placeholder="現在年齢" min="20" max="90" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
-        <span style="font-size:9px;color:var(--light)">空欄＝現在年齢</span>
-      </div>
-      <div class="fg">
-        <label class="lbl" style="font-size:9px">毎月の保険料</label>
-        <div class="suf"><input class="inp amt-inp" id="ins-m-${person}-${id}" type="number" value="" placeholder="例:3" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">万/月</span></div>
-        <span style="font-size:9px;color:#6a2a8a;font-weight:600">※支出に自動計上</span>
-      </div>
-      <div class="fg">
-        <label class="lbl" style="font-size:9px">払込満期年齢</label>
-        <div class="suf"><input class="inp age-inp" id="ins-age-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px"><span class="sl" style="font-size:10px">歳</span></div>
-      </div>
+    <div class="apick" id="ins-picker-${person}-${id}" hidden></div>
+    <div class="frow">
+      <span class="ilb" title="支出に自動計上されます"><span class="pre">保険料</span><input id="ins-m-${person}-${id}" type="number" value="" placeholder="例:3" min="0" oninput="calcInsPreview('${person}',${id})"><span class="un">万/月</span></span>
+      <span class="ilb" title="保険料の支払いが終わる年齢"><span class="pre">払込満期</span><input id="ins-age-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsPreview('${person}',${id})"><span class="un">歳</span></span>
+      <span class="ilb"><span class="pre">受取</span><input id="ins-redeem-${person}-${id}" type="number" value="" placeholder="例:60" min="20" max="100" oninput="calcInsPreview('${person}',${id})"><span class="un">歳</span></span>
+      <span class="ilb"><span class="pre">受取額</span><input class="w6" id="ins-redeem-amt-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})"><span class="un">万</span></span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start">
-      <div class="fg">
-        <label class="lbl" style="font-size:9px;color:#c00">解約/満期受取年齢</label>
-        <div class="suf"><input class="inp age-inp" id="ins-redeem-${person}-${id}" type="number" value="" placeholder="例:60" min="20" max="100" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">歳</span></div>
-      </div>
-      <div class="fg">
-        <label class="lbl" style="font-size:9px;color:#c00">解約/満期受取金額</label>
-        <div class="suf"><input class="inp amt-inp" id="ins-redeem-amt-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})" style="font-size:11px;padding:4px 6px;border-color:#fca5a5"><span class="sl" style="font-size:10px">万円</span></div>
-      </div>
+    <div class="a-chips">
+      <span class="a-gear">⚙</span>
+      <span class="a-chip" id="ins-chip-enroll-${person}-${id}" onclick="secChip('${person}',${id},'enroll')">✎ 加入年齢（空欄=現在から）</span>
+      <span class="a-chip info" id="ins-chip-est-${person}-${id}" style="display:none">受取額 未入力 → 概算で計算</span>
     </div>
-    <div id="ins-preview-${person}-${id}" style="margin-top:6px;font-size:10px;color:#6a2a8a;background:#f5e8ff;border-radius:4px;padding:4px 8px;display:none"></div>`;
+    <div class="a-dtl" id="ins-dtl-enroll-${person}-${id}" hidden>
+      <span class="ilb"><span class="pre">加入</span><input id="ins-enroll-${person}-${id}" type="number" value="" placeholder="現在年齢" min="20" max="90" oninput="calcInsPreview('${person}',${id})"><span class="un">歳</span></span>
+      <span style="font-size:9px;color:#475569;margin-left:6px">空欄＝現在年齢から加入</span>
+    </div>
+    <div id="ins-preview-${person}-${id}" style="margin-top:5px;font-size:10px;color:#6a2a8a;background:#f5e8ff;border-radius:4px;padding:4px 8px;display:none"></div>`;
   document.getElementById(`ins-savings-cont-${person}`).appendChild(el);live();
+  if(typeof insRefreshCard==='function')insRefreshCard(person,id);
+  if(typeof refreshAssetUI==='function')refreshAssetUI();
 }
 
 function addSecurity(person){
@@ -119,125 +112,99 @@ function addSecurity(person){
   secCnt++;const id=secCnt;
   const el=document.createElement('div');
   el.id=`sec-${person}-${id}`;
-  el.style.cssText='background:var(--gray-bg);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;margin-bottom:6px';
+  el.className='sec-card';
   el.innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <input class="inp" id="sec-label-${person}-${id}" type="text" placeholder="銘柄名（例：eMAXIS Slim）" oninput="live()" style="font-size:11px;padding:4px 8px;flex:1">
-      <div style="display:flex;gap:6px">
-        <div class="tc on" id="sec-taxable-${person}-${id}" onclick="setSecTax('${person}',${id},'taxable')" style="padding:3px 8px;gap:4px">
-          <div class="tc-lbl" style="font-size:10px">課税</div>
-        </div>
-        <div class="tc" id="sec-nisa-${person}-${id}" onclick="setSecTax('${person}',${id},'nisa')" style="padding:3px 8px;gap:4px">
-          <div class="tc-lbl" style="font-size:10px">非課税（NISA）</div>
-        </div>
-      </div>
-      <button class="btn-rm" onclick="document.getElementById('sec-'+this.dataset.p+'-'+this.dataset.i).remove();live();validateNisaLimits&&validateNisaLimits()" data-p="${person}" data-i="${id}">× 削除</button>
+    <div class="row-head">
+      <input class="nm" id="sec-label-${person}-${id}" type="text" placeholder="銘柄名（例: eMAXIS Slim）" oninput="live()">
+      <button class="abdg ab-tax" id="sec-badge-${person}-${id}" onclick="secPicker('${person}',${id})" title="クリックで種別を変更（課税/NISA/一括/債券/保険/財形）">課税・積立 ▾</button>
+      <button class="btn-rm" onclick="document.getElementById('sec-'+this.dataset.p+'-'+this.dataset.i).remove();live();validateNisaLimits&&validateNisaLimits();refreshAssetUI&&refreshAssetUI()" data-p="${person}" data-i="${id}">× 削除</button>
     </div>
-    <div id="sec-nisa-opts-${person}-${id}" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:6px">
-      <div style="display:flex;gap:6px;margin-bottom:6px">
-        <div class="tc on" id="sec-frame-tsumi-${person}-${id}" onclick="setSecNisaFrame('${person}',${id},'tsumi')" style="flex:1;padding:3px 6px;font-size:10px">つみたて枠<span style="color:#64748b;margin-left:4px">月10万/年120万</span></div>
-        <div class="tc" id="sec-frame-grow-${person}-${id}" onclick="setSecNisaFrame('${person}',${id},'grow')" style="flex:1;padding:3px 6px;font-size:10px">成長枠<span style="color:#64748b;margin-left:4px">年240万</span></div>
-      </div>
-      <div id="sec-nisa-grow-extra-${person}-${id}" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed #bfdbfe">
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">年間投資予定額(万)</label>
-          <input class="inp amt-inp" id="sec-nisa-annual-${person}-${id}" type="number" value="" placeholder="例:120" min="0"
-            oninput="syncNisaAnnualToMonthly('${person}',${id});live();validateNisaLimits&&validateNisaLimits()"
-            style="font-size:11px;padding:4px 6px;width:100%;max-width:180px">
-          <span style="font-size:9px;color:#475569;margin-left:6px">※毎月の積立額と連動（どちらを入力してもOK）</span>
-        </div>
-      </div>
+    <div class="apick" id="sec-picker-${person}-${id}" hidden></div>
+    <div id="sec-nisa-warn-${person}-${id}" style="display:none;color:#b91c1c;font-size:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:5px 8px;margin:5px 0 0;line-height:1.5"></div>
+    <div class="frow" id="sec-accum-fields-${person}-${id}">
+      <span class="ilb" data-f="bal"><span class="pre">評価額</span><input class="w6" id="sec-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="live()"><span class="un">万</span></span>
+      <span class="ilb" data-f="monthly"><span class="pre">積立</span><input id="sec-monthly-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="syncNisaMonthlyToAnnual('${person}',${id});live();validateNisaLimits&&validateNisaLimits()"><span class="un">万/月</span></span>
+      <span class="ilb" id="sec-nisa-grow-extra-${person}-${id}" style="display:none" title="毎月の積立額と連動（どちらを入力してもOK）"><span class="pre">年間</span><input class="w6" id="sec-nisa-annual-${person}-${id}" type="number" value="" placeholder="例:120" min="0" oninput="syncNisaAnnualToMonthly('${person}',${id});live();validateNisaLimits&&validateNisaLimits()"><span class="un">万/年</span></span>
+      <span class="ilb" data-f="rate"><span class="pre">利回り</span><input id="sec-rate-${person}-${id}" data-def="5" class="adef" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()"><span class="un">%</span></span>
+      <span class="ilb" data-f="end"><span class="pre">終了</span><input id="sec-end-${person}-${id}" data-def="65" class="adef" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="65" placeholder="65" min="20" max="90" oninput="live();validateNisaLimits&&validateNisaLimits()"><span class="un">歳</span></span>
+      <span class="ilb" data-f="redeem" title="空欄=売らずに持ち続ける"><span class="pre">解約</span><input id="sec-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="—" min="20" max="100" oninput="live()"><span class="un">歳</span></span>
     </div>
-    <div id="sec-nisa-warn-${person}-${id}" style="display:none;color:#b91c1c;font-size:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:5px 8px;margin-bottom:6px;line-height:1.5"></div>
-    <div id="sec-type-toggle-${person}-${id}" style="display:flex;gap:6px;margin-bottom:6px">
-      <div class="tc on" id="sec-acc-${person}-${id}" onclick="setSecType('${person}',${id},'accum')" style="flex:1;padding:4px 8px;gap:4px">
-        <div class="tc-lbl" style="font-size:10px">積み立て投資</div>
-      </div>
-      <div class="tc" id="sec-stock-${person}-${id}" onclick="setSecType('${person}',${id},'stock')" style="flex:1;padding:4px 8px;gap:4px">
-        <div class="tc-lbl" style="font-size:10px">一括投資</div>
-      </div>
-      <div class="tc" id="sec-bond-${person}-${id}" onclick="setSecType('${person}',${id},'bond')" style="flex:1;padding:4px 8px;gap:4px">
-        <div class="tc-lbl" style="font-size:10px">債券</div>
-      </div>
+    <div class="frow" id="sec-stock-fields-${person}-${id}" style="display:none">
+      <span class="ilb"><span class="pre">投資額</span><input class="w6" id="sec-stk-bal-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="live()"><span class="un">万</span></span>
+      <span class="ilb" title="空欄=すでに保有中"><span class="pre">開始</span><input id="sec-stk-age-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="保有中" min="20" max="90" oninput="live()"><span class="un">歳</span></span>
+      <span class="ilb"><span class="pre">利回り</span><input id="sec-div-${person}-${id}" data-def="5" class="adef" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()"><span class="un">%</span></span>
+      <span class="ilb" title="空欄=売らずに持ち続ける"><span class="pre">解約</span><input id="sec-stk-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="—" min="20" max="100" oninput="live()"><span class="un">歳</span></span>
     </div>
-    <div id="sec-accum-fields-${person}-${id}">
-      <div id="sec-nisa-basis-row-${person}-${id}" style="margin-bottom:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">取得価格累計（現在までに投資した元本 / 万）</label>
-          <input class="inp amt-inp" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits();updateBasisHint&&updateBasisHint('${person}','${id}')" style="font-size:11px;padding:4px 6px;width:100%;max-width:220px">
-          <span id="sec-basis-hint-${person}-${id}" style="font-size:9px;color:#475569;margin-left:6px">※NISAは生涯枠1800万の判定／課税口座は譲渡益課税の取得原価に使用</span>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px">
-        <div class="fg" data-f="bal"><label class="lbl" style="font-size:9px;white-space:nowrap">現時点の評価額(万)</label>
-          <input class="inp amt-inp" id="sec-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:200" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg" data-f="monthly"><label class="lbl" style="font-size:9px;white-space:nowrap">毎月の積立額(万)</label>
-          <input class="inp amt-inp" id="sec-monthly-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="例:5" min="0" oninput="syncNisaMonthlyToAnnual('${person}',${id});live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg" data-f="rate"><label class="lbl" style="font-size:9px;white-space:nowrap">想定利回り(%)</label>
-          <input class="inp amt-inp" id="sec-rate-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg" data-f="end"><label class="lbl" style="font-size:9px;white-space:nowrap">積立終了年齢(歳)</label>
-          <input class="inp age-inp" id="sec-end-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="65" placeholder="例:65" min="20" max="90" oninput="live();validateNisaLimits&&validateNisaLimits()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg" data-f="redeem"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">解約年齢(歳)</label>
-          <input class="inp age-inp" id="sec-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="空欄=持ち続ける" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
+    <div class="frow" id="sec-bond-fields-${person}-${id}" style="display:none">
+      <span class="ilb"><span class="pre">投資額</span><input class="w6" id="sec-bond-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="live()"><span class="un">万</span></span>
+      <span class="ilb"><span class="pre">利回り</span><input id="sec-bond-rate-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:3" min="0" max="20" step="0.1" oninput="live()"><span class="un">%/年</span></span>
+      <span class="ilb"><span class="pre">償還</span><input id="sec-bond-mat-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:50" min="20" max="100" oninput="live()"><span class="un">歳</span></span>
+      <span style="display:inline-flex;gap:3px;align-items:center" title="「受取」=毎年の利息（税引後）が収入に入り、償還年に元本が戻る。「再投資」=複利で増えて償還年にまとめて受取（利益に20.315%課税。債券は課税口座のみ対応）">
+        <span class="pre" style="font-size:9px;font-weight:700;color:var(--light)">利払い</span>
+        <div class="tc tc-mini on" id="sec-bond-pay-${person}-${id}" onclick="setBondPay('${person}',${id},'int')">受取</div>
+        <div class="tc tc-mini" id="sec-bond-reinv-${person}-${id}" onclick="setBondPay('${person}',${id},'reinv')">再投資</div>
+      </span>
+    </div>
+    <div class="a-chips" id="sec-chips-${person}-${id}">
+      <span class="a-gear">⚙</span>
+      <span class="a-chip" id="sec-chip-basis-${person}-${id}" onclick="secChip('${person}',${id},'basis')">✎ 取得価格を入力</span>
+      <span class="a-chip" id="sec-chip-draw-${person}-${id}" onclick="secChip('${person}',${id},'draw')">✎ 取り崩しを設定</span>
+      <span class="a-chip" id="sec-chip-bondbuy-${person}-${id}" style="display:none" onclick="secChip('${person}',${id},'bondbuy')">✎ 将来購入なら年齢を指定</span>
+      <span class="a-chip info" id="sec-chip-nofund-${person}-${id}" style="display:none">追加投資なし・保有分のみ運用</span>
+      <span class="a-chip info" id="sec-chip-hold-${person}-${id}" style="display:none"></span>
+    </div>
+    <div class="a-dtl" id="sec-dtl-basis-${person}-${id}" hidden>
+      <div id="sec-nisa-basis-row-${person}-${id}">
+        <span class="ilb"><span class="pre">取得価格累計</span><input class="w6" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits();updateBasisHint&&updateBasisHint('${person}','${id}')"><span class="un">万</span></span>
+        <span id="sec-basis-hint-${person}-${id}" style="font-size:9px;color:#475569;margin-left:6px">※NISAは生涯枠1800万の判定／課税口座は譲渡益課税の取得原価に使用</span>
       </div>
     </div>
-    <div id="sec-stock-fields-${person}-${id}" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">投資額(万)</label>
-          <input class="inp amt-inp" id="sec-stk-bal-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="例:500" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">投資開始年齢(歳)</label>
-          <input class="inp age-inp" id="sec-stk-age-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="例:40" min="20" max="90" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">想定利回り(%)</label>
-          <input class="inp amt-inp" id="sec-div-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">解約年齢(歳)</label>
-          <input class="inp age-inp" id="sec-stk-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
-      </div>
-    </div>
-    <div id="sec-draw-wrap-${person}-${id}" style="margin-top:6px;border-top:1px dashed var(--border);padding-top:6px">
-      <label class="lbl" style="font-size:9px;color:#0e7a4a">取り崩し設定（任意）— 老後などに毎年少しずつ受け取る</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr 1fr;gap:6px;align-items:end;margin-top:2px">
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">開始年齢(歳)</label>
-          <input class="inp age-inp" id="sec-draw-start-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:65" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">終了年齢(歳)</label>
-          <input class="inp age-inp" id="sec-draw-end-${person}-${id}" type="number" value="" placeholder="空欄=尽きるまで" min="20" max="110" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">方式</label>
-          <div style="display:flex;gap:4px">
-            <div class="tc on" id="sec-draw-rate-${person}-${id}" onclick="setSecDrawMode('${person}',${id},'pct')" style="flex:1;padding:3px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">定率</div></div>
-            <div class="tc" id="sec-draw-fix-${person}-${id}" onclick="setSecDrawMode('${person}',${id},'amt')" style="flex:1;padding:3px 6px;gap:3px"><div class="tc-lbl" style="font-size:10px">定額</div></div>
-          </div></div>
-        <div class="fg"><span id="sec-draw-pct-wrap-${person}-${id}"><label class="lbl" style="font-size:9px;white-space:nowrap">毎年 残高の(%)</label>
-          <input class="inp amt-inp" id="sec-draw-pct-${person}-${id}" type="number" value="" placeholder="例:4" min="0" max="100" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></span>
-          <span id="sec-draw-amt-wrap-${person}-${id}" style="display:none"><label class="lbl" style="font-size:9px;white-space:nowrap">毎年(万円)</label>
-          <input class="inp amt-inp" id="sec-draw-amt-${person}-${id}" type="number" value="" placeholder="例:120" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></span></div>
-      </div>
-      <span class="hint" style="font-size:9px">開始年齢を入れると有効になります。毎月の積立は開始年齢で自動終了。課税口座は利益部分に20.315%の税金を自動考慮（NISAは非課税）。解約年齢も入れた場合は、その年に残りを一括で受け取ります</span>
-      <div id="sec-draw-conflict-${person}-${id}" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;margin-top:5px">
-        <div style="font-size:10px;color:#b91c1c;line-height:1.6">⚠ 解約年齢が取り崩し開始と同じか早いため、<strong>取り崩しは実行されず全額一括解約</strong>になります</div>
-        <button onclick="clearSecRedeemForDraw('${person}',${id})" style="margin-top:4px;font-size:10px;padding:4px 10px;background:#2d7dd2;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:600">解約年齢を空にして取り崩しを有効にする</button>
-      </div>
-    </div>
-    <div id="sec-bond-fields-${person}-${id}" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">投資額(万)</label>
-          <input class="inp amt-inp" id="sec-bond-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:500" min="0" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">購入年齢(歳)</label>
-          <input class="inp age-inp" id="sec-bond-age-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="空欄=保有中" min="20" max="90" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap">利回り(%/年)</label>
-          <input class="inp amt-inp" id="sec-bond-rate-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:3" min="0" max="20" step="0.1" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%"></div>
-        <div class="fg"><label class="lbl" style="font-size:9px;white-space:nowrap;color:#c00">償還(満期)年齢(歳)</label>
-          <input class="inp age-inp" id="sec-bond-mat-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:50" min="20" max="100" oninput="live()" style="font-size:11px;padding:4px 6px;width:100%;border-color:#fca5a5"></div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
-        <label class="lbl" style="font-size:9px;white-space:nowrap;margin:0">利息の受け取り方</label>
-        <div class="tc on" id="sec-bond-pay-${person}-${id}" onclick="setBondPay('${person}',${id},'int')" style="flex:1;padding:3px 8px;gap:4px">
-          <div class="tc-lbl" style="font-size:10px">利息を毎年受け取る</div>
+    <div class="a-dtl" id="sec-dtl-draw-${person}-${id}" hidden>
+      <div id="sec-draw-wrap-${person}-${id}">
+        <div class="frow" style="margin-top:0">
+          <span class="ilb"><span class="pre">取崩</span><input id="sec-draw-start-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="65" min="20" max="100" oninput="live()"><span class="un">歳〜</span><input class="w6" id="sec-draw-end-${person}-${id}" type="number" value="" placeholder="尽きるまで" min="20" max="110" oninput="live()"><span class="un">歳</span></span>
+          <span style="display:inline-flex;gap:3px;align-items:center">
+            <div class="tc tc-mini on" id="sec-draw-rate-${person}-${id}" onclick="setSecDrawMode('${person}',${id},'pct')">定率</div>
+            <div class="tc tc-mini" id="sec-draw-fix-${person}-${id}" onclick="setSecDrawMode('${person}',${id},'amt')">定額</div>
+          </span>
+          <span class="ilb" id="sec-draw-pct-wrap-${person}-${id}"><span class="pre">毎年 残高の</span><input id="sec-draw-pct-${person}-${id}" type="number" value="" placeholder="例:4" min="0" max="100" step="0.1" oninput="live()"><span class="un">%</span></span>
+          <span class="ilb" id="sec-draw-amt-wrap-${person}-${id}" style="display:none"><span class="pre">毎年</span><input id="sec-draw-amt-${person}-${id}" type="number" value="" placeholder="例:120" min="0" oninput="live()"><span class="un">万円</span></span>
         </div>
-        <div class="tc" id="sec-bond-reinv-${person}-${id}" onclick="setBondPay('${person}',${id},'reinv')" style="flex:1;padding:3px 8px;gap:4px">
-          <div class="tc-lbl" style="font-size:10px">受け取らず再投資（複利）</div>
+        <span class="hint" style="font-size:9px">開始年齢＋率(額)で有効。積立は開始年齢で自動終了。課税口座は利益部分に20.315%を考慮（NISA非課税）。解約年齢も入れるとその年に残りを一括受取</span>
+        <div id="sec-draw-conflict-${person}-${id}" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;margin-top:5px">
+          <div style="font-size:10px;color:#b91c1c;line-height:1.6">⚠ 解約年齢が取り崩し開始と同じか早いため、<strong>取り崩しは実行されず全額一括解約</strong>になります</div>
+          <button onclick="clearSecRedeemForDraw('${person}',${id})" style="margin-top:4px;font-size:10px;padding:4px 10px;background:#2d7dd2;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:600">解約年齢を空にして取り崩しを有効にする</button>
         </div>
       </div>
-      <span class="hint" style="font-size:9px">「利息を毎年受け取る」は毎年の利息（税引後）がCF表の収入に入り、償還年に元本が戻ります。「再投資」は償還年に元本＋複利分をまとめて受け取ります（利息・利益に20.315%の税金を考慮。債券は課税口座のみ対応）</span>
+    </div>
+    <div class="a-dtl" id="sec-dtl-bondbuy-${person}-${id}" hidden>
+      <span class="ilb" title="空欄=すでに保有中。年齢を入れるとその年に投資額を支出計上"><span class="pre">購入</span><input id="sec-bond-age-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="保有中" min="20" max="90" oninput="live()"><span class="un">歳</span></span>
+      <span style="font-size:9px;color:#475569;margin-left:6px">空欄=すでに保有中（支出は計上されません）</span>
+    </div>
+    <div style="display:none">
+      <div class="tc on" id="sec-taxable-${person}-${id}" onclick="setSecTax('${person}',${id},'taxable')"><div class="tc-lbl">課税</div></div>
+      <div class="tc" id="sec-nisa-${person}-${id}" onclick="setSecTax('${person}',${id},'nisa')"><div class="tc-lbl">非課税（NISA）</div></div>
+      <div id="sec-nisa-opts-${person}-${id}" style="display:none">
+        <div class="tc on" id="sec-frame-tsumi-${person}-${id}" onclick="setSecNisaFrame('${person}',${id},'tsumi')">つみたて枠</div>
+        <div class="tc" id="sec-frame-grow-${person}-${id}" onclick="setSecNisaFrame('${person}',${id},'grow')">成長枠</div>
+      </div>
+      <div id="sec-type-toggle-${person}-${id}">
+        <div class="tc on" id="sec-acc-${person}-${id}" onclick="setSecType('${person}',${id},'accum')"><div class="tc-lbl">積み立て投資</div></div>
+        <div class="tc" id="sec-stock-${person}-${id}" onclick="setSecType('${person}',${id},'stock')"><div class="tc-lbl">一括投資</div></div>
+        <div class="tc" id="sec-bond-${person}-${id}" onclick="setSecType('${person}',${id},'bond')"><div class="tc-lbl">債券</div></div>
+      </div>
     </div>`;
   document.getElementById(`securities-cont-${person||'h'}`).appendChild(el);live();
+  if(typeof secRefreshCard==='function')secRefreshCard(person,id);
+  if(typeof refreshAssetUI==='function')refreshAssetUI();
 }
+// 「＋ 資産を追加」: 課税・積立で作成し、種別はバッジのピッカーで変更する
+function addAsset(person){
+  addSecurity(person);
+  const el=document.getElementById(`sec-label-${person}-${secCnt}`);
+  if(el)el.focus();
+}
+window.addAsset=addAsset;
 function setSecTax(person,id,t){
   document.getElementById(`sec-taxable-${person}-${id}`).classList.toggle('on',t==='taxable');
   document.getElementById(`sec-nisa-${person}-${id}`).classList.toggle('on',t==='nisa');
@@ -376,6 +343,7 @@ function setSecDrawMode(person,id,m){
   if(pctW)pctW.style.display=m==='pct'?'':'none';
   if(amtW)amtW.style.display=m==='amt'?'':'none';
   live();
+  if(typeof secRefreshCard==='function')secRefreshCard(person,id);
 }
 window.setSecDrawMode=setSecDrawMode;
 // 取り崩しと解約年齢の衝突警告: 「解約年齢を空にして取り崩しを有効にする」ボタン
@@ -392,6 +360,7 @@ function setBondPay(person,id,t){
   document.getElementById(`sec-bond-pay-${person}-${id}`)?.classList.toggle('on',t==='int');
   document.getElementById(`sec-bond-reinv-${person}-${id}`)?.classList.toggle('on',t==='reinv');
   live();
+  if(typeof secRefreshCard==='function')secRefreshCard(person,id);
 }
 window.setBondPay=setBondPay;
 
@@ -945,3 +914,302 @@ function syncJointShare(changed){
   }
 }
 window.syncJointShare = syncJointShare;
+
+/* ═══════════ ②資産 高密度UI（2026-09-26 リニューアル） ═══════════
+ * 方針: 入力欄のID・保存形式・計算は一切変えず「ガワ」だけ差し替える。
+ * 種別の実体は従来どおり隠しトグル(.tc/.on = 再計算ハッシュ対象)が持ち、
+ * バッジ/ピッカーはそれを操作するリモコン。 */
+const ASSET_TYPES={
+  'tax-accum' :{cls:'ab-tax',   label:'課税・積立'},
+  'nisa-tsumi':{cls:'ab-nisa',  label:'NISAつみたて'},
+  'nisa-grow' :{cls:'ab-grow',  label:'NISA成長枠'},
+  'stock'     :{cls:'ab-stk',   label:'課税・一括'},
+  'bond'      :{cls:'ab-bond',  label:'債券'},
+  'ins'       :{cls:'ab-ins',   label:'積立保険'},
+  'zaikei'    :{cls:'ab-zaikei',label:'財形'}
+};
+function secCurType(p,id){
+  const g=x=>document.getElementById(x+'-'+p+'-'+id);
+  if(g('sec-bond')&&g('sec-bond').classList.contains('on'))return 'bond';
+  if(g('sec-stock')&&g('sec-stock').classList.contains('on'))return 'stock';
+  if(g('sec-nisa')&&g('sec-nisa').classList.contains('on'))return (g('sec-frame-grow')&&g('sec-frame-grow').classList.contains('on'))?'nisa-grow':'nisa-tsumi';
+  return 'tax-accum';
+}
+function _secHasValues(p,id){
+  return ['sec-bal','sec-monthly','sec-basis','sec-stk-bal','sec-bond-bal']
+    .some(k=>{const el=document.getElementById(k+'-'+p+'-'+id);return el&&parseFloat(el.value)>0;});
+}
+function _insHasValues(p,id){
+  return ['ins-m','ins-redeem-amt'].some(k=>{const el=document.getElementById(k+'-'+p+'-'+id);return el&&parseFloat(el.value)>0;});
+}
+function _mkPicker(cont,cur,zaikeiTaken,onPick){
+  cont.innerHTML='';
+  Object.entries(ASSET_TYPES).forEach(pair=>{
+    const k=pair[0],v=pair[1];
+    const b=document.createElement('button');
+    b.className='abdg '+v.cls+(k===cur?' cur':'')+((k==='zaikei'&&zaikeiTaken)?' dis':'');
+    b.textContent=v.label;
+    if(k==='zaikei'&&zaikeiTaken){b.title='財形貯蓄はすでに設定されています（1人1つ）';}
+    else b.onclick=function(){onPick(k);};
+    cont.appendChild(b);
+  });
+}
+function _zaikeiVisible(p){
+  const card=document.getElementById('zaikei-card-'+p);
+  return !!(card&&!card.hidden);
+}
+// ── 有価証券カードのピッカー ──
+function secPicker(p,id){
+  const cont=document.getElementById('sec-picker-'+p+'-'+id);
+  if(!cont)return;
+  if(!cont.hidden){cont.hidden=true;return;}
+  _mkPicker(cont,secCurType(p,id),_zaikeiVisible(p),function(t){secPickType(p,id,t);});
+  cont.hidden=false;
+}
+function secPickType(p,id,t){
+  const cont=document.getElementById('sec-picker-'+p+'-'+id);
+  if(cont)cont.hidden=true;
+  if(t==='ins'||t==='zaikei'){
+    if(_secHasValues(p,id)&&!confirm('このカードを「'+ASSET_TYPES[t].label+'」に変更します。\n入力済みの有価証券の数値（評価額・積立額など）は削除されます。よろしいですか？'))return;
+    const label=(document.getElementById('sec-label-'+p+'-'+id)||{}).value||'';
+    const card=document.getElementById('sec-'+p+'-'+id);
+    if(card)card.remove();
+    if(t==='ins'){
+      addInsSaving(p);
+      const nm=document.getElementById('ins-label-'+p+'-'+insSavCnt);
+      if(nm){nm.value=label;nm.focus();}
+    }else{
+      zaikeiShow(p);
+    }
+    live();if(typeof validateNisaLimits==='function')validateNisaLimits();
+    refreshAssetUI();
+    return;
+  }
+  // 証券ファミリー内の切替: 既存トグルを操作するだけ（IDも保存形式も不変）
+  if(t==='bond'){setSecTax(p,id,'taxable');setSecType(p,id,'bond');}
+  else if(t==='stock'){setSecTax(p,id,'taxable');setSecType(p,id,'stock');}
+  else if(t==='tax-accum'){setSecTax(p,id,'taxable');setSecType(p,id,'accum');}
+  else if(t==='nisa-tsumi'){setSecTax(p,id,'nisa');setSecNisaFrame(p,id,'tsumi');}
+  else if(t==='nisa-grow'){setSecTax(p,id,'nisa');setSecNisaFrame(p,id,'grow');}
+  secRefreshCard(p,id);
+  refreshAssetUI();
+}
+// ── 保険カードのピッカー ──
+function insPicker(p,id){
+  const cont=document.getElementById('ins-picker-'+p+'-'+id);
+  if(!cont)return;
+  if(!cont.hidden){cont.hidden=true;return;}
+  _mkPicker(cont,'ins',_zaikeiVisible(p),function(t){insPickType(p,id,t);});
+  cont.hidden=false;
+}
+function insPickType(p,id,t){
+  const cont=document.getElementById('ins-picker-'+p+'-'+id);
+  if(cont)cont.hidden=true;
+  if(t==='ins')return;
+  if(_insHasValues(p,id)&&!confirm('このカードを「'+ASSET_TYPES[t].label+'」に変更します。\n入力済みの保険の数値（保険料・受取額など）は削除されます。よろしいですか？'))return;
+  const label=(document.getElementById('ins-label-'+p+'-'+id)||{}).value||'';
+  const card=document.getElementById('ins-'+p+'-'+id);
+  if(card)card.remove();
+  if(t==='zaikei'){zaikeiShow(p);}
+  else{
+    addSecurity(p);
+    const nid=secCnt;
+    const nm=document.getElementById('sec-label-'+p+'-'+nid);
+    if(nm)nm.value=label;
+    secPickType(p,nid,t);
+    if(nm)nm.focus();
+  }
+  live();refreshAssetUI();
+}
+// ── チップ ⇄ 詳細設定の開閉（sec/ins共通） ──
+function secChip(p,id,kind){
+  const map={basis:'sec-dtl-basis-'+p+'-'+id,draw:'sec-dtl-draw-'+p+'-'+id,bondbuy:'sec-dtl-bondbuy-'+p+'-'+id,enroll:'ins-dtl-enroll-'+p+'-'+id};
+  const d=document.getElementById(map[kind]);
+  if(!d)return;
+  d.hidden=!d.hidden;
+  if(!d.hidden){const inp=d.querySelector('input');if(inp)inp.focus();}
+}
+window.secPicker=secPicker;window.secPickType=secPickType;
+window.insPicker=insPicker;window.insPickType=insPickType;window.secChip=secChip;
+// ── カード表示のリフレッシュ（バッジ・チップ文言・薄字・取崩し強調） ──
+function _fmtDef(el){
+  if(!el)return;
+  const d=el.dataset.def;
+  if(d!==undefined)el.classList.toggle('adef',String(el.value)===String(d));
+}
+function secRefreshCard(p,id){
+  const g=x=>document.getElementById(x+'-'+p+'-'+id);
+  const card=g('sec');if(!card)return;
+  const t=secCurType(p,id);
+  const badge=g('sec-badge');
+  if(badge){badge.className='abdg '+ASSET_TYPES[t].cls;badge.textContent=ASSET_TYPES[t].label+' ▾';}
+  const isBond=t==='bond';
+  const chipB=g('sec-chip-basis'),chipD=g('sec-chip-draw'),chipBB=g('sec-chip-bondbuy');
+  if(chipB){
+    chipB.style.display=isBond?'none':'';
+    const v=parseFloat((g('sec-basis')||{}).value)||0;
+    chipB.textContent=v>0?('取得価格 '+v.toLocaleString()+'万'):'✎ 取得価格を入力';
+    chipB.classList.toggle('mod',v>0);
+  }
+  if(chipD){
+    chipD.style.display=isBond?'none':'';
+    const st=parseInt((g('sec-draw-start')||{}).value)||0;
+    const en=parseInt((g('sec-draw-end')||{}).value)||0;
+    const isAmt=g('sec-draw-fix')&&g('sec-draw-fix').classList.contains('on');
+    const val=parseFloat(((isAmt?g('sec-draw-amt'):g('sec-draw-pct'))||{}).value)||0;
+    const active=st>0&&val>0;
+    chipD.textContent=active
+      ?('取崩し '+st+'歳〜'+(en>0?en+'歳':'')+'・'+(isAmt?('定額'+val+'万/年'):('定率'+val+'%/年')))
+      :'✎ 取り崩しを設定';
+    chipD.classList.toggle('mod',active);
+    chipD.classList.toggle('mod-draw',active);
+    card.classList.toggle('has-draw',active&&!isBond);
+    if(isBond)card.classList.remove('has-draw');
+  }
+  if(chipBB){
+    chipBB.style.display=isBond?'':'none';
+    const a=parseInt((g('sec-bond-age')||{}).value)||0;
+    chipBB.textContent=a>0?('購入 '+a+'歳'):'✎ 将来購入なら年齢を指定（現在は保有中）';
+    chipBB.classList.toggle('mod',a>0);
+  }
+  const chipNF=g('sec-chip-nofund');
+  if(chipNF){
+    const bal=parseFloat((g('sec-bal')||{}).value)||0;
+    const mon=parseFloat((g('sec-monthly')||{}).value)||0;
+    chipNF.style.display=(!isBond&&t!=='stock'&&bal>0&&mon<=0)?'':'none';
+  }
+  const chipH=g('sec-chip-hold');
+  if(chipH){
+    const en2=parseInt((g('sec-end')||{}).value)||0;
+    const rd=parseInt((g('sec-redeem')||{}).value)||0;
+    const show=(!isBond&&t!=='stock'&&en2>0&&rd>en2);
+    chipH.style.display=show?'':'none';
+    if(show)chipH.textContent=en2+'歳以降は積立なしで'+rd+'歳まで運用継続';
+  }
+  ['sec-rate','sec-end','sec-div'].forEach(k=>_fmtDef(g(k)));
+}
+function insRefreshCard(p,id){
+  const g=x=>document.getElementById(x+'-'+p+'-'+id);
+  if(!g('ins'))return;
+  const chipE=g('ins-chip-enroll');
+  if(chipE){
+    const a=parseInt((g('ins-enroll')||{}).value)||0;
+    chipE.textContent=a>0?('加入 '+a+'歳'):'✎ 加入年齢（空欄=現在から）';
+    chipE.classList.toggle('mod',a>0);
+  }
+  const chipEst=g('ins-chip-est');
+  if(chipEst){
+    const amt=parseFloat((g('ins-redeem-amt')||{}).value)||0;
+    const m=parseFloat((g('ins-m')||{}).value)||0;
+    const mat=parseInt((g('ins-age')||{}).value)||0;
+    const rd=parseInt((g('ins-redeem')||{}).value)||0;
+    chipEst.style.display=(amt<=0&&m>0&&mat>0&&rd>0)?'':'none';
+  }
+}
+window.secRefreshCard=secRefreshCard;window.insRefreshCard=insRefreshCard;
+// ── 財形カード ──
+function zaikeiShow(p){
+  const card=document.getElementById('zaikei-card-'+p);
+  if(card){card.hidden=false;card.dataset.open='1';}
+  refreshAssetUI();
+  const b=document.getElementById('zaikei-'+p+'-bal');
+  if(b)b.focus();
+}
+function zaikeiClear(p){
+  if(!confirm('財形貯蓄の入力（残高・積立額・年齢）をクリアして非表示にします。よろしいですか？'))return;
+  ['bal','monthly','end','redeem'].forEach(k=>{
+    const el=document.getElementById('zaikei-'+p+'-'+k);
+    if(el)el.value=(k==='bal'||k==='monthly')?'0':'';
+  });
+  const card=document.getElementById('zaikei-card-'+p);
+  if(card){card.hidden=true;card.dataset.open='';}
+  live();refreshAssetUI();
+}
+window.zaikeiShow=zaikeiShow;window.zaikeiClear=zaikeiClear;
+// ── 全体リフレッシュ（合計・財形表示・空状態・薄字） ──
+function refreshAssetUI(){
+  try{
+    ['h','w'].forEach(p=>{
+      const secCont=document.getElementById('securities-cont-'+p);
+      const insCont=document.getElementById('ins-savings-cont-'+p);
+      if(!secCont)return;
+      let secTotal=0,insMonthly=0;
+      secCont.querySelectorAll('[id^="sec-'+p+'-"]').forEach(el=>{
+        const sid=el.id.split('-').pop();
+        secRefreshCard(p,sid);
+        const t=secCurType(p,sid);
+        const gv=x=>parseFloat((document.getElementById(x+'-'+p+'-'+sid)||{}).value)||0;
+        if(t==='stock'){if(!(parseInt((document.getElementById('sec-stk-age-'+p+'-'+sid)||{}).value)>0))secTotal+=gv('sec-stk-bal');}
+        else if(t==='bond'){if(!(parseInt((document.getElementById('sec-bond-age-'+p+'-'+sid)||{}).value)>0))secTotal+=gv('sec-bond-bal');}
+        else secTotal+=gv('sec-bal');
+      });
+      if(insCont)insCont.querySelectorAll('[id^="ins-'+p+'-"]').forEach(el=>{
+        const iid=el.id.split('-').pop();
+        insRefreshCard(p,iid);
+        insMonthly+=parseFloat((document.getElementById('ins-m-'+p+'-'+iid)||{}).value)||0;
+      });
+      // 財形カードの表示: 値があるか、明示的に開いたとき
+      const zb=parseFloat((document.getElementById('zaikei-'+p+'-bal')||{}).value)||0;
+      const zm=parseFloat((document.getElementById('zaikei-'+p+'-monthly')||{}).value)||0;
+      const zCard=document.getElementById('zaikei-card-'+p);
+      let zShown=false;
+      if(zCard){
+        zShown=zb>0||zm>0||zCard.dataset.open==='1';
+        zCard.hidden=!zShown;
+        if(zShown)secTotal+=zb;
+      }
+      // 見出し・タブの合計
+      const sumEl=document.getElementById('asset-sec-sum-'+p);
+      if(sumEl)sumEl.textContent='計 '+Math.round(secTotal).toLocaleString()+'万';
+      const tabEl=document.getElementById('asset-sum-'+p);
+      if(tabEl)tabEl.textContent='資産 '+Math.round(secTotal).toLocaleString()+'万'+(insMonthly>0?('・保険 月'+insMonthly+'万'):'');
+      // 空状態ガイド
+      const emptyEl=document.getElementById('asset-empty-'+p);
+      if(emptyEl){
+        const hasSec=!!secCont.querySelector('[id^="sec-'+p+'-"]');
+        const hasIns=!!(insCont&&insCont.querySelector('[id^="ins-'+p+'-"]'));
+        emptyEl.hidden=hasSec||hasIns||zShown;
+      }
+    });
+  }catch(e){/* UI装飾の失敗は計算に影響させない */}
+}
+window.refreshAssetUI=refreshAssetUI;
+// ── 使い方ガイド（3ステップ。？ボタンから表示） ──
+let _aCoach=null,_aSpot=null;
+const ASSET_GUIDE=[
+  {sel:'.abdg',    t:'種別バッジ',  d:'クリックすると候補が開き、課税/NISA/一括/債券/保険/財形を切り替えられます。入力欄も種別に合わせて変わります。'},
+  {sel:'input.adef',t:'薄い数字',   d:'薄いグレーの数字は「初期値のまま」の印。変更すると濃くなるので、どこを個別設定したか一目で分かります。'},
+  {sel:'.a-chip',  t:'設定チップ',  d:'取り崩しや取得価格など、たまにしか使わない設定はここ。タップで開き、設定したものは色付きチップで残ります（取り崩しは濃色＋カード左に線）。'}
+];
+function assetGuide(step){
+  step=step||0;
+  assetGuideEnd(false);
+  if(step>=ASSET_GUIDE.length){try{localStorage.setItem('cf_asset_guide_done','1');}catch(e){}return;}
+  const g=ASSET_GUIDE[step];
+  const ph=document.getElementById('asset-panel-h');
+  const panel=(ph&&ph.style.display!=='none')?ph:document.getElementById('asset-panel-w');
+  const el=(panel||document).querySelector(g.sel);
+  if(el){el.classList.add('a-spot');el.scrollIntoView({block:'center',behavior:'smooth'});_aSpot=el;}
+  _aCoach=document.createElement('div');
+  _aCoach.className='a-coach';
+  _aCoach.innerHTML='<div class="step">資産入力の使い方 '+(step+1)+' / '+ASSET_GUIDE.length+' — '+g.t+'</div>'+g.d+
+    '<div class="btns"><button class="cl" onclick="assetGuideEnd(true)">閉じる</button>'+
+    '<button class="nx" onclick="assetGuide('+(step+1)+')">'+((step+1<ASSET_GUIDE.length)?'次へ':'完了')+'</button></div>';
+  document.body.appendChild(_aCoach);
+}
+function assetGuideEnd(done){
+  if(_aSpot){_aSpot.classList.remove('a-spot');_aSpot=null;}
+  if(_aCoach){_aCoach.remove();_aCoach=null;}
+  if(done){try{localStorage.setItem('cf_asset_guide_done','1');}catch(e){}}
+}
+window.assetGuide=assetGuide;window.assetGuideEnd=assetGuideEnd;
+// ── 入力の薄字更新＋UIリフレッシュ（②資産パネル内のみ・軽量） ──
+document.addEventListener('input',function(e){
+  const t=e.target;
+  if(!t||!t.closest)return;
+  if(!t.closest('#asset-panel-h,#asset-panel-w'))return;
+  if(t.dataset&&t.dataset.def!==undefined)_fmtDef(t);
+  if(window._assetUiRaf)return;
+  window._assetUiRaf=requestAnimationFrame(function(){window._assetUiRaf=null;refreshAssetUI();});
+});
+document.addEventListener('DOMContentLoaded',function(){try{refreshAssetUI();}catch(e){}});
