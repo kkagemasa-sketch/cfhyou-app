@@ -1442,6 +1442,11 @@ function scheduleAutoSave(){
 // IndexedDBは非同期のため、navigateが先に走るとデータが消える可能性あり。
 // そのためlocalStorageへ同期的にバックアップする（saveAndRefreshと同じ仕組み）
 function _saveNow(){
+  // ★ 白紙上書き防止(2026-09-26): 起動直後（自動保存の復元が終わる前）に
+  //   タブを閉じる/切り替える/リロードすると、まだ白紙の画面状態で
+  //   自動保存を上書きしてお客様データが消える危険があった。
+  //   復元試行の完了(window._restoreDone)までは離脱時保存をスキップする。
+  if(!window._restoreDone)return;
   try{
     // フォーカス中の入力欄を確定（amt-inp等のblurフォーマットを走らせる）
     if(document.activeElement && document.activeElement.blur && document.activeElement!==document.body){
@@ -1507,6 +1512,15 @@ function _restoreScenarios(data){
 }
 
 async function restoreAutoSave(){
+  try{
+    await _restoreAutoSaveInner();
+  }finally{
+    // ★ 白紙上書き防止(2026-09-26): 復元の試行が終わるまでは _saveNow を動かさない。
+    //   成功・データなし・例外のいずれでも必ず立てる（新規ユーザーの保存を止めないため）
+    window._restoreDone=true;
+  }
+}
+async function _restoreAutoSaveInner(){
   // 1. まず更新ボタンのlocalStorageバックアップを確認（最新で確実）
   let restored=false;
   try{

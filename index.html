@@ -2168,7 +2168,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/loan-plan.js?v=22"></script>
 <script src="js/lc-tab.js?v=6"></script>
 <script src="js/scenario.js?v=9"></script>
-<script src="js/save-load.js?v=92"></script>
+<script src="js/save-load.js?v=93"></script>
 <script src="js/explain/explain-core.js?v=4"></script>
 <script src="js/explain/explain-lctrl.js?v=9"></script>
 <script src="js/explain/explain-pension.js?v=2"></script>
@@ -2184,10 +2184,32 @@ window.closeAboutModal=closeAboutModal;
 <script>
 if('serviceWorker' in navigator){
   let _swRefreshing=false;
-  // 新SWが有効化されたらリロード（バナーのボタン押下時のみ skipWaiting → controllerchange 発火）
+  // 新SWが有効化されたらリロード（skipWaiting → controllerchange 発火）
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(_swRefreshing)return; _swRefreshing=true; location.reload();
   });
+
+  // ★ サイレント自動更新(2026-09-26): 開いた直後（まだ何も操作していない間）に
+  //   新しい版が見つかったら、バナーを出さずに自動で切り替える。
+  //   開いた直後はリロードしても失うものがないため（復元は _restoreDone ガードで保護済み）。
+  //   商談中（操作後）に来た更新だけ従来どおりバナーを1回表示し、「後で」を押せば
+  //   次にアプリを開いたときにこの仕組みが自動で最新化する → 更新ボタン連打が不要になる。
+  let _userTouched=false;
+  ['pointerdown','keydown'].forEach(ev=>window.addEventListener(ev,()=>{_userTouched=true;},{capture:true,passive:true}));
+  const _canSilentUpdate=()=>{
+    if(_userTouched)return false;
+    if(performance.now()>20000)return false; // 開いてから20秒超は「使用中」とみなす
+    // 無限リロード保険: 直前にもサイレント更新していたら2回目はバナーに切り替える
+    try{ if(sessionStorage.getItem('cf_silent_upd')==='1')return false; }catch(e){}
+    return true;
+  };
+  function _autoApplyUpdate(waitingWorker){
+    if(_swRefreshing||!waitingWorker)return;
+    try{ sessionStorage.setItem('cf_silent_upd','1'); setTimeout(()=>{try{sessionStorage.removeItem('cf_silent_upd');}catch(e){}},15000); }catch(e){}
+    try{ waitingWorker.postMessage({type:'SKIP_WAITING'}); }catch(e){}
+    // controllerchange が来ない環境の保険
+    setTimeout(()=>{ if(!_swRefreshing){ _swRefreshing=true; location.reload(); } }, 2000);
+  }
 
   // 「新しいバージョンがあります」バナーを表示（更新内容つき）
   // ★2026-09-13: 「後で」を押した版は localStorage に記録し、同じ版では再表示しない。
@@ -2210,7 +2232,7 @@ if('serviceWorker' in navigator){
     bar.innerHTML='<div style="display:flex;align-items:center;gap:14px">'+
       '<span>新しいバージョンがあります</span>'+
       '<button id="cf-update-btn" style="background:#22c55e;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">今すぐ更新</button>'+
-      '<button id="cf-update-later" style="background:transparent;color:#cbd5e1;border:none;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap">後で</button>'+
+      '<button id="cf-update-later" style="background:transparent;color:#cbd5e1;border:none;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap" title="次にアプリを開いたとき自動で更新されます">後で（次回開く時に自動更新）</button>'+
       '</div><div id="cf-update-notes" style="display:none;font-size:11.5px;line-height:1.7;color:#dbe6f5;border-top:1px solid rgba(255,255,255,.2);padding-top:7px"></div>';
     document.body.appendChild(bar);
     // 新バージョンの更新内容（呼び出し元で取得済みのversion.jsonから表示）
@@ -2248,15 +2270,19 @@ if('serviceWorker' in navigator){
   }
 
   navigator.serviceWorker.register('./sw.js').then(reg=>{
-    // 既に待機中の新SWがあればバナー表示
-    if(reg.waiting && navigator.serviceWorker.controller) _showUpdateBanner(reg.waiting);
-    // 新SW検出 → インストール完了（待機状態）になったらバナー表示
+    // 既に待機中の新SWがある: 開いた直後なら黙って自動更新、使用中ならバナー
+    if(reg.waiting && navigator.serviceWorker.controller){
+      if(_canSilentUpdate()) _autoApplyUpdate(reg.waiting);
+      else _showUpdateBanner(reg.waiting);
+    }
+    // 新SW検出 → インストール完了（待機状態）: 同上
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
       if(!nw)return;
       nw.addEventListener('statechange',()=>{
         if(nw.state==='installed' && navigator.serviceWorker.controller){
-          _showUpdateBanner(reg.waiting||nw);
+          if(_canSilentUpdate()) _autoApplyUpdate(reg.waiting||nw);
+          else _showUpdateBanner(reg.waiting||nw);
         }
       });
     });
