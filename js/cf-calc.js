@@ -963,7 +963,10 @@ function render(){
       } else {
         wInc=getIncomeAtAge(wSteps,wa);
         // 奥様側の変換: 扶養控除・配偶者控除はご主人側に適用済みのため本人分の控除のみ
-        if(_grossW&&wInc>0)wInc=ri(grossToNetYearly(wInc,wa,_wtW,false,0,0));
+        // ★ バグ修正: 奥様の育休ステップ（給付金=非課税の手取り額）はご主人側と同様に変換しない
+        //   （旧: 判定が無く、額面モードで給付金がさらに手取り換算され目減りしていた）
+        const _wOnLeaveY=_wStepLeaves.some(s=>s.isMatLeave&&wa>=s.fromAge&&wa<=s.toAge);
+        if(_grossW&&wInc>0&&!_wOnLeaveY)wInc=ri(grossToNetYearly(wInc,wa,_wtW,false,0,0));
       }
       // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
       if(wInc>0&&wa<dcIdeco.w.retAge){
