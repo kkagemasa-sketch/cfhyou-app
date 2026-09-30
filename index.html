@@ -15,7 +15,7 @@
 <!-- Sentry エラー監視（DSN未設定時はローカルログのみ動作） -->
 <script src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js" crossorigin="anonymous"></script>
 <script src="js/error-monitor.js?v=2"></script>
-<link rel="stylesheet" href="css/style.css?v=64">
+<link rel="stylesheet" href="css/style.css?v=65">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -2129,6 +2129,9 @@ window.closeAboutModal=closeAboutModal;
         title="ヘッダーと入力パネルを隠してCF表を画面いっぱいに表示">全画面</button>
       <button id="btn-tab-excel" onclick="exportCurrentTab()"
         style="background:rgba(0,128,0,.3);color:#fff;border:1px solid rgba(0,200,0,.5);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">Excel出力</button>
+      <button id="btn-tab-print" onclick="printCurrentTab()"
+        style="background:rgba(245,158,11,.3);color:#fff;border:1px solid rgba(245,158,11,.65);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap"
+        title="CF表をA4横で印刷／PDF保存（表紙・前提条件・ご確認事項つき）">印刷・PDF</button>
     </div>
   </div>
   <div class="r-body" id="right-body">
@@ -2164,7 +2167,8 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/cf-table.js?v=77"></script>
 <script src="js/cf-highlight.js?v=3"></script>
 <script src="js/graphs.js?v=9"></script>
-<script src="js/export.js?v=77"></script>
+<script src="js/export.js?v=78"></script>
+<script src="js/print.js?v=1"></script>
 <script src="js/loan-plan.js?v=22"></script>
 <script src="js/lc-tab.js?v=6"></script>
 <script src="js/scenario.js?v=9"></script>

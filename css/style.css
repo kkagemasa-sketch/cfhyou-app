@@ -1462,3 +1462,75 @@ body.cf-full .panel-r{min-width:0}
 /* .tc を小型化するモディファイア（.tcのままにするのはハッシュ(.tc.on)対象を保つため） */
 .tc.tc-mini{flex:0 0 auto;padding:2px 8px;font-size:10px;font-weight:700;border-radius:var(--rs);gap:0;transform:none;box-shadow:none;border-width:1.5px}
 .tc.tc-mini.on{transform:none;box-shadow:0 0 0 1.5px rgba(8,145,178,.25)}
+
+/* ============================================================
+   印刷・PDF（print.js）：プレビュー画面＋印刷用ページ（A4横）
+   ページ寸法は既存の @page（A4横・余白8mm/10mm）の印刷可能範囲 277×193mm
+   ============================================================ */
+#pp-preview{position:fixed;inset:0;z-index:9500;background:#5b6472;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 0 24px}
+#pp-preview .pp-bar{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:center;margin:0 0 16px;padding:10px 14px;background:#1e3a5f;color:#fff;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+#pp-preview .pp-bar-btns{display:flex;gap:8px}
+#pp-preview .pp-bar button{font:inherit;font-size:13px;padding:7px 18px;border-radius:7px;border:none;cursor:pointer;font-weight:700}
+#pp-preview .pp-btn-print{background:#f59e0b;color:#fff}
+#pp-preview .pp-btn-close{background:#e2e8f0;color:#334155}
+#pp-preview .pp-bar-tip{flex-basis:100%;text-align:center;font-size:11px;color:#cbd5e1}
+#pp-preview .pp-warn{max-width:277mm;margin:0 auto 12px;background:#fee2e2;color:#991b1b;border:2px solid #dc2626;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;line-height:1.6}
+#pp-preview .pp-notice{max-width:277mm;margin:0 auto 12px;background:#fef9c3;color:#713f12;border:1px solid #eab308;border-radius:6px;padding:6px 12px;font-size:12px}
+.pp-page{width:277mm;height:193mm;margin:0 auto 18px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);padding:2mm 1mm 0;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;color:#1f2937;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif}
+.pp-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1e3a5f;padding-bottom:3mm;margin-bottom:3mm}
+.pp-title{font-size:15px;font-weight:800;color:#1e3a5f}
+.pp-title small{font-size:11px;font-weight:600;color:#64748b;margin-left:10px}
+.pp-meta{font-size:10px;color:#475569;text-align:right;line-height:1.5}
+.pp-body{flex:1;min-height:0;display:flex;flex-direction:column}
+.pp-foot{display:flex;justify-content:space-between;font-size:8.5px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:2mm;margin-top:2mm}
+.pp-cont{font-size:9px;color:#64748b;text-align:right;margin-top:1.5mm}
+/* 表紙 */
+.pp-cover-hero{border-left:6px solid #1e3a5f;padding:5mm 6mm;margin:4mm 0 7mm;background:linear-gradient(90deg,#eef4fb,#fff)}
+.pp-cover-hero.mg{border-left-color:#c2185b;background:linear-gradient(90deg,#fdf2f8,#fff)}
+.pp-cover-hero .t1{font-size:26px;font-weight:800;color:#1e3a5f;letter-spacing:.04em}
+.pp-cover-hero .t2{font-size:15px;color:#334155;margin-top:2mm}
+.pp-cover-hero .t3{font-size:15px;color:#9f1239;font-weight:700;margin-top:1.5mm}
+.pp-cover-lbl{font-size:12px;font-weight:700;color:#1e3a5f;margin:0 0 2mm;border-bottom:1.5px solid #1e3a5f;padding-bottom:1mm}
+.pp-cover .pp-pre{zoom:1.12}
+/* 前提条件（画面の欄を流用） */
+.pp-pre{zoom:.9;margin-bottom:2mm}
+.pp-pre>div{margin-bottom:1.5mm!important;border-radius:4px!important;overflow:visible!important}
+.pp-pre>div>div{flex-wrap:nowrap!important}
+.pp-note{padding:4px 12px;font-size:11px;line-height:1.5;color:#1a3a6a}
+/* CF表（画面の表を複製。画面用の固定幅・固定表示を解除） */
+.pp-tbl{width:100%!important;min-width:0!important;border-collapse:collapse!important;table-layout:fixed!important;font-size:8.6px;zoom:1!important;contain:none!important}
+.pp-tbl th,.pp-tbl td{position:static!important;left:auto!important;top:auto!important;width:auto!important;padding:1.2mm 1mm!important;border:1px solid #cbd5e1!important;white-space:nowrap!important;overflow:hidden;text-overflow:clip!important;min-width:0!important;max-width:none!important;box-shadow:none!important;font-size:8.6px!important;line-height:1.12!important}
+#pp-preview .pp-tbl th,#pp-preview .pp-tbl td{white-space:nowrap!important}  /* 画面用の行別の折り返し指定（例：その他金融資産合計）より優先 */
+.pp-tbl .pp-dummy{display:none!important}
+.pp-tbl tr>*:nth-child(n+3) *{font-size:inherit!important;max-width:none!important;overflow:visible!important}
+.pp-tbl tr>*:nth-child(-n+2) *{font-size:inherit!important;line-height:1.1!important}
+.pp-tbl tr>*:nth-child(-n+2) br+*{font-size:.92em!important}
+.pp-tbl col.c1{width:17mm}.pp-tbl col.c2{width:37mm}.pp-tbl col.cT{width:19mm}
+.pp-tbl tr>*:nth-child(2){border-right:2px solid #6b8cae!important}
+.pp-tbl button,.pp-tbl input,.pp-tbl .explain-ic{display:none!important}
+/* ご確認事項（Excel版と同じ配色：紺の見出し帯・金の縦線・黄色の注意枠） */
+.pp-dc{font-family:'Meiryo','Yu Gothic UI',sans-serif;color:#333;font-size:9.6px;line-height:1.55}
+.pp-dc .dc-title{background:#1e3a5f;color:#fff;font-size:15px;font-weight:700;text-align:center;padding:2.2mm;border-top:2px solid #0d2340;border-bottom:2px solid #0d2340}
+.pp-dc .dc-meta{background:#f1f5fa;color:#1e3a5f;text-align:center;padding:1.4mm;font-size:9.6px;margin-bottom:2mm}
+.pp-dc .dc-lead{background:#f5f8fd;border:1px solid #d0dae7;border-left:3px solid #1e3a5f;padding:1.8mm 3mm;margin-bottom:1.8mm;color:#1f2937}
+.pp-dc .dc-alert{background:#fef3c7;border:1px solid #e6c177;border-left:5px solid #f59e0b;padding:1.8mm 3mm;margin-bottom:2.2mm;font-weight:700;color:#92400e;font-size:10px}
+.pp-dc .dc-cols{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+.pp-dc .dc-sec{margin-bottom:2mm}
+.pp-dc .dc-h{background:#1e3a5f;color:#fff;font-weight:700;font-size:10.5px;padding:1mm 2.5mm;border-left:4px solid #d4a84b;margin-bottom:1mm}
+.pp-dc ul{margin:0;padding:0 0 0 1mm;list-style:none}
+.pp-dc li{padding-left:1em;text-indent:-1em;margin-bottom:.6mm}
+.pp-dc li::before{content:'・'}
+.pp-dc .dc-foot{background:#1e3a5f;color:#fff;text-align:center;font-size:9px;padding:1.2mm;margin-top:1mm}
+@media screen{
+  /* 画面が狭い端末ではプレビューだけ縮小表示（組み立て・文字サイズ調整の後に適用） */
+  #pp-preview.pp-ready .pp-page{zoom:var(--pp-z,1)}
+}
+@media print{
+  /* プレビューを開いているときだけ、プレビューの中身だけを印刷する */
+  html:has(body.pp-open),body.pp-open{position:static!important;height:auto!important;overflow:visible!important;background:#fff!important;display:block!important}
+  body.pp-open>*:not(#pp-preview){display:none!important}
+  body.pp-open #pp-preview{position:static!important;background:none!important;padding:0!important;overflow:visible!important}
+  body.pp-open #pp-preview .pp-bar,body.pp-open #pp-preview .pp-warn,body.pp-open #pp-preview .pp-notice{display:none!important}
+  body.pp-open .pp-page{margin:0!important;box-shadow:none!important;page-break-after:always;break-after:page}
+  body.pp-open .pp-page:last-child{page-break-after:auto;break-after:auto}
+}

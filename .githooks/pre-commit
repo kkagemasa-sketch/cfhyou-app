@@ -67,5 +67,15 @@ if git diff --cached --name-only | grep -qE '^(js/|index\.html)'; then
     echo "   （緊急時のみ: git commit --no-verify）"
     exit 1
   fi
+
+  # ── 印刷・PDF（画面のCF表と印刷の全マス照合・はみ出し・縦1枚）──
+  echo "🖨 印刷テスト実行中…（約30秒）"
+  run_twice "$(dirname "$0")/../tools/print-test.js"
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "🛑 印刷内容が画面のCF表と一致しない／用紙からはみ出すため、コミットを中止しました。"
+    echo "   （緊急時のみ: git commit --no-verify）"
+    exit 1
+  fi
 fi
 exit 0

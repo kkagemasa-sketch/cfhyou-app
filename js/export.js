@@ -111,7 +111,7 @@ function _loadPrintInfo(){
 
 // ===== 出力前モーダル =====
 function showExportModal(exportType){
-  if(exportType==='mg'){
+  if(exportType==='mg'||exportType==='print-mg'){
     const mgKey=rTab==='mg-h'?'h':'w';
     if(!window._mgMRStore||!window._mgMRStore[mgKey]){alert('先に万が一CF表を生成してください');return;}
   }else if(!window.lastR){alert('先にCF表を生成してください');return;}
@@ -132,7 +132,7 @@ function showExportModal(exportType){
   modal.innerHTML=`
     <div style="background:#fff;border-radius:14px;padding:24px;width:520px;max-width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:800;font-size:15px;color:#1e3a5f">${exportType==='mg'?'万が一CF表 Excel出力':exportType==='excel'?'Excel出力':exportType==='pdf'?'PDF出力':'印刷'}</div>
+        <div style="font-weight:800;font-size:15px;color:#1e3a5f">${exportType==='mg'?'万が一CF表 Excel出力':exportType==='excel'?'Excel出力':exportType==='pdf'?'PDF出力':exportType==='print-mg'?'万が一CF表 印刷・PDF':'印刷・PDF'}</div>
         <button onclick="document.getElementById('export-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0 4px">✕</button>
       </div>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
@@ -163,7 +163,7 @@ function showExportModal(exportType){
       </div>`:''}
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button onclick="document.getElementById('export-modal').remove()" style="font-size:12px;padding:8px 16px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-weight:600">キャンセル</button>
-        <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='mg'?'Excel出力':exportType==='excel'?'Excel出力':exportType==='pdf'?'PDF出力':'印刷'}</button>
+        <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='mg'?'Excel出力':exportType==='excel'?'Excel出力':exportType==='pdf'?'PDF出力':'印刷プレビューを開く'}</button>
       </div>
     </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -184,6 +184,8 @@ function _doExport(type){
   if(type==='excel')exportExcel();
   else if(type==='mg')exportExcelMG();
   else if(type==='pdf')exportPDF();
+  else if(type==='print')openPrintPreview('cf');
+  else if(type==='print-mg')openPrintPreview('mg');
   else window.print();
 }
 
@@ -1115,6 +1117,44 @@ async function exportExcelMG(){
   await _writeXlsxWithPageSetup(wb,fname,'万が一CF表',{scale:_printScale});
 }
 
+// ===== 「ご確認事項」の文面（Excel出力・印刷/PDF共通。文面の修正はここだけで行う） =====
+// taxBaseDate: 税制基準日の表示（例「2026年9月」）
+function getDisclaimerContent(taxBaseDate){
+  return {
+    title: 'ライフプラン シミュレーション結果 ― ご確認事項',
+    lead: '本資料は、お客様からご提供いただいた情報および作成時点で確認可能な情報をもとに作成した、将来の家計収支・資産推移等のシミュレーション資料です。今後のライフプランを考える際の参考資料としてご活用いただくことを目的としており、税制、社会保障制度、金利、物価、保険内容、運用環境、収入・支出、ご家族の状況等の変化により、将来の結果は実際と異なる場合があります。重要なご判断にあたっては、最新の制度、契約内容、商品資料等をご確認ください。',
+    alert: '本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。',
+    sections: [
+      {title:'1.  本シミュレーションの位置づけ', items:[
+        '本資料は、住まい・家計・保障・資産形成等について考えるための参考資料です',
+        '個別商品の勧誘、契約締結の推奨、投資判断の提供そのものを目的とするものではありません',
+        '金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には該当しません',
+        '税理士法上の「税務相談」「税務代理」「税務書類作成」には該当しません',
+        '宅地建物取引業法上の「不動産の売買・媒介」、社会保険労務士法上の「年金等の事務代理・相談」にも該当しません']},
+      {title:'2.  試算の前提とご確認事項', items:[
+        '本資料は、お客様からのご申告内容および作成時点で確認できる情報を前提に作成しています',
+        '収入、支出、物価上昇率、昇給率、運用利回り、住宅関連費用等は、入力情報または一定の前提条件に基づいて試算しています',
+        'ご申告内容の変更や未反映事項がある場合、また税制・社会保障制度・金利水準・物価動向等が変動した場合は、結果が変わることがあります',
+        '出産、転職、退職、相続、介護、病気、失業、扶養状況の変更等により、家計状況が変わる可能性があります']},
+      {title:'3.  税金・社会保障に関するご案内', items:[
+        `本資料は${taxBaseDate}現在の税制（所得税・住民税・相続税・贈与税・社会保険料率等）に基づく概算であり、法律上または税務上の助言ではありません`,
+        '所得税、住民税、社会保険料、住宅ローン控除、相続税、贈与税、各種税制優遇制度（ふるさと納税・NISA・iDeCo 等）は、適用要件や制度改正、ご家族・所得状況により実際の適用可否や金額が異なる場合があります',
+        '退職金・年金・保険金等の受取時の課税区分（一時所得／雑所得／退職所得等）は、実際の受取方法・契約形態により異なります',
+        '個別具体的な税務・社会保険上の判断が必要な場合は、税理士、社会保険労務士、所轄官公署等の専門機関へご確認ください']},
+      {title:'4.  住宅ローン・保険・資産運用に関するご案内', items:[
+        '住宅ローン金利、借入条件、諸費用、団体信用生命保険の内容、物件価格、維持費、修繕費等は、金融機関・物件条件・契約内容により異なります',
+        '保険料、保障内容、給付金、解約返戻金等は、商品内容や契約条件、告知内容、支払事由への該当有無等により異なる場合があります。各保険会社の契約締結前交付書面等で必ずご確認ください',
+        '運用シミュレーションを含む場合、想定利回り・過去実績・指数データ等は将来の運用成果を保証するものではなく、市場環境・為替・手数料・税制等の影響により実際の結果は変動します',
+        '教育費は公的統計の平均値で、学校・コース・地域により大きく異なります',
+        '年金受給額は現行給付水準による概算で、将来の改定は反映していません']},
+      {title:'5.  本資料のご活用にあたって', items:[
+        '本資料は、現時点での見通しを整理するための資料です。前提条件に変更があった場合は、再試算により結果が変わる場合があります',
+        'ご不明点や前提条件の確認事項がありましたら、その都度ご相談ください',
+        '本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません']}
+    ]
+  };
+}
+
 // ===== 免責事項：CF表シート末尾に連結（印刷時に連続してページ出力される） =====
 // 戻り値: 免責事項タイトルの行インデックス（0-based、pageBreakRow 用）
 function _appendDisclaimerToCFSheet(ws, startRow, lastCol, clientName){
@@ -1131,46 +1171,18 @@ function _appendDisclaimerToCFSheet(ws, startRow, lastCol, clientName){
   const _dObj2 = _exportExtra.date ? new Date(_exportExtra.date) : new Date();
   const taxBaseDate2 = `${_dObj2.getFullYear()}年${_dObj2.getMonth()+1}月`;
 
+  // 文面は getDisclaimerContent（印刷・PDFと共通）から組み立てる
+  const _dc = getDisclaimerContent(taxBaseDate2);
   const L = [
-    ['title', 'ライフプラン シミュレーション結果 ― ご確認事項'],
+    ['title', _dc.title],
     ['meta', `お客様：${cn}　／　作成日：${dateStr}`],
     ['meta', `作成者：${company}${fpName!=='—'?'　（'+fpName+'）':''}${contact?'　'+contact:''}`],
     ['spacer', ''],
-    ['lead', '本資料は、お客様からご提供いただいた情報および作成時点で確認可能な情報をもとに作成した、将来の家計収支・資産推移等のシミュレーション資料です。今後のライフプランを考える際の参考資料としてご活用いただくことを目的としており、税制、社会保障制度、金利、物価、保険内容、運用環境、収入・支出、ご家族の状況等の変化により、将来の結果は実際と異なる場合があります。重要なご判断にあたっては、最新の制度、契約内容、商品資料等をご確認ください。'],
+    ['lead', _dc.lead],
     ['spacer', ''],
-    ['alert', ' 本資料は将来の一定の前提に基づく試算結果であり、実際の金額を保証するものではありません。投資・契約・購入等の最終判断は、お客様ご自身の責任において行ってください。'],
+    ['alert', ' '+_dc.alert],
     ['spacer', ''],
-    ['section', '1.  本シミュレーションの位置づけ'],
-    ['body-bullet', '・本資料は、住まい・家計・保障・資産形成等について考えるための参考資料です'],
-    ['body-bullet', '・個別商品の勧誘、契約締結の推奨、投資判断の提供そのものを目的とするものではありません'],
-    ['body-bullet', '・金融商品取引法上の「投資助言」「投資勧誘」「金融商品の販売」には該当しません'],
-    ['body-bullet', '・税理士法上の「税務相談」「税務代理」「税務書類作成」には該当しません'],
-    ['body-bullet', '・宅地建物取引業法上の「不動産の売買・媒介」、社会保険労務士法上の「年金等の事務代理・相談」にも該当しません'],
-    ['spacer', ''],
-    ['section', '2.  試算の前提とご確認事項'],
-    ['body-bullet', '・本資料は、お客様からのご申告内容および作成時点で確認できる情報を前提に作成しています'],
-    ['body-bullet', '・収入、支出、物価上昇率、昇給率、運用利回り、住宅関連費用等は、入力情報または一定の前提条件に基づいて試算しています'],
-    ['body-bullet', '・ご申告内容の変更や未反映事項がある場合、また税制・社会保障制度・金利水準・物価動向等が変動した場合は、結果が変わることがあります'],
-    ['body-bullet', '・出産、転職、退職、相続、介護、病気、失業、扶養状況の変更等により、家計状況が変わる可能性があります'],
-    ['spacer', ''],
-    ['section', '3.  税金・社会保障に関するご案内'],
-    ['body-bullet', `・本資料は${taxBaseDate2}現在の税制（所得税・住民税・相続税・贈与税・社会保険料率等）に基づく概算であり、法律上または税務上の助言ではありません`],
-    ['body-bullet', '・所得税、住民税、社会保険料、住宅ローン控除、相続税、贈与税、各種税制優遇制度（ふるさと納税・NISA・iDeCo 等）は、適用要件や制度改正、ご家族・所得状況により実際の適用可否や金額が異なる場合があります'],
-    ['body-bullet', '・退職金・年金・保険金等の受取時の課税区分（一時所得／雑所得／退職所得等）は、実際の受取方法・契約形態により異なります'],
-    ['body-bullet', '・個別具体的な税務・社会保険上の判断が必要な場合は、税理士、社会保険労務士、所轄官公署等の専門機関へご確認ください'],
-    ['spacer', ''],
-    ['section', '4.  住宅ローン・保険・資産運用に関するご案内'],
-    ['body-bullet', '・住宅ローン金利、借入条件、諸費用、団体信用生命保険の内容、物件価格、維持費、修繕費等は、金融機関・物件条件・契約内容により異なります'],
-    ['body-bullet', '・保険料、保障内容、給付金、解約返戻金等は、商品内容や契約条件、告知内容、支払事由への該当有無等により異なる場合があります。各保険会社の契約締結前交付書面等で必ずご確認ください'],
-    ['body-bullet', '・運用シミュレーションを含む場合、想定利回り・過去実績・指数データ等は将来の運用成果を保証するものではなく、市場環境・為替・手数料・税制等の影響により実際の結果は変動します'],
-    ['body-bullet', '・教育費は公的統計の平均値で、学校・コース・地域により大きく異なります'],
-    ['body-bullet', '・年金受給額は現行給付水準による概算で、将来の改定は反映していません'],
-    ['spacer', ''],
-    ['section', '5.  本資料のご活用にあたって'],
-    ['body-bullet', '・本資料は、現時点での見通しを整理するための資料です。前提条件に変更があった場合は、再試算により結果が変わる場合があります'],
-    ['body-bullet', '・ご不明点や前提条件の確認事項がありましたら、その都度ご相談ください'],
-    ['body-bullet', '・本資料の内容に関する著作権は作成者に帰属し、無断複製・二次利用を禁じます。本資料の利用により生じたいかなる損害についても、作成者は一切の責任を負いません'],
-    ['spacer', ''],
+    ..._dc.sections.flatMap(s=>[['section', s.title], ...s.items.map(t=>['body-bullet', '・'+t]), ['spacer', '']]),
     ['footer-dc', `${company}${contact?'　'+contact:''}`]
   ];
 
