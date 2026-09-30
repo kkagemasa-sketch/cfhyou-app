@@ -2114,11 +2114,11 @@ window.closeAboutModal=closeAboutModal;
         <button onclick="cfZoomFit()" id="btn-zoom-fit"
           style="display:none;background:rgba(79,172,254,.3);color:#fff;border:1px solid rgba(79,172,254,.5);border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">全体表示</button>
         <span style="font-size:10px;color:rgba(255,255,255,.7);cursor:pointer" onclick="setCfZoom(Math.max(20,cfZoomLevel-5))">−</span>
-        <input type="range" id="cf-zoom-slider" min="20" max="100" value="100" step="1"
+        <input type="range" id="cf-zoom-slider" min="20" max="200" value="100" step="1"
           oninput="setCfZoom(+this.value)"
           style="width:60px;accent-color:#4dabf7;cursor:pointer;height:14px">
         <span id="cf-zoom-label" style="font-size:10px;color:rgba(255,255,255,.85);min-width:30px;text-align:center;font-family:'Cascadia Code','Consolas',monospace">100%</span>
-        <span style="font-size:10px;color:rgba(255,255,255,.7);cursor:pointer" onclick="setCfZoom(Math.min(100,cfZoomLevel+5))">+</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.7);cursor:pointer" onclick="setCfZoom(Math.min(200,cfZoomLevel+5))">+</span>
         <button onclick="setCfZoom(100)" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:1px 6px;font-size:9px;cursor:pointer;font-family:inherit">100%</button>
       </div>
       <button id="btn-fin-toggle" onclick="toggleFinAsset()"
@@ -2162,7 +2162,7 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/assets.js?v=29"></script>
 <script src="js/extras.js?v=2"></script>
 <script src="js/contingency.js?v=109"></script>
-<script src="js/cf-ui.js?v=29"></script>
+<script src="js/cf-ui.js?v=30"></script>
 <script src="js/cf-calc.js?v=94"></script>
 <script src="js/cf-table.js?v=77"></script>
 <script src="js/cf-highlight.js?v=3"></script>

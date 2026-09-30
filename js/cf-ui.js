@@ -4,7 +4,8 @@ function _rl(key,def){return _cfRowLabels[key]||def;}
 // ===== CF表ズーム =====
 let cfZoomLevel=100;
 function setCfZoom(v){
-  cfZoomLevel=Math.max(20,Math.min(100,v));
+  // ★ 100%超の拡大にも対応（20〜200%）
+  cfZoomLevel=Math.max(20,Math.min(200,v));
   const rb=document.getElementById('right-body');
   if(rb){
     // zoom を .tbl-wrap 直下の table に適用（scroll container自体は非ズーム）
@@ -12,7 +13,7 @@ function setCfZoom(v){
     const tbl=rb.querySelector('.tbl-wrap > table.cf');
     if(tbl){
       const s=cfZoomLevel/100;
-      tbl.style.zoom=s<1?s:'';
+      tbl.style.zoom=s!==1?s:'';
     }
   }
   const slider=document.getElementById('cf-zoom-slider');
@@ -58,38 +59,72 @@ function toggleCalc(bodyId, btn){
 }
 
 // ===== ライブ更新 =====
-function live(force){
-  clearTimeout(timer);
+let _livePending=false;   // デバウンス待ち中か（focusout即時実行の判定に使用）
+let _livePendingForce=false; // 待ち中の live(force) の force を保持
+function _liveIndicator(state){
+  const ind=document.getElementById('update-indicator');
+  if(!ind)return;
   // ★ 状態チップは常に同じ幅で表示し続け、文字と色だけ切り替える
   //   （旧: display切替で出没→ヘッダーのボタン列が左右に動く「がたつき」の原因だった）
-  const ind=document.getElementById('update-indicator');
-  const _indCalc=()=>{if(ind){ind.textContent='● 計算中';ind.style.background='rgba(251,191,36,.25)';ind.style.color='#fbbf24';}};
-  const _indDone=()=>{if(ind){ind.textContent='✓ 最新';ind.style.background='rgba(74,222,128,.22)';ind.style.color='#4ade80';}};
-  _indCalc();
-  timer=setTimeout(()=>{
-    const hash=_getInputHash();
-    if(!force&&hash===_lastInputHash){
-      _indDone();
-      return;
-    }
-    _lastInputHash=hash;
-    // ★ Undo記録は重い（全状態収集+JSON化）ため、再計算チェーンから外して
-    //   画面が落ち着いてから実行する（Undo/Redo押下時はflushで即時確定される）
-    if(typeof schedulePushUndoSnap==='function')schedulePushUndoSnap();else pushUndoSnap();
-    validate();updateHints();calcLC();updateEdu();
-    // 万が一タブ表示中はrenderContingency()（内部でrender()も呼ばれる）
-    // Q&A万が一タブがアクティブなら該当タブを再計算
-    if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined' && typeof mgQA_calcAndRender==='function'){
-      const _qaTab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
-      if(_qaTab){mgQA_calcAndRender(_qaTab,true);}
-      else render();
-    } else if((rTab==='mg-h'||rTab==='mg-w')&&typeof renderContingency==='function'){
-      renderContingency();
-    }else{render();}
-    document.querySelectorAll('.amt-inp').forEach(el=>{const v=el.value.trim();el.classList.toggle('is-zero',v===''||v==='0');});
-    _indDone(); // 完了後も消さずに「✓ 最新」を出し続ける（がたつき防止）
-  },800);  // ★ レベル2最適化: 600ms → 800ms（連続入力時の再計算頻度を抑制）
+  if(state==='calc'){ind.textContent='● 計算中';ind.style.background='rgba(251,191,36,.25)';ind.style.color='#fbbf24';}
+  else{ind.textContent='✓ 最新';ind.style.background='rgba(74,222,128,.22)';ind.style.color='#4ade80';}
 }
+function live(force){
+  clearTimeout(timer);
+  _liveIndicator('calc');
+  _livePending=true;
+  _livePendingForce=_livePendingForce||!!force;
+  timer=setTimeout(_liveRun,_liveDelay());
+}
+// デバウンス待ちの本体（focusout からは待たずに直接呼ばれる）
+function _liveRun(){
+  _livePending=false;
+  const force=_livePendingForce; _livePendingForce=false;
+  const hash=_getInputHash();
+  if(!force&&hash===_lastInputHash){
+    _liveIndicator('done');
+    return;
+  }
+  _lastInputHash=hash;
+  const _liveT0=performance.now();
+  // ★ Undo記録は重い（全状態収集+JSON化）ため、再計算チェーンから外して
+  //   画面が落ち着いてから実行する（Undo/Redo押下時はflushで即時確定される）
+  if(typeof schedulePushUndoSnap==='function')schedulePushUndoSnap();else pushUndoSnap();
+  validate();updateHints();calcLC();updateEdu();
+  // 万が一タブ表示中はrenderContingency()（内部でrender()も呼ばれる）
+  // Q&A万が一タブがアクティブなら該当タブを再計算
+  if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined' && typeof mgQA_calcAndRender==='function'){
+    const _qaTab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
+    if(_qaTab){mgQA_calcAndRender(_qaTab,true);}
+    else render();
+  } else if((rTab==='mg-h'||rTab==='mg-w')&&typeof renderContingency==='function'){
+    renderContingency();
+  }else{render();}
+  document.querySelectorAll('.amt-inp').forEach(el=>{const v=el.value.trim();el.classList.toggle('is-zero',v===''||v==='0');});
+  // 実際の再計算コストを記録（次回のデバウンス自動調整に使用。指数移動平均で急変を平滑化）
+  const _cost=performance.now()-_liveT0;
+  window._livePipeMs=window._livePipeMs?Math.round(window._livePipeMs*0.5+_cost*0.5):Math.round(_cost);
+  _liveIndicator('done'); // 完了後も消さずに「✓ 最新」を出し続ける（がたつき防止）
+}
+// ★ 入力の反応改善①: デバウンス待ちを端末の実測速度で自動調整。
+//   速いPC（再計算が軽い）は最短350msまで短縮し、遅い端末（iPad等）や
+//   万一タブ表示中（再計算が重い）は従来どおり800msを維持する。
+//   初回（実測なし）は従来の800ms。
+function _liveDelay(){
+  const c=window._livePipeMs;
+  if(!c)return 800;
+  return Math.max(350, Math.min(800, Math.round(c+250)));
+}
+// ★ 入力の反応改善②: 入力欄からフォーカスが外れた瞬間（Tab・次の欄クリック等）は
+//   デバウンスを待たずに即反映する（値が変わっていなければハッシュ判定で即終了＝軽い）
+document.addEventListener('focusout',e=>{
+  if(!_livePending)return;
+  const t=e.target;
+  if(t&&t.matches&&t.matches('input,select,textarea')){
+    clearTimeout(timer);
+    _liveRun();
+  }
+});
 
 // ===== バリデーション =====
 function validate(){
