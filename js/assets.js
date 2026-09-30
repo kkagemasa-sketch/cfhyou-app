@@ -491,14 +491,16 @@ function validateNisaLimits(){
       <div style="font-size:10px;color:#888;margin-top:4px">※ 既購入取得価格+将来拠出累計の合計。売却・枠復活は未考慮。</div>
     </div>`;
   };
-  const html = summarize('h') + summarize('w');
+  // ★ 2026-09-30: 各タブには本人のNISA使用状況だけを表示（旧実装は夫婦連結のhtmlを両タブに入れていた）
+  const htmlH = summarize('h');
+  const htmlW = summarize('w');
   const hasH = agg.h.tsumi.items.length + agg.h.grow.items.length > 0;
   const hasW = agg.w.tsumi.items.length + agg.w.grow.items.length > 0;
   const sh = document.getElementById('nisa-summary-h');
   const sw = document.getElementById('nisa-summary-w');
   // 各パネルは、そのパネルの本人がNISAを1つでも選択しているときだけ表示
-  if(sh){ sh.innerHTML = hasH ? html : ''; sh.style.display = hasH ? '' : 'none'; }
-  if(sw){ sw.innerHTML = hasW ? html : ''; sw.style.display = hasW ? '' : 'none'; }
+  if(sh){ sh.innerHTML = hasH ? htmlH : ''; sh.style.display = hasH ? '' : 'none'; }
+  if(sw){ sw.innerHTML = hasW ? htmlW : ''; sw.style.display = hasW ? '' : 'none'; }
 }
 
 function calcInsPreview(person,id){
