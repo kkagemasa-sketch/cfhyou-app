@@ -235,7 +235,6 @@ function _ppLCHtml(){
   const sum=items=>items.filter(it=>!(it.cond==='mansion'&&!isM)).reduce((s,it)=>s+val(it.id),0);
   const mT=sum(LC_MONTHLY_ITEMS), yT=sum(LC_YEARLY_ITEMS);
   const annualFix=mT*12, total=annualFix+yT;
-  const pctFix = total ? Math.round(annualFix/total*100) : 0;
   const man=v=>Math.round(v/10000).toLocaleString();
   const tbl=(cls,title,unit,items,subLbl,subVal,totLbl,totVal)=>`<table class="pp-lc ${cls}">
       <tr class="h"><td>${title}</td><td class="num">${unit}</td><td>備考</td></tr>
@@ -249,7 +248,6 @@ function _ppLCHtml(){
       <div class="card var"><div class="k">年間の変動費</div><div class="v">¥${yT.toLocaleString()}<small>／年</small></div><div class="s">旅行・被服・医療など年単位の支出</div></div>
       <div class="card tot"><div class="k">生活費の年間合計</div><div class="v">¥${total.toLocaleString()}</div><div class="s">約${man(total)}万円（固定費＋変動費）</div></div>
     </div>
-    ${total?`<div class="pp-lc-bar"><div class="fix" style="width:${pctFix}%"><span>固定費 ${pctFix}%</span></div><div class="var" style="width:${100-pctFix}%"><span>変動費 ${100-pctFix}%</span></div></div>`:''}
     <div class="pp-lc-cols">
       ${tbl('fix','毎月の固定費','月額（円）',LC_MONTHLY_ITEMS,'小計（月額）',mT,'年間（×12か月）',annualFix)}
       ${tbl('var','年間の変動費','年額（円）',LC_YEARLY_ITEMS,'小計（年額）',yT,'年間',yT)}

@@ -77,5 +77,15 @@ if git diff --cached --name-only | grep -qE '^(js/|index\.html)'; then
     echo "   （緊急時のみ: git commit --no-verify）"
     exit 1
   fi
+
+  # ── 生活費タブ（入力→入力パネル連動・備考・合計）──
+  echo "🧾 生活費タブ テスト実行中…（約10秒）"
+  run_twice "$(dirname "$0")/../tools/lctab-test.js"
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "🛑 生活費タブの入力連動が壊れているため、コミットを中止しました。"
+    echo "   （緊急時のみ: git commit --no-verify）"
+    exit 1
+  fi
 fi
 exit 0

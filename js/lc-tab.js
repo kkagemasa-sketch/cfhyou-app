@@ -51,21 +51,21 @@ function renderLCTab(){
   }
 
   function escAttr(s){return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-  // 行HTML生成
+  // 行HTML生成（見た目は印刷・PDFの「生活費の内訳」と同じデザイン。入力欄とdata-*はそのまま）
   function row(item){
     if(item.cond==='mansion'&&!isM)return '';
     const val=getVal(item.id);
     const bikou=getBikou(item.id);
     let labelHtml;
     if(item.other){
-      labelHtml=`その他（<input data-nameid="${item.nameId}" value="${escAttr(getName(item.nameId))}" placeholder="項目名" style="border:none;border-bottom:1px dashed #aaa;background:#f0f7ff;font-size:12px;width:70px;outline:none;font-family:inherit;padding:1px 3px" oninput="syncLCTabName(this)">）`;
+      labelHtml=`その他（<input class="lct-name" data-nameid="${item.nameId}" value="${escAttr(getName(item.nameId))}" placeholder="項目名" oninput="syncLCTabName(this)">）`;
     }else{
       labelHtml=item.label;
     }
-    return `<tr>
-      <td style="padding:4px 8px;border:1px solid #c5c5c5;font-size:12px;white-space:nowrap">${labelHtml}</td>
-      <td style="padding:4px 8px;border:1px solid #c5c5c5;text-align:right;font-size:12px;white-space:nowrap;background:#f0f7ff"><input data-srcid="${item.id}" value="${val?'¥'+val.toLocaleString():''}" style="border:none;background:transparent;text-align:right;font-size:12px;width:100%;outline:none;font-family:inherit" onfocus="this.value=this.value.replace(/[¥,]/g,'')" onblur="syncLCTabAmt(this)"></td>
-      <td style="padding:4px 8px;border:1px solid #c5c5c5;font-size:11px;background:#f0f7ff"><input data-bikid="${item.id}" value="${escAttr(bikou)}" placeholder="備考を入力" style="border:none;background:transparent;font-size:11px;width:100%;outline:none;font-family:inherit;color:#555" oninput="_lcBikou['${item.id}']=this.value;scheduleAutoSave()"></td>
+    return `<tr class="${val?'':'z'}">
+      <td class="lbl">${labelHtml}</td>
+      <td class="num"><input class="lct-amt" data-srcid="${item.id}" value="${val?'¥'+val.toLocaleString():''}" placeholder="－" onfocus="this.value=this.value.replace(/[¥,]/g,'')" onblur="syncLCTabAmt(this)"></td>
+      <td class="bik"><input class="lct-bik" data-bikid="${item.id}" value="${escAttr(bikou)}" placeholder="備考を入力" oninput="_lcBikou['${item.id}']=this.value;scheduleAutoSave()"></td>
     </tr>`;
   }
 
@@ -82,49 +82,28 @@ function renderLCTab(){
   const mYearTotal=mTotal*12;
   const grandTotal=mYearTotal+yTotal;
 
-  const _scenNm=(typeof _activeScenName==='function')?_activeScenName():'';
-  let h=`<div style="max-width:600px;margin:20px auto;font-family:inherit">
-  ${_scenNm?`<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-    <div style="font-size:14px;font-weight:800;color:#1e293b">生活費</div>
-    <div style="font-size:11.5px;font-weight:700;color:#64748b">${_scenNm}</div>
-  </div>`:''}
-  <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
-    <tr style="background:#fff8c4">
-      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">毎月の固定費</td>
-      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;text-align:center;font-size:13px;width:130px">円</td>
-      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;text-align:center;font-size:13px;width:200px">備考</td>
-    </tr>`;
-  LC_MONTHLY_ITEMS.forEach(item=>{h+=row(item);});
-  h+=`<tr style="background:#f0f0e8">
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">小計</td>
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:13px">¥${mTotal.toLocaleString()}</td>
-      <td style="border:1px solid #c5c5c5"></td>
-    </tr>
-    <tr style="background:#fff8c4">
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:12px">合計（年間）</td>
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:13px;color:#0d6a0d">¥${mYearTotal.toLocaleString()}</td>
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;background:#fff8c4"></td>
-    </tr>
-  </table>
+  const tbl=(cls,title,unit,items,subLbl,subVal,totLbl,totVal)=>{
+    let t=`<table class="lct-tbl ${cls}">
+      <tr class="h"><td>${title}</td><td class="num">${unit}</td><td>備考</td></tr>`;
+    items.forEach(item=>{t+=row(item);});
+    t+=`<tr class="s"><td>${subLbl}</td><td class="num">¥${subVal.toLocaleString()}</td><td></td></tr>
+      <tr class="t"><td>${totLbl}</td><td class="num">¥${totVal.toLocaleString()}</td><td></td></tr>
+    </table>`;
+    return t;
+  };
 
-  <table style="width:100%;border-collapse:collapse;margin-top:16px;margin-bottom:6px">
-    <tr style="background:#fff8c4">
-      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">年間の変動費</td>
-      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;text-align:center;font-size:13px;width:130px">円</td>
-      <td style="padding:6px 8px;border:1px solid #c5c5c5;font-weight:700;text-align:center;font-size:13px;width:200px">備考</td>
-    </tr>`;
-  LC_YEARLY_ITEMS.forEach(item=>{h+=row(item);});
-  h+=`<tr style="background:#f0f0e8">
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:13px">小計</td>
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:13px">¥${yTotal.toLocaleString()}</td>
-      <td style="border:1px solid #c5c5c5"></td>
-    </tr>
-    <tr style="background:#fff8c4">
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;font-weight:700;font-size:12px">合計（固定費＋変動費）</td>
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;text-align:right;font-weight:700;font-size:13px;color:#0d6a0d">¥${grandTotal.toLocaleString()}</td>
-      <td style="padding:5px 8px;border:1px solid #c5c5c5;background:#fff8c4"></td>
-    </tr>
-  </table>
+  const _scenNm=(typeof _activeScenName==='function')?_activeScenName():'';
+  let h=`<div class="lct-wrap">
+  <div class="lct-head"><div class="t">生活費</div>${_scenNm?`<div class="sc">${_scenNm}</div>`:''}<div class="hint">金額・備考はこの画面で直接入力できます（入力パネルと連動）</div></div>
+  <div class="lct-cards">
+    <div class="card fix"><div class="k">毎月の固定費</div><div class="v">¥${mTotal.toLocaleString()}<small>／月</small></div><div class="s">年間 ¥${mYearTotal.toLocaleString()}（×12か月）</div></div>
+    <div class="card var"><div class="k">年間の変動費</div><div class="v">¥${yTotal.toLocaleString()}<small>／年</small></div><div class="s">旅行・被服・医療など年単位の支出</div></div>
+    <div class="card tot"><div class="k">生活費の年間合計</div><div class="v">¥${grandTotal.toLocaleString()}</div><div class="s">約${Math.round(grandTotal/10000).toLocaleString()}万円（固定費＋変動費）</div></div>
+  </div>
+  <div class="lct-cols">
+    ${tbl('fix','毎月の固定費','月額（円）',LC_MONTHLY_ITEMS,'小計（月額）',mTotal,'年間（×12か月）',mYearTotal)}
+    ${tbl('var','年間の変動費','年額（円）',LC_YEARLY_ITEMS,'小計（年額）',yTotal,'合計（固定費＋変動費）',grandTotal)}
+  </div>
   </div>`;
   rb.innerHTML=h;
 }
