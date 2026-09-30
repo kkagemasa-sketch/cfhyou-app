@@ -1503,19 +1503,25 @@ table.cf td.vz{color:#b6c0cc}
 #pp-preview .pp-warn{max-width:277mm;margin:0 auto 12px;background:#fee2e2;color:#991b1b;border:2px solid #dc2626;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;line-height:1.6}
 #pp-preview .pp-notice{max-width:277mm;margin:0 auto 12px;background:#fef9c3;color:#713f12;border:1px solid #eab308;border-radius:6px;padding:6px 12px;font-size:12px}
 .pp-page{width:277mm;height:193mm;margin:0 auto 18px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);padding:2mm 1mm 0;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;color:#1f2937;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif}
-.pp-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1e3a5f;padding-bottom:3mm;margin-bottom:3mm}
-.pp-title{font-size:15px;font-weight:800;color:#1e3a5f}
+/* 見出し：左にロゴ、下にロゴ色（青→水色）のグラデーション線 */
+.pp-head{display:flex;align-items:flex-end;gap:4mm;padding-bottom:2.6mm;margin-bottom:3.4mm;position:relative}
+.pp-head::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1.1mm;border-radius:1mm;background:linear-gradient(90deg,#3459ca 0%,#1ac6cb 100%);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pp-logo{height:7.5mm;width:auto;flex:0 0 auto;margin-bottom:.4mm}
+.pp-title{flex:1;font-size:15px;font-weight:800;color:#1e3a5f;padding-left:4mm;border-left:1px solid #cbd5e1;line-height:1.2}
 .pp-title small{font-size:11px;font-weight:600;color:#64748b;margin-left:10px}
 .pp-meta{font-size:10px;color:#475569;text-align:right;line-height:1.5}
 .pp-body{flex:1;min-height:0;display:flex;flex-direction:column}
 .pp-foot{display:flex;justify-content:space-between;font-size:8.5px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:2mm;margin-top:2mm}
 /* 表紙 */
-.pp-cover-hero{border-left:6px solid #1e3a5f;padding:5mm 6mm;margin:4mm 0 7mm;background:linear-gradient(90deg,#eef4fb,#fff)}
-.pp-cover-hero.mg{border-left-color:#c2185b;background:linear-gradient(90deg,#fdf2f8,#fff)}
-.pp-cover-hero .t1{font-size:26px;font-weight:800;color:#1e3a5f;letter-spacing:.04em}
+.pp-cover-hero{position:relative;border-radius:3mm;padding:7mm 8mm 6mm;margin:3mm 0 7mm;background:linear-gradient(120deg,#eef2fc 0%,#e8f9fa 100%);overflow:hidden}
+.pp-cover-hero::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2mm;background:linear-gradient(180deg,#3459ca,#1ac6cb)}
+.pp-cover-hero.mg{background:linear-gradient(120deg,#fdf2f8 0%,#fff 100%)}
+.pp-cover-hero.mg::before{background:#c2185b}
+.pp-cover-logo{position:absolute;right:8mm;top:50%;transform:translateY(-50%);height:17mm;width:auto;opacity:.95}
+.pp-cover-hero .t1{font-size:28px;font-weight:800;color:#1e3a5f;letter-spacing:.05em}
 .pp-cover-hero .t2{font-size:15px;color:#334155;margin-top:2mm}
 .pp-cover-hero .t3{font-size:15px;color:#9f1239;font-weight:700;margin-top:1.5mm}
-.pp-cover-lbl{font-size:12px;font-weight:700;color:#1e3a5f;margin:0 0 2mm;border-bottom:1.5px solid #1e3a5f;padding-bottom:1mm}
+.pp-cover-lbl{font-size:12px;font-weight:700;color:#1e3a5f;margin:0 0 2mm;padding:0 0 1mm 3mm;border-left:3px solid #1ac6cb;border-bottom:1px solid #cbd5e1}
 .pp-cover .pp-pre{zoom:1.12}
 /* 前提条件（画面の欄を流用） */
 .pp-pre{zoom:.9;margin-bottom:2mm}
@@ -1534,20 +1540,42 @@ table.cf td.vz{color:#b6c0cc}
 .pp-tbl tr>*:nth-child(2){border-right:2px solid #6b8cae!important}
 .pp-tbl button,.pp-tbl input,.pp-tbl .explain-ic{display:none!important}
 /* 生活費の内訳（生活費タブと同じ配色：黄の見出し・灰の小計） */
+/* 生活費の内訳：上に金額カード3枚＋割合の帯、下に固定費（水色系）／変動費（青系）の明細 */
 .pp-lc-wrap{font-family:'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-variant-numeric:tabular-nums;color:#1f2937}
-.pp-lc-cols{display:grid;grid-template-columns:1fr 1fr;gap:6mm;align-items:start}
-.pp-lc{width:100%;border-collapse:collapse;font-size:10.5px}
-.pp-lc td{border:1px solid #c5c5c5;padding:1.3mm 2.2mm;white-space:nowrap}
-.pp-lc td.num{text-align:right;width:26mm}
-.pp-lc td.bik{white-space:normal;color:#475569;font-size:9.5px;width:45%}
-.pp-lc tr.h td{background:#fff8c4;font-weight:700;font-size:11.5px}
-.pp-lc tr.h td.num{text-align:center}
-.pp-lc tr.s td{background:#f0f0e8;font-weight:700}
-.pp-lc tr.t td{background:#fff8c4;font-weight:700}
-.pp-lc tr.t td.num{color:#0d6a0d}
-.pp-lc-total{margin-top:5mm;display:flex;align-items:baseline;justify-content:flex-end;gap:4mm;padding:3mm 4mm;border:2px solid #0d6a0d;border-radius:4px;background:#f3fbf3;font-size:13px;font-weight:700;color:#1f2937}
-.pp-lc-total b{font-size:20px;color:#0d6a0d}
-.pp-lc-total small{font-size:11px;color:#475569;font-weight:600}
+.pp-lc-cards{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:4mm;margin-bottom:3mm}
+.pp-lc-cards .card{border-radius:2.5mm;padding:2.6mm 4mm;border:1px solid #e2e8f0;background:#fff;position:relative;overflow:hidden}
+.pp-lc-cards .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:1.4mm}
+.pp-lc-cards .card.fix::before{background:#1ac6cb}
+.pp-lc-cards .card.var::before{background:#3459ca}
+.pp-lc-cards .card.tot{background:linear-gradient(120deg,#3459ca,#1ac6cb);border:none;color:#fff}
+.pp-lc-cards .card.tot::before{display:none}
+.pp-lc-cards .k{font-size:10.5px;font-weight:700;color:#475569}
+.pp-lc-cards .v{font-size:20px;font-weight:800;color:#1e3a5f;margin-top:.6mm;letter-spacing:.01em}
+.pp-lc-cards .v small{font-size:11px;font-weight:600;color:#64748b;margin-left:1mm}
+.pp-lc-cards .s{font-size:9.5px;color:#64748b;margin-top:.4mm}
+.pp-lc-cards .tot .k,.pp-lc-cards .tot .s{color:rgba(255,255,255,.88)}
+.pp-lc-cards .tot .v{color:#fff;font-size:23px}
+.pp-lc-bar{display:flex;height:5mm;border-radius:2.5mm;overflow:hidden;margin-bottom:4mm;font-size:9px;font-weight:700;color:#fff}
+.pp-lc-bar>div{display:flex;align-items:center;padding:0 2.5mm;white-space:nowrap;overflow:hidden;min-width:0}
+.pp-lc-bar .fix{background:#1ac6cb}
+.pp-lc-bar .var{background:#3459ca;justify-content:flex-end}
+.pp-lc-cols{display:grid;grid-template-columns:1fr 1fr;gap:5mm;align-items:start}
+.pp-lc{width:100%;border-collapse:separate;border-spacing:0;font-size:10.5px;border:1px solid #e2e8f0;border-radius:2mm;overflow:hidden}
+.pp-lc td{padding:1.15mm 2.4mm;white-space:nowrap;border-bottom:1px solid #eef2f6}
+.pp-lc td.num{text-align:right;width:25mm;font-weight:700;color:#1e293b}
+.pp-lc td.bik{white-space:normal;color:#64748b;font-size:9.5px;width:44%}
+.pp-lc tr:nth-child(even):not(.h):not(.s):not(.t) td{background:#f8fafc}
+.pp-lc tr.z td{color:#94a3b8}
+.pp-lc tr.z td.num{color:#cbd5e1;font-weight:400}
+.pp-lc tr.h td{color:#fff;font-weight:700;font-size:11px;border-bottom:none}
+.pp-lc.fix tr.h td{background:#15a9ae}
+.pp-lc.var tr.h td{background:#3459ca}
+.pp-lc tr.h td.num{text-align:center;color:#fff}
+.pp-lc tr.s td{background:#f1f5f9;font-weight:700;border-top:1px solid #cbd5e1}
+.pp-lc tr.t td{font-weight:800;border-bottom:none}
+.pp-lc.fix tr.t td{background:#e6f8f8}
+.pp-lc.var tr.t td{background:#eaeffb}
+.pp-lc tr.t td.num{color:#1e3a5f;font-size:11.5px}
 /* ご確認事項（Excel版と同じ配色：紺の見出し帯・金の縦線・黄色の注意枠） */
 .pp-dc{font-family:'Meiryo','Yu Gothic UI',sans-serif;color:#333;font-size:9.6px;line-height:1.55}
 .pp-dc .dc-title{background:#1e3a5f;color:#fff;font-size:15px;font-weight:700;text-align:center;padding:2.2mm;border-top:2px solid #0d2340;border-bottom:2px solid #0d2340}

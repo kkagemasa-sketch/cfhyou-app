@@ -155,7 +155,7 @@ function _ppBuild(kind, src){
   document.body.appendChild(box);
   document.body.classList.add('pp-open');
 
-  const head=sub=>`<div class="pp-head"><div class="pp-title">${_ppEsc(cn)} ${docTitle}<small>${sub}</small></div>
+  const head=sub=>`<div class="pp-head"><img class="pp-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="pp-title">${_ppEsc(cn)} ${docTitle}<small>${sub}</small></div>
     <div class="pp-meta">作成日：${dStr}${staff?'<br>担当：'+_ppEsc(staff):''}</div></div>`;
   const addPage=(sub,bodyHtml)=>{
     const p=document.createElement('div'); p.className='pp-page';
@@ -165,7 +165,7 @@ function _ppBuild(kind, src){
 
   // 表紙（前提条件）
   const y0=_ppYear(allRows[0].cells[2]), yN=_ppYear(allRows[0].cells[nCols-2]);
-  addPage(isMg?_ppEsc(mgTitle):'前提条件', `<div class="pp-cover"><div class="pp-cover-hero${isMg?' mg':''}"><div class="t1">${docTitle}</div>
+  addPage(isMg?_ppEsc(mgTitle):'前提条件', `<div class="pp-cover"><div class="pp-cover-hero${isMg?' mg':''}"><img class="pp-cover-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="t1">${docTitle}</div>
       <div class="t2">${_ppEsc(cn)}${cn?'　／　':''}${y0}年〜${yN}年（全${yearIdx.length}年間）</div>
       ${isMg?`<div class="t3">${_ppEsc(mgTitle)}</div>`:''}</div>
     ${preHtml?`<div class="pp-cover-lbl">前提条件</div>${preHtml}`:''}</div>`);
@@ -230,21 +230,30 @@ function _ppLCHtml(){
   const yen=v=>v?'¥'+v.toLocaleString():'－';
   const rowsOf=items=>items.filter(it=>!(it.cond==='mansion'&&!isM)).filter(it=>!it.other||val(it.id)||nameOf(it.nameId)||bik(it.id))
     .map(it=>{ const lbl=it.other?`その他（${_ppEsc(nameOf(it.nameId)||'—')}）`:_ppEsc(it.label);
-      return `<tr><td>${lbl}</td><td class="num">${yen(val(it.id))}</td><td class="bik">${_ppEsc(bik(it.id))}</td></tr>`; }).join('');
+      const v=val(it.id);
+      return `<tr${v?'':' class="z"'}><td>${lbl}</td><td class="num">${yen(v)}</td><td class="bik">${_ppEsc(bik(it.id))}</td></tr>`; }).join('');
   const sum=items=>items.filter(it=>!(it.cond==='mansion'&&!isM)).reduce((s,it)=>s+val(it.id),0);
   const mT=sum(LC_MONTHLY_ITEMS), yT=sum(LC_YEARLY_ITEMS);
-  const tbl=(title,unit,items,subLbl,subVal,totLbl,totVal)=>`<table class="pp-lc">
+  const annualFix=mT*12, total=annualFix+yT;
+  const pctFix = total ? Math.round(annualFix/total*100) : 0;
+  const man=v=>Math.round(v/10000).toLocaleString();
+  const tbl=(cls,title,unit,items,subLbl,subVal,totLbl,totVal)=>`<table class="pp-lc ${cls}">
       <tr class="h"><td>${title}</td><td class="num">${unit}</td><td>備考</td></tr>
       ${rowsOf(items)}
       <tr class="s"><td>${subLbl}</td><td class="num">¥${subVal.toLocaleString()}</td><td></td></tr>
       <tr class="t"><td>${totLbl}</td><td class="num">¥${totVal.toLocaleString()}</td><td></td></tr>
     </table>`;
   return `<div class="pp-lc-wrap">
-    <div class="pp-lc-cols">
-      ${tbl('毎月の固定費','月額（円）',LC_MONTHLY_ITEMS,'小計（月額）',mT,'年間（×12か月）',mT*12)}
-      ${tbl('年間の変動費','年額（円）',LC_YEARLY_ITEMS,'小計（年額）',yT,'年間',yT)}
+    <div class="pp-lc-cards">
+      <div class="card fix"><div class="k">毎月の固定費</div><div class="v">¥${mT.toLocaleString()}<small>／月</small></div><div class="s">年間 ¥${annualFix.toLocaleString()}（×12か月）</div></div>
+      <div class="card var"><div class="k">年間の変動費</div><div class="v">¥${yT.toLocaleString()}<small>／年</small></div><div class="s">旅行・被服・医療など年単位の支出</div></div>
+      <div class="card tot"><div class="k">生活費の年間合計</div><div class="v">¥${total.toLocaleString()}</div><div class="s">約${man(total)}万円（固定費＋変動費）</div></div>
     </div>
-    <div class="pp-lc-total"><span>生活費の年間合計（固定費＋変動費）</span><b>¥${(mT*12+yT).toLocaleString()}</b><small>（約${Math.round((mT*12+yT)/10000).toLocaleString()}万円）</small></div>
+    ${total?`<div class="pp-lc-bar"><div class="fix" style="width:${pctFix}%"><span>固定費 ${pctFix}%</span></div><div class="var" style="width:${100-pctFix}%"><span>変動費 ${100-pctFix}%</span></div></div>`:''}
+    <div class="pp-lc-cols">
+      ${tbl('fix','毎月の固定費','月額（円）',LC_MONTHLY_ITEMS,'小計（月額）',mT,'年間（×12か月）',annualFix)}
+      ${tbl('var','年間の変動費','年額（円）',LC_YEARLY_ITEMS,'小計（年額）',yT,'年間',yT)}
+    </div>
   </div>`;
 }
 

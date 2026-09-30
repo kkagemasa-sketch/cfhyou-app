@@ -90,7 +90,12 @@ const CASES = [
         } else if(typeof setRTab==='function') setRTab('cf');
         if(c.hideFin){ finAssetVisible=false; _applyFinAssetVisibility(); }
         _exportExtra.includeLC = !!c.includeLC;
-        if(c.includeLC){ const f=document.getElementById('lc-food'); if(f) f.value=85000; _lcBikou['lc-food']='外食込み'; }
+        if(c.includeLC){
+          const sv=(id,v)=>{ const e=document.getElementById(id); if(e) e.value=v; };
+          sv('lc-food',85000); _lcBikou['lc-food']='外食込み';
+          sv('lc-travel',200000); _lcBikou['lc-travel']='家族旅行 年1回';
+          sv('lc-clothes',100000); sv('lc-medical',50000); sv('lc-home',150000); _lcBikou['lc-home']='お盆・年末年始';
+        }
         // 画面のCF表で、数字が枠からはみ出しているマス（見やすさ調整で文字を大きくしたため確認）
         const scr = document.querySelector('#right-body .tbl-wrap > table.cf');
         const screenOverflow = [...scr.querySelectorAll('tbody td, thead td')].filter(td=>/^[\d,▲\-−–\s]+$/.test(td.textContent.trim()) && td.textContent.trim().length>1 && td.scrollWidth>td.clientWidth+1).length;
