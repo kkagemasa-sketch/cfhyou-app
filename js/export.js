@@ -86,7 +86,7 @@ function getPrintInfo(){
   return{name:_v('pi-name'),company:_v('pi-company'),address:_v('pi-address'),tel:_v('pi-tel'),email:_v('pi-email'),notes:notesRaw};
 }
 // 出力モーダル用の一時情報（作成日・免責ページ有無）
-let _exportExtra = { date:'', includeDisclaimer:true };
+let _exportExtra = { date:'', includeDisclaimer:true, includeLC:false };   // includeLC: 印刷・PDFに生活費の内訳ページを入れる
 function _savePrintInfo(){
   const info=getPrintInfo();
   try{localStorage.setItem(PI_STORAGE_KEY,JSON.stringify(info));}catch(e){}
@@ -105,7 +105,7 @@ function _loadPrintInfo(){
       if(info.notes&&info.notes.length)$('pi-notes').value=info.notes.join('\n');
     }
     const e2=localStorage.getItem('exportExtra');
-    if(e2){const v=JSON.parse(e2);if(v){_exportExtra.date=v.date||'';_exportExtra.includeDisclaimer=v.includeDisclaimer!==false;}}
+    if(e2){const v=JSON.parse(e2);if(v){_exportExtra.date=v.date||'';_exportExtra.includeDisclaimer=v.includeDisclaimer!==false;_exportExtra.includeLC=v.includeLC===true;}}
   }catch(e){}
 }
 
@@ -161,6 +161,16 @@ function showExportModal(exportType){
           </span>
         </label>
       </div>`:''}
+      ${(exportType==='print'||exportType==='print-mg')?`
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px">
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:#1e3a5f">
+          <input type="checkbox" id="em-include-lc" ${_exportExtra.includeLC?'checked':''} style="margin-top:2px;cursor:pointer">
+          <span>
+            <span style="font-weight:700">生活費の内訳を入れる</span>
+            <span style="display:block;font-size:10px;color:#64748b;margin-top:2px">生活費タブの内訳（毎月の固定費・年間の変動費・備考）を、表紙の次に1ページ追加します</span>
+          </span>
+        </label>
+      </div>`:''}
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button onclick="document.getElementById('export-modal').remove()" style="font-size:12px;padding:8px 16px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-weight:600">キャンセル</button>
         <button onclick="_doExport('${exportType}')" style="font-size:12px;padding:8px 24px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700">${exportType==='mg'?'Excel出力':exportType==='excel'?'Excel出力':exportType==='pdf'?'PDF出力':'印刷プレビューを開く'}</button>
@@ -175,7 +185,9 @@ function _applyExportModalValues(){
   const dateEl=document.getElementById('em-date');
   if(dateEl)_exportExtra.date=dateEl.value||'';
   const incEl=document.getElementById('em-include-disclaimer');
-  _exportExtra.includeDisclaimer = incEl ? !!incEl.checked : true;
+  if(incEl) _exportExtra.includeDisclaimer = !!incEl.checked;   // チェック欄がある画面（Excel出力）でだけ変更
+  const lcEl=document.getElementById('em-include-lc');
+  if(lcEl) _exportExtra.includeLC = !!lcEl.checked;   // 印刷・PDFの画面でだけ変更（他の出力では前回の選択を保持）
   _savePrintInfo();
 }
 function _doExport(type){

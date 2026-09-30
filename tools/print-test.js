@@ -61,6 +61,7 @@ const CASES = [
   { name:'通常CF_行が多い',    setup:heavySetup,  kind:'cf', expectRowsAtLeast:50 },
   { name:'通常CF_金融資産行を隠す', setup:heavySetup, kind:'cf', hideFin:true },
   { name:'万が一CF_行が多い',  setup:heavySetup,  kind:'mg' },
+  { name:'通常CF_生活費の内訳あり', setup:heavySetup, kind:'cf', includeLC:true },
 ];
 
 (async()=>{
@@ -88,6 +89,11 @@ const CASES = [
           await new Promise(res=>setTimeout(res,300));
         } else if(typeof setRTab==='function') setRTab('cf');
         if(c.hideFin){ finAssetVisible=false; _applyFinAssetVisibility(); }
+        _exportExtra.includeLC = !!c.includeLC;
+        if(c.includeLC){ const f=document.getElementById('lc-food'); if(f) f.value=85000; _lcBikou['lc-food']='外食込み'; }
+        // 画面のCF表で、数字が枠からはみ出しているマス（見やすさ調整で文字を大きくしたため確認）
+        const scr = document.querySelector('#right-body .tbl-wrap > table.cf');
+        const screenOverflow = [...scr.querySelectorAll('tbody td, thead td')].filter(td=>/^[\d,▲\-−–\s]+$/.test(td.textContent.trim()) && td.textContent.trim().length>1 && td.scrollWidth>td.clientWidth+1).length;
         await openPrintPreview(c.kind);
         const res = window._ppLastResult || {};
         const box = document.getElementById('pp-preview');
@@ -102,8 +108,11 @@ const CASES = [
         const nCols2 = nCols;
         const srcRows = [...src.rows].filter(r=>r.cells.length===nCols2 && r.style.display!=='none' && !/行を追加/.test(r.textContent));
         const detected = _ppVerify(box, srcRows, src.rows[0], nCols).length;
+        const lcPage = [...box.querySelectorAll('.pp-page')].find(p=>/生活費の内訳/.test(p.querySelector('.pp-title')?.textContent||''));
+        const lcInfo = lcPage ? { food:/¥85,000/.test(lcPage.textContent), bikou:/外食込み/.test(lcPage.textContent),
+          fits:(()=>{const b=lcPage.querySelector('.pp-body');return b.scrollHeight<=b.clientHeight+1;})() } : null;
         return { pages:res.pages, problems:res.problems, hiddenRows:res.hiddenRows, fontPx:res.fontPx, overflow:res.overflow,
-                 years, visibleRows, tablePages, detected, title:box.querySelector('.pp-title')?.textContent||'' };
+                 years, visibleRows, tablePages, detected, screenOverflow, lcInfo, title:box.querySelector('.pp-title')?.textContent||'' };
       }, c);
       // ④ 印刷モードでページからはみ出さないか（⑤で消したマスを戻すため作り直す）
       await page.evaluate(async(c)=>{ await openPrintPreview(c.kind); }, c);
@@ -112,7 +121,7 @@ const CASES = [
       if(PDF_DIR){ fs.mkdirSync(PDF_DIR,{recursive:true}); await page.pdf({path:path.join(PDF_DIR,c.name+'.pdf'),preferCSSPageSize:true,printBackground:true}); }
       await page.emulateMediaType(null);
 
-      const expPages = 1 + Math.ceil(r.years/20) + 1;
+      const expPages = 1 + (c.includeLC?1:0) + Math.ceil(r.years/20) + 1;
       const fails=[];
       if(errors.length) fails.push('JSエラー: '+errors.slice(0,2).join(' / '));
       if(!r.problems || r.problems.length) fails.push(`抜け漏れ ${r.problems?r.problems.length:'?'}件: ${(r.problems||[]).slice(0,2).join(' / ')}`);
@@ -124,6 +133,13 @@ const CASES = [
       if(c.expectRowsAtLeast && r.visibleRows<c.expectRowsAtLeast) fails.push(`行数 ${r.visibleRows}（${c.expectRowsAtLeast}行以上のはず）`);
       if(c.hideFin && !(r.hiddenRows>0)) fails.push('金融資産行を隠したのに非表示行が0');
       if(c.kind==='mg' && !/万が一/.test(r.title)) fails.push('万が一CF表の見出しになっていない');
+      if(r.screenOverflow) fails.push(`画面のCF表で数字が枠からはみ出し ${r.screenOverflow}マス`);
+      if(c.includeLC){
+        if(!r.lcInfo) fails.push('生活費の内訳ページがない');
+        else { if(!r.lcInfo.food) fails.push('生活費の内訳に食費の金額が出ていない');
+               if(!r.lcInfo.bikou) fails.push('生活費の内訳に備考が出ていない');
+               if(!r.lcInfo.fits) fails.push('生活費の内訳ページが用紙からはみ出し'); }
+      } else if(r.lcInfo) fails.push('生活費の内訳を選んでいないのにページがある');
       const info=`${r.visibleRows}行・${r.pages}ページ・文字${(r.fontPx||[]).join('/')}px`;
       if(fails.length){ bad++; console.log(`❌ ${c.name}（${info}）\n   - ${fails.join('\n   - ')}`); }
       else console.log(`✅ ${c.name}（${info}・抜け漏れ0・はみ出し0・検知テストOK）`);

@@ -170,6 +170,9 @@ function _ppBuild(kind, src){
       ${isMg?`<div class="t3">${_ppEsc(mgTitle)}</div>`:''}</div>
     ${preHtml?`<div class="pp-cover-lbl">前提条件</div>${preHtml}`:''}</div>`);
 
+  // 生活費の内訳（出力画面で「生活費の内訳を入れる」を選んだときだけ）
+  if(typeof _exportExtra!=='undefined' && _exportExtra.includeLC) addPage('生活費の内訳', _ppLCHtml());
+
   // CF表（20年ごと・縦は1枚）
   const tableBodies=[];
   chunks.forEach((cols,ci)=>{
@@ -205,7 +208,8 @@ function _ppBuild(kind, src){
     const n=document.createElement('div'); n.className='pp-notice'; n.textContent=notes.join(' ');
     box.insertBefore(n, pgs[0]);
   }
-  box.querySelector('#pp-info').textContent=`A4横・全${pgs.length}ページ（表紙1・CF表${tableBodies.length}・ご確認事項1）`+(problems.length?'':'　✓ 画面のCF表と全項目一致');
+  const lcPage=(typeof _exportExtra!=='undefined' && _exportExtra.includeLC)?'・生活費の内訳1':'';
+  box.querySelector('#pp-info').textContent=`A4横・全${pgs.length}ページ（表紙1${lcPage}・CF表${tableBodies.length}・ご確認事項1）`+(problems.length?'':'　✓ 画面のCF表と全項目一致');
   box.scrollTop=0;
   window._ppLastResult={pages:pgs.length, problems, hiddenRows:hiddenRows.length,
     fontPx:tableBodies.map(b=>+(b._fs||0).toFixed(1)),
@@ -214,6 +218,34 @@ function _ppBuild(kind, src){
   // 画面が狭い端末（iPad縦など）では、プレビューだけ画面幅に合わせて縮小表示（印刷には影響しない）
   _ppFitScreen();
   window.addEventListener('resize',_ppFitScreen);
+}
+
+// ── 生活費の内訳ページ（生活費タブと同じ項目・金額・備考。lc-tab.js の項目定義を共用） ──
+//   左：毎月の固定費／右：年間の変動費、下に年間合計。「その他」は項目名も金額もない行を省く
+function _ppLCHtml(){
+  const isM=(typeof ST!=='undefined'&&ST.type==='mansion');
+  const val=id=>{ const el=document.getElementById(id); return el?(parseFloat(String(el.value).replace(/,/g,''))||0):0; };
+  const nameOf=nid=>{ const el=nid&&document.getElementById(nid); return el?(el.value||'').trim():''; };
+  const bik=id=>(typeof _lcBikou!=='undefined'&&_lcBikou[id])||'';
+  const yen=v=>v?'¥'+v.toLocaleString():'－';
+  const rowsOf=items=>items.filter(it=>!(it.cond==='mansion'&&!isM)).filter(it=>!it.other||val(it.id)||nameOf(it.nameId)||bik(it.id))
+    .map(it=>{ const lbl=it.other?`その他（${_ppEsc(nameOf(it.nameId)||'—')}）`:_ppEsc(it.label);
+      return `<tr><td>${lbl}</td><td class="num">${yen(val(it.id))}</td><td class="bik">${_ppEsc(bik(it.id))}</td></tr>`; }).join('');
+  const sum=items=>items.filter(it=>!(it.cond==='mansion'&&!isM)).reduce((s,it)=>s+val(it.id),0);
+  const mT=sum(LC_MONTHLY_ITEMS), yT=sum(LC_YEARLY_ITEMS);
+  const tbl=(title,unit,items,subLbl,subVal,totLbl,totVal)=>`<table class="pp-lc">
+      <tr class="h"><td>${title}</td><td class="num">${unit}</td><td>備考</td></tr>
+      ${rowsOf(items)}
+      <tr class="s"><td>${subLbl}</td><td class="num">¥${subVal.toLocaleString()}</td><td></td></tr>
+      <tr class="t"><td>${totLbl}</td><td class="num">¥${totVal.toLocaleString()}</td><td></td></tr>
+    </table>`;
+  return `<div class="pp-lc-wrap">
+    <div class="pp-lc-cols">
+      ${tbl('毎月の固定費','月額（円）',LC_MONTHLY_ITEMS,'小計（月額）',mT,'年間（×12か月）',mT*12)}
+      ${tbl('年間の変動費','年額（円）',LC_YEARLY_ITEMS,'小計（年額）',yT,'年間',yT)}
+    </div>
+    <div class="pp-lc-total"><span>生活費の年間合計（固定費＋変動費）</span><b>¥${(mT*12+yT).toLocaleString()}</b><small>（約${Math.round((mT*12+yT)/10000).toLocaleString()}万円）</small></div>
+  </div>`;
 }
 
 function closePrintPreview(){

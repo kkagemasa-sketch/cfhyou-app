@@ -1464,6 +1464,32 @@ body.cf-full .panel-r{min-width:0}
 .tc.tc-mini.on{transform:none;box-shadow:0 0 0 1.5px rgba(8,145,178,.25)}
 
 /* ============================================================
+   CF表 見やすさ調整（2026-09 D案）：色は変えず、書体・余白・罫線・強弱だけ整える
+   画面と印刷・PDFの両方に効く（印刷は画面の表を複製するため）。Excel出力には影響しない
+   ============================================================ */
+table.cf{font-family:'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-variant-numeric:tabular-nums}
+table.cf td{font-family:inherit}
+table.cf th,table.cf td{padding:5px 6px;font-size:11.5px;border-right-color:#e2e8f0;border-bottom-color:#e2e8f0}
+table.cf tr.rinc td,table.cf tr.rexp td{border-bottom:1px solid #eef2f6}
+/* 明細行は1行おきにごく薄い縞（元の地色系）。独自の背景色を持つマス（教育費の段階色など）は触らない */
+table.cf tr.rinc:nth-of-type(odd) td:not(:first-child):not(:nth-child(2)):not(:last-child):not([style*="background"]){background:#f4f8fd}
+table.cf tr.rexp:nth-of-type(odd) td:not(:first-child):not(:nth-child(2)):not(:last-child):not([style*="background"]){background:#fdf5f3}
+/* 項目名の太さを揃える */
+table.cf tr.rinc td:nth-child(2),table.cf tr.rexp td:nth-child(2){font-weight:600}
+/* 合計・収支・残高は一回り大きく太く、上下に余白 */
+table.cf tr.rinct td,table.cf tr.rexpt td{font-size:12.5px;padding-top:7px;padding-bottom:7px}
+table.cf tr.rttl td{font-size:12.5px;font-weight:800;padding-top:7px;padding-bottom:7px}
+table.cf tr.rsav td{font-size:13px;font-weight:800;padding-top:8px;padding-bottom:8px}
+table.cf tr.rbal td{font-size:12.5px;font-weight:800}
+/* 年の見出しを少し大きく */
+table.cf tr.ryr th{font-size:11.5px;padding-top:6px;padding-bottom:6px}
+/* 年齢・イベントは控えめに */
+table.cf tr.rage td:not(:first-child):not(:nth-child(2)){font-size:11px}
+table.cf tr.rev-h td,table.cf tr.rev-w td,table.cf tr.rev-c td{font-size:10.5px;font-weight:600}
+/* ゼロ（－）は淡くして、金額のあるマスを目立たせる */
+table.cf td.vz{color:#b6c0cc}
+
+/* ============================================================
    印刷・PDF（print.js）：プレビュー画面＋印刷用ページ（A4横）
    ページ寸法は既存の @page（A4横・余白8mm/10mm）の印刷可能範囲 277×193mm
    ============================================================ */
@@ -1507,6 +1533,21 @@ body.cf-full .panel-r{min-width:0}
 .pp-tbl col.c1{width:17mm}.pp-tbl col.c2{width:37mm}.pp-tbl col.cT{width:19mm}
 .pp-tbl tr>*:nth-child(2){border-right:2px solid #6b8cae!important}
 .pp-tbl button,.pp-tbl input,.pp-tbl .explain-ic{display:none!important}
+/* 生活費の内訳（生活費タブと同じ配色：黄の見出し・灰の小計） */
+.pp-lc-wrap{font-family:'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-variant-numeric:tabular-nums;color:#1f2937}
+.pp-lc-cols{display:grid;grid-template-columns:1fr 1fr;gap:6mm;align-items:start}
+.pp-lc{width:100%;border-collapse:collapse;font-size:10.5px}
+.pp-lc td{border:1px solid #c5c5c5;padding:1.3mm 2.2mm;white-space:nowrap}
+.pp-lc td.num{text-align:right;width:26mm}
+.pp-lc td.bik{white-space:normal;color:#475569;font-size:9.5px;width:45%}
+.pp-lc tr.h td{background:#fff8c4;font-weight:700;font-size:11.5px}
+.pp-lc tr.h td.num{text-align:center}
+.pp-lc tr.s td{background:#f0f0e8;font-weight:700}
+.pp-lc tr.t td{background:#fff8c4;font-weight:700}
+.pp-lc tr.t td.num{color:#0d6a0d}
+.pp-lc-total{margin-top:5mm;display:flex;align-items:baseline;justify-content:flex-end;gap:4mm;padding:3mm 4mm;border:2px solid #0d6a0d;border-radius:4px;background:#f3fbf3;font-size:13px;font-weight:700;color:#1f2937}
+.pp-lc-total b{font-size:20px;color:#0d6a0d}
+.pp-lc-total small{font-size:11px;color:#475569;font-weight:600}
 /* ご確認事項（Excel版と同じ配色：紺の見出し帯・金の縦線・黄色の注意枠） */
 .pp-dc{font-family:'Meiryo','Yu Gothic UI',sans-serif;color:#333;font-size:9.6px;line-height:1.55}
 .pp-dc .dc-title{background:#1e3a5f;color:#fff;font-size:15px;font-weight:700;text-align:center;padding:2.2mm;border-top:2px solid #0d2340;border-bottom:2px solid #0d2340}
