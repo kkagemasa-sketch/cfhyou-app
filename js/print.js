@@ -175,7 +175,7 @@ function _ppBuild(kind, src){
   chunks.forEach((cols,ci)=>{
     const isLast=ci===chunks.length-1;
     const sub=`${_ppYear(allRows[0].cells[cols[0]])}年〜${_ppYear(allRows[0].cells[cols[cols.length-1]])}年${isMg?'　'+_ppEsc(mgTitle):''}`;
-    const b=addPage(sub, buildTable(cols,isLast)+`<div class="pp-cont">${isLast?'':'→ 次の年は次のページへ続きます'}</div>`);
+    const b=addPage(sub, buildTable(cols,isLast));   // 「次ページへ続く」案内は置かず、表に高さを回す
     tableBodies.push(b);
   });
   tableBodies.forEach(_ppFitPage);
@@ -249,13 +249,16 @@ function _ppFits(b){
   return [...t.rows].every(r=>[...r.cells].slice(2).every(c=>!_ppIsNum(c.textContent)||[c,...c.querySelectorAll('*')].every(e=>!e.clientWidth||e.scrollWidth<=e.clientWidth)));
 }
 function _ppFitPage(b){
-  let lo=4, hi=10.4;
+  let lo=4, hi=12;
   _ppSetFont(b,hi);
   if(!_ppFits(b)){
     for(let k=0;k<9;k++){ const m=(lo+hi)/2; _ppSetFont(b,m); if(_ppFits(b)) lo=m; else hi=m; }
     hi=lo;
   }
   const fs=Math.floor(hi*10)/10; _ppSetFont(b,fs); b._fs=fs;
+  // 余った高さは各行に均等に配分し、表を用紙の下端まで広げる
+  const t=b.querySelector('table'); const room=_ppRoom(b);
+  if(t.offsetHeight<room) t.style.height=room+'px';
 }
 // ── 文字のマス（項目名・イベント名など）は折り返さず、1行に収まるまでそのマスだけ縮小 ──
 function _ppFitTextCells(b){

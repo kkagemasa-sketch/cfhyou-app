@@ -1483,7 +1483,6 @@ body.cf-full .panel-r{min-width:0}
 .pp-meta{font-size:10px;color:#475569;text-align:right;line-height:1.5}
 .pp-body{flex:1;min-height:0;display:flex;flex-direction:column}
 .pp-foot{display:flex;justify-content:space-between;font-size:8.5px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:2mm;margin-top:2mm}
-.pp-cont{font-size:9px;color:#64748b;text-align:right;margin-top:1.5mm}
 /* 表紙 */
 .pp-cover-hero{border-left:6px solid #1e3a5f;padding:5mm 6mm;margin:4mm 0 7mm;background:linear-gradient(90deg,#eef4fb,#fff)}
 .pp-cover-hero.mg{border-left-color:#c2185b;background:linear-gradient(90deg,#fdf2f8,#fff)}
