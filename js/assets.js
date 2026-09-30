@@ -121,6 +121,11 @@ function addSecurity(person){
     </div>
     <div class="apick" id="sec-picker-${person}-${id}" hidden></div>
     <div id="sec-nisa-warn-${person}-${id}" style="display:none;color:#b91c1c;font-size:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:5px 8px;margin:5px 0 0;line-height:1.5"></div>
+    <!-- 取得価格: 評価額の上に常時表示（2026-09-30 チップ格納から昇格。IDと挙動は従来のまま） -->
+    <div class="frow" id="sec-basis-line-${person}-${id}" style="margin-top:5px">
+      <span class="ilb" id="sec-nisa-basis-row-${person}-${id}"><span class="pre">取得価格累計</span><input class="w6" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits();updateBasisHint&&updateBasisHint('${person}','${id}')"><span class="un">万</span></span>
+      <span id="sec-basis-hint-${person}-${id}" style="font-size:9px;color:#475569">※NISAは生涯枠1800万の判定／課税口座は譲渡益課税の取得原価に使用</span>
+    </div>
     <div class="frow" id="sec-accum-fields-${person}-${id}">
       <span class="ilb" data-f="bal"><span class="pre">評価額</span><input class="w6" id="sec-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="live()"><span class="un">万</span></span>
       <span class="ilb" data-f="monthly"><span class="pre">積立</span><input id="sec-monthly-${person}-${id}" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="syncNisaMonthlyToAnnual('${person}',${id});live();validateNisaLimits&&validateNisaLimits()"><span class="un">万/月</span></span>
@@ -147,17 +152,10 @@ function addSecurity(person){
     </div>
     <div class="a-chips" id="sec-chips-${person}-${id}">
       <span class="a-gear">⚙</span>
-      <span class="a-chip" id="sec-chip-basis-${person}-${id}" onclick="secChip('${person}',${id},'basis')">✎ 取得価格を入力</span>
       <span class="a-chip" id="sec-chip-draw-${person}-${id}" onclick="secChip('${person}',${id},'draw')">✎ 取り崩しを設定</span>
       <span class="a-chip" id="sec-chip-bondbuy-${person}-${id}" style="display:none" onclick="secChip('${person}',${id},'bondbuy')">✎ 将来購入なら年齢を指定</span>
       <span class="a-chip info" id="sec-chip-nofund-${person}-${id}" style="display:none">追加投資なし・保有分のみ運用</span>
       <span class="a-chip info" id="sec-chip-hold-${person}-${id}" style="display:none"></span>
-    </div>
-    <div class="a-dtl" id="sec-dtl-basis-${person}-${id}" hidden>
-      <div id="sec-nisa-basis-row-${person}-${id}">
-        <span class="ilb"><span class="pre">取得価格累計</span><input class="w6" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits();updateBasisHint&&updateBasisHint('${person}','${id}')"><span class="un">万</span></span>
-        <span id="sec-basis-hint-${person}-${id}" style="font-size:9px;color:#475569;margin-left:6px">※NISAは生涯枠1800万の判定／課税口座は譲渡益課税の取得原価に使用</span>
-      </div>
     </div>
     <div class="a-dtl" id="sec-dtl-draw-${person}-${id}" hidden>
       <div id="sec-draw-wrap-${person}-${id}">
@@ -331,6 +329,9 @@ function setSecType(person,id,t){
   // 取り崩し設定は積立型・一括投資のみ（債券は満期保有前提のため非表示）
   const drawW=document.getElementById(`sec-draw-wrap-${person}-${id}`);
   if(drawW)drawW.style.display=t==='bond'?'none':'';
+  // 取得価格の行も同様（債券は元本=取得原価のため不要）
+  const basisL=document.getElementById(`sec-basis-line-${person}-${id}`);
+  if(basisL)basisL.style.display=t==='bond'?'none':'';
   live();
   if(typeof validateNisaLimits==='function') validateNisaLimits();
 }
@@ -1023,7 +1024,7 @@ function insPickType(p,id,t){
 }
 // ── チップ ⇄ 詳細設定の開閉（sec/ins共通） ──
 function secChip(p,id,kind){
-  const map={basis:'sec-dtl-basis-'+p+'-'+id,draw:'sec-dtl-draw-'+p+'-'+id,bondbuy:'sec-dtl-bondbuy-'+p+'-'+id,enroll:'ins-dtl-enroll-'+p+'-'+id};
+  const map={draw:'sec-dtl-draw-'+p+'-'+id,bondbuy:'sec-dtl-bondbuy-'+p+'-'+id,enroll:'ins-dtl-enroll-'+p+'-'+id};
   const d=document.getElementById(map[kind]);
   if(!d)return;
   d.hidden=!d.hidden;
@@ -1044,13 +1045,7 @@ function secRefreshCard(p,id){
   const badge=g('sec-badge');
   if(badge){badge.className='abdg '+ASSET_TYPES[t].cls;badge.textContent=ASSET_TYPES[t].label+' ▾';}
   const isBond=t==='bond';
-  const chipB=g('sec-chip-basis'),chipD=g('sec-chip-draw'),chipBB=g('sec-chip-bondbuy');
-  if(chipB){
-    chipB.style.display=isBond?'none':'';
-    const v=parseFloat((g('sec-basis')||{}).value)||0;
-    chipB.textContent=v>0?('取得価格 '+v.toLocaleString()+'万'):'✎ 取得価格を入力';
-    chipB.classList.toggle('mod',v>0);
-  }
+  const chipD=g('sec-chip-draw'),chipBB=g('sec-chip-bondbuy');
   if(chipD){
     chipD.style.display=isBond?'none':'';
     const st=parseInt((g('sec-draw-start')||{}).value)||0;
@@ -1179,7 +1174,7 @@ let _aCoach=null,_aSpot=null;
 const ASSET_GUIDE=[
   {sel:'.abdg',    t:'種別バッジ',  d:'クリックすると候補が開き、課税/NISA/一括/債券/保険/財形を切り替えられます。入力欄も種別に合わせて変わります。'},
   {sel:'input.adef',t:'薄い数字',   d:'薄いグレーの数字は「初期値のまま」の印。変更すると濃くなるので、どこを個別設定したか一目で分かります。'},
-  {sel:'.a-chip',  t:'設定チップ',  d:'取り崩しや取得価格など、たまにしか使わない設定はここ。タップで開き、設定したものは色付きチップで残ります（取り崩しは濃色＋カード左に線）。'}
+  {sel:'.a-chip',  t:'設定チップ',  d:'取り崩しなど、たまにしか使わない設定はここ。タップで開き、設定したものは色付きチップで残ります（取り崩しは濃色＋カード左に線）。'}
 ];
 function assetGuide(step){
   step=step||0;
