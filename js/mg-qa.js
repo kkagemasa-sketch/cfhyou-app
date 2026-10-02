@@ -513,6 +513,9 @@ function mgQA_applyStateToDOM(tab){
     const firstStage = stages[0] || {};
     const clearsLoan = (firstStage.mode === 'danshin' || firstStage.mode === 'rent');
     setMGDansin(clearsLoan);
+    // ペアローンは本人ごとのスイッチ（mgDansinH/W）を計算が参照するため、同じ選択を伝える
+    // （以前は単独用だけ設定され、ペアローンで「ローン継続」を選んでも死亡者のローンが消えていた）
+    if(typeof setMGDansinPair === 'function'){ setMGDansinPair('h', clearsLoan); setMGDansinPair('w', clearsLoan); }
   }
 
   // 車・駐車場の継承フラグを contingency.js に伝える
@@ -725,11 +728,21 @@ function mgQA_buildPanel(tab){
   // 通常CF表からの参照値（読み取り専用ヒント用）
   const hAge = mgQA_iv('husband-age') || 30;
   const wAge = mgQA_iv('wife-age') || 29;
-  const nKids = document.querySelectorAll('#kids-list > div[id^="kid-"]').length || 0;
-  const spouseIncomeHint = target==='h'
-    ? (mgQA_fv('w-income') || mgQA_fv('income-0') || '---')
-    : (mgQA_fv('income-0') || mgQA_fv('h-income') || '---');
-  const lcHint = mgQA_fv('living-cost') || '---';
+  // ④⑤の目安は通常CF表の計算結果（lastR）から取る
+  // ※以前は存在しない入力欄ID（w-income / living-cost 等）を読んでいて常に「---」表示だった
+  const _R = window.lastR || {};
+  const _first = arr => Array.isArray(arr) && arr.length ? Math.round(arr[0]||0) : null;
+  const _spInc = _first(target==='h' ? _R.wInc : _R.hInc);
+  const spouseIncomeHint = _spInc!=null ? _spInc.toLocaleString() : '---';
+  const _lcY = _first(_R.lc);
+  const lcHint = _lcY!=null ? `年${_lcY.toLocaleString()}万円（月約${Math.round(_lcY/12*10)/10}万円）` : '---';
+  // ③の説明：遺族年金の制度モードと、受け取る人（妻か夫か）で中身が変わる
+  const _izoku2028 = (document.getElementById('izoku-mode')?.value||'current') === 'r2028';
+  const survHint = _izoku2028
+    ? '遺族厚生年金＋遺族基礎年金（子がいる場合）。2028年改正モード：子のない60歳未満の配偶者は5年間の有期給付、中高齢寡婦加算なし'
+    : (target==='h'
+        ? '遺族厚生年金＋遺族基礎年金（子がいる場合）＋中高齢寡婦加算（40〜65歳で子がいない期間）。30歳未満で子がいない場合は遺族厚生年金が5年間'
+        : '遺族厚生年金（ご主人様が死亡時55歳以上なら60歳から。子がいる場合はすぐ）＋遺族基礎年金（子がいる場合）');
 
   // btn-tog 風のトグル
   const tog = (key, value, label, opts) => {
@@ -782,7 +795,7 @@ function mgQA_buildPanel(tab){
     `)}
 
     ${card(3,'#0284c7','遺族年金',`
-      <div class="hint" style="margin-bottom:6px">通常時の年収・家族構成から自動計算（遺族厚生年金＋遺族基礎年金＋中高齢寡婦加算）</div>
+      <div class="hint" style="margin-bottom:6px">通常時の年収・家族構成から自動計算（${survHint}）</div>
       <div class="g2">
         <div class="fg"><label class="lbl">遺族年金の設定</label>
           <div style="display:flex;gap:6px">
@@ -798,7 +811,7 @@ function mgQA_buildPanel(tab){
     `)}
 
     ${card(4,'#16a34a',`${spouse}の就労収入`,`
-      <div class="hint" style="margin-bottom:6px">通常時の${spouse}の年収: 約${spouseIncomeHint}万/年（左の③収入で編集）。万が一時に変更する場合は段階設定可</div>
+      <div class="hint" style="margin-bottom:6px">通常時の${spouse}の手取り年収: 今年 約${spouseIncomeHint}万円（左の③収入で編集）。万が一時に変更する場合は段階設定可</div>
       <div class="fg">
         <label class="lbl">万が一後の${spouse}の収入</label>
         <div style="display:flex;gap:6px">
@@ -812,7 +825,7 @@ function mgQA_buildPanel(tab){
     `)}
 
     ${card(5,'#d97706','死亡後の生活費',`
-      <div class="hint" style="margin-bottom:6px">通常時の${lcHint}万円/月を基準に、万が一時の生活費を設定（割合 or 段階）</div>
+      <div class="hint" style="margin-bottom:6px">通常時の生活費 ${lcHint} を基準に、万が一時の生活費を設定（割合 or 段階）</div>
       <div class="g2">
         <div class="fg"><label class="lbl">設定方式</label>
           <div style="display:flex;gap:6px">
@@ -899,7 +912,7 @@ function mgQA_buildPanel(tab){
         <div style="margin-top:8px;${s.parkMode==='keep'?'':'display:none'}" data-cond="parkMode:keep">
           <div class="g2">
             <div class="fg"><label class="lbl">月額駐車場代</label>
-              <div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${s.parkMonthly||1.5}" data-k="parkMonthly" data-cf-row="prk" data-cf-dyn="parkAll"><span class="sl">万円/月</span></div>
+              <div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${s.parkMonthly??1.5}" data-k="parkMonthly" data-cf-row="prk" data-cf-dyn="parkAll"><span class="sl">万円/月</span></div>
             </div>
           </div>
           <div class="g2" style="margin-top:6px">

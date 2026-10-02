@@ -387,7 +387,7 @@ function _renderContingencyInner(){
   const _mgCarType=getMGCarType(_cp); // 'new' or 'used'
   const _mgParkFrom=mgParkKeep?(iv(`mg-park-${_cp}-from-age`)||0):0;
   const _mgParkTo=mgParkKeep?(iv(`mg-park-${_cp}-to-age`)||0):0;
-  const _mgParkAnnual=mgParkKeep?ri((fv('mg-parking')||1.5)*12):0;  // 万円/月入力
+  const _mgParkAnnual=mgParkKeep?ri(fvd('mg-parking',1.5)*12):0;  // 万円/月入力（0円も有効。空欄のときだけ1.5万）
   const mgScholarOn=document.getElementById('mg-scholarship-yes')?.classList.contains('on');
   const mgScholarAmt=mgScholarOn?(fv('mg-scholarship-amt')||0):0;
   const mgScholarAge=iv('mg-scholarship-age')||19;
@@ -1478,9 +1478,9 @@ function _renderContingencyInner(){
     const _mgQAFutureCars = Array.isArray(window._mgQA_futureCars) ? window._mgQA_futureCars : null;
     const _useMultiCars = _mgQAExistingCars || _mgQAFutureCars;
     let nCar=0;
-    if(_mgCarInherit){
-      // 通常CFの carTotal をそのまま使用（生存中も死亡後も）
-      // ローン継続・買換計画・複数台すべて通常CF通り
+    if(_mgCarInherit || !isDead){
+      // 通常CFの carTotal をそのまま使用（継承モードは全期間、「変更する」でも死亡前は通常どおり）
+      // ※以前は「変更する」で死亡前の年まで変更後の設定になっていた（表示用 carRows とも食い違っていた）
       nCar = i<normalR.carTotal.length ? (normalR.carTotal[i]||0) : 0;
     } else if(_useMultiCars){
       // 「変更する」モード（多台対応）: Q&A の現有車・将来車の配列で計算
@@ -1631,8 +1631,8 @@ function _renderContingencyInner(){
     // 駐車場
     const _mgParkInherit = window._mgQA_parkInherit !== false;
     let nPrk=0;
-    if(_mgParkInherit){
-      // 継承モード: 通常CFの prk をそのまま使用
+    if(_mgParkInherit || !isDead){
+      // 継承モードは全期間、「変更する」でも死亡前は通常CFの prk をそのまま使用
       nPrk = i<normalR.prk.length ? (normalR.prk[i]||0) : 0;
     } else if(mgParkKeep){
       const sAge=targetIsH?wa:ha;
