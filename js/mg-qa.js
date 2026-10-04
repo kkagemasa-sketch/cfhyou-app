@@ -21,11 +21,13 @@ window.addEventListener('load', function(){
 //  万が一タブ切替時 → 左のQ&Aもそのタブ用に切替
 //  通常CF表タブ切替時 → 左のQ&Aは非表示
 
-const mgQA_tabs = [];  // {id, target, name, state}
+const mgQA_tabs = [];  // {id, target, kind, name, state, mgOverrides, mgCustomRows}
 const mgQA_counter = { h: 0, w: 0 };
+// 万が一の種類: 'death'=死亡 / 'dis1'=障害1級 / 'dis2'=障害2級（種類ごとに独立したタブ）
+const MGQA_KINDS = ['death','dis1','dis2'];
 
 // --- タブ追加（ボタンから呼ばれる） ---
-function mgQA_addTab(target){
+function mgQA_addTab(target, kind){
   mgQA_counter[target]++;
   const id = `mgqa-${target}-${Date.now()}`;
   const label = target==='h'?'ご主人様':'奥様';
@@ -33,10 +35,40 @@ function mgQA_addTab(target){
   const name = n>1 ? `${label} 万が一 ${n}` : `${label} 万が一`;
   mgQA_tabs.push({
     id, target, name,
-    state: mgQA_buildDefaultState(target)
+    kind: MGQA_KINDS.includes(kind) ? kind : 'death',
+    state: mgQA_buildDefaultState(target),
+    // CF表のマス上書き・追加行はタブごとに独立（他の万が一タブに効かない）
+    mgOverrides: {},
+    mgCustomRows: []
   });
   mgQA_renderTabs();
   mgQA_switchTab(id);
+}
+
+// --- タブごとのマス上書き・追加行 ---
+// グローバルの mgOverrides / mgCustomRows は「表示中タブの分」を指す。
+// 再代入（リセット・行削除・Undo）で参照が切れるため、タブを離れる時・保存時に書き戻す。
+function mgQA_activeTab(){
+  return mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId) || null;
+}
+function mgQA_stashOverrides(){
+  const t = mgQA_activeTab();
+  if(t){ t.mgOverrides = mgOverrides; t.mgCustomRows = mgCustomRows; }
+}
+function mgQA_loadOverrides(t){
+  if(!t.mgOverrides || typeof t.mgOverrides!=='object') t.mgOverrides = {};
+  if(!Array.isArray(t.mgCustomRows)) t.mgCustomRows = [];
+  mgOverrides = t.mgOverrides;
+  mgCustomRows = t.mgCustomRows;
+}
+// 旧データ（種類・上書きをタブに持たない）を読み込んだ時の移行
+// 旧仕様では上書き・追加行が全タブ共有だったので、各タブに同じ内容を配る
+function mgQA_migrateTabs(legacyOverrides, legacyCustomRows){
+  mgQA_tabs.forEach(t=>{
+    if(!MGQA_KINDS.includes(t.kind)) t.kind = 'death';
+    if(t.mgOverrides===undefined) t.mgOverrides = JSON.parse(JSON.stringify(legacyOverrides||{}));
+    if(t.mgCustomRows===undefined) t.mgCustomRows = JSON.parse(JSON.stringify(legacyCustomRows||[]));
+  });
 }
 
 // 通常CFの mg-insurance-cont DOM から既存保険データを Q&A 形式で取得
@@ -206,6 +238,10 @@ function mgQA_renderTabs(){
 function mgQA_switchTab(id){
   const tab = mgQA_tabs.find(t=>t.id===id);
   if(!tab) return;
+
+  // 前のタブの上書きを書き戻してから、このタブの上書きに切り替える
+  mgQA_stashOverrides();
+  mgQA_loadOverrides(tab);
 
   // setRTab ラッパーを遅延登録（DOMContentLoaded で失敗している場合のフォールバック）
   if(typeof mgQA_wrapSetRTab === 'function') mgQA_wrapSetRTab();
@@ -641,6 +677,10 @@ function mgQA_hideLeftPanel(){
     const btn = document.getElementById('rt-'+t.id);
     if(btn) btn.classList.remove('on');
   });
+  // 離れるタブの上書きを書き戻し、タブ外では空にする（他の文脈に紛れ込ませない）
+  mgQA_stashOverrides();
+  mgOverrides = {};
+  mgCustomRows = [];
   window._mgQA_activeTabId = null;
   // ★ M5修正: Q&A タブを離れたら、その時の Q&A 専用グローバル状態を初期化する
   //   これをしないと「前タブで設定した車多台/駐車場/収入オーバーライド/奨学金/住居ステージ」
@@ -699,12 +739,16 @@ function mgQA_deleteTab(id){
 function mgQA_duplicateTab(id){
   const src = mgQA_tabs.find(t=>t.id===id);
   if(!src) return;
+  mgQA_stashOverrides();
   mgQA_counter[src.target]++;
   const newId = `mgqa-${src.target}-${Date.now()}`;
   mgQA_tabs.push({
     id: newId, target: src.target,
+    kind: src.kind || 'death',
     name: `${src.name} のコピー`,
-    state: JSON.parse(JSON.stringify(src.state))
+    state: JSON.parse(JSON.stringify(src.state)),
+    mgOverrides: JSON.parse(JSON.stringify(src.mgOverrides||{})),
+    mgCustomRows: JSON.parse(JSON.stringify(src.mgCustomRows||[]))
   });
   mgQA_renderTabs();
   mgQA_switchTab(newId);

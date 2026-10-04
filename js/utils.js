@@ -444,6 +444,12 @@ function cellEdit(td){
 function resetOverrides(){
   if(!confirm('CF表の手動上書きをすべてリセットしますか？'))return;
   cfOverrides={};mgOverrides={};
+  // 万が一タブは上書きをタブごとに持つ。従来どおり「すべて」リセット＝全タブ分を消す
+  if(typeof mgQA_tabs!=='undefined'){
+    mgQA_tabs.forEach(t=>{t.mgOverrides={};});
+    const _act=typeof mgQA_activeTab==='function'?mgQA_activeTab():null;
+    if(_act) mgQA_loadOverrides(_act);
+  }
   // Q&A万が一タブがアクティブなら該当タブを再計算、それ以外は文脈に合わせて再描画
   if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined'){
     const tab=mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId);
@@ -680,7 +686,7 @@ function customLabelEdit(td){
 function deleteCustomRow(id){
   if(!confirm('この行を削除しますか？'))return;
   const inMg=mgCustomRows.some(r=>r.id===id);
-  if(inMg){mgCustomRows=mgCustomRows.filter(r=>r.id!==id);delete mgOverrides[id];}
+  if(inMg){mgCustomRows=mgCustomRows.filter(r=>r.id!==id);delete mgOverrides[id];if(typeof mgQA_stashOverrides==='function')mgQA_stashOverrides();}
   else{cfCustomRows=cfCustomRows.filter(r=>r.id!==id);delete cfOverrides[id];}
   pushUndoSnap();
   // Q&A万が一タブがアクティブなら該当タブを再計算

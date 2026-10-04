@@ -87,5 +87,15 @@ if git diff --cached --name-only | grep -qE '^(js/|index\.html)'; then
     echo "   （緊急時のみ: git commit --no-verify）"
     exit 1
   fi
+
+  # ── 万が一タブの独立性（上書き・追加行がタブごと／保存復元／旧データ移行）──
+  echo "🗂 万が一タブ テスト実行中…（約10秒）"
+  run_twice "$(dirname "$0")/../tools/mgtab-test.js"
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "🛑 万が一タブの上書きが他のタブに混ざる／保存で崩れるため、コミットを中止しました。"
+    echo "   （緊急時のみ: git commit --no-verify）"
+    exit 1
+  fi
 fi
 exit 0
