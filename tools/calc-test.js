@@ -148,6 +148,110 @@ const SCENARIOS = {
     $('moving-cost').value=150;
     setMoveType('own');
   },
+  /* ---- 万が一（Q&Aタブ経由。実際の操作と同じ道を通す） ----
+   * 各シナリオ内の mg() は「通常CFに戻す→Q&Aタブ追加→stateを書換→即時計算」。
+   * page.evaluate は関数単位で送られるため、mg() は各シナリオ内に書く。 */
+  'M1_夫死亡_単独_団信完済_保険金': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:3,houseMode:'danshin',lcRatio:70,insurances:[{type:'lump',amount:1000,annual:0,endAge:65}]});
+  },
+  'M2_妻死亡_単独_ローン継続': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('w',{deathYear:5,houseMode:'keep',lcRatio:80});
+  },
+  'M3_夫死亡_ペア_ローン継続': function(){
+    // 不具合1の再発防止: ペアローン＋住居「ローン継続」で死亡者のローンが残ること
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+    $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=0;
+    setCostType('cash'); setDownType('own');
+    $('loan-h-amt').value=3000; $('loan-w-amt').value=1500;
+    $('loan-h-yrs').value=35; $('loan-w-yrs').value=30;
+    $('rate-h-base').value=0.6; $('rate-w-base').value=0.7;
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:2,houseMode:'keep'});
+  },
+  'M4_妻死亡_ペア_団信完済': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+    $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=0;
+    setCostType('cash'); setDownType('own');
+    $('loan-h-amt').value=3000; $('loan-w-amt').value=1500;
+    $('loan-h-yrs').value=35; $('loan-w-yrs').value=30;
+    $('rate-h-base').value=0.6; $('rate-w-base').value=0.7;
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('w',{deathYear:4,houseMode:'danshin'});
+  },
+  'M5_夫死亡_連帯_団信完済': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('joint');
+    $('house-price').value=4800; $('down-payment').value=300; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:6,houseMode:'danshin'});
+  },
+  'M6_夫死亡_車駐車場変更': function(){
+    // 不具合3の再発防止: 死亡前の年は通常CFの車・駐車場、駐車場0円は0円のまま
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    setCarOwn(true);
+    addCar({label:'家族車',owner:'share',type:'new',pay:'cash',price:'300',first:'2',cycle:'7',insp:'10'});
+    if($('parking'))$('parking').value=2;
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:4,houseMode:'danshin',
+      carInherit:false,mgExistingCars:[],mgFutureCars:[{type:'used',pay:'cash',price:150,first:2,cycle:9,insp:8,endAge:70}],
+      parkInherit:false,parkMode:'keep',parkMonthly:0});
+  },
+  'M7_夫死亡_収入生活費段階_年金型保険': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:2,houseMode:'danshin',
+      insurances:[{type:'annuity',amount:0,annual:120,endAge:60}],
+      incomeMode:'override',incomeSteps:[{ageFrom:30,ageTo:44,netFrom:180,netTo:180},{ageFrom:45,ageTo:60,netFrom:300,netTo:300}],
+      lcMode:'step',lcSteps:[{base:300,rate:0,fromYr:2027,toYr:2040,mode:'free',pct:0},{base:250,rate:0,fromYr:2041,toYr:2080,mode:'free',pct:0}]});
+  },
+  'M8_夫死亡_賃貸へ_奨学金': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:5,houseMode:'rent',houseNewRent:10,
+      scholarshipEnabled:true,scholarships:{0:{hs:{on:false,amount:0},univ:{on:true,amount:240}}}});
+  },
 };
 
 /* ---------- ページ内スナップショット関数 ---------- */
