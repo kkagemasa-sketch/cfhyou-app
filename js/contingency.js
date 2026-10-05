@@ -2137,7 +2137,7 @@ function _renderContingencyInner(){
   const getMgColCls=i=>{let c='';if(i===hDeathCol_mg||i===wDeathCol_mg)c+=' col-death';if(i===hRetireCol_mg||i===wRetireCol_mg)c+=' col-retire';return c;};
 
   // サマリーカード（通常CF表と同じ4枚 + 必要保障額）
-  let h=`<div class="r-summary" style="margin-top:30px;border-top:3px solid #c2185b;padding-top:16px">`;
+  let h=`<div class="r-summary" style="margin-top:30px;border-top:3px solid ${(window._mgKindColor)||'#c2185b'};padding-top:16px">`;
 
   // 折りたたみ状態（通常CF表とは別キー）
   const _mgSumHidden = (()=>{try{return localStorage.getItem('mg_summary_collapsed')==='1'}catch(e){return false}})();
