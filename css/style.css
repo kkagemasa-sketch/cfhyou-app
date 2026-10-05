@@ -1759,3 +1759,17 @@ table.cf td.vz{color:#b6c0cc}
 .mgqa-auto .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;color:#fff;font-weight:800;font-size:12px}
 .mgqa-auto.ok .ic{background:#0f9d58} .mgqa-auto.ng .ic{background:#ea580c}
 .mgqa-auto b{font-size:12.5px;color:#1f2937} .mgqa-auto small{display:block;font-size:10.5px;color:#475569;margin-top:2px}
+.mgqa-kid{border:1px solid #e2e8f0;border-radius:9px;padding:9px 10px;margin-bottom:8px;background:#fbfcfe}
+.mgqa-kid-hd{font-size:12.5px;font-weight:800;color:#1e3a5f;margin-bottom:6px}
+.mgqa-kid-hd small{font-weight:600;color:#64748b;margin-left:4px}
+.mgqa-lbl2{font-size:10.5px;font-weight:700;color:#475569;margin:6px 0 4px}
+.mgqa-path{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.mgqa-path .st{border:1px solid #e2e8f0;border-radius:7px;padding:4px 5px;background:#fff}
+.mgqa-path .st span{display:block;font-size:9.5px;font-weight:700;color:#64748b}
+.mgqa-path .st b{font-size:10.5px;color:#94a3b8}
+.mgqa-path .st.past{background:#f8fafc}
+.mgqa-path .st.ch{border-color:#3459ca;box-shadow:inset 3px 0 0 #3459ca}
+.mgqa-path .st select{width:100%;font-family:inherit;font-size:10.5px;border:0;background:transparent;padding:0;font-weight:700;color:#1f2937}
+.mgqa-sch{display:grid;grid-template-columns:1.6fr 1fr .8fr 18px;gap:5px;align-items:center;margin-bottom:5px}
+.mgqa-sch select{font-family:inherit;font-size:10.5px;border:1px solid #cfd6e1;border-radius:7px;padding:6px 4px;background:#fff}
+.mgqa-sch .x{font-family:inherit;border:0;background:none;color:#b91c1c;font-weight:800;cursor:pointer}

@@ -1139,6 +1139,8 @@ function _renderContingencyInner(){
       const firstChildAge=children[0].age+i;
       if(firstChildAge===mgScholarAge)scholarVal+=mgScholarAmt;
     }
+    // 奨学金（新形式：お子様ごとの年齢→受取額）
+    if(isDead && Array.isArray(window._mgScholarAt)){ children.forEach((c,ci)=>{ const m=window._mgScholarAt[ci]; if(m) scholarVal+=(m[c.age+i]||0); }); }
     MR.scholarship.push(scholarVal);
 
     // 金融資産現金化（死亡年に死亡者の金融資産を一括収入計上）
@@ -1479,7 +1481,8 @@ function _renderContingencyInner(){
     MR.moveInCost.push(i<normalR.moveInCost.length?normalR.moveInCost[i]:0);
 
     // 教育費（通常CFと同じ）
-    children.forEach((c,ci)=>{MR.edu[ci].push(normalR.edu[ci]?.[i]||0);});
+    // 教育費：通常CFをコピーし、万が一の後は進路の変更分（年齢ごとの差）を足す
+    children.forEach((c,ci)=>{let v=normalR.edu[ci]?.[i]||0;const d=isDead&&Array.isArray(window._mgEduDelta)?window._mgEduDelta[ci]:null;if(d){const ca=c.age+i;if(ca>=0&&ca<d.length)v=Math.max(0,v+(d[ca]||0));}MR.edu[ci].push(v);});
 
     // 車両費
     // Q&A継承フラグ: true（デフォルト）= 通常CFの値をそのまま使う

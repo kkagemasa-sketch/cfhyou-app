@@ -623,7 +623,9 @@ function mgQA_applyStateToDOM(tab){
     if(window._mgIncomeOverride) delete window._mgIncomeOverride[survivorSide];
   }
 
-  // 奨学金（新形式：window._mgScholarshipItems で contingency.js に渡す）
+  // 教育：進路の変更・奨学金（新形式。旧の奨学金設定はここで新形式へ移る）
+  if(typeof mgQA_eduApply==='function') mgQA_eduApply(tab);
+  // 奨学金（旧形式：window._mgScholarshipItems で contingency.js に渡す）
   if(s.scholarshipEnabled && s.scholarships){
     const items = [];
     Object.keys(s.scholarships).forEach(idxKey => {
@@ -692,6 +694,8 @@ function mgQA_hideLeftPanel(){
   window._mgScholarshipItems = [];
   window._mgHousingStages = null;
   window._mgHouse = null;
+  window._mgEduDelta = null;
+  window._mgScholarAt = null;
 }
 
 // --- 既存 setRTab をラップ：通常タブに切替えられたら左Q&Aを隠す ---
@@ -883,19 +887,7 @@ function mgQA_buildPanel(tab){
 
     ${card('house','exp','家','住まいとローン', mgQA_houseCard(tab))}
 
-    ${card('edu','exp','学','教育（奨学金）',`
-      <div class="hint" style="margin-bottom:6px">高校入学時(16歳)・大学入学時(19歳)のタイミングでお子様ごとに設定</div>
-      <div class="fg">
-        <label class="lbl">万が一時の奨学金</label>
-        <div style="display:flex;gap:6px">
-          ${tog('scholarshipEnabled','false','借りない',{asBool:true})}
-          ${tog('scholarshipEnabled','true','借りる',{asBool:true})}
-        </div>
-      </div>
-      <div style="margin-top:6px;${s.scholarshipEnabled?'':'display:none'}" data-cond="scholarshipEnabled:true">
-        ${mgQA_buildScholarshipChildren(tab)}
-      </div>
-    `)}
+    ${card('edu','exp','学','教育', mgQA_eduCard(tab))}
 
     ${card('car','exp','車',`車（${spouse}基準）`,`
       <div class="hint" style="margin-bottom:6px">通常時の車設定をそのまま使うか、万一時のみ変更するかを選択</div>
@@ -1085,8 +1077,12 @@ function mgQA_cardSummary(tab, key){
       const nx = hs.next==='rent'?`賃貸 家賃${hs.rentMonthly}万円`:hs.next==='buy'?`${mgC_man((hs.buy||{}).price)}の家を購入`:'実家など';
       return {changed:true, v:`${hs.sellYr}年目に売却`, sub:nx};
     }
-    case 'edu':
-      return s.scholarshipEnabled ? {changed:true, v:'奨学金あり'} : {changed:false, v:'変えない'};
+    case 'edu': {
+      const nPath = Object.values(s.eduPath||{}).reduce((a,p)=>a+Object.values(p||{}).filter(Boolean).length,0);
+      const nSch = Object.values(s.eduSch||{}).reduce((a,l)=>a+(l||[]).filter(x=>+x.amt>0).length,0) + (s.scholarshipEnabled?1:0);
+      if(!nPath && !nSch) return {changed:false, v:'変えない'};
+      return {changed:true, v: nPath?`進路の変更 ${nPath}件`:'進路は変えない', sub: nSch?`奨学金 ${nSch}件`:''};
+    }
     case 'car':
       return s.carInherit===false ? {changed:true, v:'変更'} : {changed:false, v:'通常どおり'};
     case 'park':
@@ -1889,6 +1885,10 @@ function mgQA_updateState(tab, el){
       return;
     }
     // 奨学金のon/off切替は該当行の金額欄を有効/無効化＋保持（再描画で反映）
+    if(key.startsWith('eduSch.')&&key.endsWith('.when')){
+      mgQA_switchTab(tab.id);
+      return;
+    }
     if(key.startsWith('scholarships.')&&key.endsWith('.on')){
       mgQA_switchTab(tab.id);
       return;

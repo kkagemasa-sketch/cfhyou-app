@@ -225,6 +225,7 @@ function mgC_fillCompare(tab, panel){
 function mgQA_afterCalcExtra(tab, panel){
   mgC_fillCompare(tab, panel);
   mgC_fillLcCompare(tab, panel);
+  mgC_fillEduCompare(tab, panel);
 }
 
 // ===== ⑤生活費 =====
@@ -511,4 +512,142 @@ function mgQA_houseCard(tab){
       <div class="mgqa-note">${sellYear}年：手元${net>=0?'＋':'−'}${Math.abs(net).toLocaleString()} − ${b.loan?`頭金${(b.price-L).toLocaleString()}`:`購入価格${b.price.toLocaleString()}`} − 諸費用${b.cost.toLocaleString()} ＝ <b>${left>=0?'＋':'−'}${Math.abs(left).toLocaleString()}万円</b>${pay?`<br>${sellYear+1}年から新しいローン返済 年<b>${pay.toLocaleString()}万円</b>（${b.yrs}年）`:''}<br>修繕費・家具家電の買い替えは元の家の設定を引き継ぎます。新しいローンは${mgC_name(mgC_survivor(tab))}が一般団信に加入する前提です</div>`;
   }
   return h;
+}
+
+// ===== ⑦教育（進路の変更＋奨学金の受け取り） =====
+// state: eduPath {cid:{elem,mid,high,univ}}（''=変えない）、eduSch {cid:[{when,amt,years}]}
+//   when: 'hsEntry'=高校入学時(16歳)一時金 / 'univEntry'=大学入学時(19歳)一時金 / 'hs'=高校在学中 毎年(3年) / 'univ'=大学在学中 毎年(年数)
+//   旧データ（scholarshipEnabled・scholarships）は初回表示時に eduSch へ移す
+const MGC_EDU_LABEL = {
+  public:'公立', private:'私立',
+  nat_h:'国公立（自宅）', nat_b:'国公立（下宿）', plit_h:'私立文系（自宅）', plit_b:'私立文系（下宿）',
+  psci_h:'私立理系（自宅）', psci_b:'私立理系（下宿）', med_h:'医歯系（自宅）', med_b:'医歯系（下宿）',
+  senmon_h:'専門学校（自宅）', senmon_b:'専門学校（下宿）', none:'進学しない'
+};
+const MGC_EDU_STAGES = [
+  {k:'elem', label:'小学校', sel:'ce', from:7,  to:12, opts:['public','private']},
+  {k:'mid',  label:'中学',   sel:'cm', from:13, to:15, opts:['public','private']},
+  {k:'high', label:'高校',   sel:'ch', from:16, to:18, opts:['public','private']},
+  {k:'univ', label:'大学など', sel:'cu', from:19, to:24, opts:['nat_h','nat_b','plit_h','plit_b','psci_h','psci_b','med_h','med_b','senmon_h','senmon_b','none']}
+];
+const MGC_SCH_WHEN = {hsEntry:'高校入学時（16歳）一時金', univEntry:'大学入学時（19歳）一時金', hs:'高校在学中 毎年（3年）', univ:'大学在学中 毎年'};
+function mgC_children(){
+  return [...document.querySelectorAll('#children-cont > div[id^="cr-"]')].map((row,idx)=>{
+    const cid = row.id.replace('cr-','');
+    return {cid, idx, age: parseInt(document.getElementById('ca-'+cid)?.value)||0, label: ['第一子','第二子','第三子','第四子'][idx]||`第${idx+1}子`};
+  });
+}
+function mgC_ensureEdu(tab){
+  const s = tab.state;
+  if(!s.eduPath || typeof s.eduPath!=='object') s.eduPath = {};
+  if(!s.eduSch || typeof s.eduSch!=='object'){
+    s.eduSch = {};
+    // 旧データの移行（高校入学・大学入学の一時金）
+    if(s.scholarshipEnabled && s.scholarships){
+      const kids = mgC_children();
+      Object.keys(s.scholarships).forEach(ix=>{
+        const k = kids[parseInt(ix)]; const sc = s.scholarships[ix]; if(!k||!sc) return;
+        const list = [];
+        if(sc.hs && sc.hs.on && sc.hs.amount>0) list.push({when:'hsEntry', amt:+sc.hs.amount, years:1});
+        if(sc.univ && sc.univ.on && sc.univ.amount>0) list.push({when:'univEntry', amt:+sc.univ.amount, years:1});
+        if(list.length) s.eduSch[k.cid] = list;
+      });
+    }
+    s.scholarshipEnabled = false;
+  }
+}
+// 子ども1人の、年齢ごとの教育費の差（変更後−通常）
+function mgC_eduDelta(cid, path){
+  const base = eduCosts(cid);
+  const alt = base.slice();
+  let changed = false;
+  MGC_EDU_STAGES.forEach(st=>{
+    const v = path && path[st.k];
+    if(!v) return;
+    const cur = _v(`${st.sel}-${cid}`) || (st.k==='univ'?'plit_h':'public');
+    if(v===cur) return;
+    changed = true;
+    if(st.k==='elem'){ for(let a=7;a<=12;a++) alt[a]=0; EDU.elem[v].slice(2).forEach((x,i)=>{alt[7+i]=x||0;}); }
+    else if(st.k==='mid'){ EDU.mid[v].forEach((x,i)=>{alt[13+i]=x||0;}); }
+    else if(st.k==='high'){ EDU.high[v].forEach((x,i)=>{alt[16+i]=x||0;}); }
+    else {
+      const oldLen = (EDU.univ[cur]||[]).length;
+      for(let a=19;a<19+oldLen&&a<alt.length;a++) alt[a]-= (EDU.univ[cur][a-19]||0);
+      (EDU.univ[v]||[]).forEach((x,i)=>{ if(19+i<alt.length) alt[19+i]+= (x||0); });
+    }
+  });
+  return changed ? alt.map((x,a)=>x-(base[a]||0)) : null;
+}
+// 奨学金：年齢→受取額
+function mgC_schByAge(list){
+  const m = {};
+  (list||[]).forEach(it=>{
+    const amt = +it.amt||0; if(!(amt>0)) return;
+    if(it.when==='hsEntry') m[16]=(m[16]||0)+amt;
+    else if(it.when==='univEntry') m[19]=(m[19]||0)+amt;
+    else if(it.when==='hs'){ for(let a=16;a<=18;a++) m[a]=(m[a]||0)+amt; }
+    else if(it.when==='univ'){ const n=Math.max(1,parseInt(it.years)||4); for(let a=19;a<19+n;a++) m[a]=(m[a]||0)+amt; }
+  });
+  return m;
+}
+// 計算に渡す（子の並び順＝①家族の並び順）
+function mgQA_eduApply(tab){
+  mgC_ensureEdu(tab);
+  const s = tab.state, kids = mgC_children();
+  window._mgEduDelta = kids.map(k=>mgC_eduDelta(k.cid, s.eduPath[k.cid]));
+  window._mgScholarAt = kids.map(k=>mgC_schByAge(s.eduSch[k.cid]));
+}
+function mgQA_eduCard(tab){
+  mgC_ensureEdu(tab);
+  const s = tab.state, id = tab.id, kids = mgC_children();
+  if(!kids.length) return `<div class="mgqa-note">お子様が登録されていません（①家族で追加すると、進路の変更と奨学金を設定できます）</div>`;
+  const evIdx = (s.deathYear||1)-1, evYr = mgC_startYear()+evIdx;
+  let h = '';
+  kids.forEach(k=>{
+    const ageEv = k.age + evIdx;
+    const path = s.eduPath[k.cid] || {};
+    h += `<div class="mgqa-kid"><div class="mgqa-kid-hd">${k.label}<small>（${evYr}年に${ageEv}歳）</small></div>
+      <div class="mgqa-lbl2">万が一の後の進路（通常は①家族の進学コース）</div><div class="mgqa-path">`;
+    MGC_EDU_STAGES.forEach(st=>{
+      const cur = _v(`${st.sel}-${k.cid}`) || (st.k==='univ'?'plit_h':'public');
+      const done = ageEv > st.to;
+      const v = path[st.k] || '';
+      if(done){ h += `<div class="st past"><span>${st.label}</span><b>${MGC_EDU_LABEL[cur]||cur}</b></div>`; return; }
+      h += `<div class="st${v&&v!==cur?' ch':''}"><span>${st.label}</span><select data-k="eduPath.${k.cid}.${st.k}">
+        <option value="">${MGC_EDU_LABEL[cur]||cur}（変えない）</option>
+        ${st.opts.filter(o=>o!==cur).map(o=>`<option value="${o}" ${v===o?'selected':''}>${MGC_EDU_LABEL[o]}</option>`).join('')}
+      </select></div>`;
+    });
+    h += `</div><div class="mgqa-lbl2">奨学金・給付金など（受け取り）</div>`;
+    (s.eduSch[k.cid]||[]).forEach((it,i)=>{
+      h += `<div class="mgqa-sch"><select data-k="eduSch.${k.cid}.${i}.when">${Object.entries(MGC_SCH_WHEN).map(([w,l])=>`<option value="${w}" ${it.when===w?'selected':''}>${l}</option>`).join('')}</select>
+        <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${it.amt||0}" data-k="eduSch.${k.cid}.${i}.amt"><span class="sl">${it.when==='hs'||it.when==='univ'?'万円/年':'万円'}</span></div>
+        ${it.when==='univ'?`<div class="suf"><input class="inp age-inp" type="number" min="1" max="6" value="${it.years||4}" data-k="eduSch.${k.cid}.${i}.years"><span class="sl">年間</span></div>`:'<span></span>'}
+        <button type="button" class="x" onclick="mgC_schDel('${id}','${k.cid}',${i})">×</button></div>`;
+    });
+    h += `<button class="btn-add" onclick="mgC_schAdd('${id}','${k.cid}')">＋ 奨学金を追加</button></div>`;
+  });
+  h += `<div class="mgqa-cmp" data-cmp="edu"></div>
+    <div class="hint">進路は「変えない」が初期値です。変えたい学校段階だけ選びます。奨学金はCF表の収入の「奨学金」に入ります（返済は扱いません）</div>`;
+  return h;
+}
+function mgC_schAdd(tabId, cid){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  mgC_ensureEdu(tab);
+  (tab.state.eduSch[cid] = tab.state.eduSch[cid] || []).push({when:'univEntry', amt:0, years:4});
+  mgQA_switchTab(tabId);
+}
+function mgC_schDel(tabId, cid, i){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  (tab.state.eduSch[cid]||[]).splice(i,1);
+  mgQA_switchTab(tabId);
+}
+function mgC_fillEduCompare(tab, panel){
+  const el = panel.querySelector('[data-cmp="edu"]'); if(!el) return;
+  const MR = window.lastMR, R = window.lastR; if(!MR||!R||!R.edu){ el.innerHTML=''; return; }
+  const i0 = (tab.state.deathYear||1)-1;
+  let a=0,b=0,sch=0;
+  (R.edu||[]).forEach((arr,ci)=>{ for(let i=i0;i<arr.length;i++){ a+=arr[i]||0; b+=((MR.edu||[])[ci]||[])[i]||0; } });
+  for(let i=i0;i<(MR.scholarship||[]).length;i++) sch += (MR.scholarship[i]||0) - ((R.scholarship||[])[i]||0);
+  el.innerHTML = `<div><small>通常の教育費（万が一の後の合計）</small><b>${mgC_man(a)}</b></div><div><small>万が一の後（奨学金を引いた実質）</small><b>${mgC_man(b-sch)}</b></div>`;
 }

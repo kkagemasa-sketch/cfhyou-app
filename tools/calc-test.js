@@ -421,6 +421,21 @@ const SCENARIOS = {
     const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
     mg('w',{deathYear:3,houseAfter:'sell',hSellYr:5,hPrice:'',hNext:'family'});
   },
+  'M23_夫死亡_進路変更と奨学金': function(){
+    // 第一子（3歳）：高校を私立に、大学を国公立（自宅）に。奨学金：高校入学時30万＋大学在学中 年60万×4年
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const cid=document.querySelector('#children-cont > div[id^="cr-"]').id.replace('cr-','');
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    const p={}; p[cid]={high:'private',univ:'nat_h'};
+    const sc={}; sc[cid]=[{when:'hsEntry',amt:30,years:1},{when:'univ',amt:60,years:4}];
+    mg('h',{deathYear:2,houseAfter:'stay',eduPath:p,eduSch:sc});
+  },
   'M8_夫死亡_賃貸へ_奨学金': function(){
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
