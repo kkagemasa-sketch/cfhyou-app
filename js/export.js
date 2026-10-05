@@ -15,7 +15,10 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, opts) {
     const zip = await JSZip.loadAsync(u8);
 
     // ① メインシート（CF表）: A4横・計算済みscaleで1ページに収め用紙いっぱい
-    const sheetIdx = wb.SheetNames.indexOf(sheetName);
+    //    sheetName は配列でもよい（万が一を複数タブまとめて出力するとき。scale は opts.scales[i]）
+    const _names = Array.isArray(sheetName) ? sheetName : [sheetName];
+    for(let _ni=0; _ni<_names.length; _ni++){
+    const sheetIdx = wb.SheetNames.indexOf(_names[_ni]);
     const xmlPath = `xl/worksheets/sheet${sheetIdx+1}.xml`;
     let xml = await zip.file(xmlPath).async('string');
     // fitToPage=0 にして scale を実効させる（fitToPage=1 だと Excel が scale を無視する）
@@ -31,7 +34,7 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, opts) {
       xml = xml.replace(/(<worksheet[^>]*>)/,'$1'+sheetPrTag);
     }
     // scale は opts.scale で渡される（xlsx-js-style が scale 属性を書き出さないため）
-    const _scale = (opts && opts.scale) ? opts.scale : 100;
+    const _scale = (opts && opts.scales && opts.scales[_ni]) ? opts.scales[_ni] : ((opts && opts.scale) ? opts.scale : 100);
     const setupTag = `<pageSetup paperSize="9" orientation="landscape" scale="${_scale}"/>`;
     if(/<pageSetup/.test(xml)){
       xml = xml.replace(/<pageSetup[^/]*\/>/,setupTag);
@@ -41,6 +44,7 @@ async function _writeXlsxWithPageSetup(wb, fname, sheetName, opts) {
       xml = xml.replace(/<\/worksheet>/,setupTag+'</worksheet>');
     }
     zip.file(xmlPath, xml);
+    }
 
     // ② 「ご確認事項」シート: A4縦・幅1ページに収める
     const dcIdx = wb.SheetNames.indexOf('ご確認事項');
@@ -151,6 +155,7 @@ function showExportModal(exportType){
           </div>
         </div>
       </div>
+      ${(exportType==='mg'||exportType==='print-mg')?_mgExportTabPicker():''}
       ${(exportType==='excel'||exportType==='mg')?`
       <div style="background:#fff5f8;border:1px solid #fbcfe8;border-radius:10px;padding:12px 14px">
         <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:#1e3a5f">
@@ -186,6 +191,8 @@ function _applyExportModalValues(){
   if(dateEl)_exportExtra.date=dateEl.value||'';
   const incEl=document.getElementById('em-include-disclaimer');
   if(incEl) _exportExtra.includeDisclaimer = !!incEl.checked;   // チェック欄がある画面（Excel出力）でだけ変更
+  const pick=[...document.querySelectorAll('#em-mg-tabs input[type=checkbox]:checked')].map(e=>e.value);
+  if(document.getElementById('em-mg-tabs')) _exportExtra.mgTabs = pick;
   const lcEl=document.getElementById('em-include-lc');
   if(lcEl) _exportExtra.includeLC = !!lcEl.checked;   // 印刷・PDFの画面でだけ変更（他の出力では前回の選択を保持）
   _savePrintInfo();
@@ -194,16 +201,18 @@ function _doExport(type){
   _applyExportModalValues();
   document.getElementById('export-modal')?.remove();
   if(type==='excel')exportExcel();
-  else if(type==='mg')exportExcelMG();
+  else if(type==='mg')exportExcelMGTabs(_exportExtra.mgTabs);
   else if(type==='pdf')exportPDF();
   else if(type==='print')openPrintPreview('cf');
-  else if(type==='print-mg')openPrintPreview('mg');
+  else if(type==='print-mg')openPrintPreviewMG(_exportExtra.mgTabs);
   else window.print();
 }
 
-async function exportExcelMG(){
+// opt（複数タブまとめて出力用）: {wb, sheetName, MR, targetIsH, noWrite}
+async function exportExcelMG(opt){
+  opt=opt||{};
   const mgKey=rTab==='mg-h'?'h':'w';
-  const MR=window._mgMRStore&&window._mgMRStore[mgKey];
+  const MR=opt.MR||(window._mgMRStore&&window._mgMRStore[mgKey]);
   if(!MR){alert('先に万が一CF表を生成してください');return;}
   const N=window.lastR;
   // 表示年数: 通常CF表(in-app)と同じ disp を使用してExcelとアプリ表示を一致させる
@@ -213,13 +222,13 @@ async function exportExcelMG(){
   const cLbls=['第一子','第二子','第三子','第四子'];
   const isM=ST.type==='mansion';
   const clientName=(_v('client-name')||'').trim()||'CF表';
-  if(!(_v('client-name')||'').trim()){
+  if(!opt.noWrite && !(_v('client-name')||'').trim()){
     if(!confirm('お客様氏名が未入力です。このまま出力しますか？')){
       document.getElementById('client-name')?.focus();
       return;
     }
   }
-  const targetIsH=rTab==='mg-h';
+  const targetIsH=(opt.targetIsH!==undefined)?opt.targetIsH:(rTab==='mg-h');
   const targetLabel=targetIsH?'ご主人様':'奥様';
   // ★ 修正: 旧コードは存在しないID 'ha'/'wa' を読んでおり、常にfallback値（30/28）が使われていた
   //   結果として Excel の「定年」マークが入力退職年齢と乖離していた
@@ -233,7 +242,7 @@ async function exportExcelMG(){
   const hPenRecv_e=iv('pension-h-receive')||65;
   const wPenRecv_e=iv('pension-w-receive')||65;
 
-  const wb=XLSX.utils.book_new();
+  const wb=opt.wb||XLSX.utils.book_new();
   const rows=[], types=[];
   const push=(data,type)=>{rows.push(data);types.push(type);};
 
@@ -1132,7 +1141,8 @@ async function exportExcelMG(){
     });
   });
 
-  XLSX.utils.book_append_sheet(wb,ws,'万が一CF表');
+  XLSX.utils.book_append_sheet(wb,ws,opt.sheetName||'万が一CF表');
+  if(opt.noWrite) return {scale:_printScale};
   // 末尾に「ご確認事項」シート（A4縦）を追加
   if(_exportExtra.includeDisclaimer!==false) _appendDisclaimerSheet(wb, clientName);
   const cnSama=clientName.endsWith('様')?clientName:clientName+'様';
@@ -2401,4 +2411,56 @@ function exportPDF(){
       if(!wasHidden)pl.classList.remove('hidden');
     },500);
   },200);
+}
+
+
+// ===== 万が一CF表：出力するタブを選ぶ（複数選ぶとまとめて出力。PDFは続けて、Excelはシート別） =====
+function _mgExportTabPicker(){
+  if(typeof mgQA_tabs==='undefined' || !mgQA_tabs.length) return '';
+  const act = window._mgQA_activeTabId;
+  const K = {death:['死亡','#c2185b'], dis1:['1級','#3459ca'], dis2:['2級','#159ea3']};
+  return `<div style="background:#f6f8fc;border:1px solid #dbe3ee;border-radius:10px;padding:12px 14px">
+    <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:.04em">出力する万が一のタブ（複数選ぶとまとめて出力）</div>
+    <div id="em-mg-tabs" style="display:flex;flex-direction:column;gap:6px">${mgQA_tabs.map(t=>{const k=K[t.kind]||K.death;return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#1e3a5f">
+      <input type="checkbox" value="${t.id}" ${t.id===act?'checked':''} style="cursor:pointer">
+      <span style="font-size:10px;font-weight:800;color:#fff;background:${k[1]};border-radius:4px;padding:1px 6px">${k[0]}</span>${_ppEsc?_ppEsc(t.name):t.name}</label>`;}).join('')}</div>
+    <div style="font-size:10px;color:#64748b;margin-top:6px">PDFはタブの並び順に続けて1つに、Excelはタブごとのシートにして1つのファイルにします</div>
+  </div>`;
+}
+function _mgPickIds(ids){
+  const all = (typeof mgQA_tabs!=='undefined') ? mgQA_tabs.map(t=>t.id) : [];
+  const list = (Array.isArray(ids)?ids:[]).filter(id=>all.includes(id));
+  if(!list.length && window._mgQA_activeTabId) list.push(window._mgQA_activeTabId);
+  return list;
+}
+// Excelのシート名（31文字まで・使えない記号を除く・重複しない）
+function _mgSheetName(name, used){
+  let b = String(name||'万が一').replace(/[\\\/\?\*\[\]:]/g,'').slice(0,28) || '万が一';
+  let n = b, k = 2;
+  while(used.includes(n)) n = `${b.slice(0,26)}(${k++})`;
+  used.push(n); return n;
+}
+async function exportExcelMGTabs(ids){
+  const list = _mgPickIds(ids);
+  if(list.length<=1 && list[0]===window._mgQA_activeTabId){ return exportExcelMG(); }
+  if(!list.length){ alert('出力する万が一のタブを選んでください'); return; }
+  const clientName=(_v('client-name')||'').trim()||'CF表';
+  if(!(_v('client-name')||'').trim()){
+    if(!confirm('お客様氏名が未入力です。このまま出力しますか？')){ document.getElementById('client-name')?.focus(); return; }
+  }
+  const act = window._mgQA_activeTabId;
+  const wb = XLSX.utils.book_new(), names = [], scales = [];
+  try{
+    for(const id of list){
+      const t = mgQA_tabs.find(x=>x.id===id); if(!t) continue;
+      mgQA_switchTab(id);   // 計算（即時）して、そのタブの結果で1シート作る
+      const nm = _mgSheetName(t.name, names);
+      const r = await exportExcelMG({wb, sheetName:nm, MR:window.lastMR, targetIsH:t.target==='h', noWrite:true});
+      scales.push(r&&r.scale||100);
+    }
+  }finally{ if(act) mgQA_switchTab(act); }
+  if(_exportExtra.includeDisclaimer!==false) _appendDisclaimerSheet(wb, clientName);
+  const cnSama=clientName.endsWith('様')?clientName:clientName+'様';
+  const fname=`万が一_${cnSama}_${names.length}パターン_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
+  await _writeXlsxWithPageSetup(wb,fname,names,{scales});
 }

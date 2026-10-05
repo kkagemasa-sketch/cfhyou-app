@@ -212,6 +212,34 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     if(B.part!=='none|none') f3.push(`扶養内パートでも欄・警告が出る ${B.part}`);
     if(f3.length){ bad++; console.log('❌ ボーナス欄\n   - '+f3.join('\n   - ')); }
     else console.log('✅ ボーナス欄: 未入力の印・0で解除・傷病手当金(金額/か月分)・保存復元・扶養内パート除外');
+
+    /* ---- 万が一を複数タブまとめてExcel出力（シート別・1ファイル） ---- */
+    await page.evaluate(pageBaseSetup);
+    const X=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      document.getElementById('client-name').value='テスト 太郎';
+      live(true); await wait(1200);
+      setRTab('cf'); mgQA_addTab('h','death'); const a=mgQA_tabs[mgQA_tabs.length-1].id;
+      mgQA_addTab('h','dis1'); const b=mgQA_tabs[mgQA_tabs.length-1].id;
+      mgQA_switchTab(a);
+      let cap=null; const orig=window._writeXlsxWithPageSetup;
+      window._writeXlsxWithPageSetup=async(wb,fname,names,opts)=>{ cap={sheets:wb.SheetNames.slice(),fname,names,scales:opts&&opts.scales,
+        hasDis:wb.SheetNames.map(n=>JSON.stringify(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1})).includes('障害年金'))}; };
+      _exportExtra.includeDisclaimer=true;
+      try{ await exportExcelMGTabs([a,b]); } finally { window._writeXlsxWithPageSetup=orig; }
+      return {cap, back: window._mgQA_activeTabId===a};
+    });
+    const f4=[];
+    if(!X.cap) f4.push('Excelが作られない');
+    else{
+      if(X.cap.sheets.length!==3) f4.push(`シート数 ${X.cap.sheets.length}（2タブ＋ご確認事項=3のはず）: ${X.cap.sheets.join(',')}`);
+      if(!(X.cap.names&&X.cap.names.length===2&&X.cap.scales&&X.cap.scales.length===2)) f4.push('ページ設定がシートごとに渡っていない');
+      if(!(X.cap.hasDis[0]===false&&X.cap.hasDis[1]===true)) f4.push(`障害年金の行が障害タブのシートだけに出ていない ${X.cap.hasDis}`);
+      if(!/2パターン/.test(X.cap.fname)) f4.push(`ファイル名 ${X.cap.fname}`);
+    }
+    if(!X.back) f4.push('出力のあと元のタブに戻っていない');
+    if(f4.length){ bad++; console.log('❌ 万が一 まとめてExcel\n   - '+f4.join('\n   - ')); }
+    else console.log(`✅ 万が一 まとめてExcel: タブごとのシート（${X.cap.sheets.join('・')}）・ページ設定・元のタブに戻る`);
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

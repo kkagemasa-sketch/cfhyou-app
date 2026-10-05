@@ -61,7 +61,32 @@ function _ppEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/<
 function _ppIsNum(t){ return /^[\d,▲\-−–\s]+$/.test((t||'').trim()); }
 function _ppYear(cell){ return (cell.textContent||'').replace(/\D/g,'').slice(-4); }
 
-function _ppBuild(kind, src){
+// 万が一CF表を複数タブまとめて印刷（タブの並び順に 表紙→CF表 を続け、最後にご確認事項を1回）
+async function openPrintPreviewMG(ids){
+  const list = (typeof _mgPickIds==='function') ? _mgPickIds(ids) : [];
+  if(list.length<=1 && list[0]===window._mgQA_activeTabId){ return openPrintPreview('mg'); }
+  if(!list.length){ alert('印刷する万が一のタブを選んでください'); return; }
+  const act = window._mgQA_activeTabId;
+  const secs = [];
+  try{
+    for(const id of list){
+      if(!mgQA_tabs.find(t=>t.id===id)) continue;
+      mgQA_switchTab(id);   // 計算（即時）して、そのタブの画面のCF表を写し取る
+      const tbl = document.querySelector('#right-body .tbl-wrap > table.cf');
+      if(!tbl) continue;
+      const banner = document.querySelector('#right-body .r-summary > div');
+      const m = (banner?.textContent||'').match(/【万が一】[^\n]*?場合/);
+      const pre = document.getElementById('mg-summary-detail');
+      secs.push({src: tbl.cloneNode(true), mgTitle: m ? m[0].replace(/\s+/g,'') : '【万が一】', preEl: pre ? pre.cloneNode(true) : null});
+    }
+  }finally{ if(act) mgQA_switchTab(act); }
+  if(!secs.length){ alert('万が一CF表が表示されていません'); return; }
+  try{ _ppBuild('mg', secs[0].src, secs); }
+  catch(e){ console.error('[print]', e); document.getElementById('pp-preview')?.remove(); alert('印刷プレビューの作成に失敗しました: '+e.message); }
+}
+
+// sections（省略可）: [{src, mgTitle, preEl}] … 万が一を複数タブまとめて印刷するとき
+function _ppBuild(kind, src, sections){
   document.getElementById('pp-preview')?.remove();
   const isMg = kind==='mg';
   const name=(_v('client-name')||'').trim();
@@ -70,61 +95,16 @@ function _ppBuild(kind, src){
   const dObj = (typeof _exportExtra!=='undefined'&&_exportExtra.date) ? new Date(_exportExtra.date) : new Date();
   const dStr = dObj.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
   const staff = [pi.company, pi.name].filter(Boolean).join('　');
-  // 万が一CF表の見出し（例：【万が一】ご主人様が45歳で死亡した場合）
-  let mgTitle='';
-  if(isMg){
-    const banner=document.querySelector('#right-body .r-summary > div');
-    const m=(banner?.textContent||'').match(/【万が一】[^\n]*?場合/);
-    mgTitle = m ? m[0].replace(/\s+/g,'') : '【万が一】';
-  }
   const docTitle = isMg ? '万が一キャッシュフロー表' : 'キャッシュフロー表';
-
-  // ── 元の表から行を取得 ──
-  //   ・「＋行を追加」ボタン行は除外
-  //   ・画面で非表示の行（「金融資産行を隠す」等）は画面どおり印刷しない
-  const allRows=[...src.rows];
-  const nCols=allRows[0].cells.length;               // 項目2列 + 年列 + 合計列
-  const hiddenRows=allRows.filter(r=>r.cells.length===nCols && r.style.display==='none');
-  const srcRows=allRows.filter(r=>r.cells.length===nCols && r.style.display!=='none' && !/行を追加/.test(r.textContent));
-  const yearIdx=[]; for(let i=2;i<nCols-1;i++) yearIdx.push(i);
-  const chunks=[]; for(let i=0;i<yearIdx.length;i+=PP_YEARS_PER_PAGE) chunks.push(yearIdx.slice(i,i+PP_YEARS_PER_PAGE));
-
-  // ── 1マス分の複製（画面専用の部品・装飾を取り除く） ──
-  const cloneCell=(r,i)=>{
-    const c=_ppCleanCell(r.cells[i], i, nCols);
-    c.dataset.pp = srcRows.indexOf(r)+':'+i;   // 抜け漏れチェック用の目印
-    return c.outerHTML;
-  };
-  const buildTable=(cols,isLast)=>{
-    const take = isLast ? [0,1,...cols,nCols-1] : [0,1,...cols];
-    let t=`<table class="pp-tbl cf"><colgroup><col class="c1"><col class="c2">${cols.map(()=>'<col>').join('')}${isLast?'<col class="cT">':''}</colgroup>`;
-    srcRows.forEach(r=>{
-      const cls=(r.className||'').replace(/\bcf-row-highlight\b/g,'');
-      t+=`<tr class="${cls}" style="${r.getAttribute('style')||''}">`+take.map(i=>cloneCell(r,i)).join('')
-        // 途中ページの最終年が「合計列」の書式にならないよう、見えないダミー列を最後に置く
-        +(isLast?'':'<td class="pp-dummy"></td>')+'</tr>';
-    });
-    return t+'</table>';
-  };
-
-  // ── 前提条件（画面のCF表上部の欄をそのまま複製） ──
-  const preSrc=document.getElementById(isMg?'mg-summary-detail':'cf-summary-detail');
-  let preHtml='';
-  if(preSrc){
-    const pre=preSrc.cloneNode(true);
-    pre.removeAttribute('id'); pre.style.display='';
-    const ta=pre.querySelector('textarea');
-    if(ta){
-      const box=ta.parentElement;
-      const note=(window._cfSummaryNote||'').trim();
-      if(note){
-        const div=document.createElement('div'); div.className='pp-note'; div.innerHTML=_ppEsc(note).replace(/\n/g,'<br>');
-        ta.replaceWith(div);
-        const hd=box.firstElementChild; if(hd) hd.textContent='注釈・補足メモ';
-      } else box.remove();
+  // 1つ目の表（画面に表示中のCF表）。万が一の見出し（例：【万が一】ご主人様が45歳で死亡した場合）
+  if(!sections){
+    let mgTitle='';
+    if(isMg){
+      const banner=document.querySelector('#right-body .r-summary > div');
+      const m=(banner?.textContent||'').match(/【万が一】[^\n]*?場合/);
+      mgTitle = m ? m[0].replace(/\s+/g,'') : '【万が一】';
     }
-    pre.querySelectorAll('button,input,select').forEach(e=>e.remove());
-    preHtml=`<div class="pp-pre">${pre.innerHTML}</div>`;
+    sections=[{src, mgTitle, preEl: document.getElementById(isMg?'mg-summary-detail':'cf-summary-detail')}];
   }
 
   // ── ご確認事項（Excel出力と同じ文面：export.js getDisclaimerContent） ──
@@ -163,26 +143,77 @@ function _ppBuild(kind, src){
     box.appendChild(p); return p.querySelector('.pp-body');
   };
 
-  // 表紙（前提条件）
-  const y0=_ppYear(allRows[0].cells[2]), yN=_ppYear(allRows[0].cells[nCols-2]);
-  addPage(isMg?_ppEsc(mgTitle):'前提条件', `<div class="pp-cover"><div class="pp-cover-hero${isMg?' mg':''}"><img class="pp-cover-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="t1">${docTitle}</div>
-      <div class="t2">${_ppEsc(cn)}${cn?'　／　':''}${y0}年〜${yN}年（全${yearIdx.length}年間）</div>
-      ${isMg?`<div class="t3">${_ppEsc(mgTitle)}</div>`:''}</div>
-    ${preHtml?`<div class="pp-cover-lbl">前提条件</div>${preHtml}`:''}</div>`);
-
-  // 生活費の内訳（出力画面で「生活費の内訳を入れる」を選んだときだけ）
-  if(typeof _exportExtra!=='undefined' && _exportExtra.includeLC) addPage('生活費の内訳', _ppLCHtml());
-
-  // CF表（20年ごと・縦は1枚）
-  const tableBodies=[];
-  chunks.forEach((cols,ci)=>{
-    const isLast=ci===chunks.length-1;
-    const sub=`${_ppYear(allRows[0].cells[cols[0]])}年〜${_ppYear(allRows[0].cells[cols[cols.length-1]])}年${isMg?'　'+_ppEsc(mgTitle):''}`;
-    const b=addPage(sub, buildTable(cols,isLast));   // 「次ページへ続く」案内は置かず、表に高さを回す
-    tableBodies.push(b);
+  const tableBodies=[], problems=[];
+  let hiddenCount=0;
+  sections.forEach((sec,si)=>{
+    const mgTitle=sec.mgTitle||'';
+    // ── 元の表から行を取得 ──
+    //   ・「＋行を追加」ボタン行は除外
+    //   ・画面で非表示の行（「金融資産行を隠す」等）は画面どおり印刷しない
+    const allRows=[...sec.src.rows];
+    const nCols=allRows[0].cells.length;               // 項目2列 + 年列 + 合計列
+    const hiddenRows=allRows.filter(r=>r.cells.length===nCols && r.style.display==='none');
+    hiddenCount+=hiddenRows.length;
+    const srcRows=allRows.filter(r=>r.cells.length===nCols && r.style.display!=='none' && !/行を追加/.test(r.textContent));
+    const yearIdx=[]; for(let i=2;i<nCols-1;i++) yearIdx.push(i);
+    const chunks=[]; for(let i=0;i<yearIdx.length;i+=PP_YEARS_PER_PAGE) chunks.push(yearIdx.slice(i,i+PP_YEARS_PER_PAGE));
+    // ── 1マス分の複製（画面専用の部品・装飾を取り除く） ──
+    const cloneCell=(r,i)=>{
+      const c=_ppCleanCell(r.cells[i], i, nCols);
+      c.dataset.pp = si+':'+srcRows.indexOf(r)+':'+i;   // 抜け漏れチェック用の目印（表の番号:行:列）
+      return c.outerHTML;
+    };
+    const buildTable=(cols,isLast)=>{
+      const take = isLast ? [0,1,...cols,nCols-1] : [0,1,...cols];
+      let t=`<table class="pp-tbl cf"><colgroup><col class="c1"><col class="c2">${cols.map(()=>'<col>').join('')}${isLast?'<col class="cT">':''}</colgroup>`;
+      srcRows.forEach(r=>{
+        const cls=(r.className||'').replace(/\bcf-row-highlight\b/g,'');
+        t+=`<tr class="${cls}" style="${r.getAttribute('style')||''}">`+take.map(i=>cloneCell(r,i)).join('')
+          // 途中ページの最終年が「合計列」の書式にならないよう、見えないダミー列を最後に置く
+          +(isLast?'':'<td class="pp-dummy"></td>')+'</tr>';
+      });
+      return t+'</table>';
+    };
+    // ── 前提条件（画面のCF表上部の欄をそのまま複製） ──
+    let preHtml='';
+    if(sec.preEl){
+      const pre=sec.preEl.cloneNode(true);
+      pre.removeAttribute('id'); pre.style.display='';
+      const ta=pre.querySelector('textarea');
+      if(ta){
+        const bx=ta.parentElement;
+        const note=(window._cfSummaryNote||'').trim();
+        if(note){
+          const div=document.createElement('div'); div.className='pp-note'; div.innerHTML=_ppEsc(note).replace(/\n/g,'<br>');
+          ta.replaceWith(div);
+          const hd=bx.firstElementChild; if(hd) hd.textContent='注釈・補足メモ';
+        } else bx.remove();
+      }
+      pre.querySelectorAll('button,input,select').forEach(e=>e.remove());
+      preHtml=`<div class="pp-pre">${pre.innerHTML}</div>`;
+    }
+    // 表紙（前提条件）
+    const y0=_ppYear(allRows[0].cells[2]), yN=_ppYear(allRows[0].cells[nCols-2]);
+    addPage(isMg?_ppEsc(mgTitle):'前提条件', `<div class="pp-cover"><div class="pp-cover-hero${isMg?' mg':''}"><img class="pp-cover-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="t1">${docTitle}</div>
+        <div class="t2">${_ppEsc(cn)}${cn?'　／　':''}${y0}年〜${yN}年（全${yearIdx.length}年間）</div>
+        ${isMg?`<div class="t3">${_ppEsc(mgTitle)}</div>`:''}</div>
+      ${preHtml?`<div class="pp-cover-lbl">前提条件</div>${preHtml}`:''}</div>`);
+    // 生活費の内訳（出力画面で「生活費の内訳を入れる」を選んだときだけ・最初の表の後に1回）
+    if(si===0 && typeof _exportExtra!=='undefined' && _exportExtra.includeLC) addPage('生活費の内訳', _ppLCHtml());
+    // CF表（20年ごと・縦は1枚）
+    const bodies=[];
+    chunks.forEach((cols,ci)=>{
+      const isLast=ci===chunks.length-1;
+      const sub=`${_ppYear(allRows[0].cells[cols[0]])}年〜${_ppYear(allRows[0].cells[cols[cols.length-1]])}年${isMg?'　'+_ppEsc(mgTitle):''}`;
+      bodies.push(addPage(sub, buildTable(cols,isLast)));   // 「次ページへ続く」案内は置かず、表に高さを回す
+    });
+    bodies.forEach(_ppFitPage);
+    bodies.forEach(_ppFitTextCells);
+    tableBodies.push(...bodies);
+    // ── 抜け漏れチェック（この表の分）──
+    const pr=_ppVerify(box, srcRows, allRows[0], nCols, si+':');
+    problems.push(...(sections.length>1?pr.map(t=>`［${mgTitle}］${t}`):pr));
   });
-  tableBodies.forEach(_ppFitPage);
-  tableBodies.forEach(_ppFitTextCells);
 
   // ご確認事項（1枚に収まるよう文字サイズを調整）
   const dcBody=addPage('ご確認事項', discHtml);
@@ -195,10 +226,8 @@ function _ppBuild(kind, src){
   const pgs=[...box.querySelectorAll('.pp-page')];
   pgs.forEach((p,i)=>p.querySelector('.pp-pno').textContent=`${i+1} / ${pgs.length}`);
 
-  // ── 抜け漏れチェック ──
-  const problems=_ppVerify(box, srcRows, allRows[0], nCols);
   const notes=[];
-  if(hiddenRows.length) notes.push(`画面で非表示にしている行（${hiddenRows.length}行：金融資産行など）は印刷していません。`);
+  if(hiddenCount) notes.push(`画面で非表示にしている行（${hiddenCount}行：金融資産行など）は印刷していません。`);
   if(problems.length){
     const w=document.createElement('div'); w.className='pp-warn';
     w.innerHTML='⚠ 画面のCF表と印刷内容に違いがあります（'+problems.length+'件）。印刷前に内容をご確認ください。<br>'+problems.slice(0,5).map(_ppEsc).join('<br>');
@@ -209,9 +238,10 @@ function _ppBuild(kind, src){
     box.insertBefore(n, pgs[0]);
   }
   const lcPage=(typeof _exportExtra!=='undefined' && _exportExtra.includeLC)?'・生活費の内訳1':'';
-  box.querySelector('#pp-info').textContent=`A4横・全${pgs.length}ページ（表紙1${lcPage}・CF表${tableBodies.length}・ご確認事項1）`+(problems.length?'':'　✓ 画面のCF表と全項目一致');
+  const coverTxt = sections.length>1 ? `表紙${sections.length}（${sections.length}パターン）` : '表紙1';
+  box.querySelector('#pp-info').textContent=`A4横・全${pgs.length}ページ（${coverTxt}${lcPage}・CF表${tableBodies.length}・ご確認事項1）`+(problems.length?'':'　✓ 画面のCF表と全項目一致');
   box.scrollTop=0;
-  window._ppLastResult={pages:pgs.length, problems, hiddenRows:hiddenRows.length,
+  window._ppLastResult={pages:pgs.length, problems, hiddenRows:hiddenCount, sections:sections.length,
     fontPx:tableBodies.map(b=>+(b._fs||0).toFixed(1)),
     overflow:tableBodies.reduce((n,b)=>n+[...b.querySelectorAll('.pp-tbl td,.pp-tbl th')].filter(c=>c.scrollWidth>c.clientWidth).length,0)};
   document.addEventListener('keydown',_ppKey);
@@ -314,7 +344,8 @@ function _ppFitTextCells(b){
 }
 
 // ── 抜け漏れチェック：画面の表の全マス（項目名・各年・合計）が、印刷にちょうど1回・同じ中身で入っているか ──
-function _ppVerify(box, srcRows, yearRow, nCols){
+function _ppVerify(box, srcRows, yearRow, nCols, prefix){
+  if(prefix===undefined) prefix='0:';   // 表の番号（複数タブまとめて印刷するとき）
   const norm=s=>(s||'').replace(/\s+/g,'');
   const seen={};
   box.querySelectorAll('.pp-tbl [data-pp]').forEach(c=>{ (seen[c.dataset.pp]=seen[c.dataset.pp]||[]).push(norm(c.textContent)); });
@@ -323,7 +354,7 @@ function _ppVerify(box, srcRows, yearRow, nCols){
     const lbl=norm(r.cells[1].textContent)||norm(r.cells[0].textContent)||`${ri+1}行目`;
     for(let i=0;i<nCols;i++){
       if(ri===0 && i===2) continue;                     // 「開始年を設定」ボタン文字は意図的に除去
-      const got=seen[ri+':'+i];
+      const got=seen[prefix+ri+':'+i];
       const where = i<=1 ? '項目名' : (i===nCols-1 ? '合計' : _ppYear(yearRow.cells[i])+'年');
       if(!got){ problems.push(`「${lbl}」の${where}が印刷に入っていません`); continue; }
       if(i<=1) continue;                                // 項目名はページごとに繰り返すので回数は問わない

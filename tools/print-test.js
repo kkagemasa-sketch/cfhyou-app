@@ -150,6 +150,40 @@ const CASES = [
       else console.log(`✅ ${c.name}（${info}・抜け漏れ0・はみ出し0・検知テストOK）`);
       await page.close();
     }
+    // ── 万が一を複数タブまとめて印刷（死亡・障害1級・障害2級） ──
+    {
+      const errors=[];
+      const page=await openApp(browser, origin, errors);
+      await page.evaluate(pageBaseSetup);
+      await page.evaluate(normalSetup);
+      const r = await page.evaluate(async()=>{
+        document.getElementById('client-name').value='テスト 太郎';
+        live(true); await new Promise(res=>setTimeout(res,1500));
+        setRTab('cf'); mgQA_addTab('h','death'); const a=mgQA_tabs[mgQA_tabs.length-1].id;
+        mgQA_addTab('h','dis1'); const b=mgQA_tabs[mgQA_tabs.length-1].id;
+        mgQA_addTab('w','dis2'); const c=mgQA_tabs[mgQA_tabs.length-1].id;
+        mgQA_switchTab(a);
+        const years = document.querySelector('#right-body .tbl-wrap > table.cf').rows[0].cells.length-3;
+        await openPrintPreviewMG([a,b,c]);
+        const res = window._ppLastResult || {};
+        const box = document.getElementById('pp-preview');
+        const titles = [...box.querySelectorAll('.pp-cover .t3')].map(e=>e.textContent);
+        return {pages:res.pages, sections:res.sections, problems:res.problems, overflow:res.overflow, years,
+          titles, back: window._mgQA_activeTabId===a, tables: box.querySelectorAll('.pp-tbl').length};
+      });
+      const per = 1 + Math.ceil(r.years/20);
+      const fails=[];
+      if(errors.length) fails.push('JSエラー: '+errors.slice(0,2).join(' / '));
+      if(r.sections!==3) fails.push(`まとめた表の数 ${r.sections}（3のはず）`);
+      if(r.pages!==per*3+1) fails.push(`ページ数 ${r.pages}（期待 ${per*3+1}）`);
+      if(!r.problems || r.problems.length) fails.push(`抜け漏れ ${r.problems?r.problems.length:'?'}件: ${(r.problems||[]).slice(0,2).join(' / ')}`);
+      if(r.overflow) fails.push(`はみ出し ${r.overflow}件`);
+      if(!(r.titles.length===3 && /死亡/.test(r.titles[0]) && /障害1級/.test(r.titles[1]) && /障害2級/.test(r.titles[2]))) fails.push(`表紙の見出し ${r.titles.join(' / ')}`);
+      if(!r.back) fails.push('印刷のあと元のタブに戻っていない');
+      if(fails.length){ bad++; console.log(`❌ 万が一_3タブまとめて\n   - ${fails.join('\n   - ')}`); }
+      else console.log(`✅ 万が一_3タブまとめて（${r.pages}ページ・抜け漏れ0・はみ出し0・元のタブに戻る）`);
+      await page.close();
+    }
   } finally {
     try{ await browser.close(); }catch(e){}
     srv.close();
