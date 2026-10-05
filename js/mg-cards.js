@@ -312,8 +312,9 @@ function mgQA_lcCard(tab){
   body += `<div class="mgqa-cmp" data-cmp="lc"></div>`;
   return body;
 }
+function mgC_lcPerson(tab){ return mgC_isDis(tab) ? tab.target : (householdType==='single' ? 'h' : mgC_survivor(tab)); }
 function mgC_lcFreeTable(tab){
-  const s = tab.state, id = tab.id, p = mgC_survivor(tab);
+  const s = tab.state, id = tab.id, p = mgC_lcPerson(tab);
   if(!Array.isArray(s.lcFree) || !s.lcFree.length){
     const ev = mgC_ageAtEvent(tab,p);
     s.lcFree = [{ageFrom:ev, ageTo:'', val:80}];
@@ -334,14 +335,14 @@ function mgC_lcFreeTable(tab){
   quick.push([65,'65歳で区切る']);
   h += `</div><button class="btn-add" onclick="mgC_lcFreeAdd('${id}')">＋ 期間を追加</button>
     <div class="mgqa-quick">${quick.map(([a,l])=>`<button type="button" onclick="mgC_lcFreeSplitAt('${id}',${a})">${l}</button>`).join('')}</div>
-    <div class="hint">年齢は${mgC_name(p)}（遺された方）の年齢です。期間に入らない年は通常どおり</div>`;
+    <div class="hint">年齢は${mgC_name(p)}${mgC_isDis(tab)||householdType==='single'?'':'（遺された方）'}の年齢です。期間に入らない年は通常どおり</div>`;
   return h;
 }
 function mgC_lcFreeAdd(tabId){
   const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
   const rows = tab.state.lcFree = tab.state.lcFree || [];
   const last = rows[rows.length-1];
-  const from = last ? ((last.ageTo!==''&&last.ageTo!=null) ? +last.ageTo+1 : (+last.ageFrom||0)+10) : mgC_ageAtEvent(tab, mgC_survivor(tab));
+  const from = last ? ((last.ageTo!==''&&last.ageTo!=null) ? +last.ageTo+1 : (+last.ageFrom||0)+10) : mgC_ageAtEvent(tab, mgC_lcPerson(tab));
   if(last && (last.ageTo===''||last.ageTo==null)) last.ageTo = from-1;
   rows.push({ageFrom:from, ageTo:'', val: tab.state.lcFreeBasis==='month'?20:70});
   mgQA_switchTab(tabId);
@@ -420,11 +421,12 @@ function mgC_house(s){
   if(s.houseAfter==='sell' || s.houseAfter==='stay'){
     if(s.houseAfter==='stay') return {sell:false};
     const b = s.hBuy || {};
-    return {sell:true, sellYr: Math.max(1, parseInt(s.hSellYr)||1), price: (s.hPrice===undefined?'':s.hPrice),
+    const _n = v => String(v??'').replace(/[,，\s]/g,'');
+    return {sell:true, sellYr: Math.max(1, parseInt(s.hSellYr)||1), price: _n(s.hPrice),
       costMode: s.hCostMode==='manual'?'manual':'auto', cost: +s.hCost||0,
       next: ['rent','buy','family'].includes(s.hNext)?s.hNext:'rent',
       rentMonthly: s.hRent===undefined?8:+s.hRent||0, renewMonths: s.hRenew===undefined?1:+s.hRenew||0,
-      buy: {price:+b.price||0, down:+b.down||0, cost:(b.cost===undefined||b.cost===null||String(b.cost).trim()==='')?Math.round((+b.price||0)*0.07):+b.cost||0, loan: b.loan==='yes', yrs:+b.yrs||20, rate:(b.rate===undefined?1.0:+b.rate||0), mgmt:+b.mgmt||0, ptx:+b.ptx||0}};
+      buy: {price:+b.price||0, down:+b.down||0, cost:(b.cost===undefined||b.cost===null||_n(b.cost)==='')?Math.round((+b.price||0)*0.07):+_n(b.cost)||0, loan: b.loan==='yes', yrs:+b.yrs||20, rate:(b.rate===undefined?1.0:+b.rate||0), mgmt:+b.mgmt||0, ptx:+b.ptx||0}};
   }
   if(s.houseMode==='rent') return {sell:true, sellYr:1, price:'', costMode:'manual', cost:0, next:'rent', rentMonthly:+s.houseNewRent||8, renewMonths:0, buy:{}};
   if(s.houseMode==='stages' && Array.isArray(s.houseStages)){
@@ -466,7 +468,12 @@ function mgQA_houseCard(tab){
   const sellYear = evYr + hs.sellYr - 1;
   const MR = window.lastMR;
   const iS = (s.deathYear||1)-1 + hs.sellYr - 1;
-  const bal = MR && MR.lBal && iS>0 ? Math.round(MR.lBal[iS-1]||0) : 0;
+  const i0 = (s.deathYear||1)-1;
+  let bal = MR && MR.lBal && iS>0 ? Math.round(MR.lBal[iS-1]||0) : 0;
+  if(iS===i0 && MR && iS>0){
+    if(pairLoanMode) bal = Math.round(((tab.target==='h' ? MR.lBalW : MR.lBalH)||[])[iS-1]||0) + (dt.ok ? 0 : Math.round(((tab.target==='h' ? MR.lBalH : MR.lBalW)||[])[iS-1]||0));
+    else if(dt.ok) bal = 0;
+  }
   const price = hs.price===''||hs.price===null ? bal : +hs.price;
   const cost = hs.costMode==='manual' ? hs.cost : Math.round(price*0.04);
   const net = price - cost - bal;
@@ -679,7 +686,11 @@ function mgC_normalCars(){
 function mgC_carPayoff(cid, i0){
   const bd = (window.lastR||{}).carBd || [];
   let s = 0;
-  for(let i=i0;i<bd.length;i++) (bd[i]||[]).forEach(it=>{ if(it.cid===cid && it.type==='loan') s+=it.amount||0; });
+  for(let i=i0;i<bd.length;i++){
+    const items = (bd[i]||[]).filter(it=>it.cid===cid);
+    if(i>i0 && items.some(it=>it.type==='buy')) break;   // 次の買い替えからは買わない
+    items.forEach(it=>{ if(it.type==='loan') s+=it.amount||0; });
+  }
   return Math.round(s);
 }
 function mgQA_carApply(tab){
@@ -717,7 +728,7 @@ function mgQA_carCard(tab){
         <button type="button" class="x" onclick="mgC_carAddDel('${id}',${i})">×</button></div>`;
     });
     h += `<button class="btn-add" onclick="mgC_carAddNew('${id}')">＋ 万が一の後に車を追加</button>
-      <div class="hint">「何年目」は万が一の年が1年目。年齢は${mgC_name(p)}（遺された方）の年齢です</div>`;
+      <div class="hint">「何年目」は万が一の年が1年目。年齢は${mgC_name(mgC_lcPerson(tab))}の年齢です</div>`;
   }
   // 駐車場
   const pm = s.parkInherit!==false ? 'keep' : (s.parkMode==='stop' ? 'none' : 'change');

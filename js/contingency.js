@@ -875,11 +875,13 @@ function _renderContingencyInner(){
     return ri(v);
   };
   let _mgRetOnset=-1;
+  let _mgStopInvCum=0;   // 障害タブで「積立投資を止める」とき、払わなかった積立の累計（資産から除く）
   if(_mgDis&&_mgDisCfg.retire==='onset'){
     const _rpFull=targetIsH?retPay:wRetPay, _rpAge=targetIsH?retPayAge:wRetPayAge, _st=targetIsH?pHStart_mg:pWStart_mg;
     _mgRetOnset=(_mgOnsetAge<_rpAge&&_rpAge>_st)?ri((_rpFull||0)*Math.max(0,_mgOnsetAge-_st)/(_rpAge-_st)):-1;
   }
-  const _mgDisKosei=(_mgDis&&getMGPensionType()!=='kokumin')
+  const _mgDisKisoOk=_mgOnsetAge<65;   // 障害基礎年金は65歳前の初診（発病）が要件
+  const _mgDisKosei=(_mgDis&&getMGPensionType()!=='kokumin'&&_mgOnsetAge<(targetIsH?retAge_mg:wRetAge_mg))   // 障害厚生は厚生年金加入中（退職前）の初診
     ? calcKoseiForSurvP(targetIsH?'h':'w', targetIsH?pHStart_mg:pWStart_mg, _mgOnsetAge, targetIsH?pSelf:pWife, targetIsH?kisoH_mg:kisoW_mg, true)
     : 0;
 
@@ -888,6 +890,7 @@ function _renderContingencyInner(){
     const active=i>=delivery, lcYr=i-delivery;
     MR.yr.push(yr);MR.hA.push(ha);MR.wA.push(wa);
 
+    const _mgPersonAge=_mgDis?(targetIsH?ha:wa):(_isSingle_mg?ha:(targetIsH?wa:ha));   // 障害=ご本人／単身=ご本人／死亡=遺された方
     const isEvt=i>=deathYearOffset-1;          // 万が一（死亡・障害）の年以降
     const isEvtYear=i===deathYearOffset-1;
     const isDead=isEvt&&!_mgDis;               // 亡くなった後（障害タブではご本人は存命）
@@ -1144,7 +1147,7 @@ function _renderContingencyInner(){
         else{
           let n=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)n++;});
           const childAdd=n<=0?0:(n===1?SURV_KISO_CHILD1_2:n===2?SURV_KISO_CHILD1_2*2:SURV_KISO_CHILD1_2*2+SURV_KISO_CHILD3PLUS*(n-2));
-          const kiso=(_mgKind==='dis1'?KISO_FULL_AMT*1.25:KISO_FULL_AMT)+childAdd;
+          const kiso=_mgDisKisoOk?((_mgKind==='dis1'?KISO_FULL_AMT*1.25:KISO_FULL_AMT)+childAdd):0;
           const spAge=targetIsH?wa:ha;
           const kakyu=(_mgDisKosei>0&&!_isSingle_mg&&spAge<65)?24.38:0;  // 配偶者加給年金（令和8年度 243,800円）
           v=kiso+_mgDisKosei*(_mgKind==='dis1'?1.25:1)+kakyu;
@@ -1465,14 +1468,14 @@ function _renderContingencyInner(){
     MR.zaikeiRedeem.push(ri(zaikeiRedeemVal));
 
     // 収入合計
-    const incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+insAnnuityTotal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(bondIntTotal_mg)+ri(secDrawTotal_mg)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg)+ri(zaikeiRedeemVal)+_disP+_sickV;
+    let incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+insAnnuityTotal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(bondIntTotal_mg)+ri(secDrawTotal_mg)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg)+ri(zaikeiRedeemVal)+_disP+_sickV;
     MR.incT.push(incTotal);
 
     // ── 支出（個別計算） ──
     // 生活費
     const normalLC=i<normalR.lc.length?normalR.lc[i]:0;
     let lcVal=normalLC;
-    const _mgLcFnV=(isEvt&&typeof window._mgLcFn==='function')?window._mgLcFn(MR.yr[i],targetIsH?wa:ha,normalLC):null;
+    const _mgLcFnV=(isEvt&&typeof window._mgLcFn==='function')?window._mgLcFn(MR.yr[i],_mgPersonAge,normalLC):null;
     if(_mgLcFnV!==null&&_mgLcFnV!==undefined){lcVal=ri(_mgLcFnV);}
     else if(isEvt){
       if(mgLCMode==='step'&&mgLCSteps.length>0){
@@ -1555,8 +1558,8 @@ function _renderContingencyInner(){
       if(isEvt && window._mgCars){
         const _mc=window._mgCars, _bdAll=normalR.carBd||[];
         (_bdAll[i]||[]).forEach(it=>{ if(_mc.release.includes(it.cid)) nCar-=(it.amount||0); });
-        if(i===deathYearOffset-1){ for(let j=i;j<_bdAll.length;j++)(_bdAll[j]||[]).forEach(it=>{ if(_mc.release.includes(it.cid)&&it.type==='loan') nCar+=(it.amount||0); }); }
-        const _sAgeC=targetIsH?wa:ha;
+        if(i===deathYearOffset-1){ const _stop=new Set(); for(let j=i;j<_bdAll.length;j++){ const its=_bdAll[j]||[]; if(j>i) its.forEach(it=>{ if(it.type==='buy') _stop.add(it.cid); }); its.forEach(it=>{ if(_mc.release.includes(it.cid)&&it.type==='loan'&&!_stop.has(it.cid)) nCar+=(it.amount||0); }); } }
+        const _sAgeC=_mgPersonAge;
         _mc.add.forEach(c=>{
           const k=i-(deathYearOffset-1)-(c.first-1); if(k<0)return;
           if(c.endAge>0&&_sAgeC>=c.endAge)return;
@@ -1738,6 +1741,7 @@ function _renderContingencyInner(){
       });
     }
     MR.secInvest.push(secInvVal);
+    if(_mgDis&&isEvt&&_mgDisCfg.stopInv) _mgStopInvCum+=Math.max(0,(normalR.secInvest[i]||0)-secInvVal);
 
     // 一括投資（生存者のみ）
     let secBuyVal=i<normalR.secBuy.length?normalR.secBuy[i]:0;
@@ -1813,15 +1817,22 @@ function _renderContingencyInner(){
       if(i>=iS){
         _mgSold=true;
         if(i===iS){
-          const bal=i>0?(MR.lBal[i-1]||0):0;  // 売却時のローン残高（前年末）
-          const price=(_mh.price===null||_mh.price===undefined||_mh.price==='')?bal:(+_mh.price||0);
+          // 売却時のローン残高（前年末）。1年目は借入額、万が一の年の売却は団信で消えた分を除く
+          let bal=i>0?(MR.lBal[i-1]||0):(active?((pairLoanMode||_mgFlatPair)?(lhAmt+lwAmt):loanAmt):0);
+          if(isEvtYear){
+            if(pairLoanMode||_mgFlatPair){ const hb=i>0?(MR.lBalH[i-1]||0):lhAmt, wb=i>0?(MR.lBalW[i-1]||0):lwAmt; bal=((targetIsH&&_mgDH)?0:hb)+((!targetIsH&&_mgDW)?0:wb); }
+            else if(_mgDS) bal=0;
+          }
+          const _pStr=String(_mh.price??'').replace(/[,，\s]/g,'');
+          const price=_pStr===''?bal:(+_pStr||0);
           const cost=_mh.costMode==='manual'?(+_mh.cost||0):ri(price*0.04);
           _mgHouseSaleVal=ri(price-cost-bal);
         }
         // 元の家：ローン返済・繰上返済・住宅ローン控除・管理費・固定資産税を止める
         lRep=0; MR.lRep[i]=0; MR.lRepH[i]=0; MR.lRepW[i]=0;
-        if(MR.lCtrl[i]){ MR.incT[i]-=MR.lCtrl[i]; MR.lCtrl[i]=0; }
+        if(MR.lCtrl[i]){ MR.incT[i]-=MR.lCtrl[i]; incTotal-=MR.lCtrl[i]; MR.lCtrl[i]=0; }
         MR.ptx[i]=0; MR.senyu[i]=0;
+        if(MR.chidai) MR.chidai[i]=0; if(MR.kaitai) MR.kaitai[i]=0;
         if(_mh.next!=='buy') MR.rep[i]=0;  // 購入した場合は修繕費・家具家電は元の家の設定を引き継ぐ
         if(_mh.next==='rent'){
           const k=i-iS, m=+_mh.rentMonthly||0;
@@ -1849,7 +1860,7 @@ function _renderContingencyInner(){
     }
     MR.houseSale=MR.houseSale||[]; MR.houseSale.push(_mgHouseSaleVal);
     MR.houseBuy=MR.houseBuy||[]; MR.houseBuy.push(_mgHouseBuyVal);
-    if(_mgHouseSaleVal) MR.incT[i]+=_mgHouseSaleVal;
+    if(_mgHouseSaleVal){ MR.incT[i]+=_mgHouseSaleVal; incTotal+=_mgHouseSaleVal; }
 
     // 財形積立（生存者のみ、死亡後は死亡者分を除外）
     let zaikeiExpVal=i<(normalR.zaikeiExp?.length||0)?(normalR.zaikeiExp[i]||0):0;
@@ -1922,8 +1933,9 @@ function _renderContingencyInner(){
       const _mgLwType=_mgFlatPair?($('flat-loan-w-type')?.value||'equal_payment'):(document.getElementById('loan-w-type')?.value||'equal_payment');
       let hLB=0,wLB=0;
       if(active){
-        if(!(isEvt&&targetIsH&&_mgDH)&&lhAmt>0&&lcYr<lhYrs)hLB=_mgLhType==='equal_payment'?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):lbal_gankin(lhAmt,lhYrs,lcYr+1);
-        if(!(isEvt&&!targetIsH&&_mgDW)&&lwAmt>0&&lcYr<lwYrs)wLB=_mgLwType==='equal_payment'?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):lbal_gankin(lwAmt,lwYrs,lcYr+1);
+        const _ppBH=window._prepaySchedules?.h, _ppBW=window._prepaySchedules?.w;   // 繰上返済があれば逐次計算の年末残高
+        if(!(isEvt&&targetIsH&&_mgDH)&&lhAmt>0&&lcYr<lhYrs)hLB=_ppBH?(_ppBH.yearEndBal[lcYr]??0):(_mgLhType==='equal_payment'?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):lbal_gankin(lhAmt,lhYrs,lcYr+1));
+        if(!(isEvt&&!targetIsH&&_mgDW)&&lwAmt>0&&lcYr<lwYrs)wLB=_ppBW?(_ppBW.yearEndBal[lcYr]??0):(_mgLwType==='equal_payment'?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):lbal_gankin(lwAmt,lwYrs,lcYr+1));
       }else{hLB=lhAmt;wLB=lwAmt;}
       lb=ri(Math.max(0,hLB+wLB));
       MR.lBalH.push(ri(Math.max(0,hLB)));MR.lBalW.push(ri(Math.max(0,wLB)));
@@ -1932,7 +1944,7 @@ function _renderContingencyInner(){
       
       const dansinClearsBalance=isEvt&&_mgDS;
       if(dansinClearsBalance){lb=0;}
-      else if(active){lb=ri(Math.max(0,loanType_mg==='equal_payment'?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr+1):lbal_gankin(loanAmt,loanYrs,lcYr+1)));}
+      else if(active){const _ppBS=window._prepaySchedules?.s; lb=ri(Math.max(0,_ppBS?(_ppBS.yearEndBal[lcYr]??0):(loanType_mg==='equal_payment'?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr+1):lbal_gankin(loanAmt,loanYrs,lcYr+1))));}
       else{lb=ri(loanAmt);}
       MR.lBalH.push(0);MR.lBalW.push(0);
     }
@@ -1962,6 +1974,7 @@ function _renderContingencyInner(){
         if(liq.year<=i) _mgFinLiqReduction += liq.gross*Math.pow(1+s.rate, i-liq.year);
       }
     });
+    if(_mgStopInvCum>0){ mgFinAsset=Math.max(0,mgFinAsset-_mgStopInvCum); mgFinAssetBase=Math.max(0,mgFinAssetBase-_mgStopInvCum); }
     if(_mgFinLiqReduction>0){
       mgFinAsset = Math.max(0, mgFinAsset - _mgFinLiqReduction);
       mgFinAssetBase = Math.max(0, mgFinAssetBase - _mgFinLiqReduction);
@@ -1997,7 +2010,7 @@ function _renderContingencyInner(){
     //   Pass2の収入再計算は secRedeemRows（個別行）を別途加算しており、集計も足すと
     //   セル上書きがあるCF表で解約金が2倍計上されていた（通常CFのincKeysと同じ方式に統一）。
     const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq','houseSale','disPension','sickBenefit'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','moveInCost','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax','houseBuy'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','moveInCost','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax','houseBuy','retireTax','prepayExp'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR[key]&&c2<MR[key].length)MR[key][c2]=val;});
@@ -2342,13 +2355,14 @@ function _renderContingencyInner(){
   // mgRow: normalArr比較でハイライト + contenteditable + mgOverrides対応
   const _mgHasExplain=(typeof isExplainEnabled==='function')?isExplainEnabled:(()=>false);
   const _mgExplainIcon=(typeof explainIconHtml==='function')?explainIconHtml:(()=>'');
+  const _mgEsc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const mgRow=(lbl,arr,normalArr,rowKey)=>{
     let tot=0;for(let i2=0;i2<mgDisp;i2++){const ov=mgOverrides[rowKey]?.[i2];tot+=(ov!==undefined?ov:(arr[i2]||0));}
     const nTot=normalArr?normalArr.slice(0,mgDisp).reduce((a,b)=>a+b,0):0;
     if(tot===0&&nTot===0)return'';
     const dl=_rl('mg-'+rowKey,lbl);
     const _exp=_mgHasExplain(rowKey);
-    let r=`<tr class="rinc"><td></td><td ${_ce} data-rowlbl="mg-${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" ${_kd}>${dl}</td>`;
+    let r=`<tr class="rinc"><td></td><td ${_ce} data-rowlbl="mg-${rowKey}" data-default="${_mgEsc(lbl)}" onblur="rowLabelEdit(this)" ${_kd}>${_mgEsc(dl)}</td>`;
     for(let i2=0;i2<mgDisp;i2++){
       const ov=mgOverrides[rowKey]?.[i2];const v=ov!==undefined?ov:(arr[i2]||0);const nv=normalArr?(normalArr[i2]||0):0;
       const changed=normalArr&&v!==nv;const isOvr=ov!==undefined;
@@ -2416,7 +2430,7 @@ function _renderContingencyInner(){
     const nTot=normalArr?normalArr.slice(0,mgDisp).reduce((a,b)=>a+b,0):0;
     if(tot===0&&nTot===0)return'';
     const dl=_rl('mg-'+rowKey,lbl);
-    let r=`<tr class="rexp"><td></td><td ${_ce} data-rowlbl="mg-${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" ${_kd}>${dl}</td>`;
+    let r=`<tr class="rexp"><td></td><td ${_ce} data-rowlbl="mg-${rowKey}" data-default="${_mgEsc(lbl)}" onblur="rowLabelEdit(this)" ${_kd}>${_mgEsc(dl)}</td>`;
     for(let i2=0;i2<mgDisp;i2++){
       const ov=mgOverrides[rowKey]?.[i2];const v=ov!==undefined?ov:(arr[i2]||0);const nv=normalArr?(normalArr[i2]||0):0;
       const changed=normalArr&&v!==nv;const isOvr=ov!==undefined;

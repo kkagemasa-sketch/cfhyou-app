@@ -240,6 +240,27 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     if(!X.back) f4.push('出力のあと元のタブに戻っていない');
     if(f4.length){ bad++; console.log('❌ 万が一 まとめてExcel\n   - '+f4.join('\n   - ')); }
     else console.log(`✅ 万が一 まとめてExcel: タブごとのシート（${X.cap.sheets.join('・')}）・ページ設定・元のタブに戻る`);
+
+    /* ---- 別タブの保険金が紛れ込まない（新しい障害タブ・保険を全部消したタブ） ---- */
+    await page.evaluate(pageBaseSetup);
+    const I=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      live(true); await wait(1000);
+      setRTab('cf'); mgQA_addTab('h','death'); const a=mgQA_tabs[mgQA_tabs.length-1];
+      a.state.insurances=[{type:'lump',name:'終身',amount:3000}]; mgQA_switchTab(a.id);
+      mgQA_addTab('h','dis1'); const b=mgQA_tabs[mgQA_tabs.length-1];
+      const disIns=(b.state.insurances||[]).filter(x=>x&&x.type!=='none').length;
+      const disPay=Math.round((window.lastMR.insPayArr||[]).reduce((s,v)=>s+v,0));
+      mgQA_switchTab(a.id); window.confirm=()=>true; mgQA_removeIns(a.id,0);
+      const after=(a.state.insurances||[]).filter(x=>x&&x.type!=='none').length;
+      const aPay=Math.round((window.lastMR.insPayArr||[]).reduce((s,v)=>s+v,0));
+      return {disIns,disPay,after,aPay};
+    });
+    const f5=[];
+    if(I.disIns!==0||I.disPay!==0) f5.push(`障害タブに死亡タブの保険が入った（${I.disIns}件・${I.disPay}万円）`);
+    if(I.after!==0||I.aPay!==0) f5.push(`保険を削除しても戻ってくる（${I.after}件・${I.aPay}万円）`);
+    if(f5.length){ bad++; console.log('❌ 保険金の紛れ込み\n   - '+f5.join('\n   - ')); }
+    else console.log('✅ 保険金: 新しい障害タブ・全部削除したタブに別タブの保険が紛れ込まない');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

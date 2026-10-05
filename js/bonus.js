@@ -86,10 +86,12 @@ function setBonusMode(p,mode){
   const el=document.getElementById(`${p}-bonus-mode`); if(!el)return;
   el.value=mode==='months'?'months':'amt';
   updateBonusUI();
+  if(typeof live==='function') live(true);
   if(typeof scheduleAutoSave==='function')scheduleAutoSave();
 }
 function onBonusInput(){
   updateBonusUI();
+  if(typeof live==='function') live();   // 障害タブの傷病手当金に効くため再計算
   if(typeof scheduleAutoSave==='function')scheduleAutoSave();
 }
 function updateBonusUI(){

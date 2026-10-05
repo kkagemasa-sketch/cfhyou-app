@@ -30,7 +30,7 @@ const MGQA_KINDS = ['death','dis1','dis2'];
 function mgQA_addTab(target, kind){
   mgQA_counter[target]++;
   const id = `mgqa-${target}-${Date.now()}`;
-  const label = target==='h'?'ご主人様':'奥様';
+  const label = target==='h'?(householdType==='single'?'ご本人':'ご主人様'):'奥様';
   const n = mgQA_counter[target];
   const _k = MGQA_KINDS.includes(kind) ? kind : 'death';
   const _sameKind = mgQA_tabs.filter(t=>t.target===target&&(t.kind||'death')===_k).length + 1;
@@ -105,12 +105,8 @@ function mgQA_buildDefaultState(target){
     // ★ 既存タブから複製した場合でも、insurances がデフォルト（type:none のみ）の場合は
     //   通常CFセッションの mg-insurance-cont に入力済みの個人年金/死亡保険金を取り込む
     //   （これをしないと、通常CFで入れた保険が Q&Aタブ作成時に消える）
-    const _isInsEmpty = !Array.isArray(cloned.insurances) ||
-                        cloned.insurances.every(x=>!x||x.type==='none');
-    if(_isInsEmpty){
-      const _legacy = _mgQA_collectLegacyInsurances();
-      if(_legacy.length>0) cloned.insurances = _legacy;
-    }
+    // ★ 以前は保険が空のとき裏の旧入力欄から取り込んでいたが、直前に表示した別タブの保険が
+    //   紛れ込むため廃止（新しいタブの最初の1枚だけ、下の初期値で旧データを取り込む）
     return cloned;
   }
   // 通常CFから車・駐車場の現在設定を読込
@@ -245,6 +241,7 @@ function mgQA_renderTabs(){
 function mgQA_switchTab(id){
   const tab = mgQA_tabs.find(t=>t.id===id);
   if(!tab) return;
+  clearTimeout(window._mgQA_debTimer);   // 前のタブの計算予約（入力から0.6秒後）を取り消す
 
   // 前のタブの上書きを書き戻してから、このタブの上書きに切り替える
   mgQA_stashOverrides();
@@ -443,13 +440,8 @@ function mgQA_applyStateToDOM(tab){
     // ★ 防御: tab.state.insurances が空（type:'none'のみ）の場合に、
     //   通常CF側 mg-insurance-cont に既に入力されている個人年金/保険金があれば
     //   それを Q&A state に取り込んでから処理する（データ消失を防ぐ）
-    const _allNone = !Array.isArray(s.insurances) || s.insurances.every(x=>!x||x.type==='none');
-    if(_allNone){
-      const _legacy = _mgQA_collectLegacyInsurances();
-      if(_legacy.length>0){
-        s.insurances = _legacy;
-      }
-    }
+    // ★ 空のときに裏の旧入力欄から取り込む処理は廃止（別タブの保険が紛れ込む不具合のため）
+    if(!Array.isArray(s.insurances)) s.insurances = [];
     insCont.innerHTML = '';
     // mgInsCnt は contingency.js で `let` 宣言されたグローバル変数（window非経由）
     // addMGInsurance() が ++mgInsCnt して新ID生成するので、カウンタはそのまま使う
@@ -706,6 +698,8 @@ function mgQA_hideLeftPanel(){
   window._mgEduDelta = null;
   window._mgCars = null;
   window._mgKind = null;
+  window._mgNeedYears = 3;
+  window._mgKindColor = null;
   window._mgDisCfg = null;
   window._mgSelfIncFn = null;
   window._mgScholarAt = null;
@@ -782,7 +776,8 @@ function mgQA_renameTab(id, newName){
 function mgQA_buildPanel(tab){
   const s = tab.state;
   const target = tab.target;
-  const deceased = target==='h' ? 'ご主人様' : '奥様';
+  const _single = householdType==='single';
+  const deceased = target==='h' ? (_single?'ご本人':'ご主人様') : '奥様';
   const spouse = target==='h' ? '奥様' : 'ご主人様';
 
   // 通常CF表からの参照値（読み取り専用ヒント用）
@@ -895,7 +890,7 @@ function mgQA_buildPanel(tab){
       <div class="hint">${s.pensionMode==='manual'?'手入力の金額を万が一の年から毎年受け取る形で計算します':`${deceased}の年収・加入期間とお子様の年齢から自動で計算します（${survHint}）`}</div>
     `)}
 
-    ${card('income','inc','人',`${spouse}の収入`, mgQA_incomeCard(tab))}
+    ${_single ? '' : card('income','inc','人',`${spouse}の収入`, mgQA_incomeCard(tab))}
 
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
     ${card('lc','exp','生','生活費', mgQA_lcCard(tab))}
@@ -924,6 +919,7 @@ window.mgQA_toggleCard=mgQA_toggleCard;
 function mgQA_setIzoku(tabId, mode){
   const sel = document.getElementById('izoku-mode');
   if(sel){ sel.value = mode; }
+  if(typeof scheduleAutoSave==='function') scheduleAutoSave();
   const tab = mgQA_tabs.find(t=>t.id===tabId);
   if(tab){ mgQA_switchTab(tabId); }
 }
@@ -1146,6 +1142,7 @@ function mgQA_setState(tabId, key, value, opts){
   } else {
     mgQA_calcAndRender(tab, false);
   }
+  if(typeof scheduleAutoSave==='function') scheduleAutoSave();
 }
 
 // --- 住居段階UI ---
@@ -1654,7 +1651,7 @@ function mgQA_renderIns(tabId, idx, ins){
   const st = tab?.state || {};
   const isAnn = ins.type==='annuity';
   const deceased = tab?.target==='h' ? 'ご主人様' : '奥様';
-  const survivor = tab?.target==='h' ? '奥様' : 'ご主人様';
+  const survivor = (tab&&(tab.kind==='dis1'||tab.kind==='dis2')) ? deceased : (householdType==='single' ? 'ご遺族' : (tab?.target==='h' ? '奥様' : 'ご主人様'));
   const hAgeNow = mgQA_iv('husband-age') || 30;
   const deathHAge = hAgeNow + (st.deathYear||1) - 1;
   const seg = (v,label) => `<button type="button" class="${ins.type===v?'on':''}" onclick="mgQA_setState('${tabId}','insurances.${idx}.type','${v}',{rebuild:true})">${label}</button>`;

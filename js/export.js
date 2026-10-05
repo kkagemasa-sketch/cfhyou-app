@@ -287,16 +287,17 @@ async function exportExcelMG(opt){
   const _deathAgeForTitle = targetIsH
     ? (hAge + (iv('mg-death-year')||1) - 1)
     : (wAge + (iv('mg-death-year')||1) - 1);
-  const mgLabel = `${targetLabel} 万が一（${_deathAgeForTitle}歳逝去）`;
+  const mgLabel = `${targetLabel} 万が一（${_deathAgeForTitle}歳${MR._isDis?(MR._evLbl||'障害'):'逝去'}）`;
   const titleRow=[`${clientName} 様`,'',isM?'マンション':'戸建て','',mgLabel];
   while(titleRow.length<disp+3)titleRow.push('');
   push(titleRow,'title');
 
   // ★ B3修正: アプリ画面の万一CFサマリーで最大の売りである「必要保障額」を
   //   Excel にも 1行 info として出力する。営業資料での印象が大きく変わる。
-  const _needCov = MR.needCoverage || 0;
-  if(_needCov > 0){
-    const needRow = ['必要保障額','',`${_needCov.toLocaleString()}万円`];
+  // 画面の3枚カード（最低限・標準・安心）と同じ値
+  const _nd = MR.need;
+  if(_nd){
+    const needRow = ['必要保障額','',`最低限 ${_nd.min.toLocaleString()}万円 ／ 標準（生活費${_nd.years}年分） ${_nd.std.toLocaleString()}万円 ／ 安心 ${_nd.safe.toLocaleString()}万円`];
     while(needRow.length < disp+3) needRow.push('');
     push(needRow, 'info');
   }
@@ -544,7 +545,7 @@ async function exportExcelMG(opt){
   //   行単位で食い違っていた。MR.pTotalH/pTotalW は contingency.js で合算済み（pS+survPH等）。
   addISkip('ご主人様年金受給額', MR.pTotalH, N.pTotalH);
   addISkip('奥様年金受給額', MR.pTotalW, N.pTotalW);
-  addISkip((MR.insAnnuityRows&&MR.insAnnuityRows.length>0)?'死亡保険金(一時金)':'死亡保険金',MR.insPayArr);  // 画面と同じ行名
+  addISkip(_rl('mg-insPayArr',(MR.insAnnuityRows&&MR.insAnnuityRows.length>0)?'死亡保険金(一時金)':'死亡保険金'),MR.insPayArr);  // 画面と同じ行名
   // 年金型保険（個別行：実額がある契約のみ）
   if(MR.insAnnuityRows&&MR.insAnnuityRows.length>0){
     MR.insAnnuityRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.name||'年金型保険',row.vals);});
@@ -563,9 +564,9 @@ async function exportExcelMG(opt){
   addISkip('奨学金',MR.scholarship,N.scholarship);
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
-  if(MR.sickBenefit&&MR.sickBenefit.some(v=>v>0)) addI('傷病手当金',MR.sickBenefit);
-  if(MR.disPension&&MR.disPension.some(v=>v>0)) addI('障害年金',MR.disPension);
-  if(MR.houseSale&&MR.houseSale.some(v=>v!==0)) addI('住宅売却（売却額−費用−残債）',MR.houseSale);
+  if(MR.sickBenefit&&MR.sickBenefit.some(v=>v>0)) addI(_rl('mg-sickBenefit','傷病手当金'),MR.sickBenefit);
+  if(MR.disPension&&MR.disPension.some(v=>v>0)) addI(_rl('mg-disPension','障害年金'),MR.disPension);
+  if(MR.houseSale&&MR.houseSale.some(v=>v!==0)) addI(_rl('mg-houseSale','住宅売却（売却額−費用−残債）'),MR.houseSale);
   // 自動資産取崩し（万一CF用）
   if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) addI('自動資産取崩し',MR.autoLiq);
   mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addI(r.label,vals);});
@@ -586,7 +587,7 @@ async function exportExcelMG(opt){
   };
   addE(_rl('mg-lc','生活費'),MR.lc);
   addESkip(_rl('mg-rent',(window._mgHouse&&window._mgHouse.sell&&window._mgHouse.next==='rent')?'家賃':'家賃（引渡前）'),MR.rent,null);
-  if(MR.houseBuy&&MR.houseBuy.some(v=>v>0)) addE('住み替え購入（頭金・諸費用）',MR.houseBuy);
+  if(MR.houseBuy&&MR.houseBuy.some(v=>v>0)) addE(_rl('mg-houseBuy','住み替え購入（頭金・諸費用）'),MR.houseBuy);
   addESkip(_rl('mg-moveInCost','引越・家具家電'),MR.moveInCost,null);
   if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(ご主人様)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
   else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
@@ -2449,12 +2450,14 @@ async function exportExcelMGTabs(ids){
     if(!confirm('お客様氏名が未入力です。このまま出力しますか？')){ document.getElementById('client-name')?.focus(); return; }
   }
   const act = window._mgQA_activeTabId;
-  const wb = XLSX.utils.book_new(), names = [], scales = [];
+  const wb = XLSX.utils.book_new(), names = [], scales = [], used = ['ご確認事項'];
   try{
     for(const id of list){
       const t = mgQA_tabs.find(x=>x.id===id); if(!t) continue;
+      window.lastMR = null;
       mgQA_switchTab(id);   // 計算（即時）して、そのタブの結果で1シート作る
-      const nm = _mgSheetName(t.name, names);
+      if(!window.lastMR || window._mgQA_activeTabId!==id){ alert(`「${t.name}」を計算できなかったため出力から外しました`); continue; }
+      const nm = _mgSheetName(t.name, used); names.push(nm);
       const r = await exportExcelMG({wb, sheetName:nm, MR:window.lastMR, targetIsH:t.target==='h', noWrite:true});
       scales.push(r&&r.scale||100);
     }

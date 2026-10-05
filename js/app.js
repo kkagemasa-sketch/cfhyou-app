@@ -279,7 +279,7 @@ document.addEventListener('keydown',function(e){
       ovr[rowKey][col]=_srcVal;
     });
     _preview=[];
-    if(_srcTd){pushUndoSnap();if(isMG)renderContingency();else render();}
+    if(_srcTd){pushUndoSnap();if(isMG)_mgRecalcActive();else render();}
     _srcTd=null;
     _fhMousePos=null;
   }
@@ -489,7 +489,7 @@ document.addEventListener('keydown',function(e){
     _clearSel();
     _anchorTd=null;
     pushUndoSnap();
-    if(hasMG)renderContingency();else render();
+    if(hasMG)_mgRecalcActive();else render();
   });
 
   // Escで選択解除
@@ -513,3 +513,14 @@ document.addEventListener('keydown',function(e){
     secJump.style.display=kbVisible?'none':origDisplay;
   });
 })();
+
+
+// 万が一CF表の再計算：Q&Aタブを表示中ならそのタブの設定で（直接 renderContingency を呼ぶと
+// タブの設定・上書きが外れて、入力した値が消えるため）
+function _mgRecalcActive(){
+  if(window._mgQA_activeTabId && typeof mgQA_tabs!=='undefined'){
+    const t=mgQA_tabs.find(x=>x.id===window._mgQA_activeTabId);
+    if(t && typeof mgQA_calcAndRender==='function'){ mgQA_calcAndRender(t,true); return; }
+  }
+  renderContingency();
+}

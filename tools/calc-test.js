@@ -478,6 +478,63 @@ const SCENARIOS = {
     setRTab('cf'); mgQA_addTab('w','dis2'); const t=mgQA_tabs[mgQA_tabs.length-1];
     Object.assign(t.state,{deathYear:2,stopIns:true}); mgQA_calcAndRender(t,true);
   },
+  'M25_夫死亡_万が一の年に売却_団信で完済済み': function(){
+    // 団信で完済された年に売る → 残債は引かない（売却4000−費用160＝3840）
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:3,houseAfter:'sell',hSellYr:1,hPrice:'4,000',hNext:'rent',hRent:8,hRenew:0});
+  },
+  'M26_夫死亡_将来車ローン中を手放す': function(){
+    // 将来車（7年ごと・ローン5年）を手放す：今のローンの残りだけ精算し、次の買い替え分は含めない
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    setCarOwn(true);
+    addCar({label:'家族車',owner:'share',type:'new',pay:'loan',price:'300',first:'1',cycle:'7',insp:'10',down:'50',loanYrs:'5',loanRate:'2.0'});
+    calcLoanAmt();
+    const cid='car-'+document.querySelector('#car-list>[id^="car-"]').id.replace('car-','');
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    const rel={}; rel[cid]=true;
+    mg('h',{deathYear:3,houseAfter:'stay',carRelease:rel});
+  },
+  'D3_夫障害2級_退職後に発病': function(){
+    // 60歳退職・62歳で障害2級 → 障害厚生・配偶者加給なし、障害基礎（65歳前）のみ
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    setRTab('cf'); mgQA_addTab('h','dis2'); const t=mgQA_tabs[mgQA_tabs.length-1];
+    Object.assign(t.state,{deathYear:33}); mgQA_calcAndRender(t,true);
+  },
+  'D4_夫障害1級_積立投資を止める': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    addSecurity('h');
+    const els=document.querySelectorAll('[id^="sec-bal-h-"]'); const sid=els[els.length-1].id.split('-').pop();
+    document.getElementById(`sec-acc-h-${sid}`)?.classList.add('on');
+    document.getElementById(`sec-bal-h-${sid}`).value=100;
+    document.getElementById(`sec-monthly-h-${sid}`).value=3;
+    document.getElementById(`sec-rate-h-${sid}`).value=0;
+    setRTab('cf'); mgQA_addTab('h','dis1'); const t=mgQA_tabs[mgQA_tabs.length-1];
+    Object.assign(t.state,{deathYear:3,stopInv:true}); mgQA_calcAndRender(t,true);
+  },
   'M8_夫死亡_賃貸へ_奨学金': function(){
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
