@@ -540,36 +540,11 @@ function mgQA_applyStateToDOM(tab){
     }
   }
 
-  // 住居（keep/danshin/rent/stages）— window._mgHousingStages に統一して渡す
-  // 'stages' 以外の単一モードは単一ステージに変換
-  let stages;
-  if(s.houseMode === 'stages' && Array.isArray(s.houseStages)){
-    stages = s.houseStages
-      .map(st => ({
-        yearsAfterDeath: Math.max(1, parseInt(st.yearsAfterDeath)||1),
-        mode: ['keep','danshin','rent'].includes(st.mode) ? st.mode : 'keep',
-        rentAmt: parseFloat(st.rentAmt)||0
-      }))
-      .sort((a,b)=>a.yearsAfterDeath-b.yearsAfterDeath);
-  } else if(s.houseMode === 'rent'){
-    stages = [{yearsAfterDeath:1, mode:'rent', rentAmt: s.houseNewRent||0}];
-  } else if(s.houseMode === 'danshin'){
-    stages = [{yearsAfterDeath:1, mode:'danshin', rentAmt:0}];
-  } else {
-    // 'keep' or default
-    stages = [{yearsAfterDeath:1, mode:'keep', rentAmt:0}];
-  }
-  window._mgHousingStages = stages;
-  // 1つ目のステージが団信完済 or 売却・賃貸 ならローンを完済する想定で団信ON
-  // (stagesによる多段階処理は未実装のため、最初のステージで判定)
-  if(typeof setMGDansin === 'function'){
-    const firstStage = stages[0] || {};
-    const clearsLoan = (firstStage.mode === 'danshin' || firstStage.mode === 'rent');
-    setMGDansin(clearsLoan);
-    // ペアローンは本人ごとのスイッチ（mgDansinH/W）を計算が参照するため、同じ選択を伝える
-    // （以前は単独用だけ設定され、ペアローンで「ローン継続」を選んでも死亡者のローンが消えていた）
-    if(typeof setMGDansinPair === 'function'){ setMGDansinPair('h', clearsLoan); setMGDansinPair('w', clearsLoan); }
-  }
+  // 住まい：その後の住まいを渡す。死亡タブの団信は選ばせない（⑤住宅の名義人・一般団信で自動）
+  window._mgHousingStages = null;
+  window._mgHouse = (typeof mgC_house==='function') ? mgC_house(s) : null;
+  if(typeof setMGDansin === 'function') setMGDansin(true);
+  if(typeof setMGDansinPair === 'function'){ setMGDansinPair('h', true); setMGDansinPair('w', true); }
 
   // 車・駐車場の継承フラグを contingency.js に伝える
   // true=通常CF設定をそのまま使う / false=Q&A詳細設定を使う
@@ -716,6 +691,7 @@ function mgQA_hideLeftPanel(){
   window._mgLcFn = null;
   window._mgScholarshipItems = [];
   window._mgHousingStages = null;
+  window._mgHouse = null;
 }
 
 // --- 既存 setRTab をラップ：通常タブに切替えられたら左Q&Aを隠す ---
@@ -905,26 +881,7 @@ function mgQA_buildPanel(tab){
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
     ${card('lc','exp','生','生活費', mgQA_lcCard(tab))}
 
-    ${card('house','exp','家','住まいとローン',`
-      <div class="hint" style="margin-bottom:6px">団信加入ローンの場合は完済、賃貸への引越しや段階的切替も可能</div>
-      <div class="fg">
-        <label class="lbl">住居モード</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${tog('houseMode','keep','現状維持(ローン継続)')}
-          ${tog('houseMode','danshin','団信で完済')}
-          ${tog('houseMode','rent','売却・賃貸')}
-          ${tog('houseMode','stages','段階的に変更')}
-        </div>
-      </div>
-      <div class="g2" style="margin-top:6px;${s.houseMode==='rent'?'':'display:none'}" data-cond="houseMode:rent">
-        <div class="fg"><label class="lbl">新しい家賃</label>
-          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.houseNewRent||8}" data-k="houseNewRent" data-cf-row="rent" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">万/月</span></div>
-        </div>
-      </div>
-      <div style="margin-top:6px;${s.houseMode==='stages'?'':'display:none'}" data-cond="houseMode:stages">
-        ${mgQA_buildHouseStages(tab)}
-      </div>
-    `)}
+    ${card('house','exp','家','住まいとローン', mgQA_houseCard(tab))}
 
     ${card('edu','exp','学','教育（奨学金）',`
       <div class="hint" style="margin-bottom:6px">高校入学時(16歳)・大学入学時(19歳)のタイミングでお子様ごとに設定</div>
@@ -1122,8 +1079,11 @@ function mgQA_cardSummary(tab, key){
       if(s.lcMode==='steps') return {changed:true, v:'期間ごと', sub:(s.lcStepsSub==='normal')?'通常の期間をもとに':`${(s.lcFree||[]).length}期間`};
       return {changed:(+s.lcRatio||100)!==100, v:`通常の${s.lcRatio||100}%`};
     case 'house': {
-      const L = {keep:'ローン継続', danshin:'団信で完済', rent:'売却・賃貸', stages:'段階的に変更'};
-      return {changed: s.houseMode!=='keep', v: L[s.houseMode]||'ローン継続', sub: s.houseMode==='rent'?`家賃 月${s.houseNewRent||8}万円`:''};
+      const hs = mgC_house(s);
+      const dan = mgC_dansinText(tab).short;
+      if(!hs.sell) return {changed:false, v:'住み続ける', sub:dan};
+      const nx = hs.next==='rent'?`賃貸 家賃${hs.rentMonthly}万円`:hs.next==='buy'?`${mgC_man((hs.buy||{}).price)}の家を購入`:'実家など';
+      return {changed:true, v:`${hs.sellYr}年目に売却`, sub:nx};
     }
     case 'edu':
       return s.scholarshipEnabled ? {changed:true, v:'奨学金あり'} : {changed:false, v:'変えない'};

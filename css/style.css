@@ -1750,3 +1750,12 @@ table.cf td.vz{color:#b6c0cc}
 .mgqa-nt .split{font-family:inherit;font-size:9.5px;border:1px dashed #94a3b8;background:#fff;border-radius:5px;padding:0 4px;color:#475569;cursor:pointer}
 .mgqa-linkbtn{font-family:inherit;font-size:10.5px;color:#3459ca;background:none;border:0;padding:4px 0;cursor:pointer;text-decoration:underline}
 .mgqa-nt small{font-size:9.5px;font-weight:600}
+.mgqa-step{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:#1e3a5f;margin:4px 0 6px}
+.mgqa-step .no{width:18px;height:18px;border-radius:50%;background:#1e3a5f;color:#fff;display:grid;place-items:center;font-size:10.5px}
+.mgqa-sub{font-size:11.5px;font-weight:800;color:#475569;margin:10px 0 5px;border-top:1px dashed #e2e8f0;padding-top:8px}
+.mgqa-auto{display:flex;gap:9px;align-items:flex-start;border-radius:9px;padding:8px 10px;margin-bottom:10px}
+.mgqa-auto.ok{background:#eef7f1;border:1px solid #bbf7d0}
+.mgqa-auto.ng{background:#fff7ed;border:1px solid #fed7aa}
+.mgqa-auto .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;color:#fff;font-weight:800;font-size:12px}
+.mgqa-auto.ok .ic{background:#0f9d58} .mgqa-auto.ng .ic{background:#ea580c}
+.mgqa-auto b{font-size:12.5px;color:#1f2937} .mgqa-auto small{display:block;font-size:10.5px;color:#475569;margin-top:2px}

@@ -173,8 +173,8 @@ const SCENARIOS = {
     const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
     mg('w',{deathYear:5,houseMode:'keep',lcRatio:80});
   },
-  'M3_夫死亡_ペア_ローン継続': function(){
-    // 不具合1の再発防止: ペアローン＋住居「ローン継続」で死亡者のローンが残ること
+  'M3_夫死亡_ペア_自動判定': function(){
+    // ペアローン：亡くなった方のローンだけ⑤の一般団信で完済、もう一方は続く（死亡タブで団信は選ばない）
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
     $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=0;
@@ -384,6 +384,42 @@ const SCENARIOS = {
     calcLoanAmt();
     const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
     mg('h',{deathYear:2,houseMode:'danshin',lcMode:'same'});
+  },
+  'M20_夫死亡_3年目に売却して賃貸': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    $('loan-dansin').value='no'; syncLoanDansinUI();  // 団信なし→売却時に残債を精算
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:3,houseAfter:'sell',hSellYr:3,hPrice:'3500',hCostMode:'auto',hNext:'rent',hRent:10,hRenew:1});
+  },
+  'M21_夫死亡_売却して購入_ローンあり': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:2,houseAfter:'sell',hSellYr:2,hPrice:'3800',hCostMode:'manual',hCost:120,hNext:'buy',
+      hBuy:{price:2500,down:1000,cost:'200',loan:'yes',yrs:20,rate:1.0,mgmt:2.5,ptx:10}});
+  },
+  'M22_妻死亡_売却して実家へ_ペア': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+    $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=0;
+    setCostType('cash'); setDownType('own');
+    $('loan-h-amt').value=3000; $('loan-w-amt').value=1500;
+    $('loan-h-yrs').value=35; $('loan-w-yrs').value=30;
+    $('rate-h-base').value=0.6; $('rate-w-base').value=0.7;
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('w',{deathYear:3,houseAfter:'sell',hSellYr:5,hPrice:'',hNext:'family'});
   },
   'M8_夫死亡_賃貸へ_奨学金': function(){
     const $=id=>document.getElementById(id);

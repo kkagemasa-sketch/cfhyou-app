@@ -9,7 +9,7 @@
 const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('./edge-harness');
 
 /* ページ内: シナリオ適用は呼び出し側で。画面行とExcel行を収集して比較 */
-async function pageCollectAndDiff(){
+async function pageCollectAndDiff(isMG){
   // ダイアログでヘッドレスが固まらないよう無効化（氏名未入力confirm等）
   window.alert=()=>{}; window.confirm=()=>true; window.prompt=()=>null;
   const disp=window.lastDisp||60;
@@ -44,7 +44,7 @@ async function pageCollectAndDiff(){
   XLSX.utils.aoa_to_sheet=function(rows){ if(!window.__aoaCaptured)window.__aoaCaptured=JSON.parse(JSON.stringify(rows)); return origAoa.apply(this,arguments); };
   XLSX.writeFile=function(){ /* ファイルは書かない */ };
   let excelErr=null;
-  try{ await exportExcel(); }catch(e){ excelErr=e.message; }
+  try{ await (isMG?exportExcelMG():exportExcel()); }catch(e){ excelErr=e.message; }
   XLSX.utils.aoa_to_sheet=origAoa; XLSX.writeFile=origWrite;
   const excel=[];
   (window.__aoaCaptured||[]).forEach(row=>{
@@ -82,6 +82,7 @@ async function pageCollectAndDiff(){
   excel.forEach((er,i)=>{
     if(excelUsed.has(i))return;
     if(INFO_ROWS.some(p=>er.label.startsWith(p)))return;
+    if(/ 様$/.test(er.label))return;  // 万が一Excelの見出し行（お客様名）
     if(er.vals.some(v=>v!==0))onlyExcel.push(er.label);
   });
   return {excelErr, screenRows:screen.length, excelRows:excel.length, diffs, onlyScreen, onlyExcel};
@@ -148,13 +149,43 @@ async function pageCollectAndDiff(){
         addExistingCar({label:'ご主人様車',owner:'h',type:'new',pay:'loan',boughtAgo:'2',price:'350',endYrs:'10',insp:'12',down:'50',loanYrs:'5',loanRate:'2.0'});
         addCar({label:'奥様車',owner:'w',type:'new',pay:'cash',price:'250',first:'3',cycle:'7',insp:'10'});
       },
+      // ── 万が一CF表（Q&Aタブ）：画面とExcel(exportExcelMG)の照合 ──
+      '万が一_夫死亡_保険金・生活費70%': {mg:true, fn:function(){
+        const $=id=>document.getElementById(id);
+        setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+        $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+        setCostType('cash'); $('loan-yrs').value=35; $('rate-base').value=0.5; calcLoanAmt();
+        setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
+        Object.assign(t.state,{deathYear:3,insurances:[{type:'lump',amount:1000},{type:'annuity',name:'収入保障',monthly:10,endAge:60,endBy:'insured'}]});
+        mgQA_calcAndRender(t,true);
+      }},
+      '万が一_夫死亡_売却して賃貸': {mg:true, fn:function(){
+        const $=id=>document.getElementById(id);
+        setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+        $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+        setCostType('cash'); $('loan-yrs').value=35; $('rate-base').value=0.5;
+        $('loan-dansin').value='no'; syncLoanDansinUI(); calcLoanAmt();
+        setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
+        Object.assign(t.state,{deathYear:3,houseAfter:'sell',hSellYr:3,hPrice:'3500',hNext:'rent',hRent:10,hRenew:1,incomeMode:'pct',incPctDir:'down',incPctAbs:20});
+        mgQA_calcAndRender(t,true);
+      }},
+      '万が一_妻死亡_売却して購入_ペア': {mg:true, fn:function(){
+        const $=id=>document.getElementById(id);
+        setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+        $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=0;
+        setCostType('cash'); $('loan-h-amt').value=3000; $('loan-w-amt').value=1500; calcLoanAmt();
+        setRTab('cf'); mgQA_addTab('w'); const t=mgQA_tabs[mgQA_tabs.length-1];
+        Object.assign(t.state,{deathYear:2,houseAfter:'sell',hSellYr:2,hPrice:'4200',hNext:'buy',hBuy:{price:2500,down:1000,cost:'200',loan:'yes',yrs:20,rate:1,mgmt:2,ptx:8},lcMode:'steps',lcStepsSub:'free',lcFree:[{ageFrom:30,ageTo:'',val:75}]});
+        mgQA_calcAndRender(t,true);
+      }},
     };
     let anyBad=false;
-    for(const [name,setup] of Object.entries(SCN)){
+    for(const [name,sc] of Object.entries(SCN)){
+      const isMG=typeof sc==='object'&&sc.mg;
       await page.evaluate(pageBaseSetup);
-      await page.evaluate(setup);
-      await page.evaluate('render()');
-      const r=await page.evaluate(pageCollectAndDiff);
+      await page.evaluate(isMG?sc.fn:sc);
+      if(!isMG) await page.evaluate('render()');
+      const r=await page.evaluate(pageCollectAndDiff, !!isMG);
       const bad=(r.diffs.length||r.onlyScreen.length||r.onlyExcel.length||r.excelErr);
       console.log(`\n=== ${name} === 画面${r.screenRows}行 / Excel${r.excelRows}行 ${bad?'❌':'✅一致'}`);
       if(r.excelErr)console.log('  Excel出力が例外:', r.excelErr);

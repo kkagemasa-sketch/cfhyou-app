@@ -408,3 +408,107 @@ function mgC_fillLcCompare(tab, panel){
   const y0 = mgC_startYear(), y1 = y0+(R.lc||[]).length-1;
   el.innerHTML = `<div><small>通常の生活費合計（${y0+i0}〜${y1}年）</small><b>${mgC_man(a)}</b></div><div><small>万が一の後（同じ期間）</small><b>${mgC_man(b)}</b></div>`;
 }
+
+// ===== ⑥住まいとローン =====
+// state: houseAfter 'stay'|'sell'、hSellYr（万が一の年=1年目）、hPrice（空=ローン残高）、hCostMode 'auto'|'manual'、hCost、
+//   hNext 'rent'|'buy'|'family'、hRent（万円/月）、hRenew（か月分/2年）、hBuy {price,down,cost,loan:'yes'|'no',yrs,rate,kind,mgmt,ptx}
+//   旧データ（houseMode）は：rent＝万が一の年に売却して賃貸（売却費用0）、stages＝最初の賃貸段階、ほか＝住み続ける
+function mgC_house(s){
+  if(s.houseAfter==='sell' || s.houseAfter==='stay'){
+    if(s.houseAfter==='stay') return {sell:false};
+    const b = s.hBuy || {};
+    return {sell:true, sellYr: Math.max(1, parseInt(s.hSellYr)||1), price: (s.hPrice===undefined?'':s.hPrice),
+      costMode: s.hCostMode==='manual'?'manual':'auto', cost: +s.hCost||0,
+      next: ['rent','buy','family'].includes(s.hNext)?s.hNext:'rent',
+      rentMonthly: s.hRent===undefined?8:+s.hRent||0, renewMonths: s.hRenew===undefined?1:+s.hRenew||0,
+      buy: {price:+b.price||0, down:+b.down||0, cost:(b.cost===undefined||b.cost===null||String(b.cost).trim()==='')?Math.round((+b.price||0)*0.07):+b.cost||0, loan: b.loan==='yes', yrs:+b.yrs||20, rate:(b.rate===undefined?1.0:+b.rate||0), mgmt:+b.mgmt||0, ptx:+b.ptx||0}};
+  }
+  if(s.houseMode==='rent') return {sell:true, sellYr:1, price:'', costMode:'manual', cost:0, next:'rent', rentMonthly:+s.houseNewRent||8, renewMonths:0, buy:{}};
+  if(s.houseMode==='stages' && Array.isArray(s.houseStages)){
+    const st = s.houseStages.find(x=>x&&x.mode==='rent');
+    if(st) return {sell:true, sellYr:Math.max(1,parseInt(st.yearsAfterDeath)||1), price:'', costMode:'manual', cost:0, next:'rent', rentMonthly:+st.rentAmt||0, renewMonths:0, buy:{}};
+  }
+  return {sell:false};
+}
+// 亡くなったときの住宅ローン（⑤住宅の名義人・一般団信から自動）
+function mgC_dansinText(tab){
+  const dead = tab.target, deadName = mgC_name(dead);
+  const R = window.lastR || {};
+  const i0 = (tab.state.deathYear||1)-1;
+  const bal = Math.round(i0>0 ? ((R.lBal||[])[i0-1]||0) : ((R.lBal||[])[0]||0));
+  const year = mgC_startYear() + i0;
+  const anyLoan = (R.lBal||[]).some(v=>v>0);
+  if(!anyLoan) return {ok:false, short:'住宅ローンなし', text:'住宅ローンはありません', sub:''};
+  if(pairLoanMode){
+    const joined = getLoanDansinJoined(dead);
+    return joined
+      ? {ok:true, short:`${deadName}分を団信で完済`, text:`${deadName}のローンが${year}年に団信で完済されます`, sub:`ペアローン・${deadName}は一般団信に加入。もう一方のローンは続きます（⑤住宅の設定）`}
+      : {ok:false, short:'ローン継続', text:`${deadName}のローンは続きます`, sub:`ペアローン・${deadName}は一般団信に加入していません（⑤住宅の設定）`};
+  }
+  const cov = getSingleLoanDansinCover();
+  if(cov[dead]) return {ok:true, short:'団信で完済', text:`${year}年に完済されます（残高${bal.toLocaleString()}万円 → 0円）`, sub: jointLoanMode?'連帯債務・一般団信の対象（⑤住宅の設定）':`${mgC_name(getLoanBorrower())}名義のローン・一般団信に加入（⑤住宅の設定）`};
+  if(!jointLoanMode && !getLoanDansinJoined('s')) return {ok:false, short:'ローン継続', text:'ローンは続きます', sub:'一般団信に加入していません（⑤住宅の設定）'};
+  return {ok:false, short:'ローン継続', text:'ローンは続きます', sub: jointLoanMode?`連帯債務の団信の対象が${deadName}ではありません（⑤住宅の設定）`:`${mgC_name(getLoanBorrower())}名義のため、${deadName}が亡くなってもローンは続きます（⑤住宅の設定）`};
+}
+function mgQA_houseCard(tab){
+  const s = tab.state, id = tab.id, hs = mgC_house(s);
+  const dt = mgC_dansinText(tab);
+  const evYr = mgC_startYear() + (s.deathYear||1) - 1;
+  let h = `<div class="mgqa-step"><span class="no">1</span>亡くなったときの住宅ローン（自動）</div>
+    <div class="mgqa-auto ${dt.ok?'ok':'ng'}"><span class="ic">${dt.ok?'✓':'!'}</span><div><b>${dt.text}</b><small>${dt.sub}</small></div></div>
+    <div class="mgqa-step"><span class="no">2</span>その後の住まい</div>
+    ${mgC_seg(id,'houseAfter',[['stay','住み続ける'],['sell','売却して住み替える']], hs.sell?'sell':'stay')}`;
+  if(!hs.sell) return h + `<div class="mgqa-note">今の家に住み続けます。管理費・固定資産税・修繕費は通常のCF表のとおりです</div>`;
+  const sellYear = evYr + hs.sellYr - 1;
+  const MR = window.lastMR;
+  const iS = (s.deathYear||1)-1 + hs.sellYr - 1;
+  const bal = MR && MR.lBal && iS>0 ? Math.round(MR.lBal[iS-1]||0) : 0;
+  const price = hs.price===''||hs.price===null ? bal : +hs.price;
+  const cost = hs.costMode==='manual' ? hs.cost : Math.round(price*0.04);
+  const net = price - cost - bal;
+  h += `<div class="mgqa-sub">売却</div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">いつ</label><div class="suf"><input class="inp age-inp" type="number" min="1" max="50" value="${hs.sellYr}" data-k="hSellYr"><span class="sl">年目（${sellYear}年）</span></div></div>
+      <div class="fg"><label class="lbl">売却価格</label><div class="suf"><input class="inp amt-inp" type="text" inputmode="numeric" placeholder="空欄＝ローン残高" value="${hs.price}" data-k="hPrice"><span class="sl">万円</span></div></div>
+    </div>
+    <div class="g2" style="margin-top:4px">
+      <div class="fg"><label class="lbl">売却費用</label>${mgC_seg(id,'hCostMode',[['auto','自動4%'],['manual','手入力']],hs.costMode)}</div>
+      <div class="fg"><label class="lbl">&nbsp;</label>${hs.costMode==='manual'?`<div class="suf"><input class="inp amt-inp" type="number" min="0" value="${hs.cost}" data-k="hCost"><span class="sl">万円</span></div>`:`<div class="mgqa-ro">${cost.toLocaleString()}万円</div>`}</div>
+    </div>
+    <div class="mgqa-note">売却 ${price.toLocaleString()} − 売却費用 ${cost.toLocaleString()} − ローン残高 ${bal.toLocaleString()}${bal===0&&dt.ok?'（団信で完済済み）':''} ＝ <b>手元に${net>=0?'＋':'−'}${Math.abs(net).toLocaleString()}万円</b></div>
+    <div class="mgqa-sub">売却後の住まい</div>
+    ${mgC_seg(id,'hNext',[['rent','賃貸'],['buy','購入する'],['family','実家など（家賃0）']],hs.next)}`;
+  if(hs.next==='rent'){
+    h += `<div class="g2">
+        <div class="fg"><label class="lbl">家賃</label><div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${hs.rentMonthly}" data-k="hRent"><span class="sl">万円/月</span></div></div>
+        <div class="fg"><label class="lbl">更新料など</label><div class="suf"><input class="inp" type="number" min="0" step="0.5" value="${hs.renewMonths}" data-k="hRenew"><span class="sl">か月分/2年</span></div></div>
+      </div>
+      <div class="mgqa-note">${sellYear}年から家賃 年<b>${Math.round(hs.rentMonthly*12).toLocaleString()}万円</b>（＋2年ごとに更新料）。管理費・固定資産税・修繕費は0</div>`;
+  }else if(hs.next==='family'){
+    h += `<div class="mgqa-note">${sellYear}年から住居費0（家賃・管理費・固定資産税・修繕費なし）</div>`;
+  }else{
+    const b = hs.buy, bb = s.hBuy || {};
+    const L = b.loan ? Math.max(0, b.price - b.down) : 0;
+    const pay = L>0 && b.yrs>0 ? Math.round(mpay(L,b.yrs,b.rate)*12) : 0;
+    const left = net - (b.price - L + b.cost);
+    h += `<div class="g2">
+        <div class="fg"><label class="lbl">購入価格</label><div class="suf"><input class="inp amt-inp" type="number" min="0" value="${bb.price||''}" data-k="hBuy.price"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl">諸費用 <span style="font-weight:400">目安7%</span></label><div class="suf"><input class="inp amt-inp" type="text" inputmode="numeric" value="${bb.cost??''}" placeholder="${Math.round(b.price*0.07)||''}" data-k="hBuy.cost"><span class="sl">万円</span></div></div>
+      </div>
+      <div class="g2" style="margin-top:4px">
+        <div class="fg"><label class="lbl">ローン</label>${mgC_seg(id,'hBuy.loan',[['no','借りない（現金）'],['yes','借りる']], b.loan?'yes':'no')}</div>
+        <div class="fg">${b.loan?`<label class="lbl">頭金（売却で得たお金から）</label><div class="suf"><input class="inp amt-inp" type="number" min="0" value="${bb.down||''}" data-k="hBuy.down"><span class="sl">万円</span></div>`:''}</div>
+      </div>
+      ${b.loan?`<div class="g3" style="margin-top:4px">
+        <div class="fg"><label class="lbl">借入額</label><div class="mgqa-ro">${L.toLocaleString()}万円</div></div>
+        <div class="fg"><label class="lbl">返済期間</label><div class="suf"><input class="inp age-inp" type="number" min="1" max="50" value="${b.yrs}" data-k="hBuy.yrs"><span class="sl">年</span></div></div>
+        <div class="fg"><label class="lbl">金利</label><div class="suf"><input class="inp" type="number" min="0" step="0.05" value="${b.rate}" data-k="hBuy.rate"><span class="sl">%</span></div></div>
+      </div>`:''}
+      <div class="g2" style="margin-top:4px">
+        <div class="fg"><label class="lbl">管理費・修繕積立金</label><div class="suf"><input class="inp" type="number" min="0" step="0.1" value="${bb.mgmt||0}" data-k="hBuy.mgmt"><span class="sl">万円/月</span></div></div>
+        <div class="fg"><label class="lbl">固定資産税</label><div class="suf"><input class="inp" type="number" min="0" value="${bb.ptx||0}" data-k="hBuy.ptx"><span class="sl">万円/年</span></div></div>
+      </div>
+      <div class="mgqa-note">${sellYear}年：手元${net>=0?'＋':'−'}${Math.abs(net).toLocaleString()} − ${b.loan?`頭金${(b.price-L).toLocaleString()}`:`購入価格${b.price.toLocaleString()}`} − 諸費用${b.cost.toLocaleString()} ＝ <b>${left>=0?'＋':'−'}${Math.abs(left).toLocaleString()}万円</b>${pay?`<br>${sellYear+1}年から新しいローン返済 年<b>${pay.toLocaleString()}万円</b>（${b.yrs}年）`:''}<br>修繕費・家具家電の買い替えは元の家の設定を引き継ぎます。新しいローンは${mgC_name(mgC_survivor(tab))}が一般団信に加入する前提です</div>`;
+  }
+  return h;
+}

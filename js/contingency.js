@@ -1730,31 +1730,52 @@ function _renderContingencyInner(){
     MR.wedding.push(i<normalR.wedding.length?normalR.wedding[i]:0);
     MR.ext.push(i<normalR.ext.length?normalR.ext[i]:0);
 
-    // ─ 万一Q&Aの住居モード反映（売却・賃貸 / 団信完済 / 段階的変更） ─
-    // window._mgHousingStages: [{yearsAfterDeath, mode:'keep'|'danshin'|'rent', rentAmt}]
-    // mode='rent' で売却・賃貸 → 家賃発生、固定資産税/修繕費/専有部分/家具買替を停止
-    let _newRentAnnual = 0;
-    if(isDead && Array.isArray(window._mgHousingStages) && window._mgHousingStages.length>0){
-      const _ysd = i - (deathYearOffset-1) + 1; // 死亡からの経過年（死亡年=1）
-      let _activeStage = null;
-      for(const st of window._mgHousingStages){
-        if(_ysd >= (st.yearsAfterDeath||1)) _activeStage = st;
-        else break;
-      }
-      if(_activeStage){
-        if(_activeStage.mode === 'rent'){
-          // 売却・賃貸: 家賃を新設、保有関連支出を停止
-          _newRentAnnual = ri((_activeStage.rentAmt||0)*12);
-          MR.rent[i] = _newRentAnnual;
-          MR.ptx[i] = 0;
-          MR.rep[i] = 0;
-          MR.senyu[i] = 0;
-          MR.furn[i] = 0;
+    // ─ 万が一のあとの住まい（住み続ける／売却して 賃貸・購入・実家など） ─
+    // window._mgHouse: {sell, sellYr(万が一の年=1), price(空=残高), costMode, cost, next:'rent'|'buy'|'family', rentMonthly, renewMonths, buy:{price,down,cost,loan,yrs,rate,mgmt,ptx}}
+    let _mgSold=false,_mgNewBal=0,_mgHouseSaleVal=0,_mgHouseBuyVal=0;
+    const _mh=window._mgHouse;
+    if(isDead && _mh && _mh.sell){
+      const iS=(deathYearOffset-1)+Math.max(1,parseInt(_mh.sellYr)||1)-1;
+      if(i>=iS){
+        _mgSold=true;
+        if(i===iS){
+          const bal=i>0?(MR.lBal[i-1]||0):0;  // 売却時のローン残高（前年末）
+          const price=(_mh.price===null||_mh.price===undefined||_mh.price==='')?bal:(+_mh.price||0);
+          const cost=_mh.costMode==='manual'?(+_mh.cost||0):ri(price*0.04);
+          _mgHouseSaleVal=ri(price-cost-bal);
         }
-        // 'danshin' は団信完済（lRepは別途dansinロジックで0化）。ptx等は継続でOK
-        // 'keep' は何もしない（通常CFと同じ）
+        // 元の家：ローン返済・繰上返済・住宅ローン控除・管理費・固定資産税を止める
+        lRep=0; MR.lRep[i]=0; MR.lRepH[i]=0; MR.lRepW[i]=0;
+        if(MR.lCtrl[i]){ MR.incT[i]-=MR.lCtrl[i]; MR.lCtrl[i]=0; }
+        MR.ptx[i]=0; MR.senyu[i]=0;
+        if(_mh.next!=='buy') MR.rep[i]=0;  // 購入した場合は修繕費・家具家電は元の家の設定を引き継ぐ
+        if(_mh.next==='rent'){
+          const k=i-iS, m=+_mh.rentMonthly||0;
+          MR.rent[i]=ri(m*12+((k>0&&k%2===0)?m*(+_mh.renewMonths||0):0));  // 2年ごとに更新料
+        }else if(_mh.next==='family'){
+          MR.rent[i]=0;
+        }else{
+          MR.rent[i]=0;
+          const bb=_mh.buy||{};
+          const bPrice=+bb.price||0, L=bb.loan?Math.max(0,bPrice-(+bb.down||0)):0;
+          if(i===iS) _mgHouseBuyVal=ri(bPrice-L+(+bb.cost||0));
+          MR.senyu[i]=ri((+bb.mgmt||0)*12);
+          MR.ptx[i]=ri(+bb.ptx||0);
+          if(L>0){
+            const yrs=+bb.yrs||0, r=+bb.rate||0, k=i-iS-1;  // 返済は購入の翌年から
+            if(k>=0&&k<yrs){
+              const pay=ri(mpay(L,yrs,r)*12);
+              lRep=pay; MR.lRep[i]=pay;
+              if(pairLoanMode||_mgFlatPair){ if(targetIsH) MR.lRepW[i]=pay; else MR.lRepH[i]=pay; }
+            }
+            _mgNewBal=k<0?ri(L):ri(lbal(L,yrs,r,k+1));
+          }
+        }
       }
     }
+    MR.houseSale=MR.houseSale||[]; MR.houseSale.push(_mgHouseSaleVal);
+    MR.houseBuy=MR.houseBuy||[]; MR.houseBuy.push(_mgHouseBuyVal);
+    if(_mgHouseSaleVal) MR.incT[i]+=_mgHouseSaleVal;
 
     // 財形積立（生存者のみ、死亡後は死亡者分を除外）
     let zaikeiExpVal=i<(normalR.zaikeiExp?.length||0)?(normalR.zaikeiExp[i]||0):0;
@@ -1775,14 +1796,15 @@ function _renderContingencyInner(){
       const _pS=window._prepaySchedules?.s,_pH=window._prepaySchedules?.h,_pW=window._prepaySchedules?.w;
       let _mgPp=0;
       if(active){
-        if(_pS&&!(isDead&&_mgDS))_mgPp+=(_pS.prepayOut[lcYr]||0); // 単独・連帯＝名義人と団信設定で判定
-        if(_pH&&!(isDead&&targetIsH&&_mgDH))_mgPp+=(_pH.prepayOut[lcYr]||0);
-        if(_pW&&!(isDead&&!targetIsH&&_mgDW))_mgPp+=(_pW.prepayOut[lcYr]||0);
+        if(_mgSold){}  // 売却後は元の家の繰上返済なし
+        else if(_pS&&!(isDead&&_mgDS))_mgPp+=(_pS.prepayOut[lcYr]||0); // 単独・連帯＝名義人と団信設定で判定
+        if(!_mgSold&&_pH&&!(isDead&&targetIsH&&_mgDH))_mgPp+=(_pH.prepayOut[lcYr]||0);
+        if(!_mgSold&&_pW&&!(isDead&&!targetIsH&&_mgDW))_mgPp+=(_pW.prepayOut[lcYr]||0);
       }
       MR.prepayExp.push(ri(_mgPp));
     }
     // 支出合計（個別計算）
-    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+(MR.retireTax[i]||0)+MR.rent[i]+(MR.moveInCost[i]||0)+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0)+(MR.prepayExp[i]||0);
+    let expTotal=lcVal+lRep+MR.rep[i]+MR.ptx[i]+MR.furn[i]+MR.senyu[i]+(MR.retireTax[i]||0)+MR.rent[i]+(MR.moveInCost[i]||0)+nCar+nPrk+secInvVal+ri(secBuyVal)+insMonthlyVal+insLumpVal+dcMatchH+dcMatchW+idecoH+idecoW+MR.wedding[i]+MR.ext[i]+ri(zaikeiExpVal)+(MR.chidai[i]||0)+(MR.kaitai[i]||0)+(MR.prepayExp[i]||0)+(MR.houseBuy[i]||0);
     children.forEach((c,ci)=>expTotal+=MR.edu[ci][i]);
     MR.expT.push(ri(expTotal));
 
@@ -1841,6 +1863,7 @@ function _renderContingencyInner(){
       MR.lBalH.push(0);MR.lBalW.push(0);
     }
     MR.lBal.push(lb);
+    if(_mgSold){ MR.lBal[i]=_mgNewBal; MR.lBalH[i]=0; MR.lBalW[i]=0; }
 
     // その他金融資産（生存者分のみ）
     let mgFinAsset=i<normalR.finAsset.length?(normalR.finAsset[i]||0):0;
@@ -1895,8 +1918,8 @@ function _renderContingencyInner(){
     // ★ 二重加算修正(2026-09-20): 'secRedeem'集計を incKeys から除外。
     //   Pass2の収入再計算は secRedeemRows（個別行）を別途加算しており、集計も足すと
     //   セル上書きがあるCF表で解約金が2倍計上されていた（通常CFのincKeysと同じ方式に統一）。
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq'];
-    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','moveInCost','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq','houseSale'];
+    const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','moveInCost','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax','houseBuy'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
       Object.entries(mgOverrides[key]).forEach(([col,val])=>{const c2=parseInt(col);if(MR[key]&&c2<MR[key].length)MR[key][c2]=val;});
@@ -2214,7 +2237,7 @@ function _renderContingencyInner(){
       const _showIcon=_exp&&_hasValue;
       const cls=(changed?(v===0?'mg-zero':'mg-changed'):(v===0?'vz':''))+(isOvr?' cell-ovr':'')+(_showIcon?' has-explain':'')+getMgColCls(i2);
       const _icon=_showIcon?_mgExplainIcon(rowKey,i2,'mg'):'';
-      r+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():(changed?'0':'-')}${_icon}</td>`;
+      r+=`<td class="${cls}" ${_ce} data-row="${rowKey}" data-col="${i2}" data-mg="1" onblur="cellEdit(this)" onfocus="selectAll(this)" ${_kd}>${v>0?ri(v).toLocaleString():v<0?'▲'+ri(-v).toLocaleString():(changed?'0':'-')}${_icon}</td>`;
     }
     return r+`<td>${ri(tot).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
   };
@@ -2248,6 +2271,7 @@ function _renderContingencyInner(){
   h+=mgRow('奨学金',MR.scholarship,N.scholarship,'scholarship');
   h+=mgRow('児童手当',MR.teate,null,'teate');
   h+=mgRow('住宅ローン控除',MR.lCtrl,N.lCtrl,'lCtrl');
+  if(MR.houseSale&&MR.houseSale.some(v=>v!==0)) h+=mgRow('住宅売却（売却額−費用−残債）',MR.houseSale,null,'houseSale');
   // 自動資産取崩し（預貯金マイナス補填）
   if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) h+=mgRow('自動資産取崩し',MR.autoLiq,null,'autoLiq');
   // カスタム収入行（万が一専用）
@@ -2282,7 +2306,8 @@ function _renderContingencyInner(){
   };
 
   h+=mgERow('生活費',MR.lc,N.lc,'lc');
-  h+=mgERow('家賃（引渡前）',MR.rent,null,'rent');
+  h+=mgERow((window._mgHouse&&window._mgHouse.sell&&window._mgHouse.next==='rent')?'家賃':'家賃（引渡前）',MR.rent,null,'rent');
+  if(MR.houseBuy&&MR.houseBuy.some(v=>v>0)) h+=mgERow('住み替え購入（頭金・諸費用）',MR.houseBuy,null,'houseBuy');
   if(MR.moveInCost&&MR.moveInCost.some(v=>v>0))h+=mgERow('引越・家具家電',MR.moveInCost,null,'moveInCost');
   if(pairLoanMode&&!_isSingle_mg){h+=mgERow('ローン返済(ご主人様)',MR.lRepH,N.lRepH,'lRepH');h+=mgERow('ローン返済(奥様)',MR.lRepW,N.lRepW,'lRepW');}
   else{h+=mgERow('住宅ローン返済',MR.lRep,N.lRep,'lRep');}

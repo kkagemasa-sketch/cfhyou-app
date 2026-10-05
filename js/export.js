@@ -533,7 +533,7 @@ async function exportExcelMG(){
   //   行単位で食い違っていた。MR.pTotalH/pTotalW は contingency.js で合算済み（pS+survPH等）。
   addISkip('ご主人様年金受給額', MR.pTotalH, N.pTotalH);
   addISkip('奥様年金受給額', MR.pTotalW, N.pTotalW);
-  addISkip('死亡保険金',MR.insPayArr);
+  addISkip((MR.insAnnuityRows&&MR.insAnnuityRows.length>0)?'死亡保険金(一時金)':'死亡保険金',MR.insPayArr);  // 画面と同じ行名
   // 年金型保険（個別行：実額がある契約のみ）
   if(MR.insAnnuityRows&&MR.insAnnuityRows.length>0){
     MR.insAnnuityRows.forEach(row=>{if(row.vals.slice(0,disp).some(v=>v>0))addISkip(row.name||'年金型保険',row.vals);});
@@ -552,6 +552,7 @@ async function exportExcelMG(){
   addISkip('奨学金',MR.scholarship,N.scholarship);
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
+  if(MR.houseSale&&MR.houseSale.some(v=>v!==0)) addI('住宅売却（売却額−費用−残債）',MR.houseSale);
   // 自動資産取崩し（万一CF用）
   if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) addI('自動資産取崩し',MR.autoLiq);
   mgCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>mgOverrides[r.id]?.[i]||0);addI(r.label,vals);});
@@ -571,7 +572,8 @@ async function exportExcelMG(){
     push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
   };
   addE(_rl('mg-lc','生活費'),MR.lc);
-  addESkip(_rl('mg-rent','家賃（引渡前）'),MR.rent,null);
+  addESkip(_rl('mg-rent',(window._mgHouse&&window._mgHouse.sell&&window._mgHouse.next==='rent')?'家賃':'家賃（引渡前）'),MR.rent,null);
+  if(MR.houseBuy&&MR.houseBuy.some(v=>v>0)) addE('住み替え購入（頭金・諸費用）',MR.houseBuy);
   addESkip(_rl('mg-moveInCost','引越・家具家電'),MR.moveInCost,null);
   if(pairLoanMode){addE(_rl('mg-lRepH','ローン返済(ご主人様)'),MR.lRepH);addE(_rl('mg-lRepW','ローン返済(奥様)'),MR.lRepW);}
   else{addE(_rl('mg-lRep','住宅ローン返済'),MR.lRep);}
