@@ -1780,3 +1780,12 @@ table.cf td.vz{color:#b6c0cc}
 .mgqa-caradd{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.1fr 1fr 18px;gap:4px;align-items:center;margin-bottom:5px}
 .mgqa-caradd .x{font-family:inherit;border:0;background:none;color:#b91c1c;font-weight:800;cursor:pointer}
 .mgqa-caradd .sl{font-size:9px}
+/* 狭い左パネルで入力が潰れないよう2段組みに */
+.mgqa-sch{grid-template-columns:1fr 1fr 22px;border-bottom:1px dashed #e2e8f0;padding-bottom:6px}
+.mgqa-sch select{grid-column:1/-1}
+.mgqa-caradd{grid-template-columns:1fr 1fr 22px;border:1px solid #e2e8f0;border-radius:8px;padding:6px;background:#fff}
+.mgqa-caradd .x{grid-column:3;grid-row:1}
+.mgqa-path{grid-template-columns:repeat(2,1fr)}
+.mgqa-path .st select{font-size:11px}
+.mgqa-caradd{position:relative;grid-template-columns:1fr 1fr;padding-right:26px}
+.mgqa-caradd .x{position:absolute;top:8px;right:4px;grid-column:auto;grid-row:auto}
