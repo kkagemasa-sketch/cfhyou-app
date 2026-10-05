@@ -223,6 +223,7 @@ function mgC_fillCompare(tab, panel){
   el.innerHTML = `<div><small>通常の手取り合計（${y0+i0}〜${y0+i1}年）</small><b>${mgC_man(a)}</b></div><div><small>万が一の後（同じ期間）</small><b>${mgC_man(b)}</b></div>`;
 }
 function mgQA_afterCalcExtra(tab, panel){
+  const dt = panel.querySelector('.mgqa-dis-tbl'); if(dt) dt.innerHTML = mgC_disPenTable(tab);
   mgC_fillCompare(tab, panel);
   mgC_fillLcCompare(tab, panel);
   mgC_fillEduCompare(tab, panel);
@@ -456,8 +457,9 @@ function mgQA_houseCard(tab){
   const s = tab.state, id = tab.id, hs = mgC_house(s);
   const dt = mgC_dansinText(tab);
   const evYr = mgC_startYear() + (s.deathYear||1) - 1;
-  let h = `<div class="mgqa-step"><span class="no">1</span>亡くなったときの住宅ローン（自動）</div>
-    <div class="mgqa-auto ${dt.ok?'ok':'ng'}"><span class="ic">${dt.ok?'✓':'!'}</span><div><b>${dt.text}</b><small>${dt.sub}</small></div></div>
+  let h = mgC_isDis(tab) ? mgQA_disHouseTop(tab) : `<div class="mgqa-step"><span class="no">1</span>亡くなったときの住宅ローン（自動）</div>
+    <div class="mgqa-auto ${dt.ok?'ok':'ng'}"><span class="ic">${dt.ok?'✓':'!'}</span><div><b>${dt.text}</b><small>${dt.sub}</small></div></div>`;
+  h += `
     <div class="mgqa-step"><span class="no">2</span>その後の住まい</div>
     ${mgC_seg(id,'houseAfter',[['stay','住み続ける'],['sell','売却して住み替える']], hs.sell?'sell':'stay')}`;
   if(!hs.sell) return h + `<div class="mgqa-note">今の家に住み続けます。管理費・固定資産税・修繕費は通常のCF表のとおりです</div>`;
@@ -759,4 +761,165 @@ function mgC_fillCarCompare(tab, panel){
   let a=0,b=0;
   for(let i=i0;i<(R.carTotal||[]).length;i++){ a+=(R.carTotal[i]||0)+((R.prk||[])[i]||0); b+=((MR.carTotal||[])[i]||0)+((MR.prk||[])[i]||0); }
   el.innerHTML = `<div><small>通常の車・駐車場（万が一の後の合計）</small><b>${mgC_man(a)}</b></div><div><small>万が一の後</small><b>${mgC_man(b)}</b></div>`;
+}
+
+function mgC_bool(v){ return v===true || v==='true'; }
+// ===== 障害タブ（障害1級・2級） =====
+// state（障害タブのみ）:
+//   selfMode 'none'(働けない)|'pct'(％で減らす)|'steps'(期間ごと)、selfPct（減らす％）、selfSteps [{ageFrom,ageTo,amt}]、selfBasis 'net'|'gross'
+//   selfRetire 'onset'(障害になった年に受取)|'normal'(通常どおり定年)
+//   disPenMode 'auto'|'manual'、disPenManual、pensionType 'kosei'|'kokumin'
+//   disDansin 'clear'|'keep'、stopIns（保険料を止める）、stopInv（積立投資を止める）
+//   生活費は lcMode 'ratio' の lcRatio（1級130%／2級110%＝介護・医療費の上乗せ）
+function mgC_isDis(tab){ return tab.kind==='dis1' || tab.kind==='dis2'; }
+// 種類ごとの初期値（新しく追加したタブだけに入れる）
+function mgQA_applyKindDefaults(tab){
+  const s = tab.state;
+  if(!mgC_isDis(tab)) return;
+  const g1 = tab.kind==='dis1';
+  Object.assign(s, {
+    selfMode: g1 ? 'none' : 'pct', selfPct: 50, selfSteps: [], selfBasis:'net',
+    selfRetire: g1 ? 'onset' : 'normal',
+    disPenMode:'auto', disPenManual:0, pensionType:'kosei',
+    disDansin: g1 ? 'clear' : 'keep', stopIns:false, stopInv:false,
+    lcMode:'ratio', lcRatio: g1 ? 130 : 110,
+    insurances: [], incomeMode:'same', houseAfter:'stay'
+  });
+}
+// ご本人の収入（障害の後）。null＝通常どおり
+function mgQA_selfIncFn(tab){
+  const s = tab.state, p = tab.target;
+  const m = s.selfMode || 'none';
+  if(m==='none') return ()=>0;
+  if(m==='pct') return (age, base) => Math.round((base||0)*(1-(+s.selfPct||0)/100));
+  const gross = s.selfBasis==='gross';
+  const steps = (Array.isArray(s.selfSteps)?s.selfSteps:[]).filter(x=>x&&x.ageTo>=x.ageFrom);
+  return age => { const st = steps.find(x=>age>=x.ageFrom&&age<=x.ageTo); if(!st) return 0; return gross ? mgC_g2n(p,+st.amt||0,age) : Math.round(+st.amt||0); };
+}
+// 傷病手当金（③収入の年収・ボーナスから）。会社員・公務員で厚生年金の方のみ
+function mgC_sick(tab){
+  const p = tab.target, s = tab.state;
+  const age = mgC_ageAtEvent(tab, p);
+  const wt = (typeof isGrossInputMode==='function' && isGrossInputMode(p)) ? getWorkType(p) : 'kaishain';
+  const ok = s.pensionType!=='kokumin' && wt!=='part' && (typeof sickBenefitAt==='function');
+  if(!ok) return {ok:false, reason: s.pensionType==='kokumin' ? '国民年金のみ（自営業など）の方は傷病手当金がありません' : '扶養内パートの方は傷病手当金がありません'};
+  const sb = sickBenefitAt(p, age);
+  if(!(sb.gross>0)) return {ok:false, reason:'障害になった年の収入がないため、傷病手当金はありません'};
+  return {ok:true, ...sb, age, blank: isBonusBlank(p)};
+}
+function mgQA_disApply(tab){
+  const s = tab.state;
+  window._mgKind = tab.kind || 'death';
+  if(!mgC_isDis(tab)){ window._mgDisCfg = null; window._mgSelfIncFn = null; return; }
+  const sk = mgC_sick(tab);
+  window._mgDisCfg = {
+    retire: s.selfRetire==='onset' ? 'onset' : 'normal',
+    penMode: s.disPenMode==='manual' ? 'manual' : 'auto', penManual: +s.disPenManual||0,
+    sickOn: !!sk.ok, sickAnnual: sk.ok ? sk.annual : 0,
+    stopIns: mgC_bool(s.stopIns), stopInv: mgC_bool(s.stopInv)
+  };
+  window._mgSelfIncFn = mgQA_selfIncFn(tab);
+}
+
+function mgQA_selfCard(tab){
+  const s = tab.state, id = tab.id, p = tab.target;
+  const m = s.selfMode || 'none';
+  const ev = mgC_ageAtEvent(tab, p), evYr = mgC_startYear() + (s.deathYear||1) - 1;
+  let h = `<div class="mgqa-lbl2">障害になった後の働き方</div>${mgC_seg(id,'selfMode',[['none','働けない'],['pct','％で減らす'],['steps','期間ごと']],m)}`;
+  if(m==='none') h += `<div class="mgqa-note">${evYr}年から${mgC_name(p)}の収入は0です</div>`;
+  else if(m==='pct'){
+    h += `<div class="g2"><div class="fg"><label class="lbl">通常の収入から</label><div class="suf"><input class="inp" type="number" min="0" max="100" value="${s.selfPct??50}" data-k="selfPct"><span class="sl">％ 減らす</span></div></div><div></div></div>
+      <div class="mgqa-quick">${[30,50,70].map(v=>`<button type="button" class="${v===+s.selfPct?'on':''}" onclick="mgQA_setState('${id}','selfPct',${v},{rebuild:true})">−${v}%</button>`).join('')}</div>`;
+  }else{
+    const steps = Array.isArray(s.selfSteps) ? s.selfSteps : [];
+    h += `<div class="fg"><label class="lbl">金額の入力</label>${mgC_seg(id,'selfBasis',[['net','手取り'],['gross','額面']], s.selfBasis==='gross'?'gross':'net')}</div><div class="mgqa-rows">`;
+    steps.forEach((st,i)=>{
+      h += `<div class="mgqa-row"><div class="suf"><input class="inp age-inp" type="number" value="${st.ageFrom}" data-k="selfSteps.${i}.ageFrom"><span class="sl">歳</span></div><span class="tl">〜</span>
+        <div class="suf"><input class="inp age-inp" type="number" value="${st.ageTo}" data-k="selfSteps.${i}.ageTo"><span class="sl">歳</span></div>
+        <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${st.amt||0}" data-k="selfSteps.${i}.amt"><span class="sl">万円</span></div>
+        <button type="button" class="x" onclick="mgC_selfStepDel('${id}',${i})">×</button></div>`;
+    });
+    h += `</div><button class="btn-add" onclick="mgC_selfStepAdd('${id}')">＋ 期間を追加</button><div class="hint">期間に入らない年は収入0です</div>`;
+  }
+  const sk = mgC_sick(tab);
+  if(sk.ok) h += `<div class="hint">傷病手当金を受け取る1年6か月は休職として収入0（2年目は半分）で計算します</div>`;
+  h += `<div class="mgqa-lbl2">退職金</div>${mgC_seg(id,'selfRetire',[['onset','障害になった年に受取'],['normal','通常どおり定年']], s.selfRetire==='onset'?'onset':'normal')}
+    <div class="hint">${s.selfRetire==='onset'?'障害になった年に退職したとして、勤続年数の割合で受け取ります':'通常のCF表と同じ年に受け取ります'}</div>`;
+  return h;
+}
+function mgC_selfStepAdd(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  const rows = tab.state.selfSteps = tab.state.selfSteps || [];
+  const last = rows[rows.length-1];
+  const from = last ? +last.ageTo+1 : mgC_ageAtEvent(tab, tab.target);
+  rows.push({ageFrom:from, ageTo:from+9, amt:0});
+  mgQA_switchTab(tabId);
+}
+function mgC_selfStepDel(tabId,i){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  tab.state.selfSteps.splice(i,1);
+  mgQA_switchTab(tabId);
+}
+function mgQA_sickCard(tab){
+  const sk = mgC_sick(tab), p = tab.target;
+  if(!sk.ok) return `<div class="mgqa-note">${sk.reason}</div>`;
+  const evYr = mgC_startYear() + (tab.state.deathYear||1) - 1;
+  const f = x=>(Math.round(x*10)/10).toLocaleString();
+  let h = '';
+  if(sk.blank) h += `<div class="mgqa-auto ng"><span class="ic">!</span><div><b>③収入のボーナスが未入力のため、ボーナス0円で計算しています</b><small>年収${f(sk.gross)}万円÷12＝月給${f(sk.monthly)}万円。実際より多めの可能性があります</small></div></div>`;
+  h += `<div class="mgqa-note">${evYr}年の年収（額面）${f(sk.gross)}万円・うちボーナス ${f(sk.bonus)}万円（③収入）→ 月給 <b>${f(sk.monthly)}万円</b> → 標準報酬月額 <b>${sk.hyojun}万円</b> → 1日 <b>${sk.daily.toLocaleString()}円</b>
+    <br><button type="button" class="mgqa-linkbtn" onclick="mgC_gotoBonus('${p}')">③収入で${sk.blank?'入力':'変更'}</button></div>
+    <div class="mgqa-tl"><div class="r h"><span>期間</span><span>金額</span></div>
+      <div class="r"><span class="p">${evYr}年</span><span class="a">${f(sk.annual)}万円</span></div>
+      <div class="r"><span class="p">${evYr+1}年（6か月）</span><span class="a">${f(sk.annual/2)}万円</span></div></div>
+    <div class="hint">給与（ボーナスを除く）の約3分の2を最長1年6か月。非課税なのでそのまま収入に入ります</div>`;
+  return h;
+}
+function mgC_gotoBonus(p){
+  const box = document.getElementById(`${p}-bonus-box`); if(!box) return;
+  const sb = box.closest('.sb'); const sec = box.closest('.sec');
+  if(sb && getComputedStyle(sb).display==='none' && sec) sec.querySelector('.sh')?.click();
+  setTimeout(()=>{ box.scrollIntoView({behavior:'smooth', block:'center'}); document.getElementById(`${p}-bonus-amt`)?.focus(); }, 150);
+}
+function mgQA_disPenCard(tab){
+  const s = tab.state, id = tab.id, p = tab.target;
+  const g1 = tab.kind==='dis1';
+  let h = `<div class="g2">
+      <div class="fg"><label class="lbl">計算方法</label>${mgC_seg(id,'disPenMode',[['auto','自動計算'],['manual','手入力']], s.disPenMode==='manual'?'manual':'auto')}</div>
+      <div class="fg"><label class="lbl">加入していた年金</label>${mgC_seg(id,'pensionType',[['kosei','厚生年金'],['kokumin','国民年金のみ']], s.pensionType==='kokumin'?'kokumin':'kosei')}</div>
+    </div>`;
+  if(s.disPenMode==='manual') h += `<div class="fg"><label class="lbl">障害年金（年額・手入力）</label><div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.disPenManual||0}" data-k="disPenManual"><span class="sl">万円/年</span></div></div>`;
+  h += `<div class="mgqa-dis-tbl">${mgC_disPenTable(tab)}</div>
+    <div class="hint">障害認定日（発生から1年6か月後）から支給。非課税。${g1?'1級は2級の1.25倍。':''}障害基礎＋子の加算${s.pensionType==='kokumin'?'':'＋障害厚生（300月みなし）＋配偶者加給'}。65歳以降は老齢年金と多いほうを自動で選びます（年金シミュレーターと同じ計算ルール・令和8年度）</div>`;
+  return h;
+}
+function mgC_disPenTable(tab){
+  const MR = window.lastMR;
+  if(!MR || !Array.isArray(MR.disPension) || window._mgQA_activeTabId!==tab.id) return '';
+  const ages = tab.target==='h' ? MR.hA : MR.wA;
+  const i0 = (tab.state.deathYear||1)-1;
+  const rows = [];
+  for(let i=i0;i<MR.disPension.length;i++){
+    const v = Math.round(MR.disPension[i]||0), last = rows[rows.length-1];
+    if(last && last.v===v) last.to = ages[i]; else rows.push({from:ages[i], to:ages[i], v});
+  }
+  const shown = rows.filter(r=>r.v>0);
+  if(!shown.length) return '<div class="hint" style="margin-top:6px">障害年金はありません</div>';
+  return `<div class="mgqa-tl"><div class="r h"><span>期間（${mgC_name(tab.target)}の年齢）</span><span>年額</span></div>${
+    shown.slice(0,8).map(r=>`<div class="r"><span class="p">${r.from===r.to?r.from+'歳':`${r.from}〜${r.to}歳`}</span><span class="a">${r.v.toLocaleString()}万円</span></div>`).join('')}</div>`;
+}
+function mgQA_stopsCard(tab){
+  const s = tab.state, id = tab.id;
+  return `<div class="g2">
+      <div class="fg"><label class="lbl">保険料</label>${mgC_seg(id,'stopIns',[['false','続ける'],['true','止める（払込免除）']], String(mgC_bool(s.stopIns)))}</div>
+      <div class="fg"><label class="lbl">積立投資</label>${mgC_seg(id,'stopInv',[['false','続ける'],['true','止める']], String(mgC_bool(s.stopInv)))}</div>
+    </div><div class="hint">払込免除の有無は保険ごとに違うため、初期値は「続ける」です。止めるとご本人の分だけ止まります</div>`;
+}
+// 障害タブの住まい：団信は選ぶ（一般団信は高度障害が対象のため、初期値 1級=完済／2級=残る）
+function mgQA_disHouseTop(tab){
+  const s = tab.state, id = tab.id;
+  const v = s.disDansin==='clear' ? 'clear' : 'keep';
+  return `<div class="mgqa-step"><span class="no">1</span>障害のときの住宅ローン</div>
+    ${mgC_seg(id,'disDansin',[['clear','団信で完済'],['keep','ローンが残る']], v)}
+    <div class="hint">一般団信は「高度障害」の状態が対象です。障害1級でも対象にならない場合があるため、ここで選べます。⑤住宅で一般団信に加入していない場合は完済になりません</div>`;
 }

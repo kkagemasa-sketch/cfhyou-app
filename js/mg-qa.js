@@ -44,6 +44,7 @@ function mgQA_addTab(target, kind){
     mgOverrides: {},
     mgCustomRows: []
   });
+  if(typeof mgQA_applyKindDefaults==='function') mgQA_applyKindDefaults(mgQA_tabs[mgQA_tabs.length-1]);
   mgQA_renderTabs();
   mgQA_switchTab(id);
 }
@@ -546,8 +547,11 @@ function mgQA_applyStateToDOM(tab){
   // 住まい：その後の住まいを渡す。死亡タブの団信は選ばせない（⑤住宅の名義人・一般団信で自動）
   window._mgHousingStages = null;
   window._mgHouse = (typeof mgC_house==='function') ? mgC_house(s) : null;
-  if(typeof setMGDansin === 'function') setMGDansin(true);
-  if(typeof setMGDansinPair === 'function'){ setMGDansinPair('h', true); setMGDansinPair('w', true); }
+  // 障害タブは団信を選ぶ（完済／残る）。⑤の名義人・一般団信の設定と両方満たす時だけ完済
+  if(typeof mgQA_disApply==='function') mgQA_disApply(tab);
+  const _dansinOn = (tab.kind==='dis1'||tab.kind==='dis2') ? (s.disDansin==='clear') : true;
+  if(typeof setMGDansin === 'function') setMGDansin(_dansinOn);
+  if(typeof setMGDansinPair === 'function'){ setMGDansinPair('h', _dansinOn); setMGDansinPair('w', _dansinOn); }
 
   // 車：手放す車・追加する車（新形式）
   if(typeof mgQA_carApply==='function') mgQA_carApply(tab);
@@ -701,6 +705,9 @@ function mgQA_hideLeftPanel(){
   window._mgHouse = null;
   window._mgEduDelta = null;
   window._mgCars = null;
+  window._mgKind = null;
+  window._mgDisCfg = null;
+  window._mgSelfIncFn = null;
   window._mgScholarAt = null;
 }
 
@@ -826,7 +833,8 @@ function mgQA_buildPanel(tab){
     </div>`;
   };
   const kind = MGQA_KIND_INFO[tab.kind] || MGQA_KIND_INFO.death;
-  const _nChanged = MGQA_CARD_KEYS.filter(k=>mgQA_cardSummary(tab,k).changed).length;
+  const _isDis = tab.kind==='dis1' || tab.kind==='dis2';
+  const _nChanged = mgQA_cardKeys(tab).filter(k=>mgQA_cardSummary(tab,k).changed).length;
 
   return `
     <div class="mgqa-ph" style="--kc:${kind.color}">
@@ -858,7 +866,8 @@ function mgQA_buildPanel(tab){
     </div>
 
     <div class="mgqa-sec inc"><span class="bar"></span>入ってくるお金</div>
-    ${card('ins','inc','保','死亡保険金',`
+    ${_isDis ? card('self','inc','人',`${deceased}の収入`, mgQA_selfCard(tab)) + card('sick','inc','傷','傷病手当金', mgQA_sickCard(tab)) + card('dispen','inc','年','障害年金', mgQA_disPenCard(tab)) : ''}
+    ${card('ins','inc','保',_isDis?'保険金・給付金':'死亡保険金',`
       <div id="mgqa-ins-${tab.id}">
         ${s.insurances.map((ins,i)=>mgQA_renderIns(tab.id, i, ins)).join('') || '<div class="hint">保険金はありません。「＋ 保険を追加」で入力します</div>'}
       </div>
@@ -866,7 +875,7 @@ function mgQA_buildPanel(tab){
       <div class="mgqa-total"><span>保険金の合計（受取総額）</span><b>${Math.round(mgQA_insTotal(tab)).toLocaleString()}万円</b></div>
     `)}
 
-    ${card('pension','inc','年','遺族年金',`
+    ${_isDis ? '' : card('pension','inc','年','遺族年金',`
       <div class="g2">
         <div class="fg"><label class="lbl">計算方法</label>
           <div class="mgqa-mini-seg">${tog('pensionMode','auto','自動計算')}${tog('pensionMode','manual','手入力')}</div></div>
@@ -890,6 +899,7 @@ function mgQA_buildPanel(tab){
 
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
     ${card('lc','exp','生','生活費', mgQA_lcCard(tab))}
+    ${_isDis ? card('stops','exp','保',`${deceased}の保険料・積立投資`, mgQA_stopsCard(tab)) : ''}
 
     ${card('house','exp','家','住まいとローン', mgQA_houseCard(tab))}
 
@@ -992,6 +1002,7 @@ const MGQA_KIND_INFO = {
   dis2: {label:'障害2級',short:'2級',  color:'#159ea3', event:'障害2級'}
 };
 const MGQA_CARD_KEYS = ['ins','pension','income','lc','house','edu','car'];
+function mgQA_cardKeys(tab){ return (tab.kind==='dis1'||tab.kind==='dis2') ? ['self','sick','dispen','ins','income','lc','stops','house','edu','car'] : MGQA_CARD_KEYS; }
 window._mgQA_openCards = window._mgQA_openCards || {};
 function mgQA_isCardOpen(tabId,key){ return !!(window._mgQA_openCards[tabId]||{})[key]; }
 function mgQA_toggleCard2(tabId,key,hdEl){
@@ -1013,6 +1024,24 @@ function mgQA_cardSummary(tab, key){
   const s = tab.state;
   const man = x => `${Math.round(x||0).toLocaleString()}万円`;
   switch(key){
+    case 'self': {
+      const m = s.selfMode||'none';
+      const ret = s.selfRetire==='onset' ? '退職金は障害の年に受取' : '';
+      if(m==='none') return {changed:true, v:'働けない', sub: ret||'収入0'};
+      if(m==='pct') return {changed:true, v:`通常の${100-(+s.selfPct||0)}%`, sub: ret};
+      return {changed:true, v:'期間ごと', sub: ret};
+    }
+    case 'sick': {
+      const sk = mgC_sick(tab);
+      return sk.ok ? {changed:false, v:`合計 約${Math.round(sk.annual*1.5).toLocaleString()}万円`, sub: sk.blank?'ボーナス未入力':'1年6か月・自動計算'} : {changed:false, v:'なし'};
+    }
+    case 'dispen':
+      return s.disPenMode==='manual' ? {changed:true, v:`年${man(s.disPenManual)}`, sub:'手入力'} : {changed:false, v:'自動計算', sub:(tab.kind==='dis1'?'障害1級':'障害2級')+(s.pensionType==='kokumin'?'・国民年金のみ':'')};
+    case 'stops': {
+      const a = mgC_bool(s.stopIns), b = mgC_bool(s.stopInv);
+      if(!a&&!b) return {changed:false, v:'続ける'};
+      return {changed:true, v:[a?'保険料を止める':'',b?'積立を止める':''].filter(Boolean).join('・')};
+    }
     case 'ins': {
       const list = (s.insurances||[]).filter(x=>x&&x.type!=='none');
       if(!list.length) return {changed:false, v:'なし'};
@@ -1039,7 +1068,7 @@ function mgQA_cardSummary(tab, key){
       return {changed:(+s.lcRatio||100)!==100, v:`通常の${s.lcRatio||100}%`};
     case 'house': {
       const hs = mgC_house(s);
-      const dan = mgC_dansinText(tab).short;
+      const dan = (tab.kind==='dis1'||tab.kind==='dis2') ? (s.disDansin==='clear'?'団信で完済':'ローンが残る') : mgC_dansinText(tab).short;
       if(!hs.sell) return {changed:false, v:'住み続ける', sub:dan};
       const nx = hs.next==='rent'?`賃貸 家賃${hs.rentMonthly}万円`:hs.next==='buy'?`${mgC_man((hs.buy||{}).price)}の家を購入`:'実家など';
       return {changed:true, v:`${hs.sellYr}年目に売却`, sub:nx};
@@ -1068,7 +1097,7 @@ function mgQA_cardSummary(tab, key){
 // 入力中（再構築しない更新）にも見出しの要約・変更数を追従させる
 function mgQA_refreshHeader(tab){
   const panel = document.getElementById('mgqa-left-panel'); if(!panel) return;
-  MGQA_CARD_KEYS.forEach(k=>{
+  mgQA_cardKeys(tab).forEach(k=>{
     const c = panel.querySelector(`.mgqa-c2[data-card="${k}"]`); if(!c) return;
     const sm = mgQA_cardSummary(tab,k);
     c.classList.toggle('ch', sm.changed);
@@ -1076,7 +1105,7 @@ function mgQA_refreshHeader(tab){
     if(t){ const tag=t.querySelector('.mgqa-c2-tag'); if(sm.changed&&!tag) t.insertAdjacentHTML('beforeend','<span class="mgqa-c2-tag">変更</span>'); if(!sm.changed&&tag) tag.remove(); }
     if(v) v.innerHTML = `${sm.v}${sm.sub?`<small>${sm.sub}</small>`:''}`;
   });
-  const n = MGQA_CARD_KEYS.filter(k=>mgQA_cardSummary(tab,k).changed).length;
+  const n = mgQA_cardKeys(tab).filter(k=>mgQA_cardSummary(tab,k).changed).length;
   const chip = panel.querySelector('.mgqa-ph-chips .o'); if(chip) chip.textContent = `変更 ${n}項目`;
   const nm = panel.querySelector('.mgqa-ph-name'); if(nm) nm.textContent = `タブ名：${tab.name}`;
   const ev = panel.querySelector('.mgqa-ph-chips .e'); if(ev) ev.textContent = mgQA_eventText(tab);

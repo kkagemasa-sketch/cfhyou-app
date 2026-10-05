@@ -178,6 +178,15 @@ async function pageCollectAndDiff(isMG){
         Object.assign(t.state,{deathYear:2,houseAfter:'sell',hSellYr:2,hPrice:'4200',hNext:'buy',hBuy:{price:2500,down:1000,cost:'200',loan:'yes',yrs:20,rate:1,mgmt:2,ptx:8},lcMode:'steps',lcStepsSub:'free',lcFree:[{ageFrom:30,ageTo:'',val:75}]});
         mgQA_calcAndRender(t,true);
       }},
+      '障害1級_夫・保険料止める': {mg:true, fn:function(){
+        const $=id=>document.getElementById(id);
+        setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+        $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+        setCostType('cash'); $('loan-yrs').value=35; $('rate-base').value=0.5; calcLoanAmt();
+        setRTab('cf'); mgQA_addTab('h','dis1'); const t=mgQA_tabs[mgQA_tabs.length-1];
+        Object.assign(t.state,{deathYear:3,stopIns:true,insurances:[{type:'lump',name:'高度障害',amount:1000}]});
+        mgQA_calcAndRender(t,true);
+      }},
     };
     let anyBad=false;
     for(const [name,sc] of Object.entries(SCN)){

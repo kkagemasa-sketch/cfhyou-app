@@ -354,6 +354,10 @@ function _renderContingencyInner(){
   const _mgDS=mgDansin&&(targetIsH?_mgCov.h:_mgCov.w);
   const _mgDH=mgDansinH&&(typeof getLoanDansinJoined==='function'?getLoanDansinJoined('h'):true);
   const _mgDW=mgDansinW&&(typeof getLoanDansinJoined==='function'?getLoanDansinJoined('w'):true);
+  // 万が一の種類：死亡／障害1級／障害2級（障害はご本人が存命。Q&Aタブ以外は死亡）
+  const _mgKind=(window._mgKind==='dis1'||window._mgKind==='dis2')?window._mgKind:'death';
+  const _mgDis=_mgKind!=='death';
+  const _mgDisCfg=window._mgDisCfg||{};
   const deathAge=targetIsH?hAge+deathYearOffset-1:(_isSingle_mg?0:wAge+deathYearOffset-1);
   // 遺族年金の制度モード（'current'=現行 / 'r2028'=2028年4月改正後の完全移行後簡略）— 通常CF(cf-calc.js)と共通
   const _izokuR2028=(document.getElementById('izoku-mode')?.value||'current')==='r2028';
@@ -651,6 +655,7 @@ function _renderContingencyInner(){
     }
   }
   _deadFinTotal=ri(_deadFinTotal);
+  if(_mgDis)_deadFinTotal=0;  // 障害：ご本人は存命のため資産の現金化はしない
 
   // ── DC/iDeCo設定（h/w 両方収集）──
   // ★ A3修正: 旧コードは生存者(_aliveP)分しか dcIdeco_mg を作っていなかったため、
@@ -694,7 +699,7 @@ function _renderContingencyInner(){
   const _mgAutoLiqEnabled = (()=>{try{return localStorage.getItem('cf_auto_liq_off')!=='1'}catch(e){return true}})();
   const _mgSecurityState = [];
   ['h','w'].forEach(p=>{
-    if(p===_deadP)return;  // 死亡者の証券は除外
+    if(!_mgDis&&p===_deadP)return;  // 死亡者の証券は除外（障害は存命なので残す）
     const pBaseAge = p==='h'?hAge:wAge;
     const pLbl = p==='h'?'ご主人様':'奥様';
     // 積立型
@@ -859,13 +864,36 @@ function _renderContingencyInner(){
     return {gross:totalGross, tax:totalTax};
   }
 
+  // ── 障害タブの準備（ご本人の収入・退職金・障害厚生年金の報酬比例） ──
+  const _mgOnsetAge=(targetIsH?hAge:wAge)+deathYearOffset-1;
+  const _mgSickOn=_mgDis&&!!_mgDisCfg.sickOn;
+  const _mgSelfIncome=(age,base,i)=>{
+    const k=i-(deathYearOffset-1);
+    let v=(typeof window._mgSelfIncFn==='function')?window._mgSelfIncFn(age,base):0;
+    if(v===null||v===undefined)v=base;
+    if(_mgSickOn){ if(k===0)v=0; else if(k===1)v=v*0.5; }  // 傷病手当金の1年6か月は休職（2年目は半年）
+    return ri(v);
+  };
+  let _mgRetOnset=-1;
+  if(_mgDis&&_mgDisCfg.retire==='onset'){
+    const _rpFull=targetIsH?retPay:wRetPay, _rpAge=targetIsH?retPayAge:wRetPayAge, _st=targetIsH?pHStart_mg:pWStart_mg;
+    _mgRetOnset=(_mgOnsetAge<_rpAge&&_rpAge>_st)?ri((_rpFull||0)*Math.max(0,_mgOnsetAge-_st)/(_rpAge-_st)):-1;
+  }
+  const _mgDisKosei=(_mgDis&&getMGPensionType()!=='kokumin')
+    ? calcKoseiForSurvP(targetIsH?'h':'w', targetIsH?pHStart_mg:pWStart_mg, _mgOnsetAge, targetIsH?pSelf:pWife, targetIsH?kisoH_mg:kisoW_mg, true)
+    : 0;
+
   for(let i=0;i<totalYrs;i++){
     const yr=cYear+i, ha=hAge+i, wa=wAge+i;
     const active=i>=delivery, lcYr=i-delivery;
     MR.yr.push(yr);MR.hA.push(ha);MR.wA.push(wa);
 
-    const isDead=i>=deathYearOffset-1;
-    const isDeathYear=i===deathYearOffset-1;
+    const isEvt=i>=deathYearOffset-1;          // 万が一（死亡・障害）の年以降
+    const isEvtYear=i===deathYearOffset-1;
+    const isDead=isEvt&&!_mgDis;               // 亡くなった後（障害タブではご本人は存命）
+    const isDeathYear=isEvtYear&&!_mgDis;
+    const _rmInv=isDead||(_mgDis&&isEvt&&_mgDisCfg.stopInv);  // ご本人の積立投資を除く
+    const _rmIns=isDead||(_mgDis&&isEvt&&_mgDisCfg.stopIns);  // ご本人の保険料を除く
     let dcReceiptH_mg=0,dcReceiptW_mg=0,idecoReceiptH_mg=0,idecoReceiptW_mg=0;
 
     // ── 収入 ──
@@ -894,19 +922,19 @@ function _renderContingencyInner(){
     };
     const _fuyoY_mg=_grossH_mg?calcFuyoDed(children,i):null;
     if(targetIsH){
-      hInc=isDead?0:_g2nH_mg(getIncomeAtAge(hSteps,ha),ha,_fuyoY_mg);
+      { const _bH=_g2nH_mg(getIncomeAtAge(hSteps,ha),ha,_fuyoY_mg); hInc=isDead?0:((_mgDis&&isEvt)?_mgSelfIncome(ha,_bH,i):_bH); }
       // 奥様の産休・育休考慮（育休給付金=非課税の手取り額 → 額面モードでも変換しない）
       const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);
       const _baseW = leave?ri(leave.income):_g2nW_mg(getIncomeAtAge(wSteps,wa),wa);
       // 生存者=奥様：死亡後の年は Q&A 上書きが効く（上書き値は手取り）
-      const _ov = isDead ? _getMgIncomeOverride('w', wa, _baseW) : null;
+      const _ov = isEvt ? _getMgIncomeOverride('w', wa, _baseW) : null;
       wInc = (_ov!==null) ? _ov : _baseW;
     }else{
       const _baseH = _g2nH_mg(getIncomeAtAge(hSteps,ha),ha,_fuyoY_mg);
       // 生存者=ご主人：死亡後の年は Q&A 上書きが効く（上書き値は手取り）
-      const _ov = isDead ? _getMgIncomeOverride('h', ha, _baseH) : null;
+      const _ov = isEvt ? _getMgIncomeOverride('h', ha, _baseH) : null;
       hInc = (_ov!==null) ? _ov : _baseH;
-      wInc=isDead?0:(()=>{const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);return leave?ri(leave.income):_g2nW_mg(getIncomeAtAge(wSteps,wa),wa);})();
+      wInc=isDead?0:(()=>{const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);const _bW=leave?ri(leave.income):_g2nW_mg(getIncomeAtAge(wSteps,wa),wa);return (_mgDis&&isEvt)?_mgSelfIncome(wa,_bW,i):_bW;})();
     }
     // 生存者のDC/iDeCo節税効果（通常CFと同じく独立した収入行として表示）
     let dcTaxSaveH=0, dcTaxSaveW=0;
@@ -928,13 +956,17 @@ function _renderContingencyInner(){
     MR.dcTaxSavingW.push(dcTaxSaveW);
 
     // 退職金（死亡後は受け取れない）
-    const rPayH=targetIsH?(isDead?0:(ha===retPayAge?ri(retPay):0)):(ha===retPayAge?ri(retPay):0);
-    const rPayW=targetIsH?(wa===wRetPayAge?ri(wRetPay):0):(isDead?0:(wa===wRetPayAge?ri(wRetPay):0));
+    let rPayH=targetIsH?(isDead?0:(ha===retPayAge?ri(retPay):0)):(ha===retPayAge?ri(retPay):0);
+    let rPayW=targetIsH?(wa===wRetPayAge?ri(wRetPay):0):(isDead?0:(wa===wRetPayAge?ri(wRetPay):0));
+    // 障害：退職金を「障害になった年に受取」なら、その年に勤続年数の割合で受け取る
+    if(_mgDis&&_mgDisCfg.retire==='onset'&&_mgRetOnset>=0){
+      if(targetIsH){rPayH=isEvtYear?_mgRetOnset:(isEvt?0:rPayH);} else {rPayW=isEvtYear?_mgRetOnset:(isEvt?0:rPayW);}
+    }
     MR.rPay.push(rPayH);
     MR.wRPay.push(rPayW);
 
     // 死亡保険金（一時金: 死亡年のみ）
-    const insPayVal=isDeathYear?insTotal:0;
+    const insPayVal=isEvtYear?insTotal:0;
     MR.insPayArr.push(insPayVal);
     // 年金型保険（毎年受取。終わりの年齢は 被保険者=亡くなった方 / 受取人=遺された方 の年齢）
     const _aliveAge=targetIsH?wa:ha;
@@ -942,7 +974,7 @@ function _renderContingencyInner(){
     let insAnnuityTotal=0;
     MR.insAnnuityRows.forEach(row=>{
       const _ageForEnd=row.endBy==='insured'?_deadAge:_aliveAge;
-      const v=(isDead&&_ageForEnd<=row.endAge)?row.annual:0;
+      const v=(isEvt&&_ageForEnd<=row.endAge)?row.annual:0;
       row.vals.push(v);
       insAnnuityTotal+=v;
     });
@@ -1061,7 +1093,7 @@ function _renderContingencyInner(){
     // 住宅ローン控除（団信・ペアローン調整）
     const baseCtrl=i<normalR.lCtrl.length?normalR.lCtrl[i]:0;
     let lctrlVal;
-    if(!isDead){lctrlVal=baseCtrl;}
+    if(!isEvt){lctrlVal=baseCtrl;}
     else if(!pairLoanMode){
       // 連帯債務 + 団信「両者」なら奥様死亡でもローン完済 → 控除も0
       
@@ -1074,8 +1106,8 @@ function _renderContingencyInner(){
           // ★ 繰上返済スケジュールがあれば逐次計算の残高を使用
           const _mgBalH=(el)=>{const s=window._prepaySchedules?.h;return s?(lcYr<=0?lhAmt:(s.yearEndBal[lcYr-1]??0)):(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0);};
           const _mgBalW=(el)=>{const s=window._prepaySchedules?.w;return s?(lcYr<=0?lwAmt:(s.yearEndBal[lcYr-1]??0)):(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0);};
-          const hBal2=(isDead&&targetIsH&&_mgDH)?0:_mgBalH();
-          const wBal2=(isDead&&!targetIsH&&_mgDW)?0:_mgBalW();
+          const hBal2=(isEvt&&targetIsH&&_mgDH)?0:_mgBalH();
+          const wBal2=(isEvt&&!targetIsH&&_mgDW)?0:_mgBalW();
           const origHBal=_mgBalH();
           const origWBal=_mgBalW();
           const origTotal=origHBal+origWBal;
@@ -1101,6 +1133,29 @@ function _renderContingencyInner(){
     let pSelfVal=0, pWifeVal=0;
     if(targetIsH){pSelfVal=isDead?0:(ha>=pHReceive?ri(_pNetAt_mg(_pGrossH_mg,ha)):0);pWifeVal=wa>=pWReceive?ri(_pNetAt_mg(_pGrossW_mg,wa)):0;}
     else{pSelfVal=ha>=pHReceive?ri(_pNetAt_mg(_pGrossH_mg,ha)):0;pWifeVal=isDead?0:(wa>=pWReceive?ri(_pNetAt_mg(_pGrossW_mg,wa)):0);}
+    // 障害年金・傷病手当金（障害タブ）。65歳以降はご本人の老齢年金と多いほうを選ぶ
+    let _disP=0,_sickV=0;
+    if(_mgDis&&isEvt){
+      const k=i-(deathYearOffset-1);
+      if(_mgDisCfg.sickOn&&k<=1) _sickV=ri((_mgDisCfg.sickAnnual||0)*(k===0?1:0.5));
+      if(k>=1){
+        let v;
+        if(_mgDisCfg.penMode==='manual'){ v=+_mgDisCfg.penManual||0; }
+        else{
+          let n=0;children.forEach(c=>{const ca=c.age+i;if(ca>=0&&ca<=18)n++;});
+          const childAdd=n<=0?0:(n===1?SURV_KISO_CHILD1_2:n===2?SURV_KISO_CHILD1_2*2:SURV_KISO_CHILD1_2*2+SURV_KISO_CHILD3PLUS*(n-2));
+          const kiso=(_mgKind==='dis1'?KISO_FULL_AMT*1.25:KISO_FULL_AMT)+childAdd;
+          const spAge=targetIsH?wa:ha;
+          const kakyu=(_mgDisKosei>0&&!_isSingle_mg&&spAge<65)?24.38:0;  // 配偶者加給年金（令和8年度 243,800円）
+          v=kiso+_mgDisKosei*(_mgKind==='dis1'?1.25:1)+kakyu;
+        }
+        _disP=ri(k===1?v*0.5:v);  // 障害認定（1年6か月後）の年は半年分
+      }
+      const own=targetIsH?pSelfVal:pWifeVal;
+      if(own>0){ if(own>=_disP){_disP=0;} else { if(targetIsH)pSelfVal=0; else pWifeVal=0; } }
+    }
+    MR.disPension=MR.disPension||[]; MR.disPension.push(_disP);
+    MR.sickBenefit=MR.sickBenefit||[]; MR.sickBenefit.push(_sickV);
     MR.pS.push(pSelfVal);
     MR.pW.push(pWifeVal);
     // 年金合算行（老齢年金 + 遺族年金）
@@ -1125,7 +1180,7 @@ function _renderContingencyInner(){
     //   旧の単一入力（mg-scholarship-amt）は新形式が無い場合のみ使う。
     const _mgQAItems = (typeof window!=='undefined' && Array.isArray(window._mgScholarshipItems))
                        ? window._mgScholarshipItems : null;
-    if(isDead && _mgQAItems && _mgQAItems.length>0){
+    if(isEvt && _mgQAItems && _mgQAItems.length>0){
       _mgQAItems.forEach(it=>{
         if(!it || !(it.amount>0)) return;
         const cIdx = it.childIdx;
@@ -1135,12 +1190,12 @@ function _renderContingencyInner(){
         const targetAge = it.phase==='hs' ? 16 : 19; // 高校入学=16歳 / 大学入学=19歳
         if(ageNow === targetAge) scholarVal += it.amount;
       });
-    } else if(isDead && mgScholarAmt>0 && children.length>0){
+    } else if(isEvt && mgScholarAmt>0 && children.length>0){
       const firstChildAge=children[0].age+i;
       if(firstChildAge===mgScholarAge)scholarVal+=mgScholarAmt;
     }
     // 奨学金（新形式：お子様ごとの年齢→受取額）
-    if(isDead && Array.isArray(window._mgScholarAt)){ children.forEach((c,ci)=>{ const m=window._mgScholarAt[ci]; if(m) scholarVal+=(m[c.age+i]||0); }); }
+    if(isEvt && Array.isArray(window._mgScholarAt)){ children.forEach((c,ci)=>{ const m=window._mgScholarAt[ci]; if(m) scholarVal+=(m[c.age+i]||0); }); }
     MR.scholarship.push(scholarVal);
 
     // 金融資産現金化（死亡年に死亡者の金融資産を一括収入計上）
@@ -1410,16 +1465,16 @@ function _renderContingencyInner(){
     MR.zaikeiRedeem.push(ri(zaikeiRedeemVal));
 
     // 収入合計
-    const incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+insAnnuityTotal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(bondIntTotal_mg)+ri(secDrawTotal_mg)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg)+ri(zaikeiRedeemVal);
+    const incTotal=ri(hInc)+ri(wInc)+dcTaxSaveH+dcTaxSaveW+rPayH+rPayW+insPayVal+insAnnuityTotal+survP+oiVal+teateVal+lctrlVal+pSelfVal+pWifeVal+scholarVal+finLiquidVal+insMatVal+ri(secRedeemTotal)+ri(bondIntTotal_mg)+ri(secDrawTotal_mg)+ri(dcReceiptH_mg)+ri(dcReceiptW_mg)+ri(idecoReceiptH_mg)+ri(idecoReceiptW_mg)+ri(zaikeiRedeemVal)+_disP+_sickV;
     MR.incT.push(incTotal);
 
     // ── 支出（個別計算） ──
     // 生活費
     const normalLC=i<normalR.lc.length?normalR.lc[i]:0;
     let lcVal=normalLC;
-    const _mgLcFnV=(isDead&&typeof window._mgLcFn==='function')?window._mgLcFn(MR.yr[i],targetIsH?wa:ha,normalLC):null;
+    const _mgLcFnV=(isEvt&&typeof window._mgLcFn==='function')?window._mgLcFn(MR.yr[i],targetIsH?wa:ha,normalLC):null;
     if(_mgLcFnV!==null&&_mgLcFnV!==undefined){lcVal=ri(_mgLcFnV);}
-    else if(isDead){
+    else if(isEvt){
       if(mgLCMode==='step'&&mgLCSteps.length>0){
         for(let si=0;si<mgLCSteps.length;si++){const st=mgLCSteps[si];if(st.mode==='pct'&&si>0){st.base=ri((mgLCSteps[si-1].base||normalLC)*(st.pct||80)/100);}if(st.base<=0&&si===0)st.base=normalLC;}
         const yr2=MR.yr[i];let found=false;
@@ -1439,8 +1494,8 @@ function _renderContingencyInner(){
     if(pairLoanMode||_mgFlatPair){
       if(active){
         let hLA=true,wLA=true;
-        if(isDead&&targetIsH&&_mgDH)hLA=false;
-        if(isDead&&!targetIsH&&_mgDW)wLA=false;
+        if(isEvt&&targetIsH&&_mgDH)hLA=false;
+        if(isEvt&&!targetIsH&&_mgDW)wLA=false;
         const _lhType=_mgFlatPair?($('flat-loan-h-type')?.value||'equal_payment'):(document.getElementById('loan-h-type')?.value||'equal_payment');
         const _lwType=_mgFlatPair?($('flat-loan-w-type')?.value||'equal_payment'):(document.getElementById('loan-w-type')?.value||'equal_payment');
         // ★ 繰上返済スケジュール(通常CFで構築)があれば逐次計算値を使用（団信で消えた側は0のまま）
@@ -1453,7 +1508,7 @@ function _renderContingencyInner(){
       if(active&&lcYr<loanYrs+15){
         // 連帯債務 + 団信「両者」の場合、奥様死亡でも完済される（フラット35デュエット等）
         
-        const dansinApplies=isDead&&_mgDS;
+        const dansinApplies=isEvt&&_mgDS;
         if(!dansinApplies){
           const _mgPPS=window._prepaySchedules?.s;
           if(_mgPPS){lRep=ri(_mgPPS.annualPay[lcYr]||0);}
@@ -1482,7 +1537,7 @@ function _renderContingencyInner(){
 
     // 教育費（通常CFと同じ）
     // 教育費：通常CFをコピーし、万が一の後は進路の変更分（年齢ごとの差）を足す
-    children.forEach((c,ci)=>{let v=normalR.edu[ci]?.[i]||0;const d=isDead&&Array.isArray(window._mgEduDelta)?window._mgEduDelta[ci]:null;if(d){const ca=c.age+i;if(ca>=0&&ca<d.length)v=Math.max(0,v+(d[ca]||0));}MR.edu[ci].push(v);});
+    children.forEach((c,ci)=>{let v=normalR.edu[ci]?.[i]||0;const d=isEvt&&Array.isArray(window._mgEduDelta)?window._mgEduDelta[ci]:null;if(d){const ca=c.age+i;if(ca>=0&&ca<d.length)v=Math.max(0,v+(d[ca]||0));}MR.edu[ci].push(v);});
 
     // 車両費
     // Q&A継承フラグ: true（デフォルト）= 通常CFの値をそのまま使う
@@ -1492,12 +1547,12 @@ function _renderContingencyInner(){
     const _mgQAFutureCars = Array.isArray(window._mgQA_futureCars) ? window._mgQA_futureCars : null;
     const _useMultiCars = _mgQAExistingCars || _mgQAFutureCars;
     let nCar=0;
-    if(_mgCarInherit || !isDead){
+    if(_mgCarInherit || !isEvt){
       // 通常CFの carTotal をそのまま使用（継承モードは全期間、「変更する」でも死亡前は通常どおり）
       // ※以前は「変更する」で死亡前の年まで変更後の設定になっていた（表示用 carRows とも食い違っていた）
       nCar = i<normalR.carTotal.length ? (normalR.carTotal[i]||0) : 0;
       // 万が一の後：手放す車の費用を除き（その年に残りのローンを精算）、追加する車の費用を足す
-      if(isDead && window._mgCars){
+      if(isEvt && window._mgCars){
         const _mc=window._mgCars, _bdAll=normalR.carBd||[];
         (_bdAll[i]||[]).forEach(it=>{ if(_mc.release.includes(it.cid)) nCar-=(it.amount||0); });
         if(i===deathYearOffset-1){ for(let j=i;j<_bdAll.length;j++)(_bdAll[j]||[]).forEach(it=>{ if(_mc.release.includes(it.cid)&&it.type==='loan') nCar+=(it.amount||0); }); }
@@ -1628,7 +1683,7 @@ function _renderContingencyInner(){
           if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=_mgCarInsp;
         }
       }
-    }else if(isDead){nCar=0;}
+    }else if(isEvt){nCar=0;}
     else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
     if(normalR.carRows&&normalR.carRows.length>0){
@@ -1639,10 +1694,10 @@ function _renderContingencyInner(){
         // 継承モード: 通常CFの carRows をそのまま使う（ラベルも値も）
         MR.carRows.forEach((row,ri2)=>{
           const src=normalR.carRows[ri2];
-          const _rel=isDead&&window._mgCars&&window._mgCars.release.includes(row.key);
+          const _rel=isEvt&&window._mgCars&&window._mgCars.release.includes(row.key);
           row.vals.push(_rel?0:(src&&i<src.vals.length?(src.vals[i]||0):0));
         });
-      } else if(isDead){
+      } else if(isEvt){
         // Q&Aモード+死亡後: 1行目のラベルを生存者基準に変更しnCarを集約
         const survLbl=`${targetIsH?'奥様':'ご主人様'} 車`;
         if(MR.carRows[0]&&MR.carRows[0].lbl!==survLbl){
@@ -1661,20 +1716,20 @@ function _renderContingencyInner(){
     // 駐車場
     const _mgParkInherit = window._mgQA_parkInherit !== false;
     let nPrk=0;
-    if(_mgParkInherit || !isDead){
+    if(_mgParkInherit || !isEvt){
       // 継承モードは全期間、「変更する」でも死亡前は通常CFの prk をそのまま使用
       nPrk = i<normalR.prk.length ? (normalR.prk[i]||0) : 0;
     } else if(mgParkKeep){
       const sAge=targetIsH?wa:ha;
       const inRange=(_mgParkFrom<=0||sAge>=_mgParkFrom)&&(_mgParkTo<=0||sAge<=_mgParkTo);
       nPrk=inRange?_mgParkAnnual:0;
-    }else if(isDead){nPrk=0;}
+    }else if(isEvt){nPrk=0;}
     else{nPrk=i<normalR.prk.length?(normalR.prk[i]||0):0;}
     MR.prk.push(nPrk);
 
     // 積立投資（生存者のみ、死亡後は死亡者分を除外）
     let secInvVal=i<normalR.secInvest.length?normalR.secInvest[i]:0;
-    if(isDead&&normalR.secInvestRows){
+    if(_rmInv&&normalR.secInvestRows){
       secInvVal=0;
       normalR.secInvestRows.forEach(row=>{
         const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
@@ -1713,7 +1768,7 @@ function _renderContingencyInner(){
 
     // 保険料（生存者のみ、死亡後は死亡者分を除外）
     let insMonthlyVal=i<normalR.insMonthly.length?normalR.insMonthly[i]:0;
-    if(isDead&&normalR.insMonthlyRows){
+    if(_rmIns&&normalR.insMonthlyRows){
       insMonthlyVal=0;
       normalR.insMonthlyRows.forEach(row=>{
         const k=row.key||'';const p2=k.includes(`-${_deadP}-`)?_deadP:_aliveP;
@@ -1725,7 +1780,7 @@ function _renderContingencyInner(){
 
     // 一時払い保険（生存者のみ）
     let insLumpVal=i<normalR.insLumpExp.length?normalR.insLumpExp[i]:0;
-    if(isDead&&normalR.insLumpExpRows){
+    if(_rmIns&&normalR.insLumpExpRows){
       insLumpVal=0;
       normalR.insLumpExpRows.forEach(row=>{
         const k=row.key||'';const p2=k.includes(`-${_deadP}-`)?_deadP:_aliveP;
@@ -1753,7 +1808,7 @@ function _renderContingencyInner(){
     // window._mgHouse: {sell, sellYr(万が一の年=1), price(空=残高), costMode, cost, next:'rent'|'buy'|'family', rentMonthly, renewMonths, buy:{price,down,cost,loan,yrs,rate,mgmt,ptx}}
     let _mgSold=false,_mgNewBal=0,_mgHouseSaleVal=0,_mgHouseBuyVal=0;
     const _mh=window._mgHouse;
-    if(isDead && _mh && _mh.sell){
+    if(isEvt && _mh && _mh.sell){
       const iS=(deathYearOffset-1)+Math.max(1,parseInt(_mh.sellYr)||1)-1;
       if(i>=iS){
         _mgSold=true;
@@ -1816,9 +1871,9 @@ function _renderContingencyInner(){
       let _mgPp=0;
       if(active){
         if(_mgSold){}  // 売却後は元の家の繰上返済なし
-        else if(_pS&&!(isDead&&_mgDS))_mgPp+=(_pS.prepayOut[lcYr]||0); // 単独・連帯＝名義人と団信設定で判定
-        if(!_mgSold&&_pH&&!(isDead&&targetIsH&&_mgDH))_mgPp+=(_pH.prepayOut[lcYr]||0);
-        if(!_mgSold&&_pW&&!(isDead&&!targetIsH&&_mgDW))_mgPp+=(_pW.prepayOut[lcYr]||0);
+        else if(_pS&&!(isEvt&&_mgDS))_mgPp+=(_pS.prepayOut[lcYr]||0); // 単独・連帯＝名義人と団信設定で判定
+        if(!_mgSold&&_pH&&!(isEvt&&targetIsH&&_mgDH))_mgPp+=(_pH.prepayOut[lcYr]||0);
+        if(!_mgSold&&_pW&&!(isEvt&&!targetIsH&&_mgDW))_mgPp+=(_pW.prepayOut[lcYr]||0);
       }
       MR.prepayExp.push(ri(_mgPp));
     }
@@ -1867,15 +1922,15 @@ function _renderContingencyInner(){
       const _mgLwType=_mgFlatPair?($('flat-loan-w-type')?.value||'equal_payment'):(document.getElementById('loan-w-type')?.value||'equal_payment');
       let hLB=0,wLB=0;
       if(active){
-        if(!(isDead&&targetIsH&&_mgDH)&&lhAmt>0&&lcYr<lhYrs)hLB=_mgLhType==='equal_payment'?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):lbal_gankin(lhAmt,lhYrs,lcYr+1);
-        if(!(isDead&&!targetIsH&&_mgDW)&&lwAmt>0&&lcYr<lwYrs)wLB=_mgLwType==='equal_payment'?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):lbal_gankin(lwAmt,lwYrs,lcYr+1);
+        if(!(isEvt&&targetIsH&&_mgDH)&&lhAmt>0&&lcYr<lhYrs)hLB=_mgLhType==='equal_payment'?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr+1):lbal_gankin(lhAmt,lhYrs,lcYr+1);
+        if(!(isEvt&&!targetIsH&&_mgDW)&&lwAmt>0&&lcYr<lwYrs)wLB=_mgLwType==='equal_payment'?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr+1):lbal_gankin(lwAmt,lwYrs,lcYr+1);
       }else{hLB=lhAmt;wLB=lwAmt;}
       lb=ri(Math.max(0,hLB+wLB));
       MR.lBalH.push(ri(Math.max(0,hLB)));MR.lBalW.push(ri(Math.max(0,wLB)));
     }else{
       // 連帯債務 + 団信「両者」の場合、奥様死亡でも完済される
       
-      const dansinClearsBalance=isDead&&_mgDS;
+      const dansinClearsBalance=isEvt&&_mgDS;
       if(dansinClearsBalance){lb=0;}
       else if(active){lb=ri(Math.max(0,loanType_mg==='equal_payment'?lbal(loanAmt,loanYrs,effRate(lcYr,rates),lcYr+1):lbal_gankin(loanAmt,loanYrs,lcYr+1)));}
       else{lb=ri(loanAmt);}
@@ -1919,13 +1974,17 @@ function _renderContingencyInner(){
     MR.totalAssetBase.push(ri(sav)+ri(mgFinAssetBase));
 
     // イベント
+    const _evLbl=_mgDis?(_mgKind==='dis1'?'障害1級':'障害2級'):'ご逝去';
+    MR._evLbl=_evLbl; MR._isDis=_mgDis;
     let evH='';
-    if(targetIsH&&isDeathYear)evH='ご逝去';
+    if(targetIsH&&isEvtYear)evH=_evLbl;
+    else if(targetIsH&&_mgDis&&i===deathYearOffset)evH='障害認定';
     else if(targetIsH&&isDead)evH='';
     else{evH=i<normalR.evH.length?(normalR.evH[i]||''):'';}
     MR.evH.push(evH);
     let evW='';
-    if(!targetIsH&&isDeathYear)evW='ご逝去';
+    if(!targetIsH&&isEvtYear)evW=_evLbl;
+    else if(!targetIsH&&_mgDis&&i===deathYearOffset)evW='障害認定';
     else if(!targetIsH&&isDead)evW='';
     else{evW=i<normalR.evW.length?(normalR.evW[i]||''):'';}
     MR.evW.push(evW);
@@ -1937,7 +1996,7 @@ function _renderContingencyInner(){
     // ★ 二重加算修正(2026-09-20): 'secRedeem'集計を incKeys から除外。
     //   Pass2の収入再計算は secRedeemRows（個別行）を別途加算しており、集計も足すと
     //   セル上書きがあるCF表で解約金が2倍計上されていた（通常CFのincKeysと同じ方式に統一）。
-    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq','houseSale'];
+    const incKeys=['hInc','wInc','dcTaxSavingH','dcTaxSavingW','rPay','wRPay','otherInc','insMat','scholarship','pTotalH','pTotalW','teate','lCtrl','dcReceiptH','dcReceiptW','idecoReceiptH','idecoReceiptW','insPayArr','finLiquid','zaikeiRedeem','autoLiq','houseSale','disPension','sickBenefit'];
     const expKeys=['lc','secInvest','secBuy','insMonthly','insLumpExp','rent','moveInCost','lRep','rep','ptx','furn','senyu','prk','carTotal','wedding','ext','dcMatchExpH','dcMatchExpW','idecoExpH','idecoExpW','zaikeiExp','chidai','kaitai','autoLiqTax','houseBuy'];
     [...incKeys,...expKeys].forEach(key=>{
       if(!mgOverrides[key])return;
@@ -2091,8 +2150,8 @@ function _renderContingencyInner(){
     <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
       <span style="font-size:18px">${targetIsH?'':''}</span>
       <div>
-        <div style="font-size:14px;font-weight:800">${nm} 様【万が一】${mgTargetLabel2}が${deathAge}歳で死亡した場合</div>
-        <div style="font-size:10px;opacity:.8">${mgSurvivorLabel}が生活を継続するキャッシュフロー</div>
+        <div style="font-size:14px;font-weight:800">${nm} 様【万が一】${mgTargetLabel2}が${deathAge}歳で${_mgDis?(_mgKind==='dis1'?'障害1級になった':'障害2級になった'):'死亡した'}場合</div>
+        <div style="font-size:10px;opacity:.8">${_mgDis?`${mgTargetLabel2}の障害年金・傷病手当金と${mgSurvivorLabel}の収入で生活を継続するキャッシュフロー`:`${mgSurvivorLabel}が生活を継続するキャッシュフロー`}</div>
       </div>
     </div>
     <button id="mg-summary-toggle" onclick="toggleMgSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.55);padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_mgTogLabel}</button>
@@ -2101,8 +2160,8 @@ function _renderContingencyInner(){
   // 必要保障額の3枚カード
   {
     const nd=MR.need, yr0=getCfStartYear();
-    const sAgeOf=i=>(targetIsH?wAge:hAge)+i;
-    const basis=i=>i<0?'':`<small>根拠：${yr0+i}年（${mgSurvivorLabel}${sAgeOf(i)}歳）</small>`;
+    const sAgeOf=i=>(_mgDis?(targetIsH?hAge:wAge):(targetIsH?wAge:hAge))+i;
+    const basis=i=>i<0?'':`<small>根拠：${yr0+i}年（${_mgDis?mgTargetLabel2:mgSurvivorLabel}${sAgeOf(i)}歳）</small>`;
     const opt=[1,2,3,4,5].map(n=>`<option value="${n}" ${n===nd.years?'selected':''}>生活費 ${n}年分</option>`).join('');
     h+=`<div class="mg-need">
       <div class="nc"><div class="hd"><span class="bg" style="background:#d97706">最低限</span><span class="t">お金が尽きないために</span></div>
@@ -2229,11 +2288,11 @@ function _renderContingencyInner(){
   // 年齢（死亡後は✝マーク）+ contenteditable + col-death/col-retire
   const _mgHAgeLabel=_isSingle_mg?'ご本人':'ご主人様';
   h+=`<tr class="rage"><td data-row="hAge">年齢</td><td contenteditable="true" data-rowlbl="mg-age-h" data-default="${_mgHAgeLabel}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('mg-age-h',_mgHAgeLabel)}</td>`;
-  for(let i=0;i<mgDisp;i++){const d=targetIsH&&i>=deathYearOffset-1;h+=`<td class="${getMgColCls(i).trim()}" style="${d?'color:#ccc':''}">${d?'✝'+MR.hA[i]:MR.hA[i]}</td>`;}
+  for(let i=0;i<mgDisp;i++){const d=!_mgDis&&targetIsH&&i>=deathYearOffset-1;h+=`<td class="${getMgColCls(i).trim()}" style="${d?'color:#ccc':''}">${d?'✝'+MR.hA[i]:MR.hA[i]}</td>`;}
   h+=`<td></td></tr>`;
   if(!_isSingle_mg){
   h+=`<tr class="rage"><td data-row="wAge"></td><td contenteditable="true" data-rowlbl="mg-age-w" data-default="奥様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('mg-age-w','奥様')}</td>`;
-  for(let i=0;i<mgDisp;i++){const d=!targetIsH&&i>=deathYearOffset-1;h+=`<td class="${getMgColCls(i).trim()}" style="${d?'color:#ccc':''}">${d?'✝'+MR.wA[i]:MR.wA[i]}</td>`;}
+  for(let i=0;i<mgDisp;i++){const d=!_mgDis&&!targetIsH&&i>=deathYearOffset-1;h+=`<td class="${getMgColCls(i).trim()}" style="${d?'color:#ccc':''}">${d?'✝'+MR.wA[i]:MR.wA[i]}</td>`;}
   h+=`<td></td></tr>`;
   }
   children.forEach((c,ci)=>{h+=`<tr class="rage"><td data-row="cAge${ci}"></td><td contenteditable="true" data-rowlbl="mg-age-c${ci}" data-default="${cLbls[ci]}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('mg-age-c'+ci,cLbls[ci])}</td>`;for(let i=0;i<mgDisp;i++)h+=`<td class="${getMgColCls(i).trim()}">${c.age+i}</td>`;h+=`<td></td></tr>`;});
@@ -2242,16 +2301,18 @@ function _renderContingencyInner(){
   h+=`<tr class="rev-h"><td>イベント</td><td contenteditable="true" data-rowlbl="mg-ev-h" data-default="${_mgHAgeLabel}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('mg-ev-h',_mgHAgeLabel)}</td>`;
   for(let i=0;i<mgDisp;i++){
     let ev=N.evH[i]||'';
-    if(targetIsH&&i===deathYearOffset-1)ev='ご逝去';
-    else if(targetIsH&&i>deathYearOffset-1)ev='';
+    if(targetIsH&&i===deathYearOffset-1)ev=MR._evLbl||'ご逝去';
+    else if(targetIsH&&_mgDis&&i===deathYearOffset)ev='障害認定';
+    else if(targetIsH&&!_mgDis&&i>deathYearOffset-1)ev='';
     h+=`<td class="${getMgColCls(i).trim()}">${ev}</td>`;
   }h+=`<td></td></tr>`;
   if(!_isSingle_mg){
   h+=`<tr class="rev-w"><td></td><td contenteditable="true" data-rowlbl="mg-ev-w" data-default="奥様" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_rl('mg-ev-w','奥様')}</td>`;
   for(let i=0;i<mgDisp;i++){
     let ev=N.evW[i]||'';
-    if(!targetIsH&&i===deathYearOffset-1)ev='ご逝去';
-    else if(!targetIsH&&i>deathYearOffset-1)ev='';
+    if(!targetIsH&&i===deathYearOffset-1)ev=MR._evLbl||'ご逝去';
+    else if(!targetIsH&&_mgDis&&i===deathYearOffset)ev='障害認定';
+    else if(!targetIsH&&!_mgDis&&i>deathYearOffset-1)ev='';
     h+=`<td class="${getMgColCls(i).trim()}">${ev}</td>`;
   }h+=`<td></td></tr>`;
   }
@@ -2329,6 +2390,8 @@ function _renderContingencyInner(){
   h+=mgRow('奨学金',MR.scholarship,N.scholarship,'scholarship');
   h+=mgRow('児童手当',MR.teate,null,'teate');
   h+=mgRow('住宅ローン控除',MR.lCtrl,N.lCtrl,'lCtrl');
+  if(MR.sickBenefit&&MR.sickBenefit.some(v=>v>0)) h+=mgRow('傷病手当金',MR.sickBenefit,null,'sickBenefit');
+  if(MR.disPension&&MR.disPension.some(v=>v>0)) h+=mgRow('障害年金',MR.disPension,null,'disPension');
   if(MR.houseSale&&MR.houseSale.some(v=>v!==0)) h+=mgRow('住宅売却（売却額−費用−残債）',MR.houseSale,null,'houseSale');
   // 自動資産取崩し（預貯金マイナス補填）
   if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) h+=mgRow('自動資産取崩し',MR.autoLiq,null,'autoLiq');
@@ -2418,7 +2481,7 @@ function _renderContingencyInner(){
   const _mgDeathOff=MR._deathOffset||0;
   // 死亡者の行は死亡年以降を0に置き換え、生存者はそのまま
   const _zeroAfterDeath=(vals,isDeadOwner)=>{
-    if(!isDeadOwner||_mgDeathOff<=0)return vals;
+    if(!isDeadOwner||_mgDeathOff<=0||_mgDis)return vals;
     return vals.map((v,idx)=>idx>=_mgDeathOff-1?0:v);
   };
   if(N.secInvestRows&&N.secInvestRows.length>=1){

@@ -460,7 +460,8 @@ async function exportExcelMG(){
   // ご主人様イベント
   push(['イベント','ご主人様',...MR.yr.slice(0,disp).map((_,i)=>{
     const ha=hAge+i;
-    if(targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return 'ご逝去';
+    if(targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return MR._evLbl||'ご逝去';
+    if(targetIsH&&MR._isDis&&MR._deathOffset&&i===MR._deathOffset)return '障害認定';
     if(ha===hRetireAge_e)return '定年'; // ★ 入力された退職年齢に追従
     if(ha===hPenRecv_e)return '年金開始'; // ★ C5: 入力された年金開始年齢に追従（旧:65固定）
     return '';
@@ -468,7 +469,8 @@ async function exportExcelMG(){
   // 奥様イベント
   push(['','奥様',...MR.yr.slice(0,disp).map((_,i)=>{
     const wa=wAge+i;
-    if(!targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return 'ご逝去';
+    if(!targetIsH&&MR._deathOffset&&i===MR._deathOffset-1)return MR._evLbl||'ご逝去';
+    if(!targetIsH&&MR._isDis&&MR._deathOffset&&i===MR._deathOffset)return '障害認定';
     if(wa===wRetireAge_e)return '定年'; // ★ 入力された退職年齢に追従
     if(wa===wPenRecv_e)return '年金開始'; // ★ C5: 入力された年金開始年齢に追従（旧:65固定）
     return '';
@@ -552,6 +554,8 @@ async function exportExcelMG(){
   addISkip('奨学金',MR.scholarship,N.scholarship);
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
+  if(MR.sickBenefit&&MR.sickBenefit.some(v=>v>0)) addI('傷病手当金',MR.sickBenefit);
+  if(MR.disPension&&MR.disPension.some(v=>v>0)) addI('障害年金',MR.disPension);
   if(MR.houseSale&&MR.houseSale.some(v=>v!==0)) addI('住宅売却（売却額−費用−残債）',MR.houseSale);
   // 自動資産取崩し（万一CF用）
   if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) addI('自動資産取崩し',MR.autoLiq);
