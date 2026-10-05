@@ -1496,6 +1496,21 @@ function _renderContingencyInner(){
       // 通常CFの carTotal をそのまま使用（継承モードは全期間、「変更する」でも死亡前は通常どおり）
       // ※以前は「変更する」で死亡前の年まで変更後の設定になっていた（表示用 carRows とも食い違っていた）
       nCar = i<normalR.carTotal.length ? (normalR.carTotal[i]||0) : 0;
+      // 万が一の後：手放す車の費用を除き（その年に残りのローンを精算）、追加する車の費用を足す
+      if(isDead && window._mgCars){
+        const _mc=window._mgCars, _bdAll=normalR.carBd||[];
+        (_bdAll[i]||[]).forEach(it=>{ if(_mc.release.includes(it.cid)) nCar-=(it.amount||0); });
+        if(i===deathYearOffset-1){ for(let j=i;j<_bdAll.length;j++)(_bdAll[j]||[]).forEach(it=>{ if(_mc.release.includes(it.cid)&&it.type==='loan') nCar+=(it.amount||0); }); }
+        const _sAgeC=targetIsH?wa:ha;
+        _mc.add.forEach(c=>{
+          const k=i-(deathYearOffset-1)-(c.first-1); if(k<0)return;
+          if(c.endAge>0&&_sAgeC>=c.endAge)return;
+          const ca=k%c.cycle;
+          if(ca===0) nCar+=c.price;
+          else if(ca===3||(ca>3&&(ca-3)%2===0)) nCar+=c.insp;
+        });
+        nCar=Math.max(0,ri(nCar));
+      }
     } else if(_useMultiCars){
       // 「変更する」モード（多台対応）: Q&A の現有車・将来車の配列で計算
       const sAge=targetIsH?wa:ha;
@@ -1624,7 +1639,8 @@ function _renderContingencyInner(){
         // 継承モード: 通常CFの carRows をそのまま使う（ラベルも値も）
         MR.carRows.forEach((row,ri2)=>{
           const src=normalR.carRows[ri2];
-          row.vals.push(src&&i<src.vals.length?(src.vals[i]||0):0);
+          const _rel=isDead&&window._mgCars&&window._mgCars.release.includes(row.key);
+          row.vals.push(_rel?0:(src&&i<src.vals.length?(src.vals[i]||0):0));
         });
       } else if(isDead){
         // Q&Aモード+死亡後: 1行目のラベルを生存者基準に変更しnCarを集約
@@ -1938,8 +1954,11 @@ function _renderContingencyInner(){
     if(MR.insAnnuityRows){MR.insAnnuityRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});}
     // carRows override → carTotal再計算
     if(MR.carRows&&MR.carRows.length>0){
+      // 台ごとの行に入らない分（現有車・手放した車の精算・追加した車）を保ってから再集計する
+      // （以前は再集計で現有車の費用が消えていた）
+      const _carRest=MR.carTotal.map((t,ci)=>(t||0)-MR.carRows.reduce((a,row)=>a+ri(row.vals[ci]||0),0));
       MR.carRows.forEach(row=>{if(!mgOverrides[row.key])return;Object.entries(mgOverrides[row.key]).forEach(([col,val])=>{row.vals[parseInt(col)]=val;});});
-      for(let ci=0;ci<MR.carTotal.length;ci++){let sum=0;MR.carRows.forEach(row=>sum+=ri(row.vals[ci]||0));MR.carTotal[ci]=sum;}
+      for(let ci=0;ci<MR.carTotal.length;ci++){let sum=0;MR.carRows.forEach(row=>sum+=ri(row.vals[ci]||0));MR.carTotal[ci]=sum+(_carRest[ci]||0);}
     }
     // ★ バグ修正(v530): 車両費アグリゲート(carTotal)の直接上書きを carRows 再集計の後に再適用（直接編集を優先）
     if(mgOverrides['carTotal']){

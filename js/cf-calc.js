@@ -2114,10 +2114,10 @@ function render(){
         if(isBuyYear){
           if(carPay==='cash'){
             thisCarAmt+=carPrice;
-            _carBdItems.push({label:_carLbl,type:'buy',amount:carPrice,owner:_carOwner});
+            _carBdItems.push({cid:'car-'+cIdx,label:_carLbl,type:'buy',amount:carPrice,owner:_carOwner});
           }else{
             thisCarAmt+=carDown;
-            _carBdItems.push({label:_carLbl,type:'buy',amount:carDown,note:'頭金',owner:_carOwner});
+            _carBdItems.push({cid:'car-'+cIdx,label:_carLbl,type:'buy',amount:carDown,note:'頭金',owner:_carOwner});
           }
         }
         if(carPay==='loan'&&carLoanYrs>0&&lastBuy>=0&&!isBuyYear&&carActive){
@@ -2127,7 +2127,7 @@ function render(){
           if(yrsAfterBuy>0&&yrsAfterBuy<=carLoanYrs){
             const _loanAmt=Math.round(monthly*12/10000);
             thisCarAmt+=_loanAmt;
-            _carBdItems.push({label:_carLbl,type:'loan',amount:_loanAmt,owner:_carOwner});
+            _carBdItems.push({cid:'car-'+cIdx,label:_carLbl,type:'loan',amount:_loanAmt,owner:_carOwner});
           }
         }
         if(lastBuy>=0&&!isBuyYear&&carActive){
@@ -2140,7 +2140,7 @@ function render(){
           }
           if(inspThisCar>0){
             thisInspAmt+=inspThisCar;
-            _carBdItems.push({label:_carLbl,type:'insp',amount:inspThisCar,owner:_carOwner});
+            _carBdItems.push({cid:'car-'+cIdx,label:_carLbl,type:'insp',amount:inspThisCar,owner:_carOwner});
           }
         }
         const thisTotal=ri(thisCarAmt)+ri(thisInspAmt);
@@ -2185,7 +2185,7 @@ function render(){
               const _ecLoanAmt=Math.round(ecMonthly*monthsThisYear+ecBonus*bonusThisYear);
               carBuyAmt+=_ecLoanAmt;
               _carOwnBk[_ecOwner]+=_ecLoanAmt;
-              if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt,owner:_ecOwner});
+              if(_ecLoanAmt>0)_carBdItems.push({cid:'ecar-'+ecIdx,label:_ecLbl,type:'loan',amount:_ecLoanAmt,owner:_ecOwner});
             }
           } else {
             // 当初借入モード（既存ロジック）
@@ -2204,7 +2204,7 @@ function render(){
               const _ecLoanAmt=Math.round(monthly*monthsThisYear/10000);
               carBuyAmt+=_ecLoanAmt;
               _carOwnBk[_ecOwner]+=_ecLoanAmt;
-              if(_ecLoanAmt>0)_carBdItems.push({label:_ecLbl,type:'loan',amount:_ecLoanAmt,owner:_ecOwner});
+              if(_ecLoanAmt>0)_carBdItems.push({cid:'ecar-'+ecIdx,label:_ecLbl,type:'loan',amount:_ecLoanAmt,owner:_ecOwner});
             }
           }
         }
@@ -2220,7 +2220,7 @@ function render(){
           if(inspThisCar>0){
             carInspAmt+=inspThisCar;
             _carOwnBk[_ecOwner]+=inspThisCar;
-            _carBdItems.push({label:_ecLbl,type:'insp',amount:inspThisCar,owner:_ecOwner});
+            _carBdItems.push({cid:'ecar-'+ecIdx,label:_ecLbl,type:'insp',amount:inspThisCar,owner:_ecOwner});
           }
         }
       });

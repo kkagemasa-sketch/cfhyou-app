@@ -226,6 +226,7 @@ function mgQA_afterCalcExtra(tab, panel){
   mgC_fillCompare(tab, panel);
   mgC_fillLcCompare(tab, panel);
   mgC_fillEduCompare(tab, panel);
+  mgC_fillCarCompare(tab, panel);
 }
 
 // ===== ⑤生活費 =====
@@ -650,4 +651,112 @@ function mgC_fillEduCompare(tab, panel){
   (R.edu||[]).forEach((arr,ci)=>{ for(let i=i0;i<arr.length;i++){ a+=arr[i]||0; b+=((MR.edu||[])[ci]||[])[i]||0; } });
   for(let i=i0;i<(MR.scholarship||[]).length;i++) sch += (MR.scholarship[i]||0) - ((R.scholarship||[])[i]||0);
   el.innerHTML = `<div><small>通常の教育費（万が一の後の合計）</small><b>${mgC_man(a)}</b></div><div><small>万が一の後（奨学金を引いた実質）</small><b>${mgC_man(b-sch)}</b></div>`;
+}
+
+// ===== ⑧車・駐車場（1枚にまとめる） =====
+// state: carRelease {cid:true}（cid='car-N' 将来車 / 'ecar-N' 現有車）、carAdd [{price,first,cycle,insp,endAge}]
+//   手放す車は万が一の年に手放し、売却額は0・残りのローンはその年に精算。以後の買替・車検は0
+//   駐車場は従来の parkInherit / parkMode / parkMonthly / parkToAge を使う
+//   旧データ（carInherit=false の全台入れ替え）はそのまま計算し、カードに案内を出す
+function mgC_normalCars(){
+  const out = [];
+  document.querySelectorAll('#existing-car-list>[id^="ecar-"]').forEach(el=>{
+    const n = el.id.replace('ecar-','');
+    out.push({cid:'ecar-'+n, label:(document.getElementById(`ecar-${n}-label`)?.value||'').trim()||`現有車${n}`,
+      desc:`${el.dataset.type==='used'?'中古':'新車'}${fvd(`ecar-${n}-price`,0)||''}${fvd(`ecar-${n}-price`,0)?'万円':''}・${el.dataset.pay==='loan'?'ローン中':'現金'}`});
+  });
+  document.querySelectorAll('#car-list>[id^="car-"]').forEach(el=>{
+    const n = el.id.replace('car-','');
+    if(!/^\d+$/.test(n)) return;
+    out.push({cid:'car-'+n, label:(document.getElementById(`car-${n}-label`)?.value||'').trim()||`${n}台目`,
+      desc:`${el.dataset.type==='used'?'中古':'新車'}${fvd(`car-${n}-price`,300)}万円・${iv(`car-${n}-cycle`)||7}年ごと買替`});
+  });
+  return out;
+}
+// 手放す車の、万が一の年以降のローン支払い（＝精算する残り）
+function mgC_carPayoff(cid, i0){
+  const bd = (window.lastR||{}).carBd || [];
+  let s = 0;
+  for(let i=i0;i<bd.length;i++) (bd[i]||[]).forEach(it=>{ if(it.cid===cid && it.type==='loan') s+=it.amount||0; });
+  return Math.round(s);
+}
+function mgQA_carApply(tab){
+  const s = tab.state;
+  window._mgCars = (s.carInherit===false) ? null : {
+    release: Object.keys(s.carRelease||{}).filter(k=>s.carRelease[k]),
+    add: (Array.isArray(s.carAdd)?s.carAdd:[]).map(c=>({price:+c.price||0, first:Math.max(1,parseInt(c.first)||1), cycle:Math.max(1,parseInt(c.cycle)||7), insp:+c.insp||0, endAge:parseInt(c.endAge)||0}))
+  };
+}
+function mgQA_carCard(tab){
+  const s = tab.state, id = tab.id, p = mgC_survivor(tab);
+  const i0 = (s.deathYear||1)-1, evYr = mgC_startYear()+i0;
+  let h = '';
+  if(s.carInherit===false){
+    h += `<div class="mgqa-note">以前の形式の車の設定（全台の入れ替え）が入っています。<button type="button" class="mgqa-linkbtn" onclick="mgC_carReset('${id}')">新しい形式で設定し直す</button></div>`;
+  }else{
+    const cars = mgC_normalCars();
+    h += `<div class="mgqa-lbl2">今の車（通常のCF表の④車）</div>`;
+    if(!cars.length) h += `<div class="hint">通常のCF表に車がありません</div>`;
+    cars.forEach(c=>{
+      const rel = !!(s.carRelease||{})[c.cid];
+      const pay = rel ? mgC_carPayoff(c.cid, i0) : 0;
+      h += `<div class="mgqa-car${rel?' rel':''}"><div class="t"><b>${mgQA_escHtml(c.label)}</b><small>${mgQA_escHtml(c.desc)}</small></div>
+        <div class="mgqa-mini-seg" style="margin:0"><button type="button" class="${rel?'':'on'}" onclick="mgQA_setState('${id}','carRelease.${c.cid}',false,{rebuild:true})">そのまま</button><button type="button" class="${rel?'on':''}" onclick="mgQA_setState('${id}','carRelease.${c.cid}',true,{rebuild:true})">手放す</button></div>
+        ${rel?`<div class="n">${evYr}年に手放す（売却額は0で見込む${pay?`・残りのローン ${pay.toLocaleString()}万円を精算`:''}）。以後の買替・車検は0</div>`:''}</div>`;
+    });
+    h += `<div class="mgqa-lbl2">万が一の後に車を追加</div>`;
+    (s.carAdd||[]).forEach((c,i)=>{
+      h += `<div class="mgqa-caradd">
+        <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${c.price??200}" data-k="carAdd.${i}.price"><span class="sl">万円</span></div>
+        <div class="suf"><input class="inp age-inp" type="number" min="1" max="40" value="${c.first??1}" data-k="carAdd.${i}.first"><span class="sl">年目に購入</span></div>
+        <div class="suf"><input class="inp age-inp" type="number" min="1" max="20" value="${c.cycle??8}" data-k="carAdd.${i}.cycle"><span class="sl">年ごと</span></div>
+        <div class="suf"><input class="inp" type="number" min="0" value="${c.insp??8}" data-k="carAdd.${i}.insp"><span class="sl">万円/車検</span></div>
+        <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${c.endAge||''}" placeholder="ずっと" data-k="carAdd.${i}.endAge"><span class="sl">歳まで</span></div>
+        <button type="button" class="x" onclick="mgC_carAddDel('${id}',${i})">×</button></div>`;
+    });
+    h += `<button class="btn-add" onclick="mgC_carAddNew('${id}')">＋ 万が一の後に車を追加</button>
+      <div class="hint">「何年目」は万が一の年が1年目。年齢は${mgC_name(p)}（遺された方）の年齢です</div>`;
+  }
+  // 駐車場
+  const pm = s.parkInherit!==false ? 'keep' : (s.parkMode==='stop' ? 'none' : 'change');
+  const R = window.lastR || {};
+  const prkNow = Math.round(((R.prk||[])[i0]||0)/12*10)/10;
+  h += `<div class="mgqa-lbl2">駐車場（通常 ${prkNow}万円/月）</div>
+    <div class="mgqa-mini-seg"><button type="button" class="${pm==='keep'?'on':''}" onclick="mgC_parkMode('${id}','keep')">通常どおり</button><button type="button" class="${pm==='change'?'on':''}" onclick="mgC_parkMode('${id}','change')">変更</button><button type="button" class="${pm==='none'?'on':''}" onclick="mgC_parkMode('${id}','none')">なし</button></div>`;
+  if(pm==='change'){
+    h += `<div class="g2"><div class="fg"><label class="lbl">万が一の後</label><div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${s.parkMonthly??1.5}" data-k="parkMonthly" data-cf-row="prk"><span class="sl">万円/月</span></div></div>
+      <div class="fg"><label class="lbl">いつまで</label><div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.parkToAge||''}" placeholder="ずっと" data-k="parkToAge" data-cf-row="prk"><span class="sl">歳まで（${mgC_name(p)}）</span></div></div></div>`;
+  }
+  h += `<div class="mgqa-cmp" data-cmp="car"></div><div class="hint">万が一の前の年は通常のCF表と同じです</div>`;
+  return h;
+}
+function mgC_carReset(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  tab.state.carInherit = true; tab.state.mgExistingCars = []; tab.state.mgFutureCars = [];
+  mgQA_switchTab(tabId);
+}
+function mgC_carAddNew(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  (tab.state.carAdd = tab.state.carAdd || []).push({price:200, first:1, cycle:8, insp:8, endAge:''});
+  mgQA_switchTab(tabId);
+}
+function mgC_carAddDel(tabId,i){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  (tab.state.carAdd||[]).splice(i,1);
+  mgQA_switchTab(tabId);
+}
+function mgC_parkMode(tabId, m){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  const s = tab.state;
+  if(m==='keep'){ s.parkInherit = true; }
+  else { s.parkInherit = false; s.parkMode = m==='none' ? 'stop' : 'keep'; }
+  mgQA_switchTab(tabId);
+}
+function mgC_fillCarCompare(tab, panel){
+  const el = panel.querySelector('[data-cmp="car"]'); if(!el) return;
+  const MR = window.lastMR, R = window.lastR; if(!MR||!R){ el.innerHTML=''; return; }
+  const i0 = (tab.state.deathYear||1)-1;
+  let a=0,b=0;
+  for(let i=i0;i<(R.carTotal||[]).length;i++){ a+=(R.carTotal[i]||0)+((R.prk||[])[i]||0); b+=((MR.carTotal||[])[i]||0)+((MR.prk||[])[i]||0); }
+  el.innerHTML = `<div><small>通常の車・駐車場（万が一の後の合計）</small><b>${mgC_man(a)}</b></div><div><small>万が一の後</small><b>${mgC_man(b)}</b></div>`;
 }

@@ -1773,3 +1773,10 @@ table.cf td.vz{color:#b6c0cc}
 .mgqa-sch{display:grid;grid-template-columns:1.6fr 1fr .8fr 18px;gap:5px;align-items:center;margin-bottom:5px}
 .mgqa-sch select{font-family:inherit;font-size:10.5px;border:1px solid #cfd6e1;border-radius:7px;padding:6px 4px;background:#fff}
 .mgqa-sch .x{font-family:inherit;border:0;background:none;color:#b91c1c;font-weight:800;cursor:pointer}
+.mgqa-car{border:1px solid #e2e8f0;border-radius:8px;padding:7px 9px;margin-bottom:6px;display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;background:#fff}
+.mgqa-car.rel{border-color:#fdba74;background:#fff7ed}
+.mgqa-car .t b{font-size:12px} .mgqa-car .t small{display:block;font-size:10px;color:#64748b}
+.mgqa-car .n{grid-column:1/3;font-size:10.5px;color:#9a3412}
+.mgqa-caradd{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.1fr 1fr 18px;gap:4px;align-items:center;margin-bottom:5px}
+.mgqa-caradd .x{font-family:inherit;border:0;background:none;color:#b91c1c;font-weight:800;cursor:pointer}
+.mgqa-caradd .sl{font-size:9px}

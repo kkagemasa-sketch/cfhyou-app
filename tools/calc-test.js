@@ -436,6 +436,24 @@ const SCENARIOS = {
     const sc={}; sc[cid]=[{when:'hsEntry',amt:30,years:1},{when:'univ',amt:60,years:4}];
     mg('h',{deathYear:2,houseAfter:'stay',eduPath:p,eduSch:sc});
   },
+  'M24_夫死亡_ローン中の車を手放し車を追加': function(){
+    // 現有車（ローン中）を手放す→残りのローンを万が一の年に精算、5年目に軽自動車150万を追加、駐車場は月1万・60歳まで
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    setCarOwn(true);
+    addExistingCar({label:'ご主人様車',owner:'h',type:'new',pay:'loan',boughtAgo:'2',price:'350',endYrs:'10',insp:'12',down:'50',loanYrs:'5',loanRate:'2.0'});
+    addCar({label:'家族車',owner:'share',type:'new',pay:'cash',price:'300',first:'3',cycle:'8',insp:'10'});
+    if($('parking'))$('parking').value=2;
+    calcLoanAmt();
+    const ecid='ecar-'+document.querySelector('#existing-car-list>[id^="ecar-"]').id.replace('ecar-','');
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    const rel={}; rel[ecid]=true;
+    mg('h',{deathYear:2,houseAfter:'stay',carRelease:rel,carAdd:[{price:150,first:5,cycle:10,insp:6,endAge:''}],parkInherit:false,parkMode:'keep',parkMonthly:1,parkToAge:60});
+  },
   'M8_夫死亡_賃貸へ_奨学金': function(){
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');

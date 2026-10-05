@@ -546,6 +546,8 @@ function mgQA_applyStateToDOM(tab){
   if(typeof setMGDansin === 'function') setMGDansin(true);
   if(typeof setMGDansinPair === 'function'){ setMGDansinPair('h', true); setMGDansinPair('w', true); }
 
+  // 車：手放す車・追加する車（新形式）
+  if(typeof mgQA_carApply==='function') mgQA_carApply(tab);
   // 車・駐車場の継承フラグを contingency.js に伝える
   // true=通常CF設定をそのまま使う / false=Q&A詳細設定を使う
   window._mgQA_carInherit = s.carInherit !== false;
@@ -695,6 +697,7 @@ function mgQA_hideLeftPanel(){
   window._mgHousingStages = null;
   window._mgHouse = null;
   window._mgEduDelta = null;
+  window._mgCars = null;
   window._mgScholarAt = null;
 }
 
@@ -889,54 +892,7 @@ function mgQA_buildPanel(tab){
 
     ${card('edu','exp','学','教育', mgQA_eduCard(tab))}
 
-    ${card('car','exp','車',`車（${spouse}基準）`,`
-      <div class="hint" style="margin-bottom:6px">通常時の車設定をそのまま使うか、万一時のみ変更するかを選択</div>
-      <div class="fg">
-        <label class="lbl">万一時の車</label>
-        <div style="display:flex;gap:6px">
-          ${tog('carInherit','true','変更なし（通常時と同じ）',{asBool:true})}
-          ${tog('carInherit','false','変更する',{asBool:true})}
-        </div>
-      </div>
-      <div style="margin-top:8px;${s.carInherit===false?'':'display:none'}" data-cond="carInherit:false">
-        ${mgQA_buildMgCars(tab)}
-      </div>
-    `)}
-
-    ${card('park','exp','P',`駐車場（${spouse}基準）`,`
-      <div class="hint" style="margin-bottom:6px">通常時の駐車場設定をそのまま使うか、万一時のみ変更するかを選択</div>
-      <div class="fg">
-        <label class="lbl">万一時の駐車場</label>
-        <div style="display:flex;gap:6px">
-          ${tog('parkInherit','true','変更なし（通常時と同じ）',{asBool:true})}
-          ${tog('parkInherit','false','変更する',{asBool:true})}
-        </div>
-      </div>
-      <div style="margin-top:8px;${s.parkInherit===false?'':'display:none'}" data-cond="parkInherit:false">
-        <div class="fg">
-          <label class="lbl">駐車場</label>
-          <div style="display:flex;gap:6px">
-            ${tog('parkMode','keep','継続')}
-            ${tog('parkMode','stop','停止')}
-          </div>
-        </div>
-        <div style="margin-top:8px;${s.parkMode==='keep'?'':'display:none'}" data-cond="parkMode:keep">
-          <div class="g2">
-            <div class="fg"><label class="lbl">月額駐車場代</label>
-              <div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${s.parkMonthly??1.5}" data-k="parkMonthly" data-cf-row="prk" data-cf-dyn="parkAll"><span class="sl">万円/月</span></div>
-            </div>
-          </div>
-          <div class="g2" style="margin-top:6px">
-            <div class="fg"><label class="lbl">開始年齢</label>
-              <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.parkFromAge||''}" placeholder="空欄=現在" data-k="parkFromAge" data-cf-row="prk" data-cf-dyn="parkFrom"><span class="sl">歳</span></div>
-            </div>
-            <div class="fg"><label class="lbl">終了年齢</label>
-              <div class="suf"><input class="inp age-inp" type="number" min="0" max="100" value="${s.parkToAge||''}" placeholder="空欄=ずっと" data-k="parkToAge" data-cf-row="prk" data-cf-dyn="parkTo"><span class="sl">歳</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `)}
+    ${card('car','exp','車','車・駐車場', mgQA_carCard(tab))}
 
     <div class="hint" style="text-align:center;margin-top:12px;padding:8px;background:#f8fafc;border-radius:6px">
       入力停止から約0.6秒後に自動で再計算されます
@@ -1024,7 +980,7 @@ const MGQA_KIND_INFO = {
   dis1: {label:'障害1級',short:'1級',  color:'#3459ca', event:'障害1級'},
   dis2: {label:'障害2級',short:'2級',  color:'#159ea3', event:'障害2級'}
 };
-const MGQA_CARD_KEYS = ['ins','pension','income','lc','house','edu','car','park'];
+const MGQA_CARD_KEYS = ['ins','pension','income','lc','house','edu','car'];
 window._mgQA_openCards = window._mgQA_openCards || {};
 function mgQA_isCardOpen(tabId,key){ return !!(window._mgQA_openCards[tabId]||{})[key]; }
 function mgQA_toggleCard2(tabId,key,hdEl){
@@ -1083,11 +1039,18 @@ function mgQA_cardSummary(tab, key){
       if(!nPath && !nSch) return {changed:false, v:'変えない'};
       return {changed:true, v: nPath?`進路の変更 ${nPath}件`:'進路は変えない', sub: nSch?`奨学金 ${nSch}件`:''};
     }
-    case 'car':
-      return s.carInherit===false ? {changed:true, v:'変更'} : {changed:false, v:'通常どおり'};
-    case 'park':
-      if(s.parkInherit!==false) return {changed:false, v:'通常どおり'};
-      return s.parkMode==='stop' ? {changed:true, v:'なし'} : {changed:true, v:`月${s.parkMonthly??1.5}万円`};
+    case 'car': {
+      const parts = [];
+      if(s.carInherit===false) parts.push('車を変更（以前の形式）');
+      else {
+        const nRel = Object.values(s.carRelease||{}).filter(Boolean).length, nAdd = (s.carAdd||[]).length;
+        if(nRel) parts.push(`${nRel}台を手放す`);
+        if(nAdd) parts.push(`${nAdd}台を追加`);
+      }
+      const park = s.parkInherit===false ? (s.parkMode==='stop' ? '駐車場なし' : `駐車場 月${s.parkMonthly??1.5}万円`) : '';
+      if(!parts.length && !park) return {changed:false, v:'通常どおり'};
+      return {changed:true, v: parts.join('・')||'車は通常どおり', sub: park};
+    }
   }
   return {changed:false, v:''};
 }
