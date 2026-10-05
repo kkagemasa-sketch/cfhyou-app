@@ -161,6 +161,57 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     if(L.singleHH!=='false/h') f2.push(`単身世帯で名義人欄が残る／奥様名義になる ${L.singleHH}`);
     if(f2.length){ bad++; console.log('❌ 名義人・一般団信の欄\n   - '+f2.join('\n   - ')); }
     else console.log('✅ 名義人・一般団信: ローン種別ごとの表示・ボタン・説明文・保存復元・旧データ初期値・単身世帯');
+
+    /* ---- ③収入：年収のうちボーナス ---- */
+    await page.evaluate(pageBaseSetup);
+    const B=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const $=id=>document.getElementById(id);
+      const o={};
+      setRTab('cf'); live(true); await wait(1200);
+      const st=()=>['h','w'].map(p=>($(`${p}-bonus-box`).classList.contains('warn')?'W':'-')+($(`${p}-bonus-dot`).style.display==='none'?'':'!')).join(',')+'|'+($('inc-bonus-dot').style.display==='none'?'':'!');
+      o.blank=st();
+      // ご主人様：0を入力 → 警告が消える（奥様はまだ未入力なので③の印は残る）
+      $('h-bonus-amt').value='0'; onBonusInput();
+      o.h0=st();
+      $('w-bonus-amt').value='50'; onBonusInput();
+      o.both=st();
+      // 計算：額面700万・ボーナス200万 → 月給41.7万 → 標準報酬41万 → 日額9,113円
+      $('h-income-mode').value='gross'; onIncomeModeChange();
+      const s0=getIncomeSteps('h')[0]; // 最初の段階を額面700→700に
+      const sid=document.querySelector('#h-income-cont [id^="h-is-"]').id;
+      $(`${sid}-net-from`).value=700; $(`${sid}-net-to`).value=700;
+      $(`${sid}-from`).value=parseInt($('husband-age').value);
+      $('h-bonus-amt').value='200'; onBonusInput();
+      const a=sickBenefitAt('h',parseInt($('husband-age').value));
+      o.amt=[a.gross,Math.round(a.monthly*10)/10,a.hyojun,a.daily,a.annual].join('/');
+      // 月給の何か月分：4か月 → 月給43.75万 → 標準報酬44万 → 日額9,780円
+      setBonusMode('h','months'); $('h-bonus-months').value='4'; onBonusInput();
+      const m=sickBenefitAt('h',parseInt($('husband-age').value));
+      o.months=[Math.round(m.monthly*100)/100,m.hyojun,m.daily].join('/');
+      o.monthsUI=$('h-bonus-months-wrap').style.display+'|'+$('h-bonus-amt-wrap').style.display;
+      // 保存→復元
+      const saved=JSON.parse(JSON.stringify(_collectSaveData()));
+      $('h-bonus-months').value=''; setBonusMode('h','amt');
+      _applyData(saved); await wait(1200);
+      o.restored=$('h-bonus-mode').value+'/'+$('h-bonus-months').value+'/'+$('h-bonus-amt').value;
+      // 扶養内パート（額面入力）は対象外 → 欄を隠し警告も出さない
+      $('h-bonus-months').value=''; $('h-bonus-amt').value=''; setBonusMode('h','amt');
+      $('h-work-type').value='part'; updateBonusUI();
+      o.part=$('h-bonus-box').style.display+'|'+$('h-bonus-dot').style.display;
+      return o;
+    });
+    const f3=[];
+    if(B.blank!=='W!,W!|!') f3.push(`未入力の印が出ない（${B.blank}）`);
+    if(B.h0!=='-,W!|!') f3.push(`0入力で警告が消えない／奥様の警告が消える（${B.h0}）`);
+    if(B.both!=='-,-|') f3.push(`両方入力しても③の印が残る（${B.both}）`);
+    if(B.amt!=='700/41.7/41/9113/332.6') f3.push(`金額入力の傷病手当金 ${B.amt}（700/41.7/41/9113/332.6 のはず）`);
+    if(B.months!=='43.75/44/9780') f3.push(`か月分入力の傷病手当金 ${B.months}（43.75/44/9780 のはず）`);
+    if(B.monthsUI!=='|none') f3.push(`入力のしかたの切替で欄が切り替わらない ${B.monthsUI}`);
+    if(B.restored!=='months/4/200') f3.push(`保存→復元で戻らない ${B.restored}`);
+    if(B.part!=='none|none') f3.push(`扶養内パートでも欄・警告が出る ${B.part}`);
+    if(f3.length){ bad++; console.log('❌ ボーナス欄\n   - '+f3.join('\n   - ')); }
+    else console.log('✅ ボーナス欄: 未入力の印・0で解除・傷病手当金(金額/か月分)・保存復元・扶養内パート除外');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

@@ -17,6 +17,7 @@ const ASSETS = [
   './js/error-monitor.js',
   './js/family.js',
   './js/income.js',
+  './js/bonus.js',
   './js/mat-leave.js',
   './js/education.js',
   './js/housing.js',

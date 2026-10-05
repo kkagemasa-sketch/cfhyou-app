@@ -1657,3 +1657,22 @@ table.cf td.vz{color:#b6c0cc}
 .loan-dansin-box .ldb-seg .tc-lbl{font-size:11px}
 .loan-dansin-box .ldb-note{font-size:10px;color:#475569;margin-top:7px;line-height:1.6}
 .loan-dansin-box .ldb-note:empty{display:none}
+
+/* ===== ③収入：年収のうちボーナス（未入力はオレンジで目立たせる） ===== */
+.bonus-box{position:relative;border:1.5px solid #cbd5e1;background:#fff;border-radius:var(--rs,8px);padding:14px 10px 9px;margin:12px 0 4px}
+.bonus-box.warn{border:2px solid #f59e0b;background:#fffbeb}
+.bonus-badge{position:absolute;top:-9px;left:10px;color:#fff;font-size:10px;font-weight:800;border-radius:5px;padding:1px 8px}
+.bonus-badge.warn{background:#d97706}
+.bonus-badge.ok{background:#0f9d58}
+.bonus-ttl{font-size:12px;font-weight:800;color:#1e3a5f;margin-bottom:7px}
+.bonus-lbl{font-size:10px;font-weight:700;color:#475569;margin-bottom:4px}
+.bonus-seg{display:flex;background:#eef1f6;border-radius:7px;padding:2px;gap:2px}
+.bonus-seg span{flex:1;text-align:center;font-size:10.5px;font-weight:700;color:#475569;padding:6px 2px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.bonus-seg span.on{background:#fff;color:#1e3a5f;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.bonus-box.warn .inp{border-color:#f59e0b}
+.bonus-warnmsg{background:#fef3c7;border-radius:7px;padding:7px 9px;margin-top:9px;font-size:10.5px;color:#92400e;line-height:1.6}
+.bonus-warnmsg b{color:#78350f}
+.bonus-res{background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:7px 9px;margin-top:9px;font-size:10.5px;color:#334155;line-height:1.7}
+.bonus-res b{color:#1e3a5f}
+.bonus-note{font-size:9.5px;color:#64748b;margin-top:7px;line-height:1.5}
+.bonus-dot{display:inline-flex;align-items:center;justify-content:center;background:#f59e0b;color:#fff;border-radius:999px;font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 4px;margin-left:5px;vertical-align:1px}

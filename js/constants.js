@@ -225,7 +225,7 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'house-price','down-payment','house-cost','cost-type','loan-yrs','loan-type',
   'loan-total-simple', // 住宅ローン総額モードの入力（★保存漏れでCF表間に値が漏れていたバグの修正）
   'loan-h-amt','loan-h-yrs','loan-h-type','rate-h-base','loan-w-amt','loan-w-yrs','loan-w-type','rate-w-base',
-  'joint-share-h','joint-share-w','loan-borrower','loan-dansin','loan-dansin-h','loan-dansin-w','joint-dansin-sel',
+  'joint-share-h','joint-share-w','h-bonus-mode','h-bonus-amt','h-bonus-months','w-bonus-mode','w-bonus-amt','w-bonus-months','loan-borrower','loan-dansin','loan-dansin-h','loan-dansin-w','joint-dansin-sel',
   'delivery-year','rent-before',
   'zaikei-h-bal','zaikei-h-monthly','zaikei-h-end','zaikei-h-redeem','zaikei-w-bal','zaikei-w-monthly','zaikei-w-end','zaikei-w-redeem',
   'rate-base','sqm','mgmt-fee','mgmt-net','rep-unit','rep-manual-base','rep-manual-override','choki',

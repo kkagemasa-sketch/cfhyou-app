@@ -3149,6 +3149,7 @@ function render(){
   }
 
   // Excel出力用にグローバル保存
+  if(typeof updateBonusUI==='function'){try{updateBonusUI();}catch(e){}} // ③収入ボーナス欄の未入力表示・見込み額
   window.lastR=R; window.lastDisp=disp; window.lastCYear=cYear; window._purchaseInitSav=initSav;
   if(rTab==='cf')renderTable(R,totalYrs,disp,cLbls,cYear,effLoanAmt,isM,hAge,retAge,children,delivery);
   else if(rTab==='graph')renderGraphs(R,disp,isM,totalYrs,hAge);
