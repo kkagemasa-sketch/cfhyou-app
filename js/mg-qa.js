@@ -387,6 +387,9 @@ function mgQA_calcAndRender(tab, immediate){
   if(oldH) oldH.style.display = 'none';
   if(oldW) oldW.style.display = 'none';
 
+  // 計算結果に依存する表示（遺族年金の内訳など）を更新
+  if(typeof mgQA_afterCalc==='function') mgQA_afterCalc(tab);
+
   // ハイライト再適用は RAF 内で実行済み
 }
 
@@ -458,6 +461,7 @@ function mgQA_applyStateToDOM(tab){
       const m = box.id && box.id.match(/^mg-ins-(\d+)$/);
       if(!m) return;
       const id = parseInt(m[1]);
+      const _nm = document.getElementById(`mg-ins-name-${id}`); if(_nm) _nm.value = ins.name || '';
       if(ins.type === 'lump'){
         if(typeof setMGInsType === 'function') setMGInsType(id, 'lump');
         const amtEl = document.getElementById(`mg-ins-amt-${id}`);
@@ -465,13 +469,19 @@ function mgQA_applyStateToDOM(tab){
       } else if(ins.type === 'annuity'){
         if(typeof setMGInsType === 'function') setMGInsType(id, 'annuity');
         const annualEl = document.getElementById(`mg-ins-annual-${id}`);
-        if(annualEl) annualEl.value = ins.annual || 0;
+        if(annualEl) annualEl.value = mgQA_insAnnual(ins);
+        box.dataset.endby = ins.endBy==='insured' ? 'insured' : 'receiver';
         const endEl = document.getElementById(`mg-ins-end-age-${id}`);
         if(endEl) endEl.value = ins.endAge || 65;
       }
     });
   }
 
+  // 亡くなった方の加入年金（厚生／国民のみ）
+  if(s.pensionType!=='kosei' && s.pensionType!=='kokumin'){
+    s.pensionType = (typeof getMGPensionType==='function') ? getMGPensionType() : 'kosei';
+  }
+  if(typeof setMGPensionType==='function') setMGPensionType(s.pensionType);
   // 遺族年金モード
   if(typeof setMGSurvMode === 'function') setMGSurvMode(s.pensionMode);
   const sa = document.getElementById('mg-surv-amt');
@@ -611,7 +621,11 @@ function mgQA_applyStateToDOM(tab){
   // 就労収入オーバーライド（新形式：window._mgIncomeOverride で contingency.js に渡す）
   // 生存者側のみ上書きする: target='h'→奥様(w)を上書き、target='w'→ご主人様(h)を上書き
   const survivorSide = tab.target === 'h' ? 'w' : 'h';
-  if(s.incomeMode === 'override' && Array.isArray(s.incomeSteps)){
+  // 新形式：遺された方の収入を関数で渡す（通常どおり／％／パート／期間ごと／働かない）
+  window._mgIncomeFn = window._mgIncomeFn || {};
+  const _incFn = (typeof mgQA_incomeFn==='function') ? mgQA_incomeFn(tab) : null;
+  if(_incFn) window._mgIncomeFn[survivorSide] = _incFn; else delete window._mgIncomeFn[survivorSide];
+  if(false){
     // 有効ステップのみ抽出（ageFrom/ageTo>0 かつ ageTo>=ageFrom）
     const validSteps = s.incomeSteps
       .filter(st => st && st.ageFrom>0 && st.ageTo>=st.ageFrom)
@@ -697,6 +711,7 @@ function mgQA_hideLeftPanel(){
   window._mgQA_carInherit = true;
   window._mgQA_parkInherit = true;
   window._mgIncomeOverride = {};
+  window._mgIncomeFn = {};
   window._mgScholarshipItems = [];
   window._mgHousingStages = null;
 }
@@ -841,52 +856,49 @@ function mgQA_buildPanel(tab){
     </div>
 
     <div class="mgqa-base">
-      <div class="g2">
-        <div class="fg"><label class="lbl">${deceased}のご逝去は何年後？</label>
-          <div class="suf"><input class="inp age-inp" type="number" min="1" max="50" value="${s.deathYear}" data-k="deathYear" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}" data-cf-to="${hAge+(s.deathYear||1)-1}"><span class="sl">年後</span></div>
+      <div class="mgqa-base-hd"><span>いつ起きたら</span><span class="mgqa-base-ev">${mgQA_eventText(tab).replace(/に.*$/,'')}</span></div>
+      <div class="g2 mgqa-when">
+        <div class="fg"><label class="lbl">今から</label>
+          <div class="suf"><input class="inp age-inp" id="mgqa-when-yr" type="number" min="1" max="70" value="${s.deathYear}" data-k="deathYear" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}" data-cf-to="${hAge+(s.deathYear||1)-1}"><span class="sl">年後</span></div>
+        </div>
+        <div class="fg"><label class="lbl">${deceased}の年齢</label>
+          <div class="suf"><input class="inp age-inp" id="mgqa-when-age" type="number" min="${(target==='h'?hAge:wAge)}" max="100" value="${(target==='h'?hAge:wAge)+(s.deathYear||1)-1}" oninput="mgQA_onWhenAge('${tab.id}',this)"><span class="sl" id="mgqa-when-agey">歳（${mgQA_eventYear(tab)}年）</span></div>
         </div>
       </div>
-      <div class="hint">「1年後」=今から1年以内（最も厳しい条件でのシミュレーション）</div>
+      <div class="mgqa-quick">${mgQA_whenQuick(tab).map(q=>`<button type="button" class="${q.n===(s.deathYear||1)?'on':''}" onclick="mgQA_setState('${tab.id}','deathYear',${q.n},{rebuild:true})">${q.label}</button>`).join('')}</div>
+      <div class="hint">どちらに入力しても連動します。「1年後」がいちばん厳しい条件の試算です</div>
     </div>
 
     <div class="mgqa-sec inc"><span class="bar"></span>入ってくるお金</div>
     ${card('ins','inc','保','死亡保険金',`
-      <div class="hint" style="margin-bottom:6px">複数契約している場合は「+保険を追加」で複数登録。一時金=一括受取 / 年金型=毎年受取</div>
       <div id="mgqa-ins-${tab.id}">
-        ${s.insurances.map((ins,i)=>mgQA_renderIns(tab.id, i, ins)).join('')}
+        ${s.insurances.map((ins,i)=>mgQA_renderIns(tab.id, i, ins)).join('') || '<div class="hint">保険金はありません。「＋ 保険を追加」で入力します</div>'}
       </div>
       <button class="btn-add" onclick="mgQA_addIns('${tab.id}')" style="margin-top:4px">＋ 保険を追加</button>
+      <div class="mgqa-total"><span>保険金の合計（受取総額）</span><b>${Math.round(mgQA_insTotal(tab)).toLocaleString()}万円</b></div>
     `)}
 
     ${card('pension','inc','年','遺族年金',`
-      <div class="hint" style="margin-bottom:6px">通常時の年収・家族構成から自動計算（${survHint}）</div>
       <div class="g2">
-        <div class="fg"><label class="lbl">遺族年金の設定</label>
-          <div style="display:flex;gap:6px">
-            ${tog('pensionMode','auto','自動計算')}
-            ${tog('pensionMode','manual','手動入力')}
-          </div>
-        </div>
-        <div class="fg" style="${s.pensionMode==='manual'?'':'display:none'}" data-cond="pensionMode:manual">
-          <label class="lbl">合計遺族年金</label>
-          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.pensionManual}" data-k="pensionManual" data-cf-row="survPension" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">万/年</span></div>
-        </div>
+        <div class="fg"><label class="lbl">計算方法</label>
+          <div class="mgqa-mini-seg">${tog('pensionMode','auto','自動計算')}${tog('pensionMode','manual','手入力')}</div></div>
+        <div class="fg"><label class="lbl">制度 <span style="font-weight:400">（通常のCF表にも反映）</span></label>
+          <div class="mgqa-mini-seg">
+            <button type="button" class="${_izoku2028?'':'on'}" onclick="mgQA_setIzoku('${tab.id}','current')">現行</button>
+            <button type="button" class="${_izoku2028?'on':''}" onclick="mgQA_setIzoku('${tab.id}','r2028')">2028年改正</button>
+          </div></div>
       </div>
+      <div class="fg"><label class="lbl">${deceased}の加入していた年金</label>
+        <div class="mgqa-mini-seg">${tog('pensionType','kosei','厚生年金（会社員・公務員）')}${tog('pensionType','kokumin','国民年金のみ（自営業など）')}</div></div>
+      <div class="fg" style="${s.pensionMode==='manual'?'':'display:none'}" data-cond="pensionMode:manual">
+        <label class="lbl">遺族年金（年額・手入力）</label>
+        <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${s.pensionManual}" data-k="pensionManual" data-cf-row="survPension" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">万円/年</span></div>
+      </div>
+      <div class="mgqa-surv-tbl">${mgQA_survTable(tab)}</div>
+      <div class="hint">${s.pensionMode==='manual'?'手入力の金額を万が一の年から毎年受け取る形で計算します':`${deceased}の年収・加入期間とお子様の年齢から自動で計算します（${survHint}）`}</div>
     `)}
 
-    ${card('income','inc','人',`${spouse}の収入`,`
-      <div class="hint" style="margin-bottom:6px">通常時の${spouse}の手取り年収: 今年 約${spouseIncomeHint}万円（左の③収入で編集）。万が一時に変更する場合は段階設定可</div>
-      <div class="fg">
-        <label class="lbl">万が一後の${spouse}の収入</label>
-        <div style="display:flex;gap:6px">
-          ${tog('incomeMode','same','通常時と同じ')}
-          ${tog('incomeMode','override','変更する')}
-        </div>
-      </div>
-      <div style="margin-top:6px;${s.incomeMode==='override'?'':'display:none'}" data-cond="incomeMode:override">
-        ${mgQA_buildIncomeSteps(tab)}
-      </div>
-    `)}
+    ${card('income','inc','人',`${spouse}の収入`, mgQA_incomeCard(tab))}
 
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
     ${card('lc','exp','生','生活費',`
@@ -1005,6 +1017,73 @@ function mgQA_toggleCard(headerEl){
 }
 window.mgQA_toggleCard=mgQA_toggleCard;
 
+// ===== ③遺族年金 =====
+function mgQA_setIzoku(tabId, mode){
+  const sel = document.getElementById('izoku-mode');
+  if(sel){ sel.value = mode; }
+  const tab = mgQA_tabs.find(t=>t.id===tabId);
+  if(tab){ mgQA_switchTab(tabId); }
+}
+// 期間別の内訳表（直近の計算結果から、金額が変わる区切りごとにまとめる）
+function mgQA_survTable(tab){
+  const MR = window.lastMR, R = window.lastR;
+  if(!MR || !Array.isArray(MR.survPension) || MR._targetIsH!==(tab.target==='h') || window._mgQA_activeTabId!==tab.id) return '';
+  const survAges = tab.target==='h' ? MR.wA : MR.hA;
+  if(!Array.isArray(survAges)) return '';
+  const y0 = (tab.state.deathYear||1) - 1;
+  const rows = [];
+  for(let i=y0;i<MR.survPension.length;i++){
+    const v = Math.round(MR.survPension[i]||0);
+    const last = rows[rows.length-1];
+    if(last && last.v===v){ last.to = survAges[i]; }
+    else rows.push({from:survAges[i], to:survAges[i], v});
+  }
+  const shown = rows.filter(r=>r.v>0);
+  if(!shown.length) return '<div class="hint" style="margin-top:6px">遺族年金はありません</div>';
+  const who = tab.target==='h' ? '奥様' : 'ご主人様';
+  return `<div class="mgqa-tl"><div class="r h"><span>期間（${who}の年齢）</span><span>年額</span></div>${
+    shown.slice(0,8).map(r=>`<div class="r"><span class="p">${r.from===r.to?r.from+'歳':`${r.from}〜${r.to}歳`}</span><span class="a">${r.v.toLocaleString()}万円</span></div>`).join('')
+  }</div>`;
+}
+
+// 計算のあとに更新する表示
+function mgQA_afterCalc(tab){
+  if(window._mgQA_activeTabId!==tab.id) return;
+  const panel = document.getElementById('mgqa-left-panel'); if(!panel) return;
+  const st = panel.querySelector('.mgqa-surv-tbl'); if(st) st.innerHTML = mgQA_survTable(tab);
+  if(typeof mgQA_afterCalcExtra==='function') mgQA_afterCalcExtra(tab, panel);
+}
+
+// ===== ①いつ起きたら =====
+function mgQA_eventYear(tab){
+  const y0 = (typeof getCfStartYear==='function') ? getCfStartYear() : new Date().getFullYear();
+  return y0 + (tab.state.deathYear||1) - 1;
+}
+// 年齢を入れたら「何年後」に換算（現在の年齢＝1年後）
+function mgQA_onWhenAge(tabId, el){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  const cur = tab.target==='h' ? (mgQA_iv('husband-age')||30) : (mgQA_iv('wife-age')||29);
+  const age = parseInt(el.value);
+  if(!(age>=cur)) return;
+  const yr = document.getElementById('mgqa-when-yr');
+  if(yr){ yr.value = age - cur + 1; mgQA_updateState(tab, yr); }
+}
+// よく使う時点のボタン（該当しないものは出さない）
+function mgQA_whenQuick(tab){
+  const out = [{n:1,label:'1年後'},{n:5,label:'5年後'},{n:10,label:'10年後'}];
+  // 末子が中学入学（13歳になる年）
+  const ages = [...document.querySelectorAll('#children-cont input[id^="ca-"]')].map(e=>parseInt(e.value)).filter(a=>a>=0);
+  if(ages.length){
+    const youngest = Math.min(...ages);
+    if(youngest<13) out.push({n:13-youngest+1, label:'末子が中学入学'});
+  }
+  // 住宅ローン完済前（返済が残っている最後の年）
+  const lb = (window.lastR && window.lastR.lBal) || [];
+  let last=-1; for(let i=0;i<lb.length;i++){ if((lb[i]||0)>0) last=i; }
+  if(last>=1) out.push({n:last+1, label:'住宅ローン完済前'});
+  return out;
+}
+
 // ===== 万が一パネルの枠組み（種類・カード要約・開閉） =====
 const MGQA_KIND_INFO = {
   death:{label:'死亡',   short:'死亡', color:'#c2185b', event:'ご逝去'},
@@ -1037,17 +1116,21 @@ function mgQA_cardSummary(tab, key){
       const list = (s.insurances||[]).filter(x=>x&&x.type!=='none');
       if(!list.length) return {changed:false, v:'なし'};
       const lump = list.filter(x=>x.type==='lump').reduce((a,x)=>a+(+x.amount||0),0);
-      const ann = list.filter(x=>x.type==='annuity').reduce((a,x)=>a+(+x.annual||0),0);
+      const ann = list.filter(x=>x.type==='annuity').reduce((a,x)=>a+mgQA_insAnnual(x),0);
       return {changed:true, v: lump>0?man(lump):`年${man(ann)}`, sub: `${list.length}件${lump>0&&ann>0?`・年金 年${man(ann)}`:''}`};
     }
     case 'pension':
       return s.pensionMode==='manual'
         ? {changed:true, v:`年${man(s.pensionManual)}`, sub:'手入力'}
-        : {changed:false, v:'自動計算', sub:(document.getElementById('izoku-mode')?.value==='r2028')?'2028年改正後':'現行制度'};
-    case 'income':
-      return s.incomeMode==='override'
-        ? {changed:true, v:'変更', sub:`${(s.incomeSteps||[]).length}期間`}
-        : {changed:false, v:'通常どおり'};
+        : {changed:s.pensionType==='kokumin', v:'自動計算', sub:[(document.getElementById('izoku-mode')?.value==='r2028')?'2028年改正後':'現行制度', s.pensionType==='kokumin'?'国民年金のみ':''].filter(Boolean).join('・')};
+    case 'income': {
+      const m = mgC_incMode(s);
+      if(m==='same') return {changed:false, v:'通常どおり'};
+      if(m==='none') return {changed:true, v:'働かない', sub:'万が一の後は収入0'};
+      if(m==='pct'){ const pct=(s.incPctDir==='up'?1:-1)*(+s.incPctAbs||0); return {changed:pct!==0, v:`通常の${100+pct}%`}; }
+      if(m==='part'){ const pt=s.incPart||{}; return {changed:true, v:`パート ${s.incBasis==='gross'?'額面':'手取り'}${man(pt.amt===undefined?130:pt.amt)}`, sub: pt.from?`${pt.from}〜${pt.to||''}歳`:''}; }
+      return {changed:true, v:'期間ごと', sub: mgC_incSub(s)==='normal' ? '通常時の期間で変更' : `${(s.incomeSteps||[]).length}期間`};
+    }
     case 'lc':
       if(s.lcMode==='step') return {changed:true, v:'期間ごと', sub:`${(s.lcSteps||[]).length}期間`};
       return {changed:(+s.lcRatio||100)!==100, v:`通常の${s.lcRatio||100}%`};
@@ -1080,6 +1163,12 @@ function mgQA_refreshHeader(tab){
   const chip = panel.querySelector('.mgqa-ph-chips .o'); if(chip) chip.textContent = `変更 ${n}項目`;
   const nm = panel.querySelector('.mgqa-ph-name'); if(nm) nm.textContent = `タブ名：${tab.name}`;
   const ev = panel.querySelector('.mgqa-ph-chips .e'); if(ev) ev.textContent = mgQA_eventText(tab);
+  const bev = panel.querySelector('.mgqa-base-ev'); if(bev) bev.textContent = mgQA_eventText(tab).replace(/に.*$/,'');
+  const cur = tab.target==='h' ? (mgQA_iv('husband-age')||30) : (mgQA_iv('wife-age')||29);
+  const ageEl = document.getElementById('mgqa-when-age');
+  if(ageEl && document.activeElement!==ageEl) ageEl.value = cur + (tab.state.deathYear||1) - 1;
+  const agey = document.getElementById('mgqa-when-agey'); if(agey) agey.textContent = `歳（${mgQA_eventYear(tab)}年）`;
+  panel.querySelectorAll('.mgqa-quick button').forEach(b=>{ const m=(b.getAttribute('onclick')||'').match(/'deathYear',(\d+)/); b.classList.toggle('on', !!m && +m[1]===(tab.state.deathYear||1)); });
 }
 // 「2030年（ご主人様34歳）にご逝去」
 function mgQA_eventText(tab){
@@ -1548,8 +1637,9 @@ function mgQA_addIncomeStep(tabId){
   const steps = tab.state.incomeSteps;
   // 前段階の終了をデフォルトの開始に
   const prev = steps[steps.length-1];
-  const newFrom = prev ? (prev.ageTo+1) : 30;
-  steps.push({ ageFrom: newFrom, ageTo: newFrom+5, netFrom: 0, netTo: 0 });
+  const sp = tab.target==='h' ? 'w' : 'h';
+  const newFrom = prev ? (prev.ageTo+1) : mgC_ageAtEvent(tab, sp);
+  steps.push({ ageFrom: newFrom, ageTo: newFrom+9, amt: 0 });
   mgQA_switchTab(tabId);
 }
 
@@ -1613,38 +1703,83 @@ function mgQA_buildScholarshipChildren(tab){
 
 // --- 保険項目の描画 ---
 function mgQA_renderIns(tabId, idx, ins){
-  const isAnn = ins.type==='annuity';
-  const isLump = ins.type==='lump';
-  const isNone = ins.type==='none' || !ins.type;
-  // 保険金の計上年 = 死亡年
+  if(!ins || ins.type==='none' || !ins.type) return '';
   const tab = mgQA_tabs.find(t=>t.id===tabId);
+  const st = tab?.state || {};
+  const isAnn = ins.type==='annuity';
+  const deceased = tab?.target==='h' ? 'ご主人様' : '奥様';
+  const survivor = tab?.target==='h' ? '奥様' : 'ご主人様';
   const hAgeNow = mgQA_iv('husband-age') || 30;
-  const deathYrOffset = tab?.state?.deathYear || 1;
-  const deathHAge = hAgeNow + deathYrOffset - 1;
+  const deathHAge = hAgeNow + (st.deathYear||1) - 1;
+  const seg = (v,label) => `<button type="button" class="${ins.type===v?'on':''}" onclick="mgQA_setState('${tabId}','insurances.${idx}.type','${v}',{rebuild:true})">${label}</button>`;
+  let body;
+  if(isAnn){
+    const p = mgQA_insAnnuityPeriod(tab, ins);
+    const monthly = mgQA_insMonthly(ins);
+    const by = ins.endBy==='receiver' ? 'receiver' : 'insured';
+    const bySeg = (v,label) => `<button type="button" class="${by===v?'on':''}" onclick="mgQA_setState('${tabId}','insurances.${idx}.endBy','${v}',{rebuild:true})">${label}</button>`;
+    body = `
+      <div class="g2">
+        <div class="fg"><label class="lbl">毎月の受取額</label>
+          <div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${monthly}" data-k="insurances.${idx}.monthly" data-cf-row="insAnnuity_${idx}" data-cf-from="${deathHAge}"><span class="sl">万円/月</span></div></div>
+        <div class="fg"><label class="lbl">受け取り終わり</label>
+          <div class="suf"><input class="inp age-inp" type="number" min="20" max="100" value="${ins.endAge||65}" data-k="insurances.${idx}.endAge" data-cf-row="insAnnuity_${idx}" data-cf-from="${deathHAge}"><span class="sl">歳まで</span></div></div>
+      </div>
+      <div class="mgqa-mini-seg" style="margin-top:6px"><span class="lbl" style="margin:0 6px 0 0">終わりの年齢は</span>${bySeg('insured',deceased+'（被保険者）')}${bySeg('receiver',survivor+'（受取人）')}</div>
+      <div class="mgqa-ins-sum">${p.years>0?`受取期間 ${p.years}年（${p.from}〜${p.to}年）　合計 <b>${Math.round(p.total).toLocaleString()}万円</b>`:'受取期間がありません（終わりの年齢を確認してください）'}</div>`;
+  }else{
+    body = `
+      <div class="g2">
+        <div class="fg"><label class="lbl">受取額</label>
+          <div class="suf"><input class="inp amt-inp" type="number" min="0" value="${ins.amount||0}" data-k="insurances.${idx}.amount" data-cf-row="insPayArr" data-cf-from="${deathHAge}"><span class="sl">万円</span></div></div>
+        <div class="fg"><label class="lbl">受取人</label><div class="mgqa-ro">${survivor}</div></div>
+      </div>`;
+  }
   return `
-    <div class="mgqa-ins" data-idx="${idx}">
-      <select data-k="insurances.${idx}.type" data-cf-row="insPayArr" data-cf-from="${deathHAge}">
-        <option value="none" ${isNone?'selected':''}>選択してください</option>
-        <option value="lump" ${isLump?'selected':''}>一時金</option>
-        <option value="annuity" ${isAnn?'selected':''}>年金型</option>
-      </select>
-      ${isAnn ? `
-        毎年 <input type="number" value="${ins.annual||0}" data-k="insurances.${idx}.annual" data-cf-row="insAnnuity_${idx}" data-cf-from="${deathHAge}" style="width:70px"> 万 ×
-        <input type="number" value="${ins.endAge||65}" data-k="insurances.${idx}.endAge" data-cf-row="insAnnuity_${idx}" data-cf-from="${deathHAge}" style="width:60px"> 歳まで
-      ` : isLump ? `
-        <input type="number" value="${ins.amount||0}" data-k="insurances.${idx}.amount" data-cf-row="insPayArr" data-cf-from="${deathHAge}" style="width:100px"> 万円
-      ` : `
-        <span style="color:#94a3b8;font-size:11px">← タイプを選ぶと金額欄が表示されます</span>
-      `}
-      <button class="mgqa-btn" onclick="mgQA_removeIns('${tabId}', ${idx})" title="削除">×</button>
-    </div>
-  `;
+    <div class="mgqa-ins2" data-idx="${idx}">
+      <div class="mgqa-ins2-hd">
+        <input class="inp" type="text" placeholder="保険の名前（例：収入保障保険）" value="${mgQA_escHtml(ins.name||'')}" data-k="insurances.${idx}.name">
+        <button type="button" class="mgqa-del" onclick="mgQA_removeIns('${tabId}', ${idx})">削除</button>
+      </div>
+      <div class="mgqa-mini-seg">${seg('lump','一時金')}${seg('annuity','毎年受け取る')}</div>
+      ${body}
+    </div>`;
+}
+// 年金型の月額（旧データは年額だけ持っている）
+function mgQA_insMonthly(ins){
+  if(ins.monthly!==undefined && ins.monthly!==null && ins.monthly!=='') return +ins.monthly||0;
+  return Math.round((+ins.annual||0)/12*10)/10;
+}
+function mgQA_insAnnual(ins){
+  if(ins.monthly!==undefined && ins.monthly!==null && ins.monthly!=='') return Math.round((+ins.monthly||0)*12*10)/10;
+  return +ins.annual||0;
+}
+// 年金型の受取期間（万が一の年から、終わりの年齢の年まで）
+function mgQA_insAnnuityPeriod(tab, ins){
+  const st = tab.state;
+  const y0 = (typeof getCfStartYear==='function') ? getCfStartYear() : new Date().getFullYear();
+  const from = y0 + (st.deathYear||1) - 1;
+  const insured = ins.endBy!=='receiver';
+  const who = insured ? tab.target : (tab.target==='h'?'w':'h');
+  const curAge = who==='h' ? (mgQA_iv('husband-age')||30) : (mgQA_iv('wife-age')||29);
+  const ageAtFrom = curAge + (st.deathYear||1) - 1;
+  const years = Math.max(0, (+ins.endAge||65) - ageAtFrom + 1);
+  return {from, to: from+years-1, years, total: years*mgQA_insAnnual(ins)};
+}
+// 保険金の受取総額（一時金＋年金型の合計）
+function mgQA_insTotal(tab){
+  return (tab.state.insurances||[]).reduce((a,ins)=>{
+    if(!ins||ins.type==='none') return a;
+    if(ins.type==='lump') return a+(+ins.amount||0);
+    return a+mgQA_insAnnuityPeriod(tab,ins).total;
+  },0);
 }
 
 function mgQA_addIns(tabId){
   const tab = mgQA_tabs.find(t=>t.id===tabId);
   if(!tab) return;
-  tab.state.insurances.push({ type:'lump', amount:0 });
+  tab.state.insurances = (tab.state.insurances||[]).filter(x=>x&&x.type!=='none');
+  tab.state.insurances.push({ type:'lump', amount:0, name:'', endAge:65, endBy:'insured' });
   mgQA_switchTab(tabId);
 }
 function mgQA_removeIns(tabId, idx){

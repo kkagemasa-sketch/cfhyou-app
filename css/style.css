@@ -1705,3 +1705,47 @@ table.cf td.vz{color:#b6c0cc}
 .mgqa-c2.open .mgqa-c2-arw{transform:rotate(180deg)}
 .mgqa-c2-bd{display:none;padding:10px 12px 12px;border-top:1px solid #eef2f6}
 .mgqa-c2.open .mgqa-c2-bd{display:block}
+.mgqa-base-hd{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;color:#1e3a5f;margin-bottom:8px}
+.mgqa-base-ev{font-size:12px;font-weight:700;color:#475569}
+.mgqa-quick{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 2px}
+.mgqa-quick button{font-family:inherit;font-size:11px;font-weight:700;border:1px solid #cfd6e1;border-radius:999px;padding:3px 10px;color:#475569;background:#fff;cursor:pointer}
+.mgqa-quick button.on{border-color:#1e3a5f;background:#eef2f7;color:#1e3a5f}
+.mgqa-ins2{border:1px solid #e2e8f0;border-radius:9px;padding:9px 10px;margin-bottom:7px;background:#fbfcfe}
+.mgqa-ins2-hd{display:flex;gap:6px;align-items:center;margin-bottom:7px}
+.mgqa-ins2-hd .inp{flex:1;min-width:0;font-weight:700}
+.mgqa-del{font-family:inherit;font-size:10.5px;font-weight:700;color:#dc2626;background:#fff;border:1px solid #fca5a5;border-radius:6px;padding:3px 8px;cursor:pointer;flex:0 0 auto}
+.mgqa-mini-seg{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
+.mgqa-mini-seg button{font-family:inherit;font-size:11px;font-weight:700;border:1px solid #cfd6e1;border-radius:7px;padding:4px 10px;color:#475569;background:#fff;cursor:pointer}
+.mgqa-mini-seg button.on{border-color:#1e3a5f;background:#1e3a5f;color:#fff}
+.mgqa-ro{height:32px;display:flex;align-items:center;padding:0 10px;border-radius:8px;background:#f1f5f9;font-weight:700;color:#334155;font-size:12px}
+.mgqa-ins-sum{font-size:11px;color:#475569;margin-top:6px}
+.mgqa-ins-sum b{color:#1e3a5f}
+.mgqa-total{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 10px;border-radius:8px;background:#eef2f7;font-size:12px;font-weight:700;color:#1e3a5f}
+.mgqa-total b{font-size:14px}
+.mgqa-tl{border:1px solid #e2e8f0;border-radius:9px;overflow:hidden;margin-top:8px}
+.mgqa-tl .r{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid #eef2f6;font-size:12px}
+.mgqa-tl .r:last-child{border-bottom:none}
+.mgqa-tl .r.h{background:#f4f6fa;font-size:10.5px;font-weight:700;color:#64748b;padding:4px 10px}
+.mgqa-tl .p{font-weight:800;color:#1e3a5f}
+.mgqa-tl .a{font-weight:800}
+.mgqa-note{font-size:11.5px;color:#334155;background:#f6f8fc;border:1px solid #e5e9f0;border-radius:8px;padding:7px 10px;margin-top:8px;line-height:1.6}
+.mgqa-note b{color:#1e3a5f}
+.mgqa-cmp{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.mgqa-cmp:empty{display:none}
+.mgqa-cmp div{border-radius:8px;padding:6px 9px;background:#f6f8fc;border:1px solid #e5e9f0}
+.mgqa-cmp small{display:block;font-size:10px;color:#64748b;font-weight:700}
+.mgqa-cmp b{font-size:14px;color:#1e3a5f}
+.mgqa-rows .mgqa-row{display:grid;grid-template-columns:1fr 14px 1fr 1.3fr 22px;gap:5px;align-items:center;margin-bottom:5px}
+.mgqa-rows .mgqa-row.h{font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px}
+.mgqa-rows .tl{text-align:center;color:#94a3b8}
+.mgqa-rows .x{font-family:inherit;border:0;background:none;color:#b91c1c;font-weight:800;cursor:pointer}
+.mgqa-nt{border:1px solid #e2e8f0;border-radius:9px;overflow:hidden;margin-top:6px}
+.mgqa-nt .r{display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid #eef2f6;font-size:11px}
+.mgqa-nt .r:last-child{border-bottom:none}
+.mgqa-nt .r.h{background:#f4f6fa;font-size:10px;font-weight:700;color:#64748b}
+.mgqa-nt .r.past{background:#f8fafc;color:#94a3b8}
+.mgqa-nt .p{font-weight:800;color:#1e3a5f}
+.mgqa-nt .mute{color:#94a3b8}
+.mgqa-nt .suf{margin-top:4px}
+.mgqa-nt .split{font-family:inherit;font-size:9.5px;border:1px dashed #94a3b8;background:#fff;border-radius:5px;padding:0 4px;color:#475569;cursor:pointer}
+.mgqa-linkbtn{font-family:inherit;font-size:10.5px;color:#3459ca;background:none;border:0;padding:4px 0;cursor:pointer;text-decoration:underline}

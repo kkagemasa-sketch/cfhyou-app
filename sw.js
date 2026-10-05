@@ -43,6 +43,7 @@ const ASSETS = [
   './js/firebase-init.js',
   './js/mansion-files.js',
   './js/mg-qa.js',
+  './js/mg-cards.js',
   './js/explain/explain-core.js',
   './js/explain/explain-lctrl.js',
   './js/explain/explain-pension.js',

@@ -301,6 +301,53 @@ const SCENARIOS = {
     const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
     mg('w',{deathYear:4,houseMode:'danshin'});
   },
+  'M13_夫死亡_妻収入20%減_被保険者基準の年金型': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:3,houseMode:'danshin',incomeMode:'pct',incPctDir:'down',incPctAbs:20,incUntil:55,
+      insurances:[{type:'annuity',name:'収入保障',monthly:10,endAge:45,endBy:'insured'}]});
+  },
+  'M14_夫死亡_妻パート額面130万_35歳から': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:2,houseMode:'danshin',incomeMode:'part',incBasis:'gross',incPart:{amt:130,from:35,to:60}});
+  },
+  'M15_妻死亡_夫働かない_通常期間ごと': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    // 夫（30歳・541→700）を 30〜39歳は-40%、40〜60歳は400万円に
+    mg('w',{deathYear:2,houseMode:'keep',incomeMode:'steps',incStepsSub:'normal',incBasis:'net',
+      incNormal:[{ageFrom:30,ageTo:39,mode:'pct',pct:-40,amt:0},{ageFrom:40,ageTo:60,mode:'amt',pct:0,amt:400}]});
+  },
+  'M16_夫死亡_妻働かない': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:4,houseMode:'danshin',incomeMode:'none'});
+  },
   'M8_夫死亡_賃貸へ_奨学金': function(){
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');

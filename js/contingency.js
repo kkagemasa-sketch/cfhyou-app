@@ -325,7 +325,7 @@ function getMGInsurances(){
     if(isAnnuity){
       const annual=parseFloat(String($(`mg-ins-annual-${id}`)?.value||'').replace(/,/g,''))||0;
       const endAge=parseInt($(`mg-ins-end-age-${id}`)?.value)||65;
-      if(annual>0)list.push({type:'annuity',name:name||'年金型保険',annual,endAge});
+      if(annual>0)list.push({type:'annuity',name:name||'年金型保険',annual,endAge,endBy:el.dataset.endby==='insured'?'insured':'receiver'});
     }else{
       const amt=parseFloat(String($(`mg-ins-amt-${id}`)?.value||'').replace(/,/g,''))||0;
       if(amt>0)list.push({type:'lump',name:name||'死亡保険金',amt});
@@ -475,7 +475,7 @@ function _renderContingencyInner(){
   children.forEach(()=>{MR.edu.push([]);MR.evC.push([]);});
   // 年金型保険の行データを初期化
   mgInsurances.filter(ins=>ins.type==='annuity').forEach(ins=>{
-    MR.insAnnuityRows.push({name:ins.name,annual:ins.annual,endAge:ins.endAge,key:'insAnnuity_'+MR.insAnnuityRows.length,vals:[]});
+    MR.insAnnuityRows.push({name:ins.name,annual:ins.annual,endAge:ins.endAge,endBy:ins.endBy||'receiver',key:'insAnnuity_'+MR.insAnnuityRows.length,vals:[]});
   });
 
   // ═══ 有価証券の取り崩しプラン（万一CF用・夫婦両方分を事前計算） ═══
@@ -875,7 +875,9 @@ function _renderContingencyInner(){
     //   旧コードは contingency.js でこれを一切参照しておらず、UIが完全に dead code 化していた。
     //   生存者側（targetIsH なら 'w'、!targetIsH なら 'h'）のみ、isDead の年に上書きする。
     const _mgIncOv = (typeof window!=='undefined' && window._mgIncomeOverride) ? window._mgIncomeOverride : null;
-    const _getMgIncomeOverride = (side, age)=>{
+    const _mgIncFn = (typeof window!=='undefined' && window._mgIncomeFn) ? window._mgIncomeFn : null;
+    const _getMgIncomeOverride = (side, age, base)=>{
+      if(_mgIncFn && typeof _mgIncFn[side]==='function'){ const v=_mgIncFn[side](age, base); if(v!==null&&v!==undefined) return ri(v); return null; }
       if(!_mgIncOv) return null;
       const steps = _mgIncOv[side];
       if(!Array.isArray(steps) || steps.length===0) return null;
@@ -897,12 +899,12 @@ function _renderContingencyInner(){
       const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);
       const _baseW = leave?ri(leave.income):_g2nW_mg(getIncomeAtAge(wSteps,wa),wa);
       // 生存者=奥様：死亡後の年は Q&A 上書きが効く（上書き値は手取り）
-      const _ov = isDead ? _getMgIncomeOverride('w', wa) : null;
+      const _ov = isDead ? _getMgIncomeOverride('w', wa, _baseW) : null;
       wInc = (_ov!==null) ? _ov : _baseW;
     }else{
       const _baseH = _g2nH_mg(getIncomeAtAge(hSteps,ha),ha,_fuyoY_mg);
       // 生存者=ご主人：死亡後の年は Q&A 上書きが効く（上書き値は手取り）
-      const _ov = isDead ? _getMgIncomeOverride('h', ha) : null;
+      const _ov = isDead ? _getMgIncomeOverride('h', ha, _baseH) : null;
       hInc = (_ov!==null) ? _ov : _baseH;
       wInc=isDead?0:(()=>{const leave=leaves_mg.find(l=>wa>=l.startAge&&wa<l.endAge);return leave?ri(leave.income):_g2nW_mg(getIncomeAtAge(wSteps,wa),wa);})();
     }
@@ -934,11 +936,13 @@ function _renderContingencyInner(){
     // 死亡保険金（一時金: 死亡年のみ）
     const insPayVal=isDeathYear?insTotal:0;
     MR.insPayArr.push(insPayVal);
-    // 年金型保険（毎年受取、受取人年齢基準）
+    // 年金型保険（毎年受取。終わりの年齢は 被保険者=亡くなった方 / 受取人=遺された方 の年齢）
     const _aliveAge=targetIsH?wa:ha;
+    const _deadAge=targetIsH?ha:wa;
     let insAnnuityTotal=0;
     MR.insAnnuityRows.forEach(row=>{
-      const v=(isDead&&_aliveAge<=row.endAge)?row.annual:0;
+      const _ageForEnd=row.endBy==='insured'?_deadAge:_aliveAge;
+      const v=(isDead&&_ageForEnd<=row.endAge)?row.annual:0;
       row.vals.push(v);
       insAnnuityTotal+=v;
     });
