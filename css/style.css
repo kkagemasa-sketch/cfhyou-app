@@ -865,34 +865,10 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
   overflow-anchor: none;
   scroll-behavior: auto !important;
 }
-.rtab.mgqa-tab {
-  background: linear-gradient(135deg, #3b82f6, #6366f1) !important;
-  color: #fff !important;
-  border: 1px solid #1d4ed8 !important;
-  font-weight: 700 !important;
-  /* ★ 非選択時は薄く（選択中かどうかを分かりやすく） */
-  opacity: .42;
-  filter: saturate(.7);
-  transition: opacity .15s, filter .15s;
-}
-.rtab.mgqa-tab:hover { opacity: .7; }
-.rtab.mgqa-tab.pink {
-  background: linear-gradient(135deg, #ec4899, #f472b6) !important;
-  border-color: #be185d !important;
-}
-/* アクティブ時のみ くっきり・くっきり目立たせる（通常の .rtab.on より優先） */
-.rtab.mgqa-tab.on {
-  background: linear-gradient(135deg, #1d4ed8, #4338ca) !important;
-  color: #fff !important;
-  box-shadow: 0 0 0 2px rgba(255,255,255,.55), inset 0 -2px 0 rgba(255,255,255,.4);
-  top: 0 !important;
-  opacity: 1 !important;
-  filter: none !important;
-}
-.rtab.mgqa-tab.pink.on {
-  background: linear-gradient(135deg, #be185d, #db2777) !important;
-  box-shadow: 0 0 0 2px rgba(255,255,255,.55), inset 0 -2px 0 rgba(255,255,255,.4);
-}
+/* 万が一タブ：他のタブと同じ見た目＋種類のラベル（配色C） */
+.rtab.mgqa-tab{display:inline-flex;align-items:center}
+.rtab.mgqa-tab .stab-name{color:inherit}
+.rtab.mgqa-tab.on{top:0}
 .mgqa-panel { padding: 0; }
 /* 万一Q&Aパネル：番号付き色分けカード（折りたたみ可） */
 .mgqa-card {
@@ -1676,3 +1652,56 @@ table.cf td.vz{color:#b6c0cc}
 .bonus-res b{color:#1e3a5f}
 .bonus-note{font-size:9.5px;color:#64748b;margin-top:7px;line-height:1.5}
 .bonus-dot{display:inline-flex;align-items:center;justify-content:center;background:#f59e0b;color:#fff;border-radius:999px;font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 4px;margin-left:5px;vertical-align:1px}
+
+/* ===== ⑧万が一：追加ボタン（配色C：紺の濃淡＋種類の印）・見出し帯・2グループのカード ===== */
+.mgadd-box{background:#fff;border:1px solid #dfe5ee;border-radius:12px;padding:12px 12px 10px;margin-top:10px}
+.mgadd-t{font-size:13px;font-weight:800;color:#1e3a5f}
+.mgadd-s{font-size:10.5px;color:#64748b;margin:2px 0 6px;line-height:1.5}
+.mgadd-who{font-size:11px;font-weight:800;color:#64748b;margin:8px 0 5px;letter-spacing:.04em}
+.mgadd-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mgadd-b{display:flex;align-items:center;gap:7px;border-radius:10px;padding:7px 8px;font-family:inherit;font-weight:800;font-size:12px;color:#fff;border:0;cursor:pointer;text-align:left;line-height:1.2}
+.mgadd-b i{font-style:normal;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;font-size:14px;font-weight:800;color:#fff}
+.mgadd-b small{display:block;font-size:9.5px;font-weight:600;opacity:.8}
+.mgadd-b.k0{background:#1e3a5f} .mgadd-b.k0 i{background:#c2185b}
+.mgadd-b.k1{background:#35577f} .mgadd-b.k1 i{background:#3459ca}
+.mgadd-b.k2{background:#5a7aa0} .mgadd-b.k2 i{background:#159ea3}
+.mgadd-b:hover:not([disabled]){filter:brightness(1.12)}
+.mgadd-b.soon{opacity:.45;cursor:not-allowed}
+/* タブの種類ラベル */
+.rtab.mgqa-tab .mgqa-tab-lab{font-size:10px;font-weight:800;color:#fff;background:var(--kc,#c2185b);border-radius:4px;padding:1px 5px;margin-right:4px}
+.rtab.mgqa-tab.on{box-shadow:inset 0 3px 0 var(--kc,#c2185b)}
+/* 見出し帯 */
+.mgqa-ph{background:#1e3a5f;color:#fff;border-radius:12px;padding:11px 12px;box-shadow:inset 6px 0 0 var(--kc,#c2185b);margin-bottom:10px}
+.mgqa-ph-row{display:flex;align-items:center;gap:7px}
+.mgqa-ph-lab{font-size:10.5px;font-weight:800;background:var(--kc,#c2185b);border-radius:5px;padding:1px 6px}
+.mgqa-ph-t{font-size:14.5px;font-weight:800}
+.mgqa-ph-acts{margin-left:auto;display:flex;gap:5px}
+.mgqa-ph-acts button{font-family:inherit;font-size:10.5px;font-weight:700;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:3px 7px;cursor:pointer}
+.mgqa-ph-acts button.del{color:#fecaca;border-color:rgba(254,202,202,.5)}
+.mgqa-ph-name{font-size:10.5px;opacity:.75;margin-top:3px}
+.mgqa-ph-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.mgqa-ph-chips span{font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;background:rgba(255,255,255,.95);color:#1e3a5f}
+.mgqa-ph-chips span.o{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.35)}
+/* いつ起きたら（常に表示） */
+.mgqa-base{background:#fff;border:1px solid #dfe5ee;border-radius:12px;padding:10px 12px;margin-bottom:12px}
+/* グループ見出し */
+.mgqa-sec{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;letter-spacing:.04em;margin:10px 2px 7px}
+.mgqa-sec .bar{width:5px;height:15px;border-radius:2px}
+.mgqa-sec.inc{color:#2563eb} .mgqa-sec.inc .bar{background:#2563eb}
+.mgqa-sec.exp{color:#e0533f} .mgqa-sec.exp .bar{background:#e0533f}
+/* カード */
+.mgqa-c2{background:#fff;border:1px solid #dfe5ee;border-radius:10px;margin-bottom:6px;overflow:hidden}
+.mgqa-c2.ch{border-color:#c7d2fe;box-shadow:inset 4px 0 0 #3459ca;background:#fbfcff}
+.mgqa-c2-hd{display:flex;align-items:center;gap:9px;padding:9px 11px;cursor:pointer;min-height:46px}
+.mgqa-c2-hd:hover{background:#f8fafc}
+.mgqa-c2-ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;font-size:12px;font-weight:800}
+.mgqa-c2.inc .mgqa-c2-ic{background:#eef4ff;color:#2563eb}
+.mgqa-c2.exp .mgqa-c2-ic{background:#fff2ef;color:#e0533f}
+.mgqa-c2-t{font-size:13px;font-weight:700;color:#1f2937}
+.mgqa-c2-tag{font-size:10px;font-weight:800;color:#3459ca;background:#eef2ff;border-radius:5px;padding:1px 6px;margin-left:6px}
+.mgqa-c2-v{margin-left:auto;text-align:right;font-size:12.5px;font-weight:700;color:#334155}
+.mgqa-c2-v small{display:block;font-size:10.5px;color:#64748b;font-weight:600}
+.mgqa-c2-arw{color:#94a3b8;font-size:11px;transition:transform .15s}
+.mgqa-c2.open .mgqa-c2-arw{transform:rotate(180deg)}
+.mgqa-c2-bd{display:none;padding:10px 12px 12px;border-top:1px solid #eef2f6}
+.mgqa-c2.open .mgqa-c2-bd{display:block}

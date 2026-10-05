@@ -32,7 +32,10 @@ function mgQA_addTab(target, kind){
   const id = `mgqa-${target}-${Date.now()}`;
   const label = target==='h'?'ご主人様':'奥様';
   const n = mgQA_counter[target];
-  const name = n>1 ? `${label} 万が一 ${n}` : `${label} 万が一`;
+  const _k = MGQA_KINDS.includes(kind) ? kind : 'death';
+  const _sameKind = mgQA_tabs.filter(t=>t.target===target&&(t.kind||'death')===_k).length + 1;
+  const _kl = {death:'死亡',dis1:'障害1級',dis2:'障害2級'}[_k];
+  const name = _sameKind>1 ? `${label} ${_kl} ${_sameKind}` : `${label} ${_kl}`;
   mgQA_tabs.push({
     id, target, name,
     kind: MGQA_KINDS.includes(kind) ? kind : 'death',
@@ -190,11 +193,14 @@ function mgQA_renderTabs(){
   container.innerHTML = '';
   mgQA_tabs.forEach(t => {
     const btn = document.createElement('button');
-    btn.className = 'rtab mgqa-tab' + (t.target==='w'?' pink':'');
+    btn.className = 'rtab mgqa-tab';
     btn.id = `rt-${t.id}`;
-    // アイコン
+    // 種類のラベル（死亡／1級／2級）
+    const _ki = MGQA_KIND_INFO[t.kind] || MGQA_KIND_INFO.death;
+    btn.style.setProperty('--kc', _ki.color);
     const icon = document.createElement('span');
-    icon.textContent = '';
+    icon.className = 'mgqa-tab-lab';
+    icon.textContent = _ki.short;
     icon.style.cssText = 'pointer-events:none';
     btn.appendChild(icon);
     // ★ 名前入力（CF表タブと同じ：ダブルクリックで編集可能）
@@ -801,36 +807,50 @@ function mgQA_buildPanel(tab){
     return `<button type="button" class="btn-tog ${active?'on':''}" onclick="mgQA_setState('${tab.id}','${key}',${arg},{rebuild:true})">${label}</button>`;
   };
 
-  // セクションカード（番号付き・色分け・折りたたみ可）
-  const card = (no, color, title, body) => `
-    <div class="mgqa-card" style="--mgqa-color:${color}">
-      <div class="mgqa-card-header" onclick="mgQA_toggleCard(this)">
-        <span class="mgqa-card-no">${no}</span>
-        <span class="mgqa-card-title">${title}</span>
-        <span class="mgqa-card-toggle">▾</span>
+  // カード：閉じた状態で右に設定内容、変更していれば青線＋「変更」印。開閉状態はタブごとに記憶
+  const card = (key, side, icon, title, body) => {
+    const sm = mgQA_cardSummary(tab, key);
+    const open = mgQA_isCardOpen(tab.id, key);
+    return `
+    <div class="mgqa-c2 ${side}${sm.changed?' ch':''}${open?' open':''}" data-card="${key}">
+      <div class="mgqa-c2-hd" onclick="mgQA_toggleCard2('${tab.id}','${key}',this)">
+        <span class="mgqa-c2-ic">${icon}</span>
+        <span class="mgqa-c2-t">${title}${sm.changed?'<span class="mgqa-c2-tag">変更</span>':''}</span>
+        <span class="mgqa-c2-v">${sm.v}${sm.sub?`<small>${sm.sub}</small>`:''}</span>
+        <span class="mgqa-c2-arw">▾</span>
       </div>
-      <div class="mgqa-card-body">${body}</div>
+      <div class="mgqa-c2-bd">${body}</div>
     </div>`;
+  };
+  const kind = MGQA_KIND_INFO[tab.kind] || MGQA_KIND_INFO.death;
+  const _nChanged = MGQA_CARD_KEYS.filter(k=>mgQA_cardSummary(tab,k).changed).length;
 
   return `
-    <div class="persona" style="background:#fdf2f8;border-color:#f9a8d4;margin-bottom:8px">
-      <span class="persona-icon"></span>
-      <input type="text" class="inp" style="flex:1;min-width:0;font-weight:700" value="${mgQA_escHtml(tab.name)}"
-        onchange="mgQA_renameTab('${tab.id}', this.value)" title="クリックで名前を編集">
-      <button class="btn-tog" onclick="mgQA_duplicateTab('${tab.id}')" style="padding:4px 8px;font-size:11px">複製</button>
-      <button class="btn-tog" onclick="mgQA_deleteTab('${tab.id}')" style="padding:4px 8px;font-size:11px;color:#dc2626;border-color:#fca5a5">削除</button>
+    <div class="mgqa-ph" style="--kc:${kind.color}">
+      <div class="mgqa-ph-row">
+        <span class="mgqa-ph-lab">${kind.short}</span>
+        <span class="mgqa-ph-t">${deceased} ${kind.label}</span>
+        <span class="mgqa-ph-acts">
+          <button type="button" onclick="mgQA_duplicateTab('${tab.id}')">複製</button>
+          <button type="button" onclick="mgQA_promptRename('${tab.id}')">名前変更</button>
+          <button type="button" class="del" onclick="mgQA_deleteTab('${tab.id}')">削除</button>
+        </span>
+      </div>
+      <div class="mgqa-ph-name">タブ名：${mgQA_escHtml(tab.name)}</div>
+      <div class="mgqa-ph-chips"><span class="e">${mgQA_eventText(tab)}</span><span class="o">変更 ${_nChanged}項目</span></div>
     </div>
 
-    ${card(1,'#dc2626','逝去時期',`
+    <div class="mgqa-base">
       <div class="g2">
         <div class="fg"><label class="lbl">${deceased}のご逝去は何年後？</label>
           <div class="suf"><input class="inp age-inp" type="number" min="1" max="50" value="${s.deathYear}" data-k="deathYear" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}" data-cf-to="${hAge+(s.deathYear||1)-1}"><span class="sl">年後</span></div>
         </div>
       </div>
       <div class="hint">「1年後」=今から1年以内（最も厳しい条件でのシミュレーション）</div>
-    `)}
+    </div>
 
-    ${card(2,'#059669','死亡保険金',`
+    <div class="mgqa-sec inc"><span class="bar"></span>入ってくるお金</div>
+    ${card('ins','inc','保','死亡保険金',`
       <div class="hint" style="margin-bottom:6px">複数契約している場合は「+保険を追加」で複数登録。一時金=一括受取 / 年金型=毎年受取</div>
       <div id="mgqa-ins-${tab.id}">
         ${s.insurances.map((ins,i)=>mgQA_renderIns(tab.id, i, ins)).join('')}
@@ -838,7 +858,7 @@ function mgQA_buildPanel(tab){
       <button class="btn-add" onclick="mgQA_addIns('${tab.id}')" style="margin-top:4px">＋ 保険を追加</button>
     `)}
 
-    ${card(3,'#0284c7','遺族年金',`
+    ${card('pension','inc','年','遺族年金',`
       <div class="hint" style="margin-bottom:6px">通常時の年収・家族構成から自動計算（${survHint}）</div>
       <div class="g2">
         <div class="fg"><label class="lbl">遺族年金の設定</label>
@@ -854,7 +874,7 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(4,'#16a34a',`${spouse}の就労収入`,`
+    ${card('income','inc','人',`${spouse}の収入`,`
       <div class="hint" style="margin-bottom:6px">通常時の${spouse}の手取り年収: 今年 約${spouseIncomeHint}万円（左の③収入で編集）。万が一時に変更する場合は段階設定可</div>
       <div class="fg">
         <label class="lbl">万が一後の${spouse}の収入</label>
@@ -868,7 +888,8 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(5,'#d97706','死亡後の生活費',`
+    <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
+    ${card('lc','exp','生','生活費',`
       <div class="hint" style="margin-bottom:6px">通常時の生活費 ${lcHint} を基準に、万が一時の生活費を設定（割合 or 段階）</div>
       <div class="g2">
         <div class="fg"><label class="lbl">設定方式</label>
@@ -887,7 +908,7 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(6,'#ea580c','住居',`
+    ${card('house','exp','家','住まいとローン',`
       <div class="hint" style="margin-bottom:6px">団信加入ローンの場合は完済、賃貸への引越しや段階的切替も可能</div>
       <div class="fg">
         <label class="lbl">住居モード</label>
@@ -908,7 +929,7 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(7,'#9333ea','お子様の奨学金',`
+    ${card('edu','exp','学','教育（奨学金）',`
       <div class="hint" style="margin-bottom:6px">高校入学時(16歳)・大学入学時(19歳)のタイミングでお子様ごとに設定</div>
       <div class="fg">
         <label class="lbl">万が一時の奨学金</label>
@@ -922,7 +943,7 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(8,'#4f46e5',`車両費（${spouse}基準）`,`
+    ${card('car','exp','車',`車（${spouse}基準）`,`
       <div class="hint" style="margin-bottom:6px">通常時の車設定をそのまま使うか、万一時のみ変更するかを選択</div>
       <div class="fg">
         <label class="lbl">万一時の車</label>
@@ -936,7 +957,7 @@ function mgQA_buildPanel(tab){
       </div>
     `)}
 
-    ${card(9,'#475569',`駐車場（${spouse}基準）`,`
+    ${card('park','exp','P',`駐車場（${spouse}基準）`,`
       <div class="hint" style="margin-bottom:6px">通常時の駐車場設定をそのまま使うか、万一時のみ変更するかを選択</div>
       <div class="fg">
         <label class="lbl">万一時の駐車場</label>
@@ -983,6 +1004,91 @@ function mgQA_toggleCard(headerEl){
   if(card)card.classList.toggle('collapsed');
 }
 window.mgQA_toggleCard=mgQA_toggleCard;
+
+// ===== 万が一パネルの枠組み（種類・カード要約・開閉） =====
+const MGQA_KIND_INFO = {
+  death:{label:'死亡',   short:'死亡', color:'#c2185b', event:'ご逝去'},
+  dis1: {label:'障害1級',short:'1級',  color:'#3459ca', event:'障害1級'},
+  dis2: {label:'障害2級',short:'2級',  color:'#159ea3', event:'障害2級'}
+};
+const MGQA_CARD_KEYS = ['ins','pension','income','lc','house','edu','car','park'];
+window._mgQA_openCards = window._mgQA_openCards || {};
+function mgQA_isCardOpen(tabId,key){ return !!(window._mgQA_openCards[tabId]||{})[key]; }
+function mgQA_toggleCard2(tabId,key,hdEl){
+  const m = window._mgQA_openCards[tabId] = window._mgQA_openCards[tabId] || {};
+  m[key] = !m[key];
+  const c = hdEl && hdEl.closest('.mgqa-c2');
+  if(c) c.classList.toggle('open', m[key]);
+}
+function mgQA_promptRename(tabId){
+  const t = mgQA_tabs.find(x=>x.id===tabId); if(!t) return;
+  const v = prompt('タブの名前', t.name);
+  if(v===null) return;
+  mgQA_renameTab(tabId, v);
+  if(window._mgQA_activeTabId===tabId) mgQA_refreshHeader(t);
+  if(typeof scheduleAutoSave==='function') scheduleAutoSave();
+}
+// カードの要約（閉じた状態の右側）と「変更」判定
+function mgQA_cardSummary(tab, key){
+  const s = tab.state;
+  const man = x => `${Math.round(x||0).toLocaleString()}万円`;
+  switch(key){
+    case 'ins': {
+      const list = (s.insurances||[]).filter(x=>x&&x.type!=='none');
+      if(!list.length) return {changed:false, v:'なし'};
+      const lump = list.filter(x=>x.type==='lump').reduce((a,x)=>a+(+x.amount||0),0);
+      const ann = list.filter(x=>x.type==='annuity').reduce((a,x)=>a+(+x.annual||0),0);
+      return {changed:true, v: lump>0?man(lump):`年${man(ann)}`, sub: `${list.length}件${lump>0&&ann>0?`・年金 年${man(ann)}`:''}`};
+    }
+    case 'pension':
+      return s.pensionMode==='manual'
+        ? {changed:true, v:`年${man(s.pensionManual)}`, sub:'手入力'}
+        : {changed:false, v:'自動計算', sub:(document.getElementById('izoku-mode')?.value==='r2028')?'2028年改正後':'現行制度'};
+    case 'income':
+      return s.incomeMode==='override'
+        ? {changed:true, v:'変更', sub:`${(s.incomeSteps||[]).length}期間`}
+        : {changed:false, v:'通常どおり'};
+    case 'lc':
+      if(s.lcMode==='step') return {changed:true, v:'期間ごと', sub:`${(s.lcSteps||[]).length}期間`};
+      return {changed:(+s.lcRatio||100)!==100, v:`通常の${s.lcRatio||100}%`};
+    case 'house': {
+      const L = {keep:'ローン継続', danshin:'団信で完済', rent:'売却・賃貸', stages:'段階的に変更'};
+      return {changed: s.houseMode!=='keep', v: L[s.houseMode]||'ローン継続', sub: s.houseMode==='rent'?`家賃 月${s.houseNewRent||8}万円`:''};
+    }
+    case 'edu':
+      return s.scholarshipEnabled ? {changed:true, v:'奨学金あり'} : {changed:false, v:'変えない'};
+    case 'car':
+      return s.carInherit===false ? {changed:true, v:'変更'} : {changed:false, v:'通常どおり'};
+    case 'park':
+      if(s.parkInherit!==false) return {changed:false, v:'通常どおり'};
+      return s.parkMode==='stop' ? {changed:true, v:'なし'} : {changed:true, v:`月${s.parkMonthly??1.5}万円`};
+  }
+  return {changed:false, v:''};
+}
+// 入力中（再構築しない更新）にも見出しの要約・変更数を追従させる
+function mgQA_refreshHeader(tab){
+  const panel = document.getElementById('mgqa-left-panel'); if(!panel) return;
+  MGQA_CARD_KEYS.forEach(k=>{
+    const c = panel.querySelector(`.mgqa-c2[data-card="${k}"]`); if(!c) return;
+    const sm = mgQA_cardSummary(tab,k);
+    c.classList.toggle('ch', sm.changed);
+    const t = c.querySelector('.mgqa-c2-t'); const v = c.querySelector('.mgqa-c2-v');
+    if(t){ const tag=t.querySelector('.mgqa-c2-tag'); if(sm.changed&&!tag) t.insertAdjacentHTML('beforeend','<span class="mgqa-c2-tag">変更</span>'); if(!sm.changed&&tag) tag.remove(); }
+    if(v) v.innerHTML = `${sm.v}${sm.sub?`<small>${sm.sub}</small>`:''}`;
+  });
+  const n = MGQA_CARD_KEYS.filter(k=>mgQA_cardSummary(tab,k).changed).length;
+  const chip = panel.querySelector('.mgqa-ph-chips .o'); if(chip) chip.textContent = `変更 ${n}項目`;
+  const nm = panel.querySelector('.mgqa-ph-name'); if(nm) nm.textContent = `タブ名：${tab.name}`;
+  const ev = panel.querySelector('.mgqa-ph-chips .e'); if(ev) ev.textContent = mgQA_eventText(tab);
+}
+// 「2030年（ご主人様34歳）にご逝去」
+function mgQA_eventText(tab){
+  const kind = MGQA_KIND_INFO[tab.kind] || MGQA_KIND_INFO.death;
+  const y0 = (typeof getCfStartYear==='function') ? getCfStartYear() : new Date().getFullYear();
+  const n = (tab.state.deathYear||1) - 1;
+  const age = (tab.target==='h' ? (mgQA_iv('husband-age')||30) : (mgQA_iv('wife-age')||29)) + n;
+  return `${y0+n}年（${tab.target==='h'?'ご主人様':'奥様'}${age}歳）に${kind.event}`;
+}
 
 // state 更新ユーティリティ（btn-tog クリックハンドラ用）
 function mgQA_setState(tabId, key, value, opts){
@@ -1727,6 +1833,8 @@ function mgQA_updateState(tab, el){
     }
   }
 
+  // 見出しの要約・変更数を追従
+  mgQA_refreshHeader(tab);
   // Q&A入力後、デバウンスでCF表を再計算
   mgQA_calcAndRender(tab, false);
 }

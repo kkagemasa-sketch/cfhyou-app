@@ -2111,15 +2111,24 @@ window.closeAboutModal=closeAboutModal;
         <span class="hint" style="font-size:9px">改正後＝完全移行後の簡易計算。子のない60歳未満の配偶者への遺族厚生年金は5年間（額は1.3倍）で終了し、中高齢寡婦加算はなくなります（経過措置は未反映）</span>
       </div>
 
-      <!-- ===== Q&A形式 万が一シミュレーション（複数タブ対応） ===== -->
-      <div style="padding:10px;border:2px dashed #f59e0b;border-radius:8px;background:#fffbeb;margin-top:10px">
-        <div style="font-size:11px;font-weight:700;color:#b45309;margin-bottom:6px">万が一シミュレーションを追加</div>
-        <div style="font-size:10px;color:#92400e;margin-bottom:8px;line-height:1.5">
-          押すたびに新しい万が一CF表タブが追加されます（何度でも・複数可）。<br>
-          タブを開くと、このすぐ下にそのタブ専用のQ&amp;A入力パネルが表示されます。
+      <!-- ===== 万が一シミュレーション（1タブ＝1つのCF表。対象者×種類で追加） ===== -->
+      <div class="mgadd-box">
+        <div class="mgadd-t">万が一のCF表を追加</div>
+        <div class="mgadd-s">押すたびに独立したCF表のタブが1つ増えます。タブを開くと、すぐ下にそのタブの設定が表示されます</div>
+        <div class="mgadd-who" id="mgadd-who-h">ご主人様に</div>
+        <div class="mgadd-btns">
+          <button type="button" class="mgadd-b k0" onclick="mgQA_addTab('h','death')"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></i><span>死亡<small>遺族年金</small></span></button>
+          <button type="button" class="mgadd-b k1 soon" disabled title="準備中（障害タブは実装中です）"><i>1</i><span>障害1級<small>準備中</small></span></button>
+          <button type="button" class="mgadd-b k2 soon" disabled title="準備中（障害タブは実装中です）"><i>2</i><span>障害2級<small>準備中</small></span></button>
         </div>
-        <button class="btn-add" onclick="mgQA_addTab('h')" style="background:#3b82f6;color:#fff;border-color:#1d4ed8;padding:6px 12px;font-size:11px;margin:2px;border-radius:var(--r);cursor:pointer">ご主人様 万が一</button>
-        <button class="btn-add wife-only" onclick="mgQA_addTab('w')" style="background:#ec4899;color:#fff;border-color:#be185d;padding:6px 12px;font-size:11px;margin:2px;border-radius:var(--r);cursor:pointer">奥様 万が一</button>
+        <div class="wife-only">
+          <div class="mgadd-who">奥様に</div>
+        <div class="mgadd-btns">
+          <button type="button" class="mgadd-b k0" onclick="mgQA_addTab('w','death')"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></i><span>死亡<small>遺族年金</small></span></button>
+          <button type="button" class="mgadd-b k1 soon" disabled title="準備中（障害タブは実装中です）"><i>1</i><span>障害1級<small>準備中</small></span></button>
+          <button type="button" class="mgadd-b k2 soon" disabled title="準備中（障害タブは実装中です）"><i>2</i><span>障害2級<small>準備中</small></span></button>
+        </div>
+        </div>
       </div>
 
       <!-- Q&A入力パネル（アクティブな万が一タブがある時だけ表示） -->
