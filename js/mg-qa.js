@@ -487,7 +487,8 @@ function mgQA_applyStateToDOM(tab){
   const sa = document.getElementById('mg-surv-amt');
   if(sa) sa.value = s.pensionManual || 0;
 
-  // 生活費（割合のみ対応、段階はB-4で）
+  // 生活費：新形式（通常どおり／期間ごと）は関数で渡す。％は従来どおりDOM経由
+  window._mgLcFn = (typeof mgQA_lcFn==='function') ? mgQA_lcFn(tab) : null;
   const lcRatio = document.getElementById('mg-lc-ratio');
   if(lcRatio) lcRatio.value = s.lcRatio;
   const ratioBtn = document.getElementById('mg-lc-mode-ratio');
@@ -712,6 +713,7 @@ function mgQA_hideLeftPanel(){
   window._mgQA_parkInherit = true;
   window._mgIncomeOverride = {};
   window._mgIncomeFn = {};
+  window._mgLcFn = null;
   window._mgScholarshipItems = [];
   window._mgHousingStages = null;
 }
@@ -901,24 +903,7 @@ function mgQA_buildPanel(tab){
     ${card('income','inc','人',`${spouse}の収入`, mgQA_incomeCard(tab))}
 
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
-    ${card('lc','exp','生','生活費',`
-      <div class="hint" style="margin-bottom:6px">通常時の生活費 ${lcHint} を基準に、万が一時の生活費を設定（割合 or 段階）</div>
-      <div class="g2">
-        <div class="fg"><label class="lbl">設定方式</label>
-          <div style="display:flex;gap:6px">
-            ${tog('lcMode','ratio','割合で設定')}
-            ${tog('lcMode','step','段階で設定')}
-          </div>
-        </div>
-        <div class="fg" style="${s.lcMode==='ratio'?'':'display:none'}" data-cond="lcMode:ratio">
-          <label class="lbl">生活費の割合</label>
-          <div class="suf"><input class="inp" type="number" min="10" max="150" value="${s.lcRatio}" data-k="lcRatio" data-cf-row="lc" data-cf-from="${hAge+(s.deathYear||1)-1}"><span class="sl">%</span></div>
-        </div>
-      </div>
-      <div style="margin-top:8px;${s.lcMode==='step'?'':'display:none'}" data-cond="lcMode:step">
-        ${mgQA_buildLcSteps(tab)}
-      </div>
-    `)}
+    ${card('lc','exp','生','生活費', mgQA_lcCard(tab))}
 
     ${card('house','exp','家','住まいとローン',`
       <div class="hint" style="margin-bottom:6px">団信加入ローンの場合は完済、賃貸への引越しや段階的切替も可能</div>
@@ -1132,7 +1117,9 @@ function mgQA_cardSummary(tab, key){
       return {changed:true, v:'期間ごと', sub: mgC_incSub(s)==='normal' ? '通常時の期間で変更' : `${(s.incomeSteps||[]).length}期間`};
     }
     case 'lc':
-      if(s.lcMode==='step') return {changed:true, v:'期間ごと', sub:`${(s.lcSteps||[]).length}期間`};
+      if(s.lcMode==='same') return {changed:false, v:'通常どおり'};
+      if(s.lcMode==='step') return {changed:true, v:'期間ごと', sub:`${(s.lcSteps||[]).length}期間（以前の形式）`};
+      if(s.lcMode==='steps') return {changed:true, v:'期間ごと', sub:(s.lcStepsSub==='normal')?'通常の期間をもとに':`${(s.lcFree||[]).length}期間`};
       return {changed:(+s.lcRatio||100)!==100, v:`通常の${s.lcRatio||100}%`};
     case 'house': {
       const L = {keep:'ローン継続', danshin:'団信で完済', rent:'売却・賃貸', stages:'段階的に変更'};

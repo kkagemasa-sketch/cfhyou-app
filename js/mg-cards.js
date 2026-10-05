@@ -224,4 +224,187 @@ function mgC_fillCompare(tab, panel){
 }
 function mgQA_afterCalcExtra(tab, panel){
   mgC_fillCompare(tab, panel);
+  mgC_fillLcCompare(tab, panel);
+}
+
+// ===== ⑤生活費 =====
+// state: lcMode 'same'|'ratio'|'steps'（旧 'step' は以前の形式の段階として従来どおり計算）
+//   lcRatio(%) / lcStepsSub 'free'|'normal'
+//   lcFree [{ageFrom, ageTo(空=最後), val}] ＋ lcFreeBasis 'pct'|'month'（遺された方の年齢）
+//   lcNormal [{fromYr, toYr(null=最後), mode:'keep'|'pct'|'amt', pct, amt}]（通常時の生活費の期間）
+function mgC_lcMode(s){ return s.lcMode||'ratio'; }
+// 通常時の生活費の期間（⑥生活費の段階）を年の区切りで
+function mgC_lcNormalPeriods(){
+  const y0 = mgC_startYear();
+  const steps = (typeof getLCSteps==='function') ? getLCSteps() : [];
+  const out = [];
+  const firstFrom = steps.length ? steps[0].from : null;
+  if(!steps.length || firstFrom>y0) out.push({fromYr:y0, toYr: steps.length ? firstFrom-1 : null, label:'基本'});
+  steps.forEach((st,i)=>{
+    out.push({fromYr: Math.max(st.from,y0), toYr: i<steps.length-1 ? steps[i+1].from-1 : null, label:`段階${i+1}`, rate: st.rate});
+  });
+  return out.filter(p=>p.toYr===null || p.toYr>=y0);
+}
+function mgC_ensureLcNormal(tab){
+  const s = tab.state;
+  if(Array.isArray(s.lcNormal) && s.lcNormal.length) return;
+  const evYr = mgC_startYear() + (s.deathYear||1) - 1;
+  const rows = [];
+  mgC_lcNormalPeriods().forEach(p=>{
+    // 万が一が期間の途中なら、万が一の年で分ける
+    if(p.fromYr<evYr && (p.toYr===null || p.toYr>=evYr)){
+      rows.push({fromYr:p.fromYr, toYr:evYr-1, mode:'keep', pct:100, amt:0, label:p.label});
+      rows.push({fromYr:evYr, toYr:p.toYr, mode:'keep', pct:100, amt:0, label:p.label+'の続き'});
+    }else rows.push({fromYr:p.fromYr, toYr:p.toYr, mode:'keep', pct:100, amt:0, label:p.label});
+  });
+  s.lcNormal = rows;
+}
+// 万が一の後の生活費（年額）。null＝通常の計算（％など）に任せる
+function mgQA_lcFn(tab){
+  const s = tab.state, p = mgC_survivor(tab);
+  const mode = mgC_lcMode(s);
+  if(mode==='same') return (yr, sAge, normalLC) => normalLC;   // 通常どおり
+  if(mode!=='steps') return null;
+  if((s.lcStepsSub||'free')==='normal'){
+    const rows = Array.isArray(s.lcNormal) ? s.lcNormal : [];
+    const normAt = yr => { const i = yr - mgC_startYear(); return ((window.lastR||{}).lc||[])[i]||0; };
+    return (yr, sAge, normalLC) => {
+      const r = rows.find(x=>yr>=x.fromYr && (x.toYr===null||x.toYr===undefined||yr<=x.toYr));
+      if(!r || !r.mode || r.mode==='keep') return normalLC;
+      if(r.mode==='pct') return Math.round(normalLC*(+r.pct||0)/100);
+      // 金額：期間の始まりの金額として、以後は通常時の変化率を引き継ぐ
+      const n0 = normAt(r.fromYr) || normalLC;
+      return Math.round((+r.amt||0) * (n0>0 ? normalLC/n0 : 1));
+    };
+  }
+  const rows = (Array.isArray(s.lcFree)?s.lcFree:[]).slice().sort((a,b)=>(+a.ageFrom||0)-(+b.ageFrom||0));
+  const month = s.lcFreeBasis==='month';
+  return (yr, sAge, normalLC) => {
+    const r = rows.find(x=>sAge>=(+x.ageFrom||0) && (x.ageTo===''||x.ageTo===null||x.ageTo===undefined||sAge<=+x.ageTo));
+    if(!r) return normalLC;
+    return month ? Math.round((+r.val||0)*12) : Math.round(normalLC*(+r.val||0)/100);
+  };
+}
+function mgQA_lcCard(tab){
+  const s = tab.state, id = tab.id, p = mgC_survivor(tab);
+  const mode = mgC_lcMode(s);
+  const R = window.lastR || {};
+  const i0 = (s.deathYear||1)-1;
+  const normEv = Math.round((R.lc||[])[i0]||0);
+  let body = mgC_seg(id,'lcMode',[['same','通常どおり'],['ratio','％で設定'],['steps','期間ごと']], mode==='step'?'steps':mode);
+  if(mode==='same'){
+    body += `<div class="mgqa-note">通常のCF表と同じ生活費を使います。万が一の年 <b>年${mgC_man(normEv)}</b></div>`;
+  }else if(mode==='ratio'){
+    const r = +s.lcRatio||100;
+    body += `<div class="g2"><div class="fg"><label class="lbl">通常に対する割合</label><div class="suf"><input class="inp" type="number" min="10" max="200" value="${r}" data-k="lcRatio" data-cf-row="lc"><span class="sl">％</span></div></div><div></div></div>
+      <div class="mgqa-quick">${[60,70,80,90].map(v=>`<button type="button" class="${v===r?'on':''}" onclick="mgQA_setState('${id}','lcRatio',${v},{rebuild:true})">${v}%</button>`).join('')}</div>
+      <div class="mgqa-note">通常 年${mgC_man(normEv)} → <b>年${mgC_man(normEv*r/100)}</b>（月約${Math.round(normEv*r/100/12*10)/10}万円）。物価上昇の設定はそのまま適用</div>`;
+  }else if(mode==='step'){
+    body += `<div class="mgqa-note">以前の形式の段階設定（${(s.lcSteps||[]).length}期間）が入っています。「期間ごと」を押すと新しい形式で入力し直せます</div>`;
+  }else{
+    const sub = s.lcStepsSub||'free';
+    body += `<div class="fg" style="margin-top:2px"><label class="lbl">期間の決め方</label>${mgC_seg(id,'lcStepsSub',[['free','自由に入力'],['normal','通常の期間をもとに']],sub)}</div>`;
+    body += sub==='normal' ? mgC_lcNormalTable(tab) : mgC_lcFreeTable(tab);
+  }
+  body += `<div class="mgqa-cmp" data-cmp="lc"></div>`;
+  return body;
+}
+function mgC_lcFreeTable(tab){
+  const s = tab.state, id = tab.id, p = mgC_survivor(tab);
+  if(!Array.isArray(s.lcFree) || !s.lcFree.length){
+    const ev = mgC_ageAtEvent(tab,p);
+    s.lcFree = [{ageFrom:ev, ageTo:'', val:80}];
+  }
+  const month = s.lcFreeBasis==='month';
+  let h = `<div class="fg"><label class="lbl">入力の種類</label>${mgC_seg(id,'lcFreeBasis',[['pct','％'],['month','月額']], month?'month':'pct')}</div>
+    <div class="mgqa-rows"><div class="mgqa-row h"><span>開始</span><span></span><span>終了</span><span>${month?'月額':'通常に対する割合'}</span><span></span></div>`;
+  s.lcFree.forEach((r,i)=>{
+    h += `<div class="mgqa-row">
+      <div class="suf"><input class="inp age-inp" type="number" value="${r.ageFrom}" data-k="lcFree.${i}.ageFrom"><span class="sl">歳</span></div><span class="tl">〜</span>
+      <div class="suf"><input class="inp age-inp" type="text" inputmode="numeric" placeholder="最後" value="${r.ageTo??''}" data-k="lcFree.${i}.ageTo"><span class="sl">歳</span></div>
+      <div class="suf"><input class="inp" type="number" min="0" value="${r.val}" data-k="lcFree.${i}.val"><span class="sl">${month?'万円/月':'％'}</span></div>
+      <button type="button" class="x" onclick="mgC_lcFreeDel('${id}',${i})">×</button></div>`;
+  });
+  const quick = [];
+  const indep = mgC_ageWhenYoungestIs(p, 22);
+  if(indep) quick.push([indep,'末子の独立で区切る']);
+  quick.push([65,'65歳で区切る']);
+  h += `</div><button class="btn-add" onclick="mgC_lcFreeAdd('${id}')">＋ 期間を追加</button>
+    <div class="mgqa-quick">${quick.map(([a,l])=>`<button type="button" onclick="mgC_lcFreeSplitAt('${id}',${a})">${l}</button>`).join('')}</div>
+    <div class="hint">年齢は${mgC_name(p)}（遺された方）の年齢です。期間に入らない年は通常どおり</div>`;
+  return h;
+}
+function mgC_lcFreeAdd(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  const rows = tab.state.lcFree = tab.state.lcFree || [];
+  const last = rows[rows.length-1];
+  const from = last ? ((last.ageTo!==''&&last.ageTo!=null) ? +last.ageTo+1 : (+last.ageFrom||0)+10) : mgC_ageAtEvent(tab, mgC_survivor(tab));
+  if(last && (last.ageTo===''||last.ageTo==null)) last.ageTo = from-1;
+  rows.push({ageFrom:from, ageTo:'', val: tab.state.lcFreeBasis==='month'?20:70});
+  mgQA_switchTab(tabId);
+}
+function mgC_lcFreeDel(tabId,i){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  tab.state.lcFree.splice(i,1);
+  mgQA_switchTab(tabId);
+}
+// 指定の年齢で期間を区切る（その年齢を含む期間を2つに分ける）
+function mgC_lcFreeSplitAt(tabId, age){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  const rows = tab.state.lcFree || [];
+  const i = rows.findIndex(r=>age>+r.ageFrom && (r.ageTo===''||r.ageTo==null||age<=+r.ageTo));
+  if(i<0) return;
+  const r = rows[i];
+  rows.splice(i,1,{...r, ageTo: age-1},{...r, ageFrom: age});
+  mgQA_switchTab(tabId);
+}
+function mgC_lcNormalTable(tab){
+  mgC_ensureLcNormal(tab);
+  const s = tab.state, id = tab.id, p = mgC_survivor(tab);
+  const evYr = mgC_startYear() + (s.deathYear||1) - 1;
+  const R = window.lastR || {};
+  const y0 = mgC_startYear();
+  const normAt = yr => Math.round((R.lc||[])[yr-y0]||0);
+  const ageOf = yr => mgC_ageNow(p) + (yr - y0);
+  let h = `<div class="mgqa-nt"><div class="r h"><span>期間</span><span>通常時（年額）</span><span>万が一の後</span></div>`;
+  s.lcNormal.forEach((r,i)=>{
+    const per = `${r.fromYr}${r.toYr===null||r.toYr===undefined?'年〜':`〜${r.toYr}年`}`;
+    const sub = `${mgC_name(p)}${ageOf(r.fromYr)}${r.toYr==null?'歳〜':`〜${ageOf(r.toYr)}歳`}`;
+    const nv = `${mgC_man(normAt(r.fromYr))}<br><small>${r.label||''}</small>`;
+    if(r.toYr!==null && r.toYr!==undefined && r.toYr<evYr){
+      h += `<div class="r past"><span class="p">${per}</span><span>${nv}</span><span class="mute">万が一の前（変更なし）</span></div>`;
+      return;
+    }
+    const m = r.mode||'keep';
+    const segs = [['pct','％'],['amt','金額'],['keep','そのまま']].map(([v,l])=>`<button type="button" class="${m===v?'on':''}" onclick="mgQA_setState('${id}','lcNormal.${i}.mode','${v}',{rebuild:true})">${l}</button>`).join('');
+    const inp = m==='pct' ? `<div class="suf"><input class="inp" type="number" min="0" value="${r.pct??100}" data-k="lcNormal.${i}.pct"><span class="sl">％</span></div>`
+      : m==='amt' ? `<div class="suf"><input class="inp amt-inp" type="number" min="0" value="${r.amt||0}" data-k="lcNormal.${i}.amt"><span class="sl">万円/年</span></div>` : '';
+    const canSplit = r.toYr!==null && r.toYr!==undefined && r.toYr-r.fromYr>=2;
+    h += `<div class="r"><span class="p">${per}<br><small class="mute">${sub}</small>${canSplit?` <button type="button" class="split" onclick="mgC_splitLcNormal('${id}',${i})">分ける</button>`:''}</span><span>${nv}</span><span><span class="mgqa-mini-seg" style="margin:0">${segs}</span>${inp}</span></div>`;
+  });
+  h += `</div><div class="hint">万が一が段階の途中で起きた場合、その段階は「万が一の年」から始まる期間として表示します。金額で入れた期間も、毎年の変化率は通常時の設定を引き継ぎます</div>
+    <button type="button" class="mgqa-linkbtn" onclick="mgC_resetLcNormal('${id}')">通常時の期間で作り直す</button>`;
+  return h;
+}
+function mgC_splitLcNormal(tabId,i){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  const r = tab.state.lcNormal[i]; if(!r || r.toYr==null) return;
+  const mid = Math.floor((r.fromYr + r.toYr + 1)/2);
+  tab.state.lcNormal.splice(i,1,{...r, toYr: mid-1},{...r, fromYr: mid});
+  mgQA_switchTab(tabId);
+}
+function mgC_resetLcNormal(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  tab.state.lcNormal = [];
+  mgQA_switchTab(tabId);
+}
+// 生活費の比較（万が一の年〜最後）
+function mgC_fillLcCompare(tab, panel){
+  const el = panel.querySelector('[data-cmp="lc"]'); if(!el) return;
+  const MR = window.lastMR, R = window.lastR; if(!MR||!R){ el.innerHTML=''; return; }
+  const i0 = (tab.state.deathYear||1)-1;
+  let a=0,b=0;
+  for(let i=i0;i<(R.lc||[]).length;i++){ a+=R.lc[i]||0; b+=(MR.lc||[])[i]||0; }
+  const y0 = mgC_startYear(), y1 = y0+(R.lc||[]).length-1;
+  el.innerHTML = `<div><small>通常の生活費合計（${y0+i0}〜${y1}年）</small><b>${mgC_man(a)}</b></div><div><small>万が一の後（同じ期間）</small><b>${mgC_man(b)}</b></div>`;
 }

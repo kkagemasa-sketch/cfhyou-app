@@ -348,6 +348,43 @@ const SCENARIOS = {
     const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
     mg('h',{deathYear:4,houseMode:'danshin',incomeMode:'none'});
   },
+  'M17_夫死亡_生活費_期間ごと自由': function(){
+    // 妻の年齢で 30〜39歳 80% ／ 40〜64歳 月20万 ／ 65歳〜 60%
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:2,houseMode:'danshin',lcMode:'steps',lcStepsSub:'free',lcFreeBasis:'pct',
+      lcFree:[{ageFrom:30,ageTo:39,val:80},{ageFrom:40,ageTo:64,val:150},{ageFrom:65,ageTo:'',val:60}]});
+  },
+  'M18_夫死亡_生活費_通常の期間をもとに': function(){
+    // 通常CFに生活費の段階（2035年〜 月額指定）を入れ、万が一後は 基本の続き=70% ／ 段階1=年200万（変化率は引継ぎ）
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:3,houseMode:'danshin',lcMode:'steps',lcStepsSub:'normal',
+      lcNormal:[{fromYr:2026,toYr:2027,mode:'keep'},{fromYr:2028,toYr:2034,mode:'pct',pct:70},{fromYr:2035,toYr:null,mode:'amt',amt:200}]});
+  },
+  'M19_夫死亡_生活費_通常どおり': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:2,houseMode:'danshin',lcMode:'same'});
+  },
   'M8_夫死亡_賃貸へ_奨学金': function(){
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
