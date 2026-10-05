@@ -2043,6 +2043,24 @@ function _renderContingencyInner(){
   }
   MR.needCoverage=minSav<0?Math.abs(minSav):0;
 
+  // ── 必要保障額（3段階）。判定は総金融資産（預貯金＋有価証券など） ──
+  //   最低限＝CF表の最後の年に総金融資産がマイナスにならない額
+  //   標準　＝万が一の後のどの年も、総金融資産で生活費◯年分を確保できる額（初期3年）
+  //   安心　＝万が一の後のどの年も、総金融資産が通常のCF表と同じだけ残る額（通常との差の最大）
+  {
+    const _i0=deathYearOffset-1, _last=mgDisp-1;
+    const _yrs=Math.max(1,parseInt(window._mgNeedYears)||3);
+    const TA=MR.totalAsset, NTA=normalR.totalAsset||[];
+    const need={years:_yrs,min:Math.max(0,-ri(TA[_last]||0)),iMin:_last,std:0,iStd:-1,safe:0,iSafe:-1};
+    for(let i=_i0;i<=_last;i++){
+      const d2=ri((MR.lc[i]||0)*_yrs-(TA[i]||0)); if(d2>need.std){need.std=d2;need.iStd=i;}
+      const d3=ri((NTA[i]||0)-(TA[i]||0)); if(d3>need.safe){need.safe=d3;need.iSafe=i;}
+    }
+    MR.need=need;
+    MR.refNormalTotal=NTA.slice(0,MR.totalAsset.length).map(v=>ri(v||0));
+    MR.refGap=MR.totalAsset.map((v,i)=>i<_i0?0:Math.max(0,ri((NTA[i]||0)-(v||0))));
+  }
+
   // ── 表示 ──
   const isM=ST.type==='mansion';
   const targetLabel=targetIsH?'ご主人様':'奥様';
@@ -2069,7 +2087,7 @@ function _renderContingencyInner(){
   // 対象者ラベル + 自己資金内訳 + 住宅ローン条件（通常CF表と同じ）
   const mgTargetLabel2=_isSingle_mg?'ご本人':(targetIsH?'ご主人様':'奥様');
   const mgSurvivorLabel=_isSingle_mg?'遺族':(targetIsH?'奥様':'ご主人様');
-  h+=`<div style="background:${targetIsH?'#1e40af':'#9f1239'};color:#fff;padding:8px 16px;border-radius:var(--rs);margin-bottom:10px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
+  h+=`<div class="mg-hdr" style="background:#1e3a5f;box-shadow:inset 6px 0 0 ${(window._mgKindColor)||'#c2185b'};color:#fff;padding:9px 16px 9px 20px;border-radius:10px;margin-bottom:10px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
     <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
       <span style="font-size:18px">${targetIsH?'':''}</span>
       <div>
@@ -2079,6 +2097,24 @@ function _renderContingencyInner(){
     </div>
     <button id="mg-summary-toggle" onclick="toggleMgSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.55);padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_mgTogLabel}</button>
   </div>`;
+
+  // 必要保障額の3枚カード
+  {
+    const nd=MR.need, yr0=getCfStartYear();
+    const sAgeOf=i=>(targetIsH?wAge:hAge)+i;
+    const basis=i=>i<0?'':`<small>根拠：${yr0+i}年（${mgSurvivorLabel}${sAgeOf(i)}歳）</small>`;
+    const opt=[1,2,3,4,5].map(n=>`<option value="${n}" ${n===nd.years?'selected':''}>生活費 ${n}年分</option>`).join('');
+    h+=`<div class="mg-need">
+      <div class="nc"><div class="hd"><span class="bg" style="background:#d97706">最低限</span><span class="t">お金が尽きないために</span></div>
+        <div class="v">${nd.min.toLocaleString()}<small>万円</small>${basis(nd.min>0?nd.iMin:-1)}</div><div class="x">CF表の<b>最後の年</b>に、預貯金と有価証券が<b>マイナスにならない</b>額</div></div>
+      <div class="nc"><div class="hd"><span class="bg" style="background:#0f9d58">標準</span><span class="t">暮らしが行き詰まらないために</span>
+        <select class="set" onchange="mgQA_setNeedYears(this.value)" title="何年分の生活費を確保するか">${opt}</select></div>
+        <div class="v">${nd.std.toLocaleString()}<small>万円</small>${basis(nd.iStd)}</div><div class="x">どの年も、預貯金と有価証券で<b>生活費${nd.years}年分</b>を確保できる額</div></div>
+      <div class="nc safe"><div class="hd"><span class="bg" style="background:#1e3a5f">安心</span><span class="t">今の生活と資産計画を守るために</span></div>
+        <div class="v">${nd.safe.toLocaleString()}<small>万円</small>${basis(nd.iSafe)}</div><div class="x">どの年も、資産が<b>通常のCF表と同じ</b>だけ残る額</div></div>
+    </div>
+    <div class="mg-need-foot">枠の色：<i style="background:#f59e0b"></i>最低限の根拠<i style="background:#0f9d58"></i>標準の根拠<i style="background:#60a5fa"></i>安心の根拠（CF表の総金融資産のマス）。保険金などで万が一の年に受け取る想定の額です</div>`;
+  }
 
   // 詳細ボックスをまとめて折りたたみ可能なコンテナで囲む
   h+=`<div id="mg-summary-detail" style="${_mgSumHidden?'display:none':''}">`;
@@ -2488,8 +2524,15 @@ function _renderContingencyInner(){
   }
   // 総金融資産
   h+=`<tr class="rttl"><td>総金融資産</td><td></td>`;
-  for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.totalAsset[i2]);h+=`<td class="${v<0?'vn':''}">${v.toLocaleString()}</td>`;}
+  for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.totalAsset[i2]);const nd=MR.need||{};const mk=(i2===nd.iMin&&nd.min>0?' need-m1':'')+(i2===nd.iStd?' need-m2':'')+(i2===nd.iSafe?' need-m3':'');h+=`<td class="${v<0?'vn':''}${mk}">${v.toLocaleString()}</td>`;}
   h+=`<td>${ri(MR.totalAsset[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">総金融資産</span></td></tr>`;
+  // 参考：通常のCF表の総金融資産と、その差（安心の根拠）
+  h+=`<tr class="rref"><td>（参考）</td><td>通常の総金融資産</td>`;
+  for(let i2=0;i2<mgDisp;i2++){const v=MR.refNormalTotal[i2]||0;h+=`<td class="${v<0?'vn':''}">${v.toLocaleString()}</td>`;}
+  h+=`<td>${(MR.refNormalTotal[mgDisp-1]||0).toLocaleString()}</td></tr>`;
+  h+=`<tr class="rref gap"><td>（参考）</td><td>通常との差</td>`;
+  for(let i2=0;i2<mgDisp;i2++){const v=MR.refGap[i2]||0;h+=`<td class="${i2===(MR.need||{}).iSafe?'need-m3':''}">${v>0?v.toLocaleString():'-'}</td>`;}
+  h+=`<td></td></tr>`;
   // ローン残高
   if(loanAmt>0||lhAmt>0||lwAmt>0){
     if(!_isSingle_mg&&(pairLoanMode||_mgFlatPair)){

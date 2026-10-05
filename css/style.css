@@ -1789,3 +1789,25 @@ table.cf td.vz{color:#b6c0cc}
 .mgqa-path .st select{font-size:11px}
 .mgqa-caradd{position:relative;grid-template-columns:1fr 1fr;padding-right:26px}
 .mgqa-caradd .x{position:absolute;top:8px;right:4px;grid-column:auto;grid-row:auto}
+
+/* ===== 万が一：必要保障額（最低限・標準・安心）と根拠のマス ===== */
+.mg-need{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 6px}
+.mg-need .nc{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;background:#fff;position:relative}
+.mg-need .nc.safe{border:2px solid #1e3a5f;background:#f6f8fc}
+.mg-need .hd{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.mg-need .bg{font-size:11px;font-weight:800;color:#fff;border-radius:6px;padding:2px 8px}
+.mg-need .t{font-size:13px;font-weight:800;color:#1e3a5f}
+.mg-need .set{margin-left:auto;font-family:inherit;font-size:11px;font-weight:700;color:#475569;border:1px solid #cbd5e1;border-radius:6px;padding:1px 4px;background:#fff}
+.mg-need .v{font-size:26px;font-weight:800;color:#1e3a5f;margin-top:4px;font-variant-numeric:tabular-nums}
+.mg-need .v small{font-size:13px;margin-left:2px}
+.mg-need .v small:last-child:not(:first-of-type){display:block;font-size:10.5px;font-weight:600;color:#64748b;margin:0}
+.mg-need .x{font-size:11.5px;color:#334155;line-height:1.5;margin-top:3px}
+.mg-need .x b{color:#1e3a5f}
+.mg-need-foot{font-size:10.5px;color:#64748b;margin:0 0 10px}
+.mg-need-foot i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin:0 3px 0 9px}
+table.cf td.need-m1{outline:3px solid #f59e0b;outline-offset:-3px}
+table.cf td.need-m2{outline:3px solid #0f9d58;outline-offset:-3px}
+table.cf td.need-m3{outline:3px solid #60a5fa;outline-offset:-3px}
+table.cf tr.rref td{background:#f1f5f9;color:#64748b;font-weight:700}
+table.cf tr.rref.gap td{background:#fdf2f7;color:#9d174d}
+@media print{.mg-need,.mg-need-foot{display:none}}

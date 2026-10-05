@@ -692,6 +692,11 @@ async function exportExcelMG(){
   }
   // 総金融資産（通常CFと同じ型タグ: 'totalAsset'）
   if(MR.totalAsset)push(['総金融資産','',...MR.totalAsset.slice(0,disp).map(v=>ri(v)),ri(MR.totalAsset[disp-1])],'totalAsset');
+  // 参考：通常のCF表の総金融資産と、その差（画面と同じ2行。必要保障額「安心」の根拠）
+  if(MR.refNormalTotal){
+    push(['（参考）','通常の総金融資産',...MR.refNormalTotal.slice(0,disp).map(v=>ri(v)),ri(MR.refNormalTotal[disp-1]||0)],'balance');
+    push(['（参考）','通常との差',...MR.refGap.slice(0,disp).map(v=>ri(v)),''],'balance');
+  }
   // ローン残高
   if(pairLoanMode){
     if(MR.lBalH&&MR.lBalH.some(v=>v>0))push(['ローン残高(ご主人様)','',...MR.lBalH.slice(0,disp).map(v=>ri(v)),ri(MR.lBalH[disp-1]||0)],'balance');

@@ -477,6 +477,9 @@ function mgQA_applyStateToDOM(tab){
     });
   }
 
+  // 必要保障額（標準の年数）と見出し帯の種類色
+  window._mgNeedYears = s.needYears || 3;
+  window._mgKindColor = (MGQA_KIND_INFO[tab.kind]||MGQA_KIND_INFO.death).color;
   // 亡くなった方の加入年金（厚生／国民のみ）
   if(s.pensionType!=='kosei' && s.pensionType!=='kokumin'){
     s.pensionType = (typeof getMGPensionType==='function') ? getMGPensionType() : 'kosei';
@@ -942,6 +945,14 @@ function mgQA_afterCalc(tab){
   const panel = document.getElementById('mgqa-left-panel'); if(!panel) return;
   const st = panel.querySelector('.mgqa-surv-tbl'); if(st) st.innerHTML = mgQA_survTable(tab);
   if(typeof mgQA_afterCalcExtra==='function') mgQA_afterCalcExtra(tab, panel);
+}
+
+// 必要保障額「標準」の年数（右のカードで選ぶ）
+function mgQA_setNeedYears(v){
+  const tab = mgQA_activeTab(); if(!tab) return;
+  tab.state.needYears = Math.max(1, parseInt(v)||3);
+  mgQA_calcAndRender(tab, true);
+  if(typeof scheduleAutoSave==='function') scheduleAutoSave();
 }
 
 // ===== ①いつ起きたら =====
