@@ -220,7 +220,7 @@
 
     // 通常ローン時の税額計算セクション（ペアローン時は上のブロックで代替）
     const singleTaxSection = bd.pairMode ? '' : `
-        <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 税額計算（ご主人様）</div>
+        <div style="font-weight:700;color:#1e3a5f;margin-top:6px">▼ 税額計算（${bd.borrower==='w'?'奥様（名義人）':'ご主人様'}）</div>
         <div>推定額面年収: ${explainFmt(bd.grossEst,'万円')}</div>
         <div>課税所得ベース: ${explainFmt(bd.taxableBase,'万円')}</div>
         ${bd.hMatLeave?'<div style="color:#d97706;font-weight:600">育休年（給付金主体・所得税0扱い）</div>':''}

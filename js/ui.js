@@ -33,6 +33,7 @@ function setHouseholdType(type){
   if(el('icon-asset-h'))el('icon-asset-h').textContent=hIcon;
   if(el('lbl-cash-h'))el('lbl-cash-h').textContent=hLabel;
   if(el('lbl-mg-h'))el('lbl-mg-h').textContent=hLabel;
+  if(typeof syncLoanDansinUI==='function')syncLoanDansinUI(); // 単身は名義人欄を隠す
   // 単身時はペアローン無効化＆万が一はhのみ
   if(single){
     if(typeof pairLoanMode!=='undefined'&&pairLoanMode)togglePairLoan(false);

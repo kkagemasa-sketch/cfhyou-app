@@ -1184,6 +1184,7 @@ function _applyData(d){
       if(typeof setLoanCategory==='function')setLoanCategory(loanCategory);
       if(typeof setFlat35Sub==='function'&&loanCategory==='flat35')setFlat35Sub(flat35Sub);
     }finally{ window._restoringData=false; }
+    if(typeof syncLoanDansinUI==='function')syncLoanDansinUI();
     // 万が一Q&Aタブ（複数タブ）復元
     if(typeof mgQA_tabs !== 'undefined' && Array.isArray(mgQA_tabs)){
       mgQA_tabs.length = 0;  // 配列を空に（const配列の場合のみ）
@@ -1375,6 +1376,7 @@ function _resetSheetState(){
   retirePayOn=true;wRetirePayOn=true;
   pairLoanMode=false;
   jointLoanMode=false;
+  if(typeof syncLoanDansinUI==='function')syncLoanDansinUI();
   // 修繕積立金 手入力チェックをリセット
   const repChk0=document.getElementById('rep-manual-toggle');
   if(repChk0){repChk0.checked=false;if(typeof toggleRepManual==='function')toggleRepManual();}

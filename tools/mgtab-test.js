@@ -109,6 +109,58 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     if(r.oldIndependent!==555) fails.push('旧データで配った上書きがタブ間で共有されている');
     if(fails.length){ bad++; console.log('❌ 万が一タブの独立性\n   - '+fails.join('\n   - ')); }
     else console.log('✅ 万が一タブ: 上書き・追加行がタブごとに独立（移動・複製・削除・保存復元・旧データ移行・種類）');
+
+    /* ---- ⑤住宅：名義人・一般団信の欄 ---- */
+    await page.evaluate(pageBaseSetup);
+    const L=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const $=id=>document.getElementById(id);
+      const vis=id=>{const e=$(id);return !!e&&e.style.display!=='none'&&e.offsetParent!==null;};
+      const onV=key=>[...document.querySelectorAll(`[data-ldb="${key}"].on`)].map(b=>b.dataset.v).join('|');
+      const o={};
+      setRTab('cf');
+      if(typeof toggleHousingGroup==='function'){ const hg=$('loan-dansin-box').closest('.hg-body'); if(hg&&hg.offsetParent===null) toggleHousingGroup('loan'); }
+      setLoanMode('single'); await wait(100);
+      o.single=[vis('ldb-single'),vis('ldb-pair'),vis('ldb-joint')].join(',');
+      o.defOn=onV('loan-borrower')+'/'+onV('loan-dansin');
+      document.querySelector('[data-ldb="loan-borrower"][data-v="w"]').click();
+      document.querySelector('[data-ldb="loan-dansin"][data-v="no"]').click();
+      o.afterClick=$('loan-borrower').value+'/'+$('loan-dansin').value+'/'+onV('loan-borrower')+'/'+onV('loan-dansin');
+      o.note=$('ldb-note').textContent;
+      setLoanMode('pair'); await wait(100);
+      o.pair=[vis('ldb-single'),vis('ldb-pair'),vis('ldb-joint')].join(',');
+      setLoanMode('joint'); await wait(100);
+      o.joint=[vis('ldb-single'),vis('ldb-pair'),vis('ldb-joint')].join(',');
+      document.querySelector('[data-ldb="joint-dansin-sel"][data-v="none"]').click();
+      setLoanMode('single'); await wait(100);
+      // 保存→復元
+      const saved=JSON.parse(JSON.stringify(_collectSaveData()));
+      setLoanMode('pair'); $('loan-borrower').value='h'; $('loan-dansin').value='yes';
+      _applyData(saved); await wait(800);
+      o.restored=$('loan-borrower').value+'/'+$('loan-dansin').value+'/'+$('joint-dansin-sel').value+'/'+onV('loan-borrower')+'/'+onV('loan-dansin');
+      // 旧データ（項目なし）→ 初期値
+      const old=JSON.parse(JSON.stringify(saved));
+      ['loan-borrower','loan-dansin','loan-dansin-h','loan-dansin-w','joint-dansin-sel'].forEach(k=>delete old.fields[k]);
+      _applyData(old); await wait(800);
+      o.oldDef=$('loan-borrower').value+'/'+$('loan-dansin').value+'/'+$('joint-dansin-sel').value+'/'+onV('loan-borrower');
+      // 単身世帯は名義人欄を隠す・計算は本人名義
+      $('loan-borrower').value='w'; setHouseholdType('single'); await wait(100);
+      o.singleHH=vis('ldb-borrower-wrap')+'/'+getLoanBorrower();
+      setHouseholdType('couple');
+      return o;
+    });
+    const f2=[];
+    if(L.single!=='true,false,false') f2.push(`単独ローンの欄の表示 ${L.single}`);
+    if(L.defOn!=='h/yes') f2.push(`初期値の選択表示 ${L.defOn}`);
+    if(L.afterClick!=='w/no/w/no') f2.push(`ボタンで値が変わらない ${L.afterClick}`);
+    if(!L.note.includes('団信なし')) f2.push(`説明文が設定に追従しない「${L.note}」`);
+    if(L.pair!=='false,true,false') f2.push(`ペアローンの欄の表示 ${L.pair}`);
+    if(L.joint!=='false,false,true') f2.push(`連帯債務の欄の表示 ${L.joint}`);
+    if(L.restored!=='w/no/none/w/no') f2.push(`保存→復元で戻らない ${L.restored}`);
+    if(L.oldDef!=='h/yes/h/h') f2.push(`旧データで初期値にならない ${L.oldDef}`);
+    if(L.singleHH!=='false/h') f2.push(`単身世帯で名義人欄が残る／奥様名義になる ${L.singleHH}`);
+    if(f2.length){ bad++; console.log('❌ 名義人・一般団信の欄\n   - '+f2.join('\n   - ')); }
+    else console.log('✅ 名義人・一般団信: ローン種別ごとの表示・ボタン・説明文・保存復元・旧データ初期値・単身世帯');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

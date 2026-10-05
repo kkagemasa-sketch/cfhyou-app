@@ -240,6 +240,67 @@ const SCENARIOS = {
       incomeMode:'override',incomeSteps:[{ageFrom:30,ageTo:44,netFrom:180,netTo:180},{ageFrom:45,ageTo:60,netFrom:300,netTo:300}],
       lcMode:'step',lcSteps:[{base:300,rate:0,fromYr:2027,toYr:2040,mode:'free',pct:0},{base:250,rate:0,fromYr:2041,toYr:2080,mode:'free',pct:0}]});
   },
+  'S11_単独_奥様名義': function(){
+    // 住宅ローン控除を奥様の税額から計算（⑤住宅の名義人）
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    $('loan-borrower').value='w'; syncLoanDansinUI();
+    calcLoanAmt();
+  },
+  'M9_妻死亡_単独奥様名義_団信完済': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    $('loan-borrower').value='w'; syncLoanDansinUI();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('w',{deathYear:4,houseMode:'danshin'});
+  },
+  'M10_夫死亡_団信加入なし': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    $('loan-dansin').value='no'; syncLoanDansinUI();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('h',{deathYear:3,houseMode:'danshin'});
+  },
+  'M11_妻死亡_連帯おふたり_ペア奥様なし': function(){
+    // 連帯債務「おふたり」→奥様死亡でも完済
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('joint');
+    $('house-price').value=4800; $('down-payment').value=300; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    $('joint-dansin-sel').value='both'; syncLoanDansinUI();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('w',{deathYear:3,houseMode:'danshin'});
+  },
+  'M12_妻死亡_ペア奥様団信なし': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+    $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=0;
+    setCostType('cash'); setDownType('own');
+    $('loan-h-amt').value=3000; $('loan-w-amt').value=1500;
+    $('loan-h-yrs').value=35; $('loan-w-yrs').value=30;
+    $('rate-h-base').value=0.6; $('rate-w-base').value=0.7;
+    $('loan-dansin-w').value='no'; syncLoanDansinUI();
+    calcLoanAmt();
+    const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
+    mg('w',{deathYear:4,houseMode:'danshin'});
+  },
   'M8_夫死亡_賃貸へ_奨学金': function(){
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');

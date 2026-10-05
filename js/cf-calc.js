@@ -1424,6 +1424,25 @@ function render(){
           _lctrlBd.wItax=wItax; _lctrlBd.wJuminCtrlMax=wJuminCtrlMax; _lctrlBd.wTaxCapTotal=wTaxCapTotal;
         }
       }
+      // 単独ローン・奥様名義：控除は奥様の税額から（⑤住宅の名義人）
+      else if(!pairLoanMode&&!_flatPair&&!jointLoanMode&&!_isSingle&&typeof getLoanBorrower==='function'&&getLoanBorrower()==='w'){
+        const _wBorrowLeave = _wStepLeaves.some(s=>s.isMatLeave&&wa>=s.fromAge&&wa<=s.toAge);
+        const _wBorrowGross=(wInc>0 && !_wBorrowLeave)?wInc:0;
+        const _wBorrowBd=_calcNetBreakdown(_wBorrowGross, wa, true, 0, false);
+        const _wbCapBase=_wBorrowBd?_wBorrowBd.taxable:0;
+        const _wbItax=_wBorrowBd?_wBorrowBd.itax:0;
+        const _wbJuminMax=Math.min(Math.round(_wbCapBase*0.05*10)/10, JUMIN_CTRL_MAX);
+        const _wbCap=Math.round((_wbItax+_wbJuminMax)*10)/10;
+        lc2=Math.max(0,Math.round(Math.min(calcCtrl,_wbCap)*10)/10);
+        _lctrlBd.borrower='w';
+        _lctrlBd.grossEst=_wBorrowBd?_wBorrowBd.gross:0;
+        _lctrlBd.taxableBase=_wBorrowBd?_wBorrowBd.taxableBase:0;
+        _lctrlBd.itax=_wbItax;
+        _lctrlBd.jumin=_wBorrowBd?_wBorrowBd.jumin:0;
+        _lctrlBd.juminCtrlMax=_wbJuminMax;
+        _lctrlBd.taxCapTotal=_wbCap;
+        _lctrlBd.hMatLeave=!!_wBorrowLeave;
+      }
     }
     if(_lctrlDedMode!=='manual'){
       // 元の自動計算値を breakdown に保存（Pass2 の override 上書きに影響されない）

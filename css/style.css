@@ -1648,3 +1648,12 @@ table.cf td.vz{color:#b6c0cc}
   body.pp-open .pp-page{margin:0!important;box-shadow:none!important;page-break-after:always;break-after:page}
   body.pp-open .pp-page:last-child{page-break-after:auto;break-after:auto}
 }
+
+/* ===== ⑤住宅：名義人・一般団信 ===== */
+.loan-dansin-box{border:1px solid #c8d6e8;background:#f6f9fd;border-radius:var(--rs,8px);padding:10px 10px 8px;margin:0 0 10px}
+.loan-dansin-box .ldb-lbl{font-size:11px;font-weight:700;color:#1e3a5f;margin:0 0 5px}
+.loan-dansin-box .ldb-seg{display:flex;gap:6px}
+.loan-dansin-box .ldb-seg .tc{flex:1;padding:6px 8px;justify-content:center;text-align:center}
+.loan-dansin-box .ldb-seg .tc-lbl{font-size:11px}
+.loan-dansin-box .ldb-note{font-size:10px;color:#475569;margin-top:7px;line-height:1.6}
+.loan-dansin-box .ldb-note:empty{display:none}

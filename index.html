@@ -1255,6 +1255,47 @@ window.closeAboutModal=closeAboutModal;
           <div><div class="tc-lbl" style="font-size:11px">連帯債務</div></div>
         </div>
       </div>
+      <!-- 名義人・一般団信（ローン種別ごとに中身を切替。値は hidden に保持して保存対象） -->
+      <div id="loan-dansin-box" class="loan-dansin-box">
+        <input type="hidden" id="loan-borrower" value="h">
+        <input type="hidden" id="loan-dansin" value="yes">
+        <input type="hidden" id="loan-dansin-h" value="yes">
+        <input type="hidden" id="loan-dansin-w" value="yes">
+        <input type="hidden" id="joint-dansin-sel" value="h">
+        <div id="ldb-single" class="g2" style="gap:10px">
+          <div id="ldb-borrower-wrap"><div class="ldb-lbl">名義人（ローンを借りる人）</div>
+            <div class="ldb-seg">
+              <div class="tc" data-ldb="loan-borrower" data-v="h" onclick="setLoanDansinField('loan-borrower','h')"><div class="tc-lbl">ご主人様</div></div>
+              <div class="tc" data-ldb="loan-borrower" data-v="w" onclick="setLoanDansinField('loan-borrower','w')"><div class="tc-lbl">奥様</div></div>
+            </div></div>
+          <div><div class="ldb-lbl">一般団信</div>
+            <div class="ldb-seg">
+              <div class="tc" data-ldb="loan-dansin" data-v="yes" onclick="setLoanDansinField('loan-dansin','yes')"><div class="tc-lbl">加入</div></div>
+              <div class="tc" data-ldb="loan-dansin" data-v="no" onclick="setLoanDansinField('loan-dansin','no')"><div class="tc-lbl">加入なし</div></div>
+            </div></div>
+        </div>
+        <div id="ldb-pair" class="g2" style="gap:10px;display:none">
+          <div><div class="ldb-lbl">ご主人様のローンの一般団信</div>
+            <div class="ldb-seg">
+              <div class="tc" data-ldb="loan-dansin-h" data-v="yes" onclick="setLoanDansinField('loan-dansin-h','yes')"><div class="tc-lbl">加入</div></div>
+              <div class="tc" data-ldb="loan-dansin-h" data-v="no" onclick="setLoanDansinField('loan-dansin-h','no')"><div class="tc-lbl">加入なし</div></div>
+            </div></div>
+          <div><div class="ldb-lbl">奥様のローンの一般団信</div>
+            <div class="ldb-seg">
+              <div class="tc" data-ldb="loan-dansin-w" data-v="yes" onclick="setLoanDansinField('loan-dansin-w','yes')"><div class="tc-lbl">加入</div></div>
+              <div class="tc" data-ldb="loan-dansin-w" data-v="no" onclick="setLoanDansinField('loan-dansin-w','no')"><div class="tc-lbl">加入なし</div></div>
+            </div></div>
+        </div>
+        <div id="ldb-joint" style="display:none">
+          <div class="ldb-lbl">一般団信の対象</div>
+          <div class="ldb-seg">
+            <div class="tc" data-ldb="joint-dansin-sel" data-v="h" onclick="setLoanDansinField('joint-dansin-sel','h')"><div class="tc-lbl">ご主人様のみ（標準）</div></div>
+            <div class="tc" data-ldb="joint-dansin-sel" data-v="both" onclick="setLoanDansinField('joint-dansin-sel','both')"><div class="tc-lbl">おふたり（デュエット等）</div></div>
+            <div class="tc" data-ldb="joint-dansin-sel" data-v="none" onclick="setLoanDansinField('joint-dansin-sel','none')"><div class="tc-lbl">加入なし</div></div>
+          </div>
+        </div>
+        <div id="ldb-note" class="ldb-note"></div>
+      </div>
       <!-- ローンカテゴリ切替（固定/変動・フラット） -->
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div class="tc on" id="lcat-std" onclick="setLoanCategory('standard')" style="flex:1;padding:7px 10px">
@@ -1276,12 +1317,7 @@ window.closeAboutModal=closeAboutModal;
           <div class="fg"><label class="lbl" style="font-size:10px">奥様 持分額</label>
             <div class="suf"><input class="inp amt-inp" id="joint-share-w" type="number" value="1800" min="0" step="1" oninput="syncJointShare('w');live()"><span class="sl">万円</span></div></div>
         </div>
-        <div id="joint-share-hint" style="font-size:10px;color:#3a8a3a;margin-bottom:8px">✓ 持分合計: 4500万円（借入額と一致）</div>
-        <div style="font-size:10px;font-weight:700;color:#7a5000;margin-bottom:6px">団信加入者</div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap">
-          <label style="font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:4px"><input type="radio" name="joint-dansin" id="joint-dansin-h" value="h" checked oninput="live()">ご主人のみ（標準）</label>
-          <label style="font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:4px"><input type="radio" name="joint-dansin" id="joint-dansin-both" value="both" oninput="live()">両者（フラット35デュエット等）</label>
-        </div>
+        <div id="joint-share-hint" style="font-size:10px;color:#3a8a3a">✓ 持分合計: 4500万円（借入額と一致）</div>
       </div>
       <!-- 単独ローン設定 -->
       <div id="loan-single-body">

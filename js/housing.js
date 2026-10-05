@@ -1424,3 +1424,66 @@ window.addPrepayRow=addPrepayRow;
 window.rmPrepayRow=rmPrepayRow;
 window.onPrepayTypeChange=onPrepayTypeChange;
 window.syncPrepayUIVisibility=syncPrepayUIVisibility;
+
+// ===== 名義人・一般団信（⑤住宅ローン設定） =====
+// 値は hidden input（loan-borrower / loan-dansin / loan-dansin-h / loan-dansin-w / joint-dansin-sel）に保持し保存対象。
+// 万が一タブでは「亡くなった方が団信の対象ならローン完済」の判定に使う。
+function setLoanDansinField(id,v){
+  const el=document.getElementById(id); if(!el)return;
+  el.value=v;
+  syncLoanDansinUI();
+  live(true);
+}
+// 単独ローンの名義人（単身世帯は常にご本人）
+function getLoanBorrower(){
+  if(householdType==='single')return 'h';
+  return document.getElementById('loan-borrower')?.value==='w'?'w':'h';
+}
+// p: 's'=単独ローン / 'h','w'=ペアローン各自
+function getLoanDansinJoined(p){
+  const id=p==='h'?'loan-dansin-h':p==='w'?'loan-dansin-w':'loan-dansin';
+  return document.getElementById(id)?.value!=='no';
+}
+// 単独・連帯債務ローンで、亡くなったときに団信で完済される人 {h:bool, w:bool}
+function getSingleLoanDansinCover(){
+  if(jointLoanMode){
+    const s=document.getElementById('joint-dansin-sel')?.value||'h';
+    return {h:s!=='none', w:s==='both'};
+  }
+  const joined=getLoanDansinJoined('s');
+  const b=getLoanBorrower();
+  return {h:joined&&b==='h', w:joined&&b==='w'};
+}
+function syncLoanDansinUI(){
+  const box=document.getElementById('loan-dansin-box'); if(!box)return;
+  // 旧データ・リセット後は空になるので初期値（ご主人様名義・加入・ご主人様のみ）に戻す
+  const _defV={'loan-borrower':'h','loan-dansin':'yes','loan-dansin-h':'yes','loan-dansin-w':'yes','joint-dansin-sel':'h'};
+  Object.keys(_defV).forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=_defV[id];});
+  const mode=pairLoanMode?'pair':jointLoanMode?'joint':'single';
+  const show=(id,on)=>{const e=document.getElementById(id);if(e)e.style.display=on?'':'none';};
+  show('ldb-single',mode==='single');
+  show('ldb-pair',mode==='pair');
+  show('ldb-joint',mode==='joint');
+  show('ldb-borrower-wrap',householdType!=='single');
+  box.querySelectorAll('[data-ldb]').forEach(b=>{
+    b.classList.toggle('on',(document.getElementById(b.dataset.ldb)?.value||'')===b.dataset.v);
+  });
+  const note=document.getElementById('ldb-note');
+  if(note){
+    let t='';
+    if(mode==='single'){
+      const who=getLoanBorrower()==='w'?'奥様':(householdType==='single'?'ご本人':'ご主人様');
+      t=householdType==='single'
+        ? `・万が一タブ：${getLoanDansinJoined('s')?'亡くなったら団信でローン完済':'団信なしのためローンは続きます'}`
+        : `・住宅ローン控除は<b>${who}の税金</b>から差し引きます<br>・万が一タブ：${getLoanDansinJoined('s')?`${who}が亡くなったら団信で完済、もう一方の方が亡くなってもローンは続きます`:'団信なしのため、どちらが亡くなってもローンは続きます'}`;
+    }else if(mode==='pair'){
+      t='・万が一タブ：亡くなった方のローンが団信加入なら完済、もう一方のローンは続きます';
+    }else{
+      const s=document.getElementById('joint-dansin-sel')?.value||'h';
+      t=s==='none'?'・万が一タブ：団信なしのため、どちらが亡くなってもローンは続きます'
+        :s==='both'?'・万が一タブ：どちらが亡くなってもローン全体を団信で完済'
+        :'・万が一タブ：ご主人様が亡くなったらローン全体を団信で完済（奥様の場合は続きます）';
+    }
+    note.innerHTML=t;
+  }
+}
