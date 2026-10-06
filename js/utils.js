@@ -603,6 +603,17 @@ function toggleCfSummaryDetail(){
 }
 
 // 万が一CF表の詳細ボックス折りたたみトグル
+// 万が一：必要保障額のカードを隠す／表示する（画面だけ。CF表の根拠の色枠も一緒に隠す）
+function toggleMgNeed(){
+  const box=document.getElementById('mg-need-wrap');
+  const btn=document.getElementById('mg-need-toggle');
+  if(!box||!btn) return;
+  const hide=box.style.display!=='none';
+  box.style.display=hide?'none':'';
+  btn.textContent=hide?'▸ 必要保障額を表示':'▾ 必要保障額を隠す';
+  document.body.classList.toggle('mg-need-hide', hide);
+  try{localStorage.setItem('mg_need_collapsed',hide?'1':'0')}catch(e){}
+}
 function toggleMgSummaryDetail(){
   const box=document.getElementById('mg-summary-detail');
   const btn=document.getElementById('mg-summary-toggle');

@@ -1871,7 +1871,8 @@ function _renderContingencyInner(_mgStopOv){
   // ── 必要保障額（3段階）。判定は総金融資産（預貯金＋有価証券など） ──
   //   最低限＝CF表の最後の年に総金融資産がマイナスにならない額
   //   標準　＝万が一の後のどの年も、総金融資産で生活費◯年分を確保できる額（初期3年）
-  //   安心　＝万が一の後のどの年も、総金融資産が通常のCF表と同じだけ残る額（通常との差の最大）
+  //   安心　＝万が一の後のどの年も、総金融資産が「通常のCF表」と「生活費◯年分」の多い方以上残る額
+  //          （通常のCF表でも資金が不足する家計で、安心が最低限より少なくならないように。必ず 最低限≦標準≦安心）
   {
     const _i0=deathYearOffset-1, _last=mgDisp-1;
     const _yrs=Math.max(1,parseInt(window._mgNeedYears)||3);
@@ -1879,8 +1880,10 @@ function _renderContingencyInner(_mgStopOv){
     const need={years:_yrs,min:Math.max(0,-ri(TA[_last]||0)),iMin:_last,std:0,iStd:-1,safe:0,iSafe:-1};
     for(let i=_i0;i<=_last;i++){
       const d2=ri((MR.lc[i]||0)*_yrs-(TA[i]||0)); if(d2>need.std){need.std=d2;need.iStd=i;}
-      const d3=ri((NTA[i]||0)-(TA[i]||0)); if(d3>need.safe){need.safe=d3;need.iSafe=i;}
+      const d3=ri(Math.max(NTA[i]||0,(MR.lc[i]||0)*_yrs)-(TA[i]||0)); if(d3>need.safe){need.safe=d3;need.iSafe=i;}
     }
+    // 通常のCF表でも総金融資産がマイナスになる年がある（安心の注意書き用）
+    need.normalShort=NTA.slice(_i0,_last+1).some(v=>(v||0)<0);
     MR.need=need;
     MR.refNormalTotal=NTA.slice(0,MR.totalAsset.length).map(v=>ri(v||0));
     MR.refGap=MR.totalAsset.map((v,i)=>i<_i0?0:Math.max(0,ri((NTA[i]||0)-(v||0))));
@@ -1908,6 +1911,9 @@ function _renderContingencyInner(_mgStopOv){
   // 折りたたみ状態（通常CF表とは別キー）
   const _mgSumHidden = (()=>{try{return localStorage.getItem('mg_summary_collapsed')==='1'}catch(e){return false}})();
   const _mgTogLabel = _mgSumHidden ? '▸ 詳細を表示' : '▾ 詳細を隠す';
+  // 必要保障額のカードを隠しているか（画面だけ。PDF・Excelには影響しない）
+  const _mgNeedHidden = (()=>{try{return localStorage.getItem('mg_need_collapsed')==='1'}catch(e){return false}})();
+  document.body.classList.toggle('mg-need-hide', _mgNeedHidden);
 
   // 対象者ラベル + 自己資金内訳 + 住宅ローン条件（通常CF表と同じ）
   const mgTargetLabel2=_isSingle_mg?'ご本人':(targetIsH?'ご主人様':'奥様');
@@ -1920,7 +1926,10 @@ function _renderContingencyInner(_mgStopOv){
         <div style="font-size:10px;opacity:.8">${_mgDis?`${mgTargetLabel2}の障害年金・傷病手当金と${mgSurvivorLabel}の収入で生活を継続するキャッシュフロー`:`${mgSurvivorLabel}が生活を継続するキャッシュフロー`}</div>
       </div>
     </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <button id="mg-need-toggle" onclick="toggleMgNeed()" title="必要保障額（最低限・標準・安心）のカードを表示／非表示" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.55);padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_mgNeedHidden?'▸ 必要保障額を表示':'▾ 必要保障額を隠す'}</button>
     <button id="mg-summary-toggle" onclick="toggleMgSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.55);padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_mgTogLabel}</button>
+    </div>
   </div>`;
 
   // 必要保障額の3枚カード
@@ -1929,16 +1938,17 @@ function _renderContingencyInner(_mgStopOv){
     const sAgeOf=i=>(_mgDis?(targetIsH?hAge:wAge):(targetIsH?wAge:hAge))+i;
     const basis=i=>i<0?'':`<small>根拠：${yr0+i}年（${_mgDis?mgTargetLabel2:mgSurvivorLabel}${sAgeOf(i)}歳）</small>`;
     const opt=[1,2,3,4,5].map(n=>`<option value="${n}" ${n===nd.years?'selected':''}>生活費 ${n}年分</option>`).join('');
-    h+=`<div class="mg-need">
+    h+=`<div id="mg-need-wrap" style="${_mgNeedHidden?'display:none':''}"><div class="mg-need">
       <div class="nc"><div class="hd"><span class="bg" style="background:#d97706">最低限</span><span class="t">お金が尽きないために</span></div>
         <div class="v">${nd.min.toLocaleString()}<small>万円</small>${basis(nd.min>0?nd.iMin:-1)}</div><div class="x">CF表の<b>最後の年</b>に、預貯金と有価証券が<b>マイナスにならない</b>額</div></div>
       <div class="nc"><div class="hd"><span class="bg" style="background:#0f9d58">標準</span><span class="t">暮らしが行き詰まらないために</span>
         <select class="set" onchange="mgQA_setNeedYears(this.value)" title="何年分の生活費を確保するか">${opt}</select></div>
         <div class="v">${nd.std.toLocaleString()}<small>万円</small>${basis(nd.iStd)}</div><div class="x">どの年も、預貯金と有価証券で<b>生活費${nd.years}年分</b>を確保できる額</div></div>
       <div class="nc safe"><div class="hd"><span class="bg" style="background:#1e3a5f">安心</span><span class="t">今の生活と資産計画を守るために</span></div>
-        <div class="v">${nd.safe.toLocaleString()}<small>万円</small>${basis(nd.iSafe)}</div><div class="x">どの年も、資産が<b>通常のCF表と同じ</b>だけ残る額</div></div>
+        <div class="v">${nd.safe.toLocaleString()}<small>万円</small>${basis(nd.iSafe)}</div><div class="x">どの年も、資産が<b>通常のCF表と同じ</b>だけ（少なくとも<b>生活費${nd.years}年分</b>）残る額</div>
+        ${nd.normalShort?`<div class="nw">⚠ 通常のCF表でも資金が不足する年があるため、通常のCF表が生活費${nd.years}年分を下回る年は、生活費${nd.years}年分を基準にしています</div>`:''}</div>
     </div>
-    <div class="mg-need-foot">枠の色：<i style="background:#f59e0b"></i>最低限の根拠<i style="background:#0f9d58"></i>標準の根拠<i style="background:#60a5fa"></i>安心の根拠（CF表の総金融資産のマス）。保険金などで万が一の年に受け取る想定の額です</div>`;
+    <div class="mg-need-foot">枠の色：<i style="background:#f59e0b"></i>最低限の根拠<i style="background:#0f9d58"></i>標準の根拠<i style="background:#60a5fa"></i>安心の根拠（CF表の総金融資産のマス）。保険金などで万が一の年に受け取る想定の額です</div></div>`;
   }
 
   // 詳細ボックスをまとめて折りたたみ可能なコンテナで囲む

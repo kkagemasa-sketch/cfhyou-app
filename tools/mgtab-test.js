@@ -289,6 +289,38 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     if(JSON.stringify(S.r2)!=='[false,false]') f6.push(`古いデータが「続ける」にならない ${JSON.stringify(S.r2)}`);
     if(f6.length){ bad++; console.log('❌ 取崩し発生で積立をやめる\n   - '+f6.join('\n   - ')); }
     else console.log('✅ 取崩し発生で積立をやめる: 初期値「やめる」・保存復元・古いデータは「続ける」');
+
+    /* ---- 必要保障額：通常のCF表も赤字の家計でも 最低限≦標準≦安心、カードを隠す／表示 ---- */
+    await page.evaluate(pageBaseSetup);
+    const NE=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const $=id=>document.getElementById(id);
+      try{localStorage.setItem('mg_need_collapsed','0')}catch(e){}
+      setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+      $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+      setCostType('cash'); setDownType('own'); $('loan-yrs').value=35; $('rate-base').value=0.5; calcLoanAmt();
+      $('lc-food').value=600000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+      live(true); await wait(800);
+      setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
+      Object.assign(t.state,{deathYear:3,insurances:[{type:'lump',amount:500}],lcMode:'ratio',lcRatio:80}); mgQA_calcAndRender(t,true);
+      const nd=JSON.parse(JSON.stringify(window.lastMR.need));
+      const shown1=$('mg-need-wrap')?.style.display!=='none';
+      toggleMgNeed();
+      const hidden=$('mg-need-wrap')?.style.display==='none';
+      const cell=document.querySelector('#right-body table.cf td.need-m1,#right-body table.cf td.need-m2,#right-body table.cf td.need-m3');
+      const outlineHidden=cell?getComputedStyle(cell).outlineStyle==='none':true;
+      mgQA_calcAndRender(t,true);
+      const keep=$('mg-need-wrap')?.style.display==='none' && /表示/.test($('mg-need-toggle')?.textContent||'');
+      toggleMgNeed();
+      const back=$('mg-need-wrap')?.style.display!=='none';
+      return {nd,shown1,hidden,outlineHidden,keep,back};
+    });
+    const f7=[];
+    if(!(NE.nd.min<=NE.nd.std && NE.nd.std<=NE.nd.safe)) f7.push(`順番が逆 最低限${NE.nd.min}・標準${NE.nd.std}・安心${NE.nd.safe}`);
+    if(!NE.nd.normalShort) f7.push('通常のCF表が赤字なのに注意書きの判定が立たない');
+    if(!NE.shown1||!NE.hidden||!NE.outlineHidden||!NE.keep||!NE.back) f7.push(`カードの表示切替 ${JSON.stringify({shown:NE.shown1,hidden:NE.hidden,outline:NE.outlineHidden,keep:NE.keep,back:NE.back})}`);
+    if(f7.length){ bad++; console.log('❌ 必要保障額\n   - '+f7.join('\n   - ')); }
+    else console.log(`✅ 必要保障額: 通常も赤字の家計で 最低限${NE.nd.min.toLocaleString()}≦標準${NE.nd.std.toLocaleString()}≦安心${NE.nd.safe.toLocaleString()}・カードを隠す/表示（色枠も連動・再計算後も保持）`);
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

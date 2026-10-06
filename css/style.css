@@ -1811,3 +1811,6 @@ table.cf td.need-m3{outline:3px solid #60a5fa;outline-offset:-3px}
 table.cf tr.rref td{background:#f1f5f9;color:#64748b;font-weight:700}
 table.cf tr.rref.gap td{background:#fdf2f7;color:#9d174d}
 @media print{.mg-need,.mg-need-foot{display:none}}
+.mg-need .nw{font-size:10.5px;color:#b45309;margin-top:6px;line-height:1.5}
+/* 必要保障額を隠しているときは、画面のCF表の根拠の色枠も出さない（印刷プレビューには影響しない） */
+body.mg-need-hide #right-body table.cf td.need-m1,body.mg-need-hide #right-body table.cf td.need-m2,body.mg-need-hide #right-body table.cf td.need-m3{outline:none}
