@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>通常時の表紙 案A改</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#9aa4b2;font-family:"Yu Gothic UI","Yu Gothic","Meiryo",sans-serif;color:#1e293b}
+.page{width:1123px;height:794px;background:#fff;margin:24px auto;position:relative;overflow:hidden;display:grid;grid-template-columns:300px 1fr}
+.num{font-variant-numeric:tabular-nums}
+.cap{position:absolute;right:14px;bottom:10px;background:#111827;color:#fff;font-size:12px;font-weight:700;border-radius:6px;padding:4px 10px;opacity:.85;z-index:5}
+.side{background:#1e3a5f;color:#fff;padding:40px 30px;display:flex;flex-direction:column;position:relative}
+.side::after{content:"";position:absolute;right:0;top:0;bottom:0;width:6px;background:#2bb3a3}
+.logoWhite{height:40px;filter:brightness(0) invert(1);align-self:flex-start}
+.k{font-size:12px;letter-spacing:.2em;opacity:.7;margin-top:52px}
+.side h1{font-size:31px;line-height:1.35;margin:8px 0 0;font-weight:800}
+.who{font-size:23px;font-weight:700;margin-top:28px}
+.tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.tags span{font-size:12.5px;border:1px solid rgba(255,255,255,.45);border-radius:999px;padding:2px 11px}
+.per{font-size:13.5px;opacity:.9;margin-top:16px;line-height:1.8}
+.meta{margin-top:auto;font-size:12.5px;opacity:.9;line-height:1.8;border-top:1px solid rgba(255,255,255,.25);padding-top:14px}
+.main{padding:30px 38px 26px;display:flex;flex-direction:column}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.mhead .t{font-size:17px;font-weight:800;color:#1e3a5f;letter-spacing:.06em;display:flex;align-items:center;gap:10px}
+.mhead .t::before{content:"";width:6px;height:20px;background:#2bb3a3;border-radius:3px}
+.logoColor{height:36px}
+.box{border:1px solid #d7e0ea;border-radius:16px;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.box>.blk{flex:none}
+.blk{padding:22px 28px;border-bottom:1px solid #e8eef5}
+.blk:last-child{border-bottom:none}
+.bh{font-size:15px;font-weight:800;color:#1e3a5f;margin-bottom:12px;display:flex;align-items:baseline;gap:14px}
+.bh span{font-size:12.5px;font-weight:600;color:#64748b}
+.flow{display:flex;align-items:stretch;gap:10px}
+.flow .b{flex:1;background:#f6f8fc;border-radius:12px;padding:14px 16px}
+.flow .b .l{font-size:13px;color:#475569}
+.flow .b .v{font-size:30px;font-weight:800;color:#1e3a5f;margin-top:2px}
+.flow .b .v small{font-size:13px;margin-left:2px}
+.flow .ar{display:flex;align-items:center;color:#94a3b8;font-size:18px}
+.neg{color:#dc2626!important}.pos{color:#0f9d58!important}.blu{color:#2d7dd2!important}
+.loan{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:0;font-size:14px}
+.loan div{padding:13px 14px;border-bottom:1px solid #eef2f7}
+.loan .hd{font-size:12px;color:#64748b;font-weight:700;background:#f8fafc}
+.loan .p{font-weight:800;font-size:15px}
+.loan .v{font-size:23px;font-weight:800;color:#1e3a5f}
+.loan .v small{font-size:12px;margin-left:2px}
+.two{display:grid;grid-template-columns:1fr 1.2fr;gap:0;flex:1}
+.two .blk:first-child{border-right:1px solid #e8eef5}
+table.kv{width:100%;border-collapse:collapse;font-size:15px}
+table.kv td{padding:10px 0;border-bottom:1px solid #f1f5f9}
+table.kv td:last-child{text-align:right;font-weight:800;font-size:19px;color:#1e3a5f}
+table.kv tr.tot td{border-top:2px solid #1e3a5f;border-bottom:none}
+.memo{font-size:15px;line-height:1.9;color:#334155;background:#fffbea;border-radius:10px;padding:12px 16px}
+</style></head><body>
+
+<div class="page" id="A1"><span class="cap">A-1：ロゴを白一色で左帯に</span>
+  <div class="side">
+    <img class="logoWhite" src="file:///C:/Users/kkage/cfhyou-wt-print/img/housingfp-logo.png">
+    <div class="k">CASH FLOW REPORT</div>
+    <h1>キャッシュフロー表</h1>
+    <div class="who">山田 太郎 様</div>
+    <div class="tags"><span>戸建て</span><span>ペアローン</span></div>
+    <div class="per">2026年〜2085年（全60年間）<br>ご主人様30歳・奥様29歳・第一子3歳</div>
+    <div class="meta">作成日：2026年10月6日<br>担当：鎌倉 景政</div>
+  </div>
+  <div class="main">
+    <div class="mhead"><div class="t">前提条件</div></div>
+    <div class="box">%BODY%</div>
+  </div>
+</div>
+
+<div class="page" id="A2"><span class="cap">A-2：ロゴを右上に元の色で</span>
+  <div class="side">
+    <div class="k" style="margin-top:4px">CASH FLOW REPORT</div>
+    <h1>キャッシュフロー表</h1>
+    <div class="who">山田 太郎 様</div>
+    <div class="tags"><span>戸建て</span><span>ペアローン</span></div>
+    <div class="per">2026年〜2085年（全60年間）<br>ご主人様30歳・奥様29歳・第一子3歳</div>
+    <div class="meta">作成日：2026年10月6日<br>担当：鎌倉 景政</div>
+  </div>
+  <div class="main">
+    <div class="mhead"><div class="t">前提条件</div><img class="logoColor" src="file:///C:/Users/kkage/cfhyou-wt-print/img/housingfp-logo.png"></div>
+    <div class="box">%BODY%</div>
+  </div>
+</div>
+
+<template id="body">
+  <div class="blk"><div class="bh">自己資金の内訳<span>購入時に使うお金と、購入後に残る預貯金</span></div>
+    <div class="flow">
+      <div class="b"><div class="l">現預金合計</div><div class="v num">1,100<small>万円</small></div></div><div class="ar">▶</div>
+      <div class="b"><div class="l">頭金（自己資金）</div><div class="v num neg">500<small>万円</small></div></div>
+      <div class="b"><div class="l">諸費用</div><div class="v num neg">200<small>万円</small></div></div><div class="ar">▶</div>
+      <div class="b" style="background:#ecfdf5"><div class="l">購入後残高</div><div class="v num pos">400<small>万円</small></div></div>
+    </div>
+    <div style="font-size:12px;color:#64748b;margin-top:8px">※ 引越・家具家電 80万円は、引き渡し年（2027年）の支出としてCF表に計上しています</div>
+  </div>
+  <div class="blk"><div class="bh">住宅ローン条件（ペアローン）<span>住宅価格 4,500万円　／　引き渡し 2027年</span></div>
+    <div class="loan">
+      <div class="hd"></div><div class="hd">借入額</div><div class="hd">金利</div><div class="hd">返済期間</div>
+      <div class="p" style="color:#1e5a9a">ご主人様</div><div class="v num">2,800<small>万円</small></div><div class="v num">0.6<small>%（変動）</small></div><div class="v num">35<small>年</small></div>
+      <div class="p" style="color:#9a1e5a;border-bottom:none">奥様</div><div class="v num" style="border-bottom:none">1,200<small>万円</small></div><div class="v num" style="border-bottom:none">0.7<small>%（変動）</small></div><div class="v num" style="border-bottom:none">30<small>年</small></div>
+    </div>
+  </div>
+  <div class="two">
+    <div class="blk"><div class="bh">その他金融資産（現時点）</div>
+      <table class="kv"><tr><td>NISA積立（ご主人様）</td><td>120万円</td></tr><tr><td>課税一括（奥様）</td><td>300万円</td></tr><tr class="tot"><td>合計</td><td>420万円</td></tr></table></div>
+    <div class="blk"><div class="bh">注釈・補足メモ</div><div class="memo">退職金で一部繰上返済を予定。<br>教育費は私立大学（文系）を想定しています。</div></div>
+  </div>
+</template>
+<script>
+const body=document.getElementById('body').innerHTML;
+document.querySelectorAll('.box').forEach(b=>b.innerHTML=body);
+</script>
+</body></html>

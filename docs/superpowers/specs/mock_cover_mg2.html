@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>万が一の表紙 A-1</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#9aa4b2;font-family:"Yu Gothic UI","Yu Gothic","Meiryo",sans-serif;color:#1e293b}
+.page{width:1123px;height:794px;background:#fff;margin:24px auto;position:relative;overflow:hidden;display:grid;grid-template-columns:300px 1fr}
+.num{font-variant-numeric:tabular-nums}
+.cap{position:absolute;right:14px;bottom:10px;background:#111827;color:#fff;font-size:12px;font-weight:700;border-radius:6px;padding:4px 10px;opacity:.85;z-index:5}
+.side{background:#1e3a5f;color:#fff;padding:40px 30px;display:flex;flex-direction:column;position:relative}
+.side::after{content:"";position:absolute;right:0;top:0;bottom:0;width:6px;background:var(--kc)}
+.logoWhite{height:40px;filter:brightness(0) invert(1);align-self:flex-start}
+.k{font-size:12px;letter-spacing:.2em;opacity:.7;margin-top:52px}
+.side h1{font-size:31px;line-height:1.35;margin:8px 0 0;font-weight:800}
+.who{font-size:23px;font-weight:700;margin-top:26px}
+.tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.tags span{font-size:12.5px;border:1px solid rgba(255,255,255,.45);border-radius:999px;padding:2px 11px}
+.per{font-size:13.5px;opacity:.9;margin-top:14px;line-height:1.8}
+.scn{margin-top:22px;background:rgba(255,255,255,.1);border-left:5px solid var(--kc);padding:12px 14px;border-radius:4px;font-size:16px;font-weight:800;line-height:1.5}
+.scn small{display:block;font-size:12px;font-weight:600;opacity:.85;margin-top:2px}
+.meta{margin-top:auto;font-size:12.5px;opacity:.9;line-height:1.8;border-top:1px solid rgba(255,255,255,.25);padding-top:14px}
+.main{padding:26px 34px 22px;display:flex;flex-direction:column;gap:14px}
+.t{font-size:16px;font-weight:800;color:#1e3a5f;letter-spacing:.06em;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.t::before{content:"";width:6px;height:19px;background:var(--kc);border-radius:3px}
+.t span{font-size:12px;font-weight:600;color:#64748b;letter-spacing:0}
+.tiers{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:12px}
+.tier{border-radius:14px;padding:14px 16px;border:1px solid #d7e0ea;background:#fff}
+.tier .bd{display:inline-block;font-size:11.5px;font-weight:800;color:#fff;border-radius:999px;padding:2px 12px}
+.tier .tt{font-size:12.5px;font-weight:700;color:#334155;margin-top:7px}
+.tier .v{font-size:32px;font-weight:800;color:#1e3a5f;margin-top:2px}
+.tier .v small{font-size:14px;margin-left:3px}
+.tier .g{font-size:11.5px;color:#64748b}
+.tier .x{font-size:11.5px;color:#475569;margin-top:8px;padding-top:7px;border-top:1px dashed #e2e8f0;line-height:1.5}
+.tier.safe{background:#1e3a5f;border:none;color:#fff}
+.tier.safe .tt,.tier.safe .g,.tier.safe .x{color:#dbe4f0}
+.tier.safe .v{color:#fff;font-size:40px}
+.tier.safe .x{border-top-color:rgba(255,255,255,.25)}
+.legend{font-size:11px;color:#64748b;margin-top:7px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px;vertical-align:-1px}
+.box{border:1px solid #d7e0ea;border-radius:14px;overflow:hidden;flex:1;display:flex;flex-direction:column}
+.blk{padding:12px 20px;border-bottom:1px solid #e8eef5}
+.bh{font-size:13px;font-weight:800;color:#1e3a5f;margin-bottom:8px;display:flex;align-items:baseline;gap:12px}
+.bh span{font-size:12px;font-weight:600;color:#64748b}
+.flow{display:flex;gap:8px}
+.flow .b{flex:1;background:#f6f8fc;border-radius:10px;padding:8px 12px}
+.flow .b .l{font-size:11.5px;color:#475569}
+.flow .b .v{font-size:20px;font-weight:800;color:#1e3a5f}
+.flow .b .v small{font-size:11px;margin-left:2px}
+.flow .ar{display:flex;align-items:center;color:#94a3b8}
+.neg{color:#dc2626!important}.pos{color:#0f9d58!important}
+.loan{display:grid;grid-template-columns:auto 1fr 1fr 1fr;font-size:13px}
+.loan div{padding:6px 12px;border-bottom:1px solid #eef2f7}
+.loan .hd{font-size:11.5px;color:#64748b;font-weight:700;background:#f8fafc}
+.loan .v{font-size:17px;font-weight:800;color:#1e3a5f}
+.loan .v small{font-size:11px;margin-left:2px}
+.two{display:grid;grid-template-columns:1fr 1.2fr;flex:1}
+.two .blk{border-bottom:none}
+.two .blk:first-child{border-right:1px solid #e8eef5}
+table.kv{width:100%;border-collapse:collapse;font-size:13px}
+table.kv td{padding:4px 0;border-bottom:1px solid #f1f5f9}
+table.kv td:last-child{text-align:right;font-weight:800;color:#1e3a5f}
+.memo{font-size:13px;line-height:1.7;color:#334155;background:#fffbea;border-radius:10px;padding:8px 14px}
+</style></head><body>
+
+<div class="page" id="M" style="--kc:#c2185b"><span class="cap">万が一の表紙（A-1の形）</span>
+  <div class="side">
+    <img class="logoWhite" src="file:///C:/Users/kkage/cfhyou-wt-print/img/housingfp-logo.png">
+    <div class="k">CASH FLOW REPORT</div>
+    <h1>万が一<br>キャッシュフロー表</h1>
+    <div class="who">山田 太郎 様</div>
+    <div class="tags"><span>戸建て</span><span>ペアローン</span></div>
+    <div class="per">2026年〜2085年（全60年間）</div>
+    <div class="scn">ご主人様が32歳で<br>死亡した場合<small>2028年・奥様31歳・第一子5歳</small></div>
+    <div class="meta">作成日：2026年10月6日<br>担当：鎌倉 景政</div>
+  </div>
+  <div class="main">
+    <div>
+      <div class="t">必要保障額<span>万が一の年に、保険金などで受け取る想定の額</span></div>
+      <div class="tiers">
+        <div class="tier"><span class="bd" style="background:#d97706">最低限</span><div class="tt">お金が尽きないために</div><div class="v num">1,250<small>万円</small></div><div class="g">根拠：2085年（奥様88歳）</div><div class="x">CF表の最後の年に、預貯金と有価証券がマイナスにならない額</div></div>
+        <div class="tier"><span class="bd" style="background:#0f9d58">標準</span><div class="tt">暮らしが行き詰まらないために</div><div class="v num">2,180<small>万円</small></div><div class="g">根拠：2048年（奥様54歳）</div><div class="x">どの年も、預貯金と有価証券で生活費3年分を確保できる額</div></div>
+        <div class="tier safe"><span class="bd" style="background:#fff;color:#1e3a5f">安心</span><div class="tt">今の生活と資産計画を守るために</div><div class="v num">3,600<small>万円</small></div><div class="g">根拠：2061年（奥様64歳）</div><div class="x">どの年も、資産が通常のCF表と同じだけ残る額</div></div>
+      </div>
+      <div class="legend">CF表の総金融資産の色枠：<i style="background:#f59e0b"></i>最低限の根拠<i style="background:#0f9d58"></i>標準の根拠<i style="background:#60a5fa"></i>安心の根拠</div>
+    </div>
+    <div class="box">
+      <div class="blk" style="padding-bottom:6px"><div class="t" style="font-size:14px;margin-bottom:0">前提条件</div></div>
+      <div class="blk"><div class="bh">自己資金の内訳<span>引越・家具家電 80万円は引き渡し年（2027年）に計上</span></div>
+        <div class="flow"><div class="b"><div class="l">現預金合計</div><div class="v num">1,100<small>万円</small></div></div><div class="ar">▶</div>
+          <div class="b"><div class="l">頭金（自己資金）</div><div class="v num neg">500<small>万円</small></div></div><div class="b"><div class="l">諸費用</div><div class="v num neg">200<small>万円</small></div></div><div class="ar">▶</div>
+          <div class="b" style="background:#ecfdf5"><div class="l">購入後残高</div><div class="v num pos">400<small>万円</small></div></div></div></div>
+      <div class="blk"><div class="bh">住宅ローン条件（ペアローン）<span>住宅価格 4,500万円　／　引き渡し 2027年</span></div>
+        <div class="loan"><div class="hd"></div><div class="hd">借入額</div><div class="hd">金利</div><div class="hd">返済期間</div>
+          <div style="font-weight:800;color:#1e5a9a">ご主人様</div><div class="v num">2,800<small>万円</small></div><div class="v num">0.6<small>%（変動）</small></div><div class="v num">35<small>年</small></div>
+          <div style="font-weight:800;color:#9a1e5a;border-bottom:none">奥様</div><div class="v num" style="border-bottom:none">1,200<small>万円</small></div><div class="v num" style="border-bottom:none">0.7<small>%（変動）</small></div><div class="v num" style="border-bottom:none">30<small>年</small></div></div></div>
+      <div class="two">
+        <div class="blk"><div class="bh">その他金融資産（現時点）</div><table class="kv"><tr><td>NISA積立（ご主人様）</td><td>120万円</td></tr><tr><td>課税一括（奥様）</td><td>300万円</td></tr><tr><td>合計</td><td>420万円</td></tr></table></div>
+        <div class="blk"><div class="bh">注釈・補足メモ</div><div class="memo">退職金で一部繰上返済を予定。教育費は私立大学（文系）を想定しています。</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>
