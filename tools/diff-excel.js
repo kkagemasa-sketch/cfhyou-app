@@ -22,7 +22,8 @@ async function pageCollectAndDiff(isMG){
   };
   const rowsFromCells=cells=>{
     if(cells.length<disp+1)return null;
-    const label=(cells[0]||cells[1]||'').trim();
+    // 行名の書き方の違いはそろえてから金額を比べる（万が一Excelは資産の行名に「　現時点 ○万円」を付ける）
+    const label=(cells[0]||cells[1]||'').trim().replace(/　現時点 .*$/,'');
     if(!label)return null;
     const vals=cells.slice(cells.length-1-disp,cells.length-1).map(normNum);
     return {label,vals};
@@ -83,6 +84,7 @@ async function pageCollectAndDiff(isMG){
     if(excelUsed.has(i))return;
     if(INFO_ROWS.some(p=>er.label.startsWith(p)))return;
     if(/ 様$/.test(er.label))return;  // 万が一Excelの見出し行（お客様名）
+    if(er.label==='その他金融資産')return;  // 万が一Excelの「その他金融資産（現時点の内訳）」情報行
     if(er.vals.some(v=>v!==0))onlyExcel.push(er.label);
   });
   return {excelErr, screenRows:screen.length, excelRows:excel.length, diffs, onlyScreen, onlyExcel};
@@ -186,6 +188,21 @@ async function pageCollectAndDiff(isMG){
         setRTab('cf'); mgQA_addTab('h','dis1'); const t=mgQA_tabs[mgQA_tabs.length-1];
         Object.assign(t.state,{deathYear:3,stopIns:true,insurances:[{type:'lump',name:'高度障害',amount:1000}]});
         mgQA_calcAndRender(t,true);
+      }},
+      '万が一_夫死亡_妻の積立を不足年でやめる': {mg:true, fn:function(){
+        const $=id=>document.getElementById(id);
+        setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+        $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+        setCostType('cash'); $('loan-yrs').value=35; $('rate-base').value=0.5; calcLoanAmt();
+        $('lc-food').value=300000;
+        addSecurity('h'); addSecurity('w');
+        [['h',500,2],['w',800,3]].forEach(([p,bal,mon])=>{
+          const els=document.querySelectorAll(`[id^="sec-bal-${p}-"]`); const sid=els[els.length-1].id.split('-').pop();
+          document.getElementById(`sec-acc-${p}-${sid}`)?.classList.add('on');
+          $(`sec-bal-${p}-${sid}`).value=bal; $(`sec-monthly-${p}-${sid}`).value=mon; $(`sec-rate-${p}-${sid}`).value=3; $(`sec-end-${p}-${sid}`).value='';
+        });
+        setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
+        Object.assign(t.state,{deathYear:3}); mgQA_calcAndRender(t,true);
       }},
     };
     let anyBad=false;

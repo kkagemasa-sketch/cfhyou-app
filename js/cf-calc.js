@@ -4,6 +4,14 @@ function render(){
   if(rTab==='lctab'){renderLCTab();return}
   if(rTab==='loan'){if($('lp-table-wrap'))renderLoanCalc();return}
   if(rTab==='memo'){renderMemo();return}
+  // ★ 取り崩しが起きたら積立を止める：2回目の計算でだけ入る「積立ごとの最後に積み立てる年齢」
+  //   {`${p}|${sid}`: 年齢}（最初に預貯金が足りなくなった年の前年の年齢）。1回目は null
+  const _secStopOv=render._stopOv||null;
+  function _secEndAgeOf(p,sid){
+    const e=iv(`sec-end-${p}-${sid}`)||0;
+    const o=_secStopOv?_secStopOv[`${p}|${sid}`]:undefined;
+    return o===undefined?e:(e===0?o:Math.min(e,o));
+  }
   const _isSingle=householdType==='single';
   const hAge=iv('husband-age')||30, wAge=_isSingle?0:(iv('wife-age')||29);
   const loanAmt=fv('loan-amt'), loanYrs=iv('loan-yrs')||35, delivery=iv('delivery');
@@ -478,7 +486,7 @@ function render(){
         if(!isAccum) return;
         const bal = fv(`sec-bal-${p}-${sid}`)||0;
         const monthly = fv(`sec-monthly-${p}-${sid}`)||0;
-        const endAge = iv(`sec-end-${p}-${sid}`)||0;
+        const endAge = _secEndAgeOf(p,sid);
         const rate = fvd(`sec-rate-${p}-${sid}`,5)/100;
         const secKey = `sec-accum-${p}-${sid}`;
         const series = _computeAccumSeries(secKey, bal, monthly, rate, endAge, pBaseAge, pBaseAge);
@@ -637,9 +645,11 @@ function render(){
       securityState.push({
         sid, p, type:'accum', lbl, isNisa, baseAge:pBaseAge,
         bal, monthly,
-        endAge:iv(`sec-end-${p}-${sid}`)||0,
+        endAge:_secEndAgeOf(p,sid),
         rate:fvd(`sec-rate-${p}-${sid}`,5)/100,
         redeemAge:iv(`sec-redeem-${p}-${sid}`)||0,
+        // 取り崩しが起きたら積立を止めるか（ボタンが「止める」）
+        stopOnShort:document.getElementById(`sec-stopliq-${p}-${sid}`)?.classList.contains('on')||false,
         basisInput:fv(`sec-basis-${p}-${sid}`)||0,
         liquidations:[]  // [{year, gross, tax, costReduced}]
       });
@@ -2365,6 +2375,8 @@ function render(){
     if(!R.finAssetRows)R.finAssetRows=[];
     const finRowMap={};
     const finRowMapBase={}; // 下落シナリオなしの通常利回り版（グラフ通常線用）
+    // 自動取崩しで差し引いた額（行ごと）。万が一CFは自分で取り崩しを決め直すので、引く前の残高を使う
+    const finRowLiqAdd={}, finRowLiqAddBase={};
     const finRowPerson={}; // finRowMap のキーごとの所有者 ('h' or 'w' or 'both')
     // 【積立型有価証券】（主人・奥様両方）正確な複利計算
     ['h','w'].forEach(p=>{
@@ -2385,7 +2397,7 @@ function render(){
         const bal=fv(`sec-bal-${p}-${sid}`)||0;
         const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
         if(bal<=0&&monthly<=0)return; // 残高も積立額もなければスキップ
-        const endAge=iv(`sec-end-${p}-${sid}`)||0;
+        const endAge=_secEndAgeOf(p,sid);
         const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
         const yrs=i+1;
         const _secKey=`sec-accum-${p}-${sid}`;
@@ -2419,6 +2431,7 @@ function render(){
         }
         // シナリオ適用版（シリーズがあれば使用、なければ通常版と同じ）
         let fv2 = _series ? (_series[i]||0) : fv2Base;
+        const _fvNL=fv2, _fvBaseNL=fv2Base;   // 自動取崩しを引く前
         if(_liqReduction>0){
           fv2 = Math.max(0, fv2 - Math.round(_liqReduction));
           fv2Base = Math.max(0, fv2Base - Math.round(_liqReduction));
@@ -2427,6 +2440,10 @@ function render(){
         if(_matchSec&&_matchSec.drawPlan){
           fv2=Math.round(_matchSec.drawPlan.balEnd[i]||0);
           fv2Base=fv2;
+        }
+        if(!(_matchSec&&_matchSec.drawPlan)){
+          finRowLiqAdd[lbl]=(finRowLiqAdd[lbl]||0)+(_fvNL-fv2);
+          finRowLiqAddBase[lbl]=(finRowLiqAddBase[lbl]||0)+(_fvBaseNL-fv2Base);
         }
         finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+fv2Base;
         // 積立額累計（開始から現時点まで、積立終了後は endAge 時点で停止）
@@ -2482,6 +2499,7 @@ function render(){
         const _stkSeries=_stkSeriesCache[_stkKey];
         let _evalBase=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
         let _eval=_stkSeries?(_stkSeries[i]||0):_evalBase;
+        const _evNL=_eval, _evBaseNL=_evalBase;   // 自動取崩しを引く前
         // 自動取崩しによる減額（過去の取崩しは複利成長分も含めて差し引き）
         const _matchSecStk = _secStateMap.get(`stock|${p}|${sid}`);
         if(_matchSecStk){
@@ -2498,6 +2516,10 @@ function render(){
         if(_matchSecStk&&_matchSecStk.drawPlan){
           _eval=Math.round(_matchSecStk.drawPlan.balEnd[i]||0);
           _evalBase=_eval;
+        }
+        if(!(_matchSecStk&&_matchSecStk.drawPlan)){
+          finRowLiqAdd[lbl]=(finRowLiqAdd[lbl]||0)+(_evNL-_eval);
+          finRowLiqAddBase[lbl]=(finRowLiqAddBase[lbl]||0)+(_evBaseNL-_evalBase);
         }
         finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_evalBase;
         // 一括投資の取得原価: basisがあればそれ、なければ初期評価額(bal) — 取崩しによる原価減少も反映
@@ -2761,6 +2783,9 @@ function render(){
       const zVal=_zRedeemed?0:Math.max(0,Math.round(zbal+zm*12*_zContribYrs-_zLiqRed));
       const _pLblZ=p==='h'?'ご主人様':'奥様';
       const lblZ=`財形貯蓄(${_pLblZ})`;
+      const _zNL=(_zRedeemed?0:Math.round(zbal+zm*12*_zContribYrs))-zVal;   // 自動取崩しで引いた額
+      finRowLiqAdd[lblZ]=(finRowLiqAdd[lblZ]||0)+_zNL;
+      finRowLiqAddBase[lblZ]=(finRowLiqAddBase[lblZ]||0)+_zNL;
       finRowMap[lblZ]=(finRowMap[lblZ]||0)+zVal;
       finRowMapBase[lblZ]=(finRowMapBase[lblZ]||0)+zVal;
       finRowPerson[lblZ]=p;
@@ -2789,9 +2814,16 @@ function render(){
       row.vals.push(ri(finRowMap[row.lbl]||0));
       if(!row.baseVals)row.baseVals=new Array(row.vals.length-1).fill(0);
       row.baseVals.push(ri(finRowMapBase[row.lbl]||0));
+      // 自動取崩しを引く前（万が一CFの土台用）
+      if(!row.nlVals)row.nlVals=new Array(row.vals.length-1).fill(0);
+      row.nlVals.push(ri((finRowMap[row.lbl]||0)+(finRowLiqAdd[row.lbl]||0)));
+      if(!row.nlBaseVals)row.nlBaseVals=new Array(row.vals.length-1).fill(0);
+      row.nlBaseVals.push(ri((finRowMapBase[row.lbl]||0)+(finRowLiqAddBase[row.lbl]||0)));
     });
     const finAssetVal=Object.values(finRowMap).reduce((a,b)=>a+b,0);
     R.finAsset.push(ri(finAssetVal));
+    (R.finAssetNL=R.finAssetNL||[]).push(ri(finAssetVal+Object.values(finRowLiqAdd).reduce((a,b)=>a+b,0)));
+    (R.finAssetBaseNL=R.finAssetBaseNL||[]).push(ri(Object.values(finRowMapBase).reduce((a,b)=>a+b,0)+Object.values(finRowLiqAddBase).reduce((a,b)=>a+b,0)));
     R.totalAsset.push(R.sav[i]+ri(finAssetVal));// 預貯金残高＋その他金融資産
     // 下落シナリオなしの通常計算版（グラフ比較線用）
     const finAssetValBase=Object.values(finRowMapBase).reduce((a,b)=>a+b,0);
@@ -3148,6 +3180,33 @@ function render(){
     survWSpan.textContent=autoW.toLocaleString()+(noRightW?' (受給権なし)':is5yrW?' (5年有期)':'');
   }
 
+  // ★ 取り崩しが起きたら積立を止める（積立ごとに「止める」を選んだもの）
+  //   最初に預貯金が足りなくなった年（自動取崩し or 預貯金マイナス。セル上書き後の最終結果で判定）から、
+  //   その積立をずっと止める。1回目の計算で年を見つけ、止める年齢を決めて全体をもう一度計算する
+  //   （止めてもその前の年は変わらないので、もう一度で確定する）
+  if(!_secStopOv){
+    const _yS=R.yr.findIndex((_,i)=>(R.autoLiq[i]||0)>0.5||(R.sav[i]||0)<-0.5);
+    const _ov={};
+    if(_yS>=0){
+      securityState.forEach(s=>{
+        if(s.type!=='accum'||!s.stopOnShort)return;
+        const row=(R.secInvestRows||[]).find(r=>r.key===`secInv-${s.p}-${s.sid}`);
+        if(!row||!((row.vals[_yS]||0)>0))return;
+        _ov[`${s.p}|${s.sid}`]=(s.p==='h'?hAge:wAge)+_yS-1;
+      });
+    }
+    window._secStopInfo={};
+    Object.keys(_ov).forEach(k=>{window._secStopInfo[k]={age:_ov[k]+1,year:cYear+_yS};});
+    if(Object.keys(_ov).length){
+      render._stopOv=_ov;
+      try{ return render(); } finally { render._stopOv=null; }
+    }
+  }
+  window._secStopEnd=_secStopOv||{};   // 通常CFで止めた積立の最後に積み立てる年齢
+  // 万が一CFの土台として計算だけするとき（calcNormalWithStops）は、表示・カードには触らない
+  if(render._calcOnly){ window.lastR=R; window.lastDisp=disp; window.lastCYear=cYear; return; }
+  if(typeof updateSecStopChips==='function'){try{updateSecStopChips();}catch(e){}}
+
   // Excel出力用にグローバル保存
   if(typeof updateBonusUI==='function'){try{updateBonusUI();}catch(e){}} // ③収入ボーナス欄の未入力表示・見込み額
   window.lastR=R; window.lastDisp=disp; window.lastCYear=cYear; window._purchaseInitSav=initSav;
@@ -3158,4 +3217,18 @@ function render(){
     if(window._mgStore[key]){$('right-body').innerHTML=window._mgStore[key];}
     else{renderTable(R,totalYrs,disp,cLbls,cYear,effLoanAmt,isM,hAge,retAge,children,delivery);rTab='cf';$('rt-cf')?.classList.add('on');}
   }else renderTable(R,totalYrs,disp,cLbls,cYear,effLoanAmt,isM,hAge,retAge,children,delivery);
+}
+
+// 万が一CF用：積立をやめる年齢を指定して通常CFを「計算だけ」する（表・window.lastR などは元に戻す）
+// ov = {`${p}|${sid}`: 最後に積み立てる年齢}。{} なら「取崩し発生で積立をやめる」も働かせない
+function calcNormalWithStops(ov){
+  const keep={R:window.lastR,D:window.lastDisp,C:window.lastCYear,P:window._purchaseInitSav,I:window._secStopInfo,E:window._secStopEnd};
+  const prevOv=render._stopOv, prevCO=render._calcOnly;
+  render._stopOv=ov||{}; render._calcOnly=true;
+  try{ render(); return window.lastR; }
+  finally{
+    render._stopOv=prevOv; render._calcOnly=prevCO;
+    window.lastR=keep.R; window.lastDisp=keep.D; window.lastCYear=keep.C; window._purchaseInitSav=keep.P;
+    window._secStopInfo=keep.I; window._secStopEnd=keep.E;
+  }
 }

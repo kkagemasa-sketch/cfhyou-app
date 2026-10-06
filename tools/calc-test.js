@@ -111,6 +111,7 @@ const SCENARIOS = {
     document.getElementById(`sec-bal-h-${sid}`).value=3000;
     document.getElementById(`sec-monthly-h-${sid}`).value=2;
     document.getElementById(`sec-rate-h-${sid}`).value=3;
+    setSecStopLiq('h',sid,false); // 取り崩し発生でも積立を続ける（従来の計算）
     if($('zaikei-h-bal'))$('zaikei-h-bal').value=600;
     if($('zaikei-h-monthly'))$('zaikei-h-monthly').value=1;
   },
@@ -131,6 +132,7 @@ const SCENARIOS = {
     document.getElementById(`sec-bal-h-${sid}`).value=3000;
     document.getElementById(`sec-monthly-h-${sid}`).value=2;
     document.getElementById(`sec-rate-h-${sid}`).value=3;
+    setSecStopLiq('h',sid,false); // 取り崩し発生でも積立を続ける（従来の計算）
     // 生活費セル上書き(5年目1000万) ＋ カスタム支出行(8年目71万)
     cfOverrides['lc']={5:1000};
     cfCustomRows.push({id:'cexp_reg1',type:'exp',label:'回帰テスト支出'});
@@ -534,6 +536,106 @@ const SCENARIOS = {
     document.getElementById(`sec-rate-h-${sid}`).value=0;
     setRTab('cf'); mgQA_addTab('h','dis1'); const t=mgQA_tabs[mgQA_tabs.length-1];
     Object.assign(t.state,{deathYear:3,stopInv:true}); mgQA_calcAndRender(t,true);
+  },
+  'S12_取崩し発生で積立をやめる': function(){
+    // S8と同じ家計で「取崩し発生で積立をやめる」（初期値）：最初に足りなくなった年から積立0
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    $('lc-food').value=600000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+    addSecurity('h');
+    const els=document.querySelectorAll('[id^="sec-bal-h-"]');
+    const sid=els[els.length-1].id.split('-').pop();
+    document.getElementById(`sec-acc-h-${sid}`)?.classList.add('on');
+    document.getElementById(`sec-bal-h-${sid}`).value=3000;
+    document.getElementById(`sec-monthly-h-${sid}`).value=2;
+    document.getElementById(`sec-rate-h-${sid}`).value=3;
+  },
+  'S13_取崩し発生で積立をやめる_上書きあり': function(){
+    // セル上書き・カスタム支出で早く足りなくなる年を、上書き後の結果で判定する
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    $('lc-food').value=600000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+    addSecurity('h');
+    const els=document.querySelectorAll('[id^="sec-bal-h-"]');
+    const sid=els[els.length-1].id.split('-').pop();
+    document.getElementById(`sec-acc-h-${sid}`)?.classList.add('on');
+    document.getElementById(`sec-bal-h-${sid}`).value=3000;
+    document.getElementById(`sec-monthly-h-${sid}`).value=2;
+    document.getElementById(`sec-rate-h-${sid}`).value=3;
+    cfCustomRows.push({id:'cexp_reg2',type:'exp',label:'回帰テスト支出2'});
+    cfOverrides['cexp_reg2']={2:300};
+  },
+  'M27_夫死亡_妻の積立を万が一の不足年でやめる': function(){
+    // 通常CFでは足りなくならないが、万が一の後に足りなくなる年から遺族（奥様）の積立をやめる
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    $('lc-food').value=300000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+    addSecurity('w');
+    const els=document.querySelectorAll('[id^="sec-bal-w-"]');
+    const sid=els[els.length-1].id.split('-').pop();
+    document.getElementById(`sec-acc-w-${sid}`)?.classList.add('on');
+    document.getElementById(`sec-bal-w-${sid}`).value=800;
+    document.getElementById(`sec-monthly-w-${sid}`).value=3;
+    document.getElementById(`sec-rate-w-${sid}`).value=3;
+    document.getElementById(`sec-end-w-${sid}`).value='';
+    setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
+    Object.assign(t.state,{deathYear:3}); mgQA_calcAndRender(t,true);
+  },
+  'M28_妻死亡_通常CFで取崩しあり_二重に引かない': function(){
+    // 通常CFで自動取崩しがある家計：万が一CFの資産は通常CFの取崩しと二重に引かない（万が一前は通常と同じ）
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    $('lc-food').value=600000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+    addSecurity('h');
+    const els=document.querySelectorAll('[id^="sec-bal-h-"]');
+    const sid=els[els.length-1].id.split('-').pop();
+    document.getElementById(`sec-acc-h-${sid}`)?.classList.add('on');
+    document.getElementById(`sec-bal-h-${sid}`).value=3000;
+    document.getElementById(`sec-monthly-h-${sid}`).value=2;
+    document.getElementById(`sec-rate-h-${sid}`).value=3;
+    setSecStopLiq('h',sid,false);
+    setRTab('cf'); mgQA_addTab('w'); const t=mgQA_tabs[mgQA_tabs.length-1];
+    Object.assign(t.state,{deathYear:10}); mgQA_calcAndRender(t,true);
+  },
+  'D5_夫障害1級_本人の積立を不足年でやめる': function(){
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    $('lc-food').value=300000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+    addSecurity('h');
+    const els=document.querySelectorAll('[id^="sec-bal-h-"]');
+    const sid=els[els.length-1].id.split('-').pop();
+    document.getElementById(`sec-acc-h-${sid}`)?.classList.add('on');
+    document.getElementById(`sec-bal-h-${sid}`).value=800;
+    document.getElementById(`sec-monthly-h-${sid}`).value=3;
+    document.getElementById(`sec-rate-h-${sid}`).value=3;
+    document.getElementById(`sec-end-h-${sid}`).value='';
+    setRTab('cf'); mgQA_addTab('h','dis1'); const t=mgQA_tabs[mgQA_tabs.length-1];
+    Object.assign(t.state,{deathYear:3}); mgQA_calcAndRender(t,true);
   },
   'M8_夫死亡_賃貸へ_奨学金': function(){
     const $=id=>document.getElementById(id);

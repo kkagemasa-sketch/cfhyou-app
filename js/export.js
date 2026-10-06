@@ -621,7 +621,8 @@ async function exportExcelMG(opt){
     N.secInvestRows.forEach(row=>{
       const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
       const isDeadOwner=p2===_expDeadP;
-      const displayVals=_zeroAfter(row.vals,isDeadOwner);
+      const _mr=(MR.secInvestRows||[]).find(r=>r.key===row.key);
+      const displayVals=_mr?_mr.vals:_zeroAfter(row.vals,isDeadOwner);
       addESkip(row.lbl,displayVals,row.vals);
     });
   }else{addESkip(_rl('mg-secInvest','積立投資額'),MR.secInvest,N.secInvest);}
@@ -692,8 +693,9 @@ async function exportExcelMG(opt){
         _curTotal_mg+=val;
       });
     });
-    if(N.finAssetRows&&N.finAssetRows.length>0){
-      N.finAssetRows.forEach(row=>{
+    const _finRowsE=MR.finAssetRowsBase||N.finAssetRows;
+    if(_finRowsE&&_finRowsE.length>0){
+      _finRowsE.forEach(row=>{
         if(row.person===_deadPExp)return;
         if(!row.vals.slice(0,disp).some(v=>v>0))return;
         const _cur=_curByLbl_mg[row.lbl]||0;

@@ -74,8 +74,9 @@ function renderContingency(){
   try{ return _renderContingencyInner(); }
   finally{ _mgRendering=false; }
 }
-function _renderContingencyInner(){
-  render();
+function _renderContingencyInner(_mgStopOv){
+  // _mgStopOv: 2回目の計算でだけ入る「積立をやめる年齢」（万が一の後に預貯金が足りなくなった年から）
+  if(!_mgStopOv) render();
   if(!window.lastR){alert('先にCF表を生成してください');return;}
   const _isSingle_mg=householdType==='single';
   const hAge=iv('husband-age')||30, wAge=_isSingle_mg?0:(iv('wife-age')||29);
@@ -95,8 +96,27 @@ function _renderContingencyInner(){
   // 遺族年金の制度モード（'current'=現行 / 'r2028'=2028年4月改正後の完全移行後簡略）— 通常CF(cf-calc.js)と共通
   const _izokuR2028=(document.getElementById('izoku-mode')?.value||'current')==='r2028';
 
-  // 通常render()の結果を取得
-  const normalR=window.lastR;
+  // 通常render()の結果を取得（trueNR＝通常のCF表そのもの。表示の比較・必要保障額の「安心」に使う）
+  const trueNR=window.lastR;
+  // ★ 積立をやめる設定（④資産「取崩し発生で積立をやめる」・障害タブ「積立投資を止める」）
+  //   {`${p}|${sid}`: 最後に積み立てる年齢}。万が一の計算の土台にする通常CFを、この設定で計算し直す
+  //   （通常CFで止まった年は使わない：万が一の後の家計で決め直す）
+  const _mgBaseOv=Object.assign({},_mgStopOv||{});
+  if(_mgDis&&_mgDisCfg.stopInv){
+    const _pT=targetIsH?'h':'w', _aT=(targetIsH?hAge:wAge)+deathYearOffset-2;   // 障害になった年から積立なし
+    document.querySelectorAll(`[id^="sec-bal-${_pT}-"]`).forEach(el=>{
+      const sid=el.id.split('-').pop();
+      if(!document.getElementById(`sec-acc-${_pT}-${sid}`)?.classList.contains('on'))return;
+      const k=`${_pT}|${sid}`; _mgBaseOv[k]=_mgBaseOv[k]===undefined?_aT:Math.min(_mgBaseOv[k],_aT);
+    });
+  }
+  const _mgHasStopSec=[...document.querySelectorAll('[id^="sec-stopliq-"].on')].some(el=>/^sec-stopliq-[hw]-\d+$/.test(el.id));
+  const normalR=((_mgHasStopSec||Object.keys(_mgBaseOv).length)&&typeof calcNormalWithStops==='function')
+    ? calcNormalWithStops(_mgBaseOv) : trueNR;
+  function _mgSecEnd(p,sid){
+    const e=iv(`sec-end-${p}-${sid}`)||0; const o=_mgBaseOv[`${p}|${sid}`];
+    return o===undefined?e:(e===0?o:Math.min(e,o));
+  }
   const disp=window.lastDisp;
   const cYear=window.lastCYear;
   const nm=_v('client-name')||'お客様';
@@ -227,7 +247,7 @@ function _renderContingencyInner(){
           const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on')||false;
           const cfg=ty==='accum'?{
             type:'accum',bal:fv(`sec-bal-${p}-${sid}`)||0,monthly:fv(`sec-monthly-${p}-${sid}`)||0,
-            endAge:iv(`sec-end-${p}-${sid}`)||0,rate:fvd(`sec-rate-${p}-${sid}`,5)/100,investAge:0,
+            endAge:_mgSecEnd(p,sid),rate:fvd(`sec-rate-${p}-${sid}`,5)/100,investAge:0,
             redeemAge:iv(`sec-redeem-${p}-${sid}`)||0,basisInput:fv(`sec-basis-${p}-${sid}`)||0
           }:{
             type:'stock',bal:fv(`sec-stk-bal-${p}-${sid}`)||0,monthly:0,endAge:0,
@@ -273,7 +293,7 @@ function _renderContingencyInner(){
     const bal=fv(`sec-bal-${_deadP}-${sid}`)||0;
     const monthly=fv(`sec-monthly-${_deadP}-${sid}`)||0;
     if(bal<=0&&monthly<=0)return;
-    const endAge=iv(`sec-end-${_deadP}-${sid}`)||0;
+    const endAge=_mgSecEnd(_deadP,sid);
     const rate=fvd(`sec-rate-${_deadP}-${sid}`,5)/100;
     const yrs=_yrsAtDeath;
     let fv2=0;
@@ -439,7 +459,7 @@ function _renderContingencyInner(){
       _mgSecurityState.push({
         sid, p, type:'accum', lbl, isNisa, baseAge:pBaseAge,
         bal, monthly,
-        endAge:iv(`sec-end-${p}-${sid}`)||0,
+        endAge:_mgSecEnd(p,sid),
         rate:fvd(`sec-rate-${p}-${sid}`,5)/100,
         redeemAge:iv(`sec-redeem-${p}-${sid}`)||0,
         basisInput:fv(`sec-basis-${p}-${sid}`)||0,
@@ -973,7 +993,7 @@ function _renderContingencyInner(){
           return;
         }
         const bal=fv(`sec-bal-${p}-${sid}`)||0;const monthly=fv(`sec-monthly-${p}-${sid}`)||0;
-        const endAge=iv(`sec-end-${p}-${sid}`)||0;const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
+        const endAge=_mgSecEnd(p,sid);const rate=fvd(`sec-rate-${p}-${sid}`,5)/100;
         const yrs=i+1;let fv2=0;
         // 評価額の式は通常CF(cf-calc.js)・_mgRawFVと同一（月利r/12、積立終了年齢はその年も含む）
         if(endAge===0||pAge<=endAge){
@@ -1444,6 +1464,15 @@ function _renderContingencyInner(){
       });
     }
     MR.secInvest.push(secInvVal);
+    // 行ごとの積立額（表示・Excel用。亡くなった方／積立投資を止めた方の行は0）
+    if(normalR.secInvestRows){
+      if(!MR.secInvestRows)MR.secInvestRows=normalR.secInvestRows.map(r=>({lbl:r.lbl,key:r.key,vals:[]}));
+      MR.secInvestRows.forEach((row,ri2)=>{
+        const src=normalR.secInvestRows[ri2]; const k=row.key||'';
+        const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
+        row.vals.push(_rmInv&&p2===_deadP?0:(src?.vals[i]||0));
+      });
+    }
     if(_mgDis&&isEvt&&_mgDisCfg.stopInv) _mgStopInvCum+=Math.max(0,(normalR.secInvest[i]||0)-secInvVal);
 
     // 一括投資（生存者のみ）
@@ -1655,14 +1684,17 @@ function _renderContingencyInner(){
     if(_mgSold){ MR.lBal[i]=_mgNewBal; MR.lBalH[i]=0; MR.lBalW[i]=0; }
 
     // その他金融資産（生存者分のみ）
-    let mgFinAsset=i<normalR.finAsset.length?(normalR.finAsset[i]||0):0;
-    let mgFinAssetBase=i<(normalR.finAssetBase?.length||0)?(normalR.finAssetBase[i]||0):mgFinAsset;
+    // ★ 通常CFの自動取崩しを引く前の残高を土台にする（万が一は自分で取り崩しを決め直して下で引く。
+    //   以前は通常CFの取り崩しと万が一の取り崩しを二重に引いていた）
+    const _nfa=normalR.finAssetNL||normalR.finAsset, _nfb=normalR.finAssetBaseNL||normalR.finAssetBase;
+    let mgFinAsset=i<_nfa.length?(_nfa[i]||0):0;
+    let mgFinAssetBase=i<(_nfb?.length||0)?(_nfb[i]||0):mgFinAsset;
     if(isDead&&normalR.finAssetRows){
       mgFinAsset=0;
       mgFinAssetBase=0;
       const deadP=targetIsH?'h':'w';
       normalR.finAssetRows.forEach(row=>{
-        const v=row.vals[i]||0;if(v<=0)return;
+        const v=(row.nlVals||row.vals)[i]||0;if(v<=0)return;
         if(row.person===deadP)return;
         // ★ 共有(both)概念を撤廃: 各自の行に分けたので半額化しない（死亡者分は別途現金化済み）
         mgFinAsset+=v;
@@ -1811,6 +1843,24 @@ function _renderContingencyInner(){
     }
   }
 
+  MR.finAssetRowsBase=normalR.finAssetRows;   // Excelの資産内訳行も画面と同じ土台を使う
+  // ★ 取り崩しが起きたら積立をやめる（万が一の後の家計で判定）：最初に預貯金が足りなくなった年に
+  //   積み立てている「やめる」設定の積立を、その年から止めてもう一度計算する（その前の年は変わらない）
+  if(!_mgStopOv&&_mgHasStopSec){
+    const _yM=MR.yr.findIndex((_,i)=>(MR.autoLiq[i]||0)>0.5||(MR.sav[i]||0)<-0.5);
+    if(_yM>=0){
+      const _ov2=Object.assign({},_mgBaseOv); let _add=false;
+      (MR.secInvestRows||[]).forEach(row=>{
+        const m=(row.key||'').match(/^secInv-([hw])-(\d+)$/); if(!m)return;
+        if(!((row.vals[_yM]||0)>0))return;
+        if(!document.getElementById(`sec-stopliq-${m[1]}-${m[2]}`)?.classList.contains('on'))return;
+        const k=`${m[1]}|${m[2]}`, a=(m[1]==='h'?hAge:wAge)+_yM-1;
+        if(_ov2[k]===undefined||a<_ov2[k]){_ov2[k]=a;_add=true;}
+      });
+      if(_add) return _renderContingencyInner(_ov2);
+    }
+  }
+
   // 必要保障額計算
   let minSav=Infinity;
   for(let i=deathYearOffset-1;i<mgDisp;i++){
@@ -1825,7 +1875,7 @@ function _renderContingencyInner(){
   {
     const _i0=deathYearOffset-1, _last=mgDisp-1;
     const _yrs=Math.max(1,parseInt(window._mgNeedYears)||3);
-    const TA=MR.totalAsset, NTA=normalR.totalAsset||[];
+    const TA=MR.totalAsset, NTA=trueNR.totalAsset||[];
     const need={years:_yrs,min:Math.max(0,-ri(TA[_last]||0)),iMin:_last,std:0,iStd:-1,safe:0,iSafe:-1};
     for(let i=_i0;i<=_last;i++){
       const d2=ri((MR.lc[i]||0)*_yrs-(TA[i]||0)); if(d2>need.std){need.std=d2;need.iStd=i;}
@@ -1894,7 +1944,7 @@ function _renderContingencyInner(){
   // 詳細ボックスをまとめて折りたたみ可能なコンテナで囲む
   h+=`<div id="mg-summary-detail" style="${_mgSumHidden?'display:none':''}">`;
   // 自己資金の内訳（通常CF表と同じ形式）
-  const N=normalR;
+  const N=trueNR;   // 表示の比較は通常のCF表そのもの
   const mgChip=(icon,label,val,valColor)=>`<div style="display:flex;align-items:center;gap:5px;padding:6px 13px;border-right:1px solid #dce6f0;white-space:nowrap;flex-shrink:0"><span>${icon}</span><span style="color:var(--muted);font-size:10px">${label}</span><strong style="color:${valColor||'var(--navy)'};font-family:'Cascadia Code','Consolas','Menlo',monospace;font-size:11px">${val}</strong></div>`;
   const mgArrow=`<div style="color:#b0bec5;font-size:13px;padding:0 2px;display:flex;align-items:center">▶</div>`;
   const housePrice2=fv('house-price')||0;
@@ -2205,7 +2255,8 @@ function _renderContingencyInner(){
     N.secInvestRows.forEach(row=>{
       const k=row.key||'';const p2=k.includes('-h-')?'h':k.includes('-w-')?'w':'both';
       const isDeadOwner=p2===_mgDeadP;
-      const displayVals=_zeroAfterDeath(row.vals,isDeadOwner);
+      const _mr=(MR.secInvestRows||[]).find(r=>r.key===row.key);
+      const displayVals=_mr?_mr.vals:_zeroAfterDeath(row.vals,isDeadOwner);
       // 通常CF側で値が一度でも出ていれば行を表示（死亡で0になっても行は残す）
       if(!row.vals.slice(0,mgDisp).some(v=>v>0))return;
       h+=mgERow(row.lbl,displayVals,row.vals,row.key);

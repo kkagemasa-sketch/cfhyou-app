@@ -261,6 +261,34 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     if(I.after!==0||I.aPay!==0) f5.push(`保険を削除しても戻ってくる（${I.after}件・${I.aPay}万円）`);
     if(f5.length){ bad++; console.log('❌ 保険金の紛れ込み\n   - '+f5.join('\n   - ')); }
     else console.log('✅ 保険金: 新しい障害タブ・全部削除したタブに別タブの保険が紛れ込まない');
+
+    /* ---- 積立の「取崩し発生で積立をやめる」：初期値・保存復元・古いデータは「続ける」 ---- */
+    await page.evaluate(pageBaseSetup);
+    const S=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      addSecurity('h'); addSecurity('h');
+      const ids=[...document.querySelectorAll('[id^="sec-bal-h-"]')].map(e=>e.id.split('-').pop());
+      const a=ids[ids.length-2], b=ids[ids.length-1];
+      const def=document.getElementById(`sec-stopliq-h-${a}`)?.classList.contains('on');
+      setSecStopLiq('h',b,false);
+      const d=_collectSaveData();
+      const saved=(d.dynamic.securities||[]).slice(-2).map(x=>x.stopOnShort);
+      _applyData(JSON.parse(JSON.stringify(d))); await wait(300);
+      const ids2=[...document.querySelectorAll('[id^="sec-bal-h-"]')].map(e=>e.id.split('-').pop());
+      const r1=ids2.slice(-2).map(id=>document.getElementById(`sec-stopliq-h-${id}`)?.classList.contains('on'));
+      const old=JSON.parse(JSON.stringify(d)); old.dynamic.securities.forEach(x=>delete x.stopOnShort);
+      _applyData(old); await wait(300);
+      const ids3=[...document.querySelectorAll('[id^="sec-bal-h-"]')].map(e=>e.id.split('-').pop());
+      const r2=ids3.slice(-2).map(id=>document.getElementById(`sec-stopliq-h-${id}`)?.classList.contains('on'));
+      return {def,saved,r1,r2};
+    });
+    const f6=[];
+    if(S.def!==true) f6.push('新しい積立の初期値が「やめる」になっていない');
+    if(JSON.stringify(S.saved)!=='[true,false]') f6.push(`保存値が違う ${JSON.stringify(S.saved)}`);
+    if(JSON.stringify(S.r1)!=='[true,false]') f6.push(`復元値が違う ${JSON.stringify(S.r1)}`);
+    if(JSON.stringify(S.r2)!=='[false,false]') f6.push(`古いデータが「続ける」にならない ${JSON.stringify(S.r2)}`);
+    if(f6.length){ bad++; console.log('❌ 取崩し発生で積立をやめる\n   - '+f6.join('\n   - ')); }
+    else console.log('✅ 取崩し発生で積立をやめる: 初期値「やめる」・保存復元・古いデータは「続ける」');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

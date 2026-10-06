@@ -133,6 +133,11 @@ function addSecurity(person){
       <span class="ilb" data-f="rate"><span class="pre">利回り</span><input id="sec-rate-${person}-${id}" data-def="5" class="adef" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()"><span class="un">%</span></span>
       <span class="ilb" data-f="end"><span class="pre">終了</span><input id="sec-end-${person}-${id}" data-def="65" class="adef" onfocus="scrollToCFRow('secInvest')" onblur="cfRowBlur()" type="number" value="65" placeholder="65" min="20" max="90" oninput="live();validateNisaLimits&&validateNisaLimits()"><span class="un">歳</span></span>
       <span class="ilb" data-f="redeem" title="空欄=売らずに持ち続ける"><span class="pre">解約</span><input id="sec-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="—" min="20" max="100" oninput="live()"><span class="un">歳</span></span>
+      <span style="display:inline-flex;gap:3px;align-items:center" title="預貯金が足りなくなり資産の取り崩しが起きたら、その年からこの積立をやめるか">
+        <span class="pre" style="font-size:9px;font-weight:700;color:var(--light)">取崩し発生で</span>
+        <div class="tc tc-mini on" id="sec-stopliq-${person}-${id}" onclick="setSecStopLiq('${person}',${id},true)">積立をやめる</div>
+        <div class="tc tc-mini" id="sec-stopliq-cont-${person}-${id}" onclick="setSecStopLiq('${person}',${id},false)">続ける</div>
+      </span>
     </div>
     <div class="frow" id="sec-stock-fields-${person}-${id}" style="display:none">
       <span class="ilb"><span class="pre">投資額</span><input class="w6" id="sec-stk-bal-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="live()"><span class="un">万</span></span>
@@ -156,6 +161,7 @@ function addSecurity(person){
       <span class="a-chip" id="sec-chip-bondbuy-${person}-${id}" style="display:none" onclick="secChip('${person}',${id},'bondbuy')">✎ 将来購入なら年齢を指定</span>
       <span class="a-chip info" id="sec-chip-nofund-${person}-${id}" style="display:none">追加投資なし・保有分のみ運用</span>
       <span class="a-chip info" id="sec-chip-hold-${person}-${id}" style="display:none"></span>
+      <span class="a-chip info" id="sec-chip-stop-${person}-${id}" style="display:none;color:#b45309;border-color:#fcd34d;background:#fffbeb"></span>
     </div>
     <div class="a-dtl" id="sec-dtl-draw-${person}-${id}" hidden>
       <div id="sec-draw-wrap-${person}-${id}">
@@ -357,6 +363,24 @@ function clearSecRedeemForDraw(person,id){
 }
 window.clearSecRedeemForDraw=clearSecRedeemForDraw;
 // 債券の利払いタイプ切替（int=利息を毎年受け取る / reinv=再投資・複利）
+// 取り崩しが起きたら積立をやめる（true）／続ける（false）
+function setSecStopLiq(person,id,stop){
+  document.getElementById(`sec-stopliq-${person}-${id}`)?.classList.toggle('on',!!stop);
+  document.getElementById(`sec-stopliq-cont-${person}-${id}`)?.classList.toggle('on',!stop);
+  live();
+}
+window.setSecStopLiq=setSecStopLiq;
+// 計算の後：積立をやめた年齢をカードに表示（window._secStopInfo は cf-calc.js が設定）
+function updateSecStopChips(){
+  const info=window._secStopInfo||{};
+  document.querySelectorAll('[id^="sec-chip-stop-"]').forEach(el=>{
+    const m=el.id.match(/^sec-chip-stop-([hw])-(\d+)$/); if(!m)return;
+    const it=info[`${m[1]}|${m[2]}`];
+    el.style.display=it?'':'none';
+    if(it)el.textContent=`預貯金が足りなくなる${it.age}歳（${it.year}年）から積立をやめます`;
+  });
+}
+window.updateSecStopChips=updateSecStopChips;
 function setBondPay(person,id,t){
   document.getElementById(`sec-bond-pay-${person}-${id}`)?.classList.toggle('on',t==='int');
   document.getElementById(`sec-bond-reinv-${person}-${id}`)?.classList.toggle('on',t==='reinv');
