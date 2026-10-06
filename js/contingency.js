@@ -2357,13 +2357,7 @@ function _renderContingencyInner(_mgStopOv){
   h+=`<tr class="rttl"><td>総金融資産</td><td></td>`;
   for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.totalAsset[i2]);const nd=MR.need||{};const mk=(i2===nd.iMin&&nd.min>0?' need-m1':'')+(i2===nd.iStd?' need-m2':'')+(i2===nd.iSafe?' need-m3':'');h+=`<td class="${v<0?'vn':''}${mk}">${v.toLocaleString()}</td>`;}
   h+=`<td>${ri(MR.totalAsset[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">総金融資産</span></td></tr>`;
-  // 参考：通常のCF表の総金融資産と、その差（安心の根拠）
-  h+=`<tr class="rref"><td>（参考）</td><td>通常の総金融資産</td>`;
-  for(let i2=0;i2<mgDisp;i2++){const v=MR.refNormalTotal[i2]||0;h+=`<td class="${v<0?'vn':''}">${v.toLocaleString()}</td>`;}
-  h+=`<td>${(MR.refNormalTotal[mgDisp-1]||0).toLocaleString()}</td></tr>`;
-  h+=`<tr class="rref gap"><td>（参考）</td><td>通常との差</td>`;
-  for(let i2=0;i2<mgDisp;i2++){const v=MR.refGap[i2]||0;h+=`<td class="${i2===(MR.need||{}).iSafe?'need-m3':''}">${v>0?v.toLocaleString():'-'}</td>`;}
-  h+=`<td></td></tr>`;
+  // （参考）通常の総金融資産・通常との差の2行は表示しない（2026-10-06 ユーザー指示で削除）
   // ローン残高
   if(loanAmt>0||lhAmt>0||lwAmt>0){
     if(!_isSingle_mg&&(pairLoanMode||_mgFlatPair)){
