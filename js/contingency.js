@@ -1871,8 +1871,8 @@ function _renderContingencyInner(_mgStopOv){
   // ── 必要保障額（3段階）。判定は総金融資産（預貯金＋有価証券など） ──
   //   最低限＝CF表の最後の年に総金融資産がマイナスにならない額
   //   標準　＝万が一の後のどの年も、総金融資産で生活費◯年分を確保できる額（初期3年）
-  //   安心　＝万が一の後のどの年も、総金融資産が「通常のCF表」と「生活費◯年分」の多い方以上残る額
-  //          （通常のCF表でも資金が不足する家計で、安心が最低限より少なくならないように。必ず 最低限≦標準≦安心）
+  //   安心　＝CF表の最後の年に残るお金が、万が一がなかった場合（通常のCF表）と同じになる額
+  //          ただし「標準＋生活費2年分（標準の根拠の年の生活費）」を下回るときはその額（必ず 最低限＜標準＜安心）
   {
     const _i0=deathYearOffset-1, _last=mgDisp-1;
     const _yrs=Math.max(1,parseInt(window._mgNeedYears)||3);
@@ -1880,10 +1880,12 @@ function _renderContingencyInner(_mgStopOv){
     const need={years:_yrs,min:Math.max(0,-ri(TA[_last]||0)),iMin:_last,std:0,iStd:-1,safe:0,iSafe:-1};
     for(let i=_i0;i<=_last;i++){
       const d2=ri((MR.lc[i]||0)*_yrs-(TA[i]||0)); if(d2>need.std){need.std=d2;need.iStd=i;}
-      const d3=ri(Math.max(NTA[i]||0,(MR.lc[i]||0)*_yrs)-(TA[i]||0)); if(d3>need.safe){need.safe=d3;need.iSafe=i;}
     }
-    // 通常のCF表でも総金融資産がマイナスになる年がある（安心の注意書き用）
-    need.normalShort=NTA.slice(_i0,_last+1).some(v=>(v||0)<0);
+    // 安心：最後の年に通常のCF表と同じだけ残る額。標準＋生活費2年分を下限にする
+    const _safeEnd=Math.max(0,ri((NTA[_last]||0)-(TA[_last]||0)));
+    const _safeFloor=need.std>0?ri(need.std+(MR.lc[need.iStd]||0)*2):0;
+    if(_safeEnd>=_safeFloor){ need.safe=_safeEnd; need.iSafe=_safeEnd>0?_last:-1; need.safeMode='end'; }
+    else { need.safe=_safeFloor; need.iSafe=need.iStd; need.safeMode='floor'; }
     MR.need=need;
     MR.refNormalTotal=NTA.slice(0,MR.totalAsset.length).map(v=>ri(v||0));
     MR.refGap=MR.totalAsset.map((v,i)=>i<_i0?0:Math.max(0,ri((NTA[i]||0)-(v||0))));
@@ -1945,8 +1947,8 @@ function _renderContingencyInner(_mgStopOv){
         <select class="set" onchange="mgQA_setNeedYears(this.value)" title="何年分の生活費を確保するか">${opt}</select></div>
         <div class="v">${nd.std.toLocaleString()}<small>万円</small>${basis(nd.iStd)}</div><div class="x">どの年も、預貯金と有価証券で<b>生活費${nd.years}年分</b>を確保できる額</div></div>
       <div class="nc safe"><div class="hd"><span class="bg" style="background:#1e3a5f">安心</span><span class="t">今の生活と資産計画を守るために</span></div>
-        <div class="v">${nd.safe.toLocaleString()}<small>万円</small>${basis(nd.iSafe)}</div><div class="x">どの年も、資産が<b>通常のCF表と同じ</b>だけ（少なくとも<b>生活費${nd.years}年分</b>）残る額</div>
-        ${nd.normalShort?`<div class="nw">⚠ 通常のCF表でも資金が不足する年があるため、通常のCF表が生活費${nd.years}年分を下回る年は、生活費${nd.years}年分を基準にしています</div>`:''}</div>
+        <div class="v">${nd.safe.toLocaleString()}<small>万円</small>${basis(nd.iSafe)}</div><div class="x">CF表の<b>最後の年</b>に残るお金が、<b>万が一がなかった場合（通常のCF表）と同じ</b>になる額</div>
+        ${nd.safeMode==='floor'?`<div class="nw">通常のCF表と比べた額が標準に近いため、<b>標準＋生活費2年分</b>にしています</div>`:''}</div>
     </div>
     <div class="mg-need-foot">枠の色：<i style="background:#f59e0b"></i>最低限の根拠<i style="background:#0f9d58"></i>標準の根拠<i style="background:#60a5fa"></i>安心の根拠（CF表の総金融資産のマス）。保険金などで万が一の年に受け取る想定の額です</div></div>`;
   }

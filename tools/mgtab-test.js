@@ -316,11 +316,10 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       return {nd,shown1,hidden,outlineHidden,keep,back};
     });
     const f7=[];
-    if(!(NE.nd.min<=NE.nd.std && NE.nd.std<=NE.nd.safe)) f7.push(`順番が逆 最低限${NE.nd.min}・標準${NE.nd.std}・安心${NE.nd.safe}`);
-    if(!NE.nd.normalShort) f7.push('通常のCF表が赤字なのに注意書きの判定が立たない');
+    if(!(NE.nd.min<NE.nd.std && NE.nd.std<NE.nd.safe)) f7.push(`最低限＜標準＜安心 になっていない 最低限${NE.nd.min}・標準${NE.nd.std}・安心${NE.nd.safe}`);
     if(!NE.shown1||!NE.hidden||!NE.outlineHidden||!NE.keep||!NE.back) f7.push(`カードの表示切替 ${JSON.stringify({shown:NE.shown1,hidden:NE.hidden,outline:NE.outlineHidden,keep:NE.keep,back:NE.back})}`);
     if(f7.length){ bad++; console.log('❌ 必要保障額\n   - '+f7.join('\n   - ')); }
-    else console.log(`✅ 必要保障額: 通常も赤字の家計で 最低限${NE.nd.min.toLocaleString()}≦標準${NE.nd.std.toLocaleString()}≦安心${NE.nd.safe.toLocaleString()}・カードを隠す/表示（色枠も連動・再計算後も保持）`);
+    else console.log(`✅ 必要保障額: 通常も赤字の家計で 最低限${NE.nd.min.toLocaleString()}＜標準${NE.nd.std.toLocaleString()}＜安心${NE.nd.safe.toLocaleString()}（${NE.nd.safeMode==='floor'?'標準＋2年分':'最後の年の比較'}）・カードを隠す/表示（色枠も連動・再計算後も保持）`);
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });
