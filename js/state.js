@@ -77,16 +77,8 @@ let householdType='couple'; // 'couple' | 'single'
 let mgTarget='h'; // h=ご主人, w=奥様
 let mgDansin=true, mgDansinH=true, mgDansinW=true;
 let mgSurvMode='auto';
-let mgInsCnt=0;
 
-let mgCarOn=true, mgParkOn=true;
 let _mgRendering=false; // setRTab↔renderContingency 再帰防止フラグ
-
-// var で宣言（window._mgLCStepCount にも反映させ、mg-qa.js からリセット可能にする）
-// let のままだと mg-qa.js の `window._mgLCStepCount=0` が無効化され、
-// Q&Aパネル経由の万一CF生活費の段階モードで rate/from が DOM に書き込まれず
-// 上昇率が反映されなくなるバグの原因になる。
-var _mgLCStepCount=0;
 
 let _loanPrepayId=0;
 

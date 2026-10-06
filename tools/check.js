@@ -91,7 +91,7 @@ function checkMissingIds(defined){
   // （＝古い機能の残骸 or 別経路に置換済み）。新規の参照ミスを止めるためベースラインから除外。
   // ※ユーザー判断で整理する候補。整理が済んだら下から削除する。
   const allowlist = new Set([
-    // 遺族年金「夫婦個別の手動上書き」欄（現在は単一 mg-surv-amt に置換済み＝常に無効）
+    // 遺族年金「夫婦個別の手動上書き」欄（現在は万が一タブの遺族年金に置換済み＝常に無効）
     'surv-h-amt','surv-w-amt','surv-h-box','surv-w-box','surv-h-auto-val','surv-w-auto-val','mg-surv-auto-note',
     // 休業(産休育休)の旧コンテナ（addLeave の追加先が無く画面に出ない＝旧経路）
     'leave-cont',

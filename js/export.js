@@ -285,8 +285,8 @@ async function exportExcelMG(opt){
   // ── タイトル行（通常CFと同形式 + E列に万が一ラベル） ──
   // ★ C6修正(軽微): タイトル E列に死亡時の年齢を含める（画面の「○○歳で死亡した場合」と整合）
   const _deathAgeForTitle = targetIsH
-    ? (hAge + (iv('mg-death-year')||1) - 1)
-    : (wAge + (iv('mg-death-year')||1) - 1);
+    ? (hAge + (MR._deathOffset||1) - 1)
+    : (wAge + (MR._deathOffset||1) - 1);
   const mgLabel = `${targetLabel} 万が一（${_deathAgeForTitle}歳${MR._isDis?(MR._evLbl||'障害'):'逝去'}）`;
   const titleRow=[`${clientName} 様`,'',isM?'マンション':'戸建て','',mgLabel];
   while(titleRow.length<disp+3)titleRow.push('');

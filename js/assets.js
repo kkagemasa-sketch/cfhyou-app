@@ -873,7 +873,6 @@ function setLoanMode(mode){
     if(fsp)fsp.style.display='none';
     if(fpp)fpp.style.display='none';
   }
-  if(typeof updateMGDansinUI==='function')updateMGDansinUI();
   if(typeof syncLoanDansinUI==='function')syncLoanDansinUI(); // 名義人・一般団信の欄をローン種別に合わせる
   if(typeof syncPrepayUIVisibility==='function')syncPrepayUIVisibility(); // 繰上返済欄の単独/ペア切替
   if(loanCategory==='flat35')updateFlat35Info();

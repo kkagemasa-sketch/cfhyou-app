@@ -1,158 +1,22 @@
 // contingency.js — 万が一シミュレーション
 // ===== 万が一シミュレーション関数群 =====
-// ===== 万一CF 遺族年金: 段階入力 =====
-// 各ステップは {from年齢, to年齢, 金額} を持つ。生存者の年齢に応じて該当ステップの金額を使用。
-let _mgSurvStepCnt = 0;
-function addMgSurvStep(from, to, amt){
-  _mgSurvStepCnt++;
-  const id = _mgSurvStepCnt;
-  const cont = document.getElementById('mg-surv-steps-cont');
-  if(!cont) return;
-  const el = document.createElement('div');
-  el.id = `mss-${id}`;
-  el.style.cssText = 'display:flex;gap:4px;align-items:center;background:#f5f8fc;border:1px solid #d8e2ed;border-radius:4px;padding:4px 6px';
-  el.innerHTML = `
-    <input type="number" class="inp age-inp" id="mss-from-${id}" value="${from||''}" placeholder="開始" min="0" max="120" style="width:50px;font-size:11px;padding:3px" oninput="live(true)">
-    <span style="font-size:10px;color:var(--muted)">〜</span>
-    <input type="number" class="inp age-inp" id="mss-to-${id}" value="${to||''}" placeholder="終了" min="0" max="120" style="width:50px;font-size:11px;padding:3px" oninput="live(true)">
-    <span style="font-size:10px;color:var(--muted)">歳</span>
-    <input type="number" class="inp amt-inp" id="mss-amt-${id}" value="${amt||''}" placeholder="金額" min="0" style="width:80px;font-size:11px;padding:3px" oninput="live(true)">
-    <span style="font-size:10px;color:var(--muted)">万円/年</span>
-    <button class="btn-rm" onclick="removeMgSurvStep(${id})" style="margin-left:auto">×</button>
-  `;
-  cont.appendChild(el);
+// ===== 万が一タブの設定の受け渡し =====
+// 万が一タブ（mg-qa.js の mgQA_applyStateToDOM）が計算の前にここへ入れる。タブの外では既定値。
+// （以前は画面に隠した旧入力欄を経由していたが、2026-10 に旧入力欄を撤去）
+function mgIn_default(){
+  return {deathYear:1,insurances:[],pensionType:'kosei',survManual:0,lcRatio:70,lcMode:'ratio',lcSteps:[],
+    park:{on:true,monthly:1.5,from:0,to:0}};
 }
-function removeMgSurvStep(id){
-  document.getElementById(`mss-${id}`)?.remove();
-  if(typeof live==='function') live(true);
-}
-window.addMgSurvStep = addMgSurvStep;
-window.removeMgSurvStep = removeMgSurvStep;
-// 生存者年齢から該当ステップの遺族年金額を返す。未マッチ時は既定値(mg-surv-amt)
-function getMgSurvAmtAtAge(survAge){
-  const cont = document.getElementById('mg-surv-steps-cont');
-  if(!cont) return fv('mg-surv-amt')||0;
-  const steps = [];
-  cont.querySelectorAll('[id^="mss-"]').forEach(el=>{
-    const idMatch = el.id.match(/^mss-(\d+)$/);
-    if(!idMatch) return;
-    const sid = idMatch[1];
-    const from = parseInt(document.getElementById(`mss-from-${sid}`)?.value);
-    const to = parseInt(document.getElementById(`mss-to-${sid}`)?.value);
-    const amt = parseFloat(String(document.getElementById(`mss-amt-${sid}`)?.value||'').replace(/,/g,''))||0;
-    if(!isNaN(from) && from>=0){
-      steps.push({from, to:isNaN(to)?999:to, amt});
-    }
-  });
-  // ステップが無い→既定値
-  if(steps.length===0) return fv('mg-surv-amt')||0;
-  // 該当ステップを検索（年齢が範囲内のもの）
-  for(const s of steps){
-    if(survAge>=s.from && survAge<=s.to) return s.amt;
-  }
-  // どのステップにも該当しない→既定値（または0）
-  return fv('mg-surv-amt')||0;
-}
-window.getMgSurvAmtAtAge = getMgSurvAmtAtAge;
+window._mgIn=mgIn_default();
+function _mgInNum(v){return parseFloat(String(v??'').replace(/,/g,''))||0;}
 
-function setMGTarget(t){
-  mgTarget=t;
-  $('mg-target-h').classList.toggle('on',t==='h');
-  $('mg-target-w').classList.toggle('on',t==='w');
-  updateMGCarParkVisibility();
-  updateMGHints();
-}
-// 車両費・駐車場の継続/なしボタン
-function setMGCarPark(type,on){
-  $(`mg-${type}-keep`).classList.toggle('on',on);
-  $(`mg-${type}-stop`).classList.toggle('on',!on);
-  if(type==='car'){
-    updateMGCarParkVisibility();
-  }else{
-    $('mg-park-fields').style.display=on?'':'none';
-    updateMGCarParkVisibility();
-  }
-  live();
-}
-// ターゲットに応じて車両フィールドの表示を切替
-function updateMGCarParkVisibility(){
-  const carOn=$('mg-car-keep')?.classList.contains('on');
-  const parkOn=$('mg-park-keep')?.classList.contains('on');
-  const t=mgTarget;
-  const hF=$('mg-car-fields-h'),wF=$('mg-car-fields-w');
-  if(!carOn){if(hF)hF.style.display='none';if(wF)wF.style.display='none';}
-  else{
-    if(hF)hF.style.display=t==='h'?'':'none';
-    if(wF)wF.style.display=t==='w'?'':'none';
-  }
-  const phF=$('mg-park-age-h'),pwF=$('mg-park-age-w');
-  if(!parkOn){if(phF)phF.style.display='none';if(pwF)pwF.style.display='none';}
-  else{
-    if(phF)phF.style.display=t==='h'?'':'none';
-    if(pwF)pwF.style.display=t==='w'?'':'none';
-  }
-}
-// 通常CF表の車設定を万が一タブの車フィールドに反映
-function syncMGCarFromNormal(){
-  const cars=document.querySelectorAll('#car-list>[id^="car-"]');
-  if(!cars.length)return;
-  // 1台目の設定を取得
-  const firstId=cars[0].id.replace('car-','');
-  const price=fv(`car-${firstId}-price`)||300;
-  const cycle=iv(`car-${firstId}-cycle`)||7;
-  const insp=fv(`car-${firstId}-insp`)||10;
-  const endAge=iv(`car-${firstId}-end-age`)||70;
-  const carType=cars[0].dataset.type||'new';
-  // 両方のフィールドに反映（h=ご主人死亡時→奥様基準、w=奥様死亡時→ご主人基準）
-  // ★ L5修正: 旧コードは「デフォルト値（300/7/10/15000）と一致 or 0 or 空」を
-  //   「未設定」とみなして通常CFから上書きしていた。これだと「ユーザーが意図的に0や300を
-  //    入れた」値も上書きされてしまう。空欄のときだけ通常CFを反映に変更。
-  ['h','w'].forEach(p=>{
-    const ep=$(`mg-car-${p}-price`); if(ep&&ep.value==='') ep.value=price;
-    const ec=$(`mg-car-${p}-cycle`); if(ec&&ec.value==='') ec.value=cycle;
-    const ei=$(`mg-car-${p}-insp`);  if(ei&&ei.value==='') ei.value=insp;
-    const ee=$(`mg-car-${p}-end-age`);if(ee&&!ee.value) ee.value=endAge;
-    // 新車/中古も連動
-    if(typeof setMGCarType==='function')setMGCarType(p,carType);
-  });
-  // 駐車場も連動
-  const parkEl=$('mg-parking');
-  const normPark=$('parking');
-  if(parkEl&&normPark&&parkEl.value==='') parkEl.value=normPark.value||'1.5';
-}
-function setMGCarType(p,type){
-  $(`mg-car-${p}-new`)?.classList.toggle('on',type==='new');
-  $(`mg-car-${p}-used`)?.classList.toggle('on',type==='used');
-  live();
-}
-function getMGCarType(p){return $(`mg-car-${p}-used`)?.classList.contains('on')?'used':'new';}
-function setMGDansin(on){
-  mgDansin=on;
-  $('mg-dansin-yes').classList.toggle('on',on);
-  $('mg-dansin-no').classList.toggle('on',!on);
-  $('mg-dansin-hint').textContent=on?'✓ 死亡時にローン残債がゼロになります':'ローン返済が継続します';
-  $('mg-dansin-hint').className=on?'hint ok':'hint warn';
-}
-function setMGDansinPair(p,on){
-  if(p==='h'){mgDansinH=on;$('mg-dansin-h-yes').classList.toggle('on',on);$('mg-dansin-h-no').classList.toggle('on',!on);}
-  else{mgDansinW=on;$('mg-dansin-w-yes').classList.toggle('on',on);$('mg-dansin-w-no').classList.toggle('on',!on);}
-}
-function updateMGDansinUI(){
-  const isPair=pairLoanMode;
-  if($('mg-dansin-normal'))$('mg-dansin-normal').style.display=isPair?'none':'block';
-  if($('mg-dansin-pair'))$('mg-dansin-pair').style.display=isPair?'block':'none';
-}
+function setMGTarget(t){ mgTarget=t; }
+function setMGDansin(on){ mgDansin=on; }
+function setMGDansinPair(p,on){ if(p==='h')mgDansinH=on; else mgDansinW=on; }
 function setMGSurvMode(m){
   // 廃止された 'detail' モードは 'auto' に寄せる
   if(m==='detail')m='auto';
   mgSurvMode=m;
-  $('mg-surv-auto')?.classList.toggle('on',m==='auto');
-  $('mg-surv-manual')?.classList.toggle('on',m==='manual');
-  if($('mg-surv-auto-note'))$('mg-surv-auto-note').style.display=m==='auto'?'':'none';
-  if($('mg-surv-manual-wrap'))$('mg-surv-manual-wrap').style.display=m==='manual'?'':'none';
-  const hints={auto:'③収入欄の年収設定から自動計算します',manual:'手入力した金額を使用します'};
-  if($('mg-surv-hint'))$('mg-surv-hint').textContent=hints[m]||hints.auto;
-  live(true);
 }
 // 老齢年金の簡易手取り率（年金額面・給与所得有無で段階式）
 function pensionNetRate(amt,hasWork){
@@ -169,148 +33,19 @@ function calcKiso(n){
   if(n===2)return ri(SURV_KISO_BASE+SURV_KISO_CHILD1_2*2);
   return ri(SURV_KISO_BASE+SURV_KISO_CHILD1_2*2+SURV_KISO_CHILD3PLUS*(n-2));
 }
-function addMGInsurance(){
-  mgInsCnt++;const id=mgInsCnt;
-  const cont=$('mg-insurance-cont');
-  const d=document.createElement('div');d.id=`mg-ins-${id}`;
-  d.style.cssText='background:var(--light);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px';
-  d.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <input class="inp" id="mg-ins-name-${id}" placeholder="例：収入保障保険" oninput="live()" style="flex:1;font-size:11px;margin-right:8px">
-      <button onclick="document.getElementById('mg-ins-${id}').remove();live()" style="background:#fee;color:#d63a2a;border:1px solid #fca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;flex-shrink:0">✕</button>
-    </div>
-    <div style="display:flex;gap:4px;margin-bottom:6px">
-      <button class="btn-tog on" id="mg-ins-type-lump-${id}" onclick="setMGInsType(${id},'lump')" style="font-size:10px;padding:3px 10px">一時金</button>
-      <button class="btn-tog" id="mg-ins-type-annuity-${id}" onclick="setMGInsType(${id},'annuity')" style="font-size:10px;padding:3px 10px">年金型（毎年受取）</button>
-    </div>
-    <div id="mg-ins-lump-wrap-${id}">
-      <div class="fg"><label class="lbl" style="font-size:9px">保険金額（一括）</label>
-        <div class="suf"><input class="inp amt-inp" id="mg-ins-amt-${id}" type="number" value="0" min="0" onfocus="scrollToCFRow('insPayArr')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円</span></div></div>
-    </div>
-    <div id="mg-ins-annuity-wrap-${id}" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div class="fg"><label class="lbl" style="font-size:9px">年額</label>
-          <div class="suf"><input class="inp amt-inp" id="mg-ins-annual-${id}" type="number" value="0" min="0" onfocus="scrollToCFRow('insPayArr')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円/年</span></div></div>
-        <div class="fg"><label class="lbl" style="font-size:9px">受取終了（受取人の年齢）</label>
-          <div class="suf"><input class="inp age-inp" id="mg-ins-end-age-${id}" type="number" value="65" min="20" max="100" onfocus="scrollToCFRow('insPayArr')" onblur="cfRowBlur()" oninput="live()"><span class="sl">歳</span></div></div>
-      </div>
-    </div>`;
-  cont.appendChild(d);
-}
-function setMGInsType(id,type){
-  $(`mg-ins-type-lump-${id}`)?.classList.toggle('on',type==='lump');
-  $(`mg-ins-type-annuity-${id}`)?.classList.toggle('on',type==='annuity');
-  const lw=$(`mg-ins-lump-wrap-${id}`),aw=$(`mg-ins-annuity-wrap-${id}`);
-  if(lw)lw.style.display=type==='lump'?'':'none';
-  if(aw)aw.style.display=type==='annuity'?'':'none';
-  live();
-}
-function getMGCarOn(){return document.getElementById('mg-car-keep')?.classList.contains('on')!==false;}
-function getMGParkOn(){return document.getElementById('mg-park-keep')?.classList.contains('on')!==false;}
-
-// ===== 死亡時の年金区分（厚生年金 / 国民年金のみ）=====
-// kosei  : 厚生年金加入中の死亡 → 遺族厚生年金あり、300月みなし適用
-// kokumin: 国民年金のみで死亡   → 遺族厚生年金 = 0 円、遺族基礎年金のみ
-function getMGPensionType(){
-  // 'kokumin' ボタンに on クラスがあれば国民年金、なければ既定（厚生年金）
-  return document.getElementById('mg-pen-kokumin')?.classList.contains('on') ? 'kokumin' : 'kosei';
-}
-function setMGPensionType(type){
-  const koseiBtn=document.getElementById('mg-pen-kosei');
-  const kokuminBtn=document.getElementById('mg-pen-kokumin');
-  const hint=document.getElementById('mg-pen-hint');
-  if(koseiBtn) koseiBtn.classList.toggle('on', type==='kosei');
-  if(kokuminBtn) kokuminBtn.classList.toggle('on', type==='kokumin');
-  if(hint){
-    if(type==='kokumin'){
-      hint.innerHTML='国民年金のみ → 遺族厚生年金は<b>0円</b>、遺族基礎年金のみ（子18歳未満の間）';
-      hint.style.color='#b45309';
-    }else{
-      hint.innerHTML='✓ 厚生年金加入中の死亡 → 遺族厚生年金あり（300月みなし適用）';
-      hint.style.color='';
-    }
-  }
-  if(typeof live==='function') live();
-}
-function updateMGHints(){
-  const ratio=parseInt($('mg-lc-ratio')?.value)||70;
-  $('mg-lc-hint').textContent=`✓ 死亡後は現在の${ratio}%で計算`;
-}
-// 万が一生活費の段階設定
-function addMGLCStep(){
-  _mgLCStepCount++;
-  const n=_mgLCStepCount;
-  const isFirst=n===1;
-  const cont=document.getElementById('mg-lc-steps-container');
-  const d=document.createElement('div');
-  d.className='mg-lc-step';
-  d.style.cssText='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-bottom:6px';
-  const modeToggle=isFirst?'':`
-  <div style="display:flex;gap:3px;margin-bottom:4px">
-    <button class="btn-tog on" id="mg-lsmode-free-${n}" onclick="setMGLCMode(${n},'free')" style="font-size:10px;padding:3px 8px">自由入力</button>
-    <button class="btn-tog" id="mg-lsmode-pct-${n}" onclick="setMGLCMode(${n},'pct')" style="font-size:10px;padding:3px 8px">前段階の割合</button>
-  </div>`;
-  const pctWrap=isFirst?'':`
-  <div id="mg-lspct-wrap-${n}" style="display:none;margin-bottom:4px">
-    <label style="font-size:10px;color:#92400e;font-weight:600;display:block;margin-bottom:3px">前段階の金額の</label>
-    <div class="suf" style="width:90px"><input class="inp amt-inp" id="mg-lspct-${n}" type="number" value="80" min="1" max="200" step="1" oninput="live()"><span class="sl">%</span></div>
-  </div>`;
-  const phBase=isFirst?'空欄=通常の生活費合計を使用':'空欄=前段階終了時の金額を引継ぎ';
-  d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-    <span style="font-size:10px;font-weight:600;color:#64748b">段階${n}</span>
-    <button onclick="this.parentElement.parentElement.remove();live()" style="background:#fee;color:#d63a2a;border:1px solid #fca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button>
-  </div>
-  ${modeToggle}
-  <div id="mg-lsfree-wrap-${n}">
-    <div class="g2" style="margin-bottom:4px">
-      <div class="fg"><label class="lbl">金額</label>
-        <div class="suf"><input class="inp amt-inp" id="mg-lsb-${n}" type="number" value="" placeholder="${phBase}" min="0" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">万円/年</span></div></div>
-      <div class="fg"><label class="lbl">上昇率（0=横ばい）</label>
-        <div class="suf"><input class="inp" id="mg-lsr-${n}" type="number" value="0" step="0.1" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">%/年</span></div></div>
-    </div>
-  </div>
-  ${pctWrap}
-  <div class="g2">
-    <div class="fg"><label class="lbl">開始年</label>
-      <div class="suf"><input class="inp age-inp" id="mg-lsf-${n}" type="number" value="" placeholder="${isFirst?getCfStartYear():'前段階+1'}" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
-    <div class="fg"><label class="lbl">終了年</label>
-      <div class="suf"><input class="inp age-inp" id="mg-lst-${n}" type="number" value="" placeholder="空欄=ずっと" onfocus="scrollToCFRow('lc')" onblur="cfRowBlur()" oninput="live()"><span class="sl">年</span></div></div>
-  </div>`;
-  cont.appendChild(d);
-}
-function setMGLCMode(n,mode){
-  const isFree=mode==='free';
-  $(`mg-lsmode-free-${n}`)?.classList.toggle('on',isFree);
-  $(`mg-lsmode-pct-${n}`)?.classList.toggle('on',!isFree);
-  const fw=$(`mg-lsfree-wrap-${n}`);
-  const pw=$(`mg-lspct-wrap-${n}`);
-  if(fw)fw.style.display=isFree?'':'none';
-  if(pw)pw.style.display=isFree?'none':'block';
-  live();
-}
+// 死亡時の年金区分 kosei=厚生年金加入中（遺族厚生年金あり・300月みなし）／kokumin=国民年金のみ（遺族厚生年金0円）
+function getMGPensionType(){ return window._mgIn.pensionType==='kokumin'?'kokumin':'kosei'; }
+function getMGParkOn(){ return window._mgIn.park?.on!==false; }
+function getMGLCMode(){ return window._mgIn.lcMode==='step'?'step':'ratio'; }
+// 生活費の段階（以前の形式）。計算中に base を書き換えるので毎回作り直す
 function getMGLCSteps(){
-  const steps=[];
-  let idx=0;
-  document.querySelectorAll('.mg-lc-step').forEach(el=>{
-    idx++;
-    const isPct=el.querySelector(`[id$="lsmode-pct-${idx}"]`)?.classList.contains('on')||false;
-    const baseEl=el.querySelector(`[id$="lsb-${idx}"]`);
-    const rateEl=el.querySelector(`[id$="lsr-${idx}"]`);
-    const fromEl=el.querySelector(`[id$="lsf-${idx}"]`);
-    const toEl=el.querySelector(`[id$="lst-${idx}"]`);
-    const pctEl=el.querySelector(`[id$="lspct-${idx}"]`);
-    steps.push({
-      base:isPct?0:(parseFloat(String(baseEl?.value||'').replace(/,/g,''))||0),
-      rate:parseFloat(rateEl?.value)||0,
-      fromYr:parseInt(fromEl?.value)||0,
-      toYr:parseInt(toEl?.value)||0,
-      mode:isPct?'pct':'free',
-      pct:isPct?(parseFloat(String(pctEl?.value||'').replace(/,/g,''))||80):null
-    });
+  return (window._mgIn.lcSteps||[]).map((st,i)=>{
+    st=st||{};
+    const isPct=i>0&&st.mode==='pct';
+    return {base:isPct?0:_mgInNum(st.base),rate:parseFloat(st.rate)||0,fromYr:parseInt(st.fromYr)||0,toYr:parseInt(st.toYr)||0,
+      mode:isPct?'pct':'free',pct:isPct?(_mgInNum(st.pct)||80):null};
   });
-  return steps;
 }
-function getMGLCMode(){return document.getElementById('mg-lc-mode-step')?.classList.contains('on')?'step':'ratio';}
 function getMGInsuranceTotal(){
   let total=0;
   getMGInsurances().forEach(ins=>{if(ins.type==='lump')total+=ins.amt;});
@@ -318,16 +53,15 @@ function getMGInsuranceTotal(){
 }
 function getMGInsurances(){
   const list=[];
-  document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
-    const id=el.id.split('-').pop();
-    const isAnnuity=$(`mg-ins-type-annuity-${id}`)?.classList.contains('on');
-    const name=$(`mg-ins-name-${id}`)?.value||'';
-    if(isAnnuity){
-      const annual=parseFloat(String($(`mg-ins-annual-${id}`)?.value||'').replace(/,/g,''))||0;
-      const endAge=parseInt($(`mg-ins-end-age-${id}`)?.value)||65;
-      if(annual>0)list.push({type:'annuity',name:name||'年金型保険',annual,endAge,endBy:el.dataset.endby==='insured'?'insured':'receiver'});
-    }else{
-      const amt=parseFloat(String($(`mg-ins-amt-${id}`)?.value||'').replace(/,/g,''))||0;
+  (window._mgIn.insurances||[]).forEach(ins=>{
+    if(!ins)return;
+    const name=ins.name||'';
+    if(ins.type==='annuity'){
+      const annual=_mgInNum(typeof mgQA_insAnnual==='function'?mgQA_insAnnual(ins):ins.annual);
+      const endAge=parseInt(ins.endAge)||65;
+      if(annual>0)list.push({type:'annuity',name:name||'年金型保険',annual,endAge,endBy:ins.endBy==='insured'?'insured':'receiver'});
+    }else if(ins.type==='lump'){
+      const amt=_mgInNum(ins.amount);
       if(amt>0)list.push({type:'lump',name:name||'死亡保険金',amt});
     }
   });
@@ -337,7 +71,6 @@ function getMGInsurances(){
 // ===== 万が一CF表の計算・描画 =====
 function renderContingency(){
   _mgRendering=true;
-  syncMGCarFromNormal();
   try{ return _renderContingencyInner(); }
   finally{ _mgRendering=false; }
 }
@@ -346,7 +79,7 @@ function _renderContingencyInner(){
   if(!window.lastR){alert('先にCF表を生成してください');return;}
   const _isSingle_mg=householdType==='single';
   const hAge=iv('husband-age')||30, wAge=_isSingle_mg?0:(iv('wife-age')||29);
-  const deathYearOffset=iv('mg-death-year')||1;
+  const deathYearOffset=parseInt(window._mgIn.deathYear)||1;
   const deathYear=getCfStartYear()+deathYearOffset-1;
   const targetIsH=mgTarget==='h';
   // 団信の対象（⑤住宅の名義人・一般団信の設定）。万が一側の「団信で完済」選択と両方満たす時だけ完済
@@ -382,24 +115,14 @@ function _renderContingencyInner(){
   const ratesH=_mgFlatPair?rates:(pairLoanMode?getPairRates('h'):[]);
   const ratesW=_mgFlatPair?rates:(pairLoanMode?getPairRates('w'):[]);
   const mgLCMode=getMGLCMode();
-  const lcRatio=(parseInt($('mg-lc-ratio')?.value)||70)/100;
+  const lcRatio=(parseInt(window._mgIn.lcRatio)||70)/100;
   const mgLCSteps=mgLCMode==='step'?getMGLCSteps():[];
-  const mgCarKeep=getMGCarOn();
   const mgParkKeep=getMGParkOn();
-  // 車両・駐車場のループ不変値（DOM読み取りを1回にまとめる）
-  const _cp=targetIsH?'h':'w';
-  const _mgCarPrice=mgCarKeep?(fv(`mg-car-${_cp}-price`)||300):0;
-  const _mgCarCycle=mgCarKeep?(iv(`mg-car-${_cp}-cycle`)||7):7;
-  const _mgCarInsp=mgCarKeep?(fv(`mg-car-${_cp}-insp`)||10):0;
-  const _mgCarEndAge=mgCarKeep?(iv(`mg-car-${_cp}-end-age`)||0):0;
-  const _mgCarFirst=mgCarKeep?(iv(`mg-car-${_cp}-first`)||(targetIsH?wAge:hAge)):0;
-  const _mgCarType=getMGCarType(_cp); // 'new' or 'used'
-  const _mgParkFrom=mgParkKeep?(iv(`mg-park-${_cp}-from-age`)||0):0;
-  const _mgParkTo=mgParkKeep?(iv(`mg-park-${_cp}-to-age`)||0):0;
-  const _mgParkAnnual=mgParkKeep?ri(fvd('mg-parking',1.5)*12):0;  // 万円/月入力（0円も有効。空欄のときだけ1.5万）
-  const mgScholarOn=document.getElementById('mg-scholarship-yes')?.classList.contains('on');
-  const mgScholarAmt=mgScholarOn?(fv('mg-scholarship-amt')||0):0;
-  const mgScholarAge=iv('mg-scholarship-age')||19;
+  // 駐車場（「変更する」のとき）：万円/月・生存者の年齢範囲
+  const _mgPk=window._mgIn.park||{};
+  const _mgParkFrom=mgParkKeep?(parseInt(_mgPk.from)||0):0;
+  const _mgParkTo=mgParkKeep?(parseInt(_mgPk.to)||0):0;
+  const _mgParkAnnual=mgParkKeep?ri(_mgInNum(_mgPk.monthly)*12):0;
   const mgInsurances=getMGInsurances();
   const insTotal=getMGInsuranceTotal();
   // 年金型保険の受取人年齢（受取人=生存者）
@@ -436,7 +159,7 @@ function _renderContingencyInner(){
   const pWReceive=_isSingle_mg?99:(iv('pension-w-receive')||65);
   const retPay=fv('retire-pay'), retPayAge=iv('retire-pay-age')||iv('retire-age')||60;
   const wRetPay=_isSingle_mg?0:(fv('w-retire-pay')||0), wRetPayAge=_isSingle_mg?99:(iv('w-retire-pay-age')||iv('w-retire-age')||60);
-  const survManualAmt=fv('mg-surv-amt')||0;
+  const survManualAmt=_mgInNum(window._mgIn.survManual);
   // 老齢基礎年金概算（令和7年度満額82.51万円 × 加入年数/40年、constants.js で一元管理）
   const KISO_FULL=KISO_FULL_AMT;
   const retAge_mg=iv('retire-age')||60, wRetAge_mg=iv('w-retire-age')||60;
@@ -986,16 +709,14 @@ function _renderContingencyInner(){
     let survP=0;
     if(isDead){
       if(mgSurvMode==='manual'){
-        // 生存者の年齢に応じて段階別金額を取得（未設定時は mg-surv-amt 既定値）
-        const _survAge = targetIsH ? wa : ha;
-        survP = (typeof getMgSurvAmtAtAge==='function') ? getMgSurvAmtAtAge(_survAge) : survManualAmt;
+        survP = survManualAmt;
       }else{
         // 遺族厚生年金用：死亡時の被保険者期間ベース＋300月みなし
         const hDeathAgeCalc=targetIsH?deathAge:(hAge+deathYearOffset-1);
         const wDeathAgeCalc=targetIsH?(wAge+deathYearOffset-1):deathAge;
         // ★ 死亡者の年金区分が「国民年金のみ」なら遺族厚生年金は 0 円
         //   （ kH/kW を 0 にすれば後段の Math.max(kH*0.75 - kosei, 0) で 0 になる）
-        const _mgPenType = (typeof getMGPensionType==='function') ? getMGPensionType() : 'kosei';
+        const _mgPenType = getMGPensionType();
         const _isKokumin = _mgPenType==='kokumin';
         // ★ B7修正: 死亡時に厚生年金被保険者だったか（=退職年齢以前の死亡か）で
         //   短期要件（300月みなし）/ 長期要件（実加入月数）を切り替える。
@@ -1179,8 +900,7 @@ function _renderContingencyInner(){
 
     // 奨学金
     let scholarVal=i<normalR.scholarship.length?(normalR.scholarship[i]||0):0;
-    // ★ C4修正: Q&Aパネル新形式（window._mgScholarshipItems）が設定されていれば優先採用。
-    //   旧の単一入力（mg-scholarship-amt）は新形式が無い場合のみ使う。
+    // Q&Aパネルの奨学金（以前の形式：window._mgScholarshipItems）
     const _mgQAItems = (typeof window!=='undefined' && Array.isArray(window._mgScholarshipItems))
                        ? window._mgScholarshipItems : null;
     if(isEvt && _mgQAItems && _mgQAItems.length>0){
@@ -1193,9 +913,6 @@ function _renderContingencyInner(){
         const targetAge = it.phase==='hs' ? 16 : 19; // 高校入学=16歳 / 大学入学=19歳
         if(ageNow === targetAge) scholarVal += it.amount;
       });
-    } else if(isEvt && mgScholarAmt>0 && children.length>0){
-      const firstChildAge=children[0].age+i;
-      if(firstChildAge===mgScholarAge)scholarVal+=mgScholarAmt;
     }
     // 奨学金（新形式：お子様ごとの年齢→受取額）
     if(isEvt && Array.isArray(window._mgScholarAt)){ children.forEach((c,ci)=>{ const m=window._mgScholarAt[ci]; if(m) scholarVal+=(m[c.age+i]||0); }); }
@@ -1672,20 +1389,6 @@ function _renderContingencyInner(){
           }
         }
       });
-    } else if(mgCarKeep){
-      // 旧UI（mg-car-h-* 単一車フィールド）でのフォールバック
-      const sAge=targetIsH?wa:ha;
-      if(_mgCarEndAge>0&&sAge>=_mgCarEndAge){nCar=0;}
-      else if(sAge>=_mgCarFirst){
-        const ageFromFirst=sAge-_mgCarFirst;
-        if(ageFromFirst%_mgCarCycle===0)nCar+=_mgCarPrice;
-        const carAge=ageFromFirst%_mgCarCycle;
-        if(_mgCarType==='used'){
-          if(carAge>0&&carAge%2===0)nCar+=_mgCarInsp;
-        }else{
-          if(carAge===3||(carAge>3&&(carAge-3)%2===0))nCar+=_mgCarInsp;
-        }
-      }
     }else if(isEvt){nCar=0;}
     else{nCar=i<normalR.carTotal.length?(normalR.carTotal[i]||0):0;}
     MR.carTotal.push(nCar);
@@ -2138,7 +1841,7 @@ function _renderContingencyInner(){
   const targetLabel=targetIsH?'ご主人様':'奥様';
 
   // 逝去・退職列インデックス計算（通常CF表と同じ col-death / col-retire クラス）
-  // 万が一CF表では、シミュレーション対象者の逝去列は入力パネルの死亡時期(mg-death-year)に合わせる
+  // 万が一CF表では、シミュレーション対象者の逝去列は万が一タブの「いつ起きたら」に合わせる
   const wAge0_mg=wAge;
   const hDeathAge_mg=iv('h-death-age')||83,wDeathAge_mg=iv('w-death-age')||88;
   const wRetireAge_mg=iv('w-retire-age')||60; // ★ M1: 空欄時 fallback 追加（旧は -wAge0 で列マッチせず奥様の「定年」ハイライトが消えていた）

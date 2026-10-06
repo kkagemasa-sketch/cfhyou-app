@@ -2,18 +2,6 @@
 // 既存コード（setRTab, renderContingency, mgTarget等）は一切変更せず、
 // 専用の名前空間 mgQA_* で実装する
 
-// syncMGCarFromNormal を無効化（Q&A側で車・駐車場を直接設定するため）
-// 旧UIは非表示化されているので副作用なし
-window.addEventListener('load', function(){
-  if(typeof window.syncMGCarFromNormal === 'function'){
-    window._origSyncMGCarFromNormal = window.syncMGCarFromNormal;
-    window.syncMGCarFromNormal = function(){
-      // no-op when Q&A tab is active, otherwise forward
-      if(window._mgQA_activeTabId) return;
-      return window._origSyncMGCarFromNormal.apply(this, arguments);
-    };
-  }
-});
 //
 // 構造:
 //  [左パネル] 通常の入力 + 万が一ボタン + (アクティブな万が一タブの) Q&Aパネル
@@ -75,23 +63,22 @@ function mgQA_migrateTabs(legacyOverrides, legacyCustomRows){
   });
 }
 
-// 通常CFの mg-insurance-cont DOM から既存保険データを Q&A 形式で取得
-// Q&Aタブ新規作成時に「通常CFで入れた個人年金/死亡保険金が消える」のを防ぐ
+// 新しい画面になる前のファイルの保険（保存データ d.mg.insurances）を Q&A 形式で取得
+// 最初の万が一タブを作るときに、前の画面で入れた死亡保険金・年金型保険を引き継ぐ
 function _mgQA_collectLegacyInsurances(){
   const out = [];
-  // contingency.js の getMGInsurances を直接使えるならそれを使う
-  if(typeof getMGInsurances === 'function'){
-    try {
-      const list = getMGInsurances() || [];
-      list.forEach(ins=>{
-        if(ins.type==='annuity' && ins.annual>0){
-          out.push({ type:'annuity', annual:ins.annual, endAge:ins.endAge||65, amount:0 });
-        }else if(ins.type==='lump' && ins.amt>0){
-          out.push({ type:'lump', amount:ins.amt, annual:0, endAge:65 });
-        }
-      });
-    } catch(e){ /* fallback to direct DOM */ }
-  }
+  const num = v => parseFloat(String(v??'').replace(/,/g,''))||0;
+  const list = (window._mgLegacy && Array.isArray(window._mgLegacy.insurances)) ? window._mgLegacy.insurances : [];
+  list.forEach(ins=>{
+    if(!ins) return;
+    if(ins.insType==='annuity'){
+      const annual = num(ins.annual);
+      if(annual>0) out.push({ type:'annuity', name:ins.name||'', annual, endAge:parseInt(ins.endAge)||65, amount:0 });
+    }else{
+      const amt = num(ins.amt);
+      if(amt>0) out.push({ type:'lump', name:ins.name||'', amount:amt, annual:0, endAge:65 });
+    }
+  });
   return out;
 }
 
@@ -102,9 +89,6 @@ function mgQA_buildDefaultState(target){
                [...mgQA_tabs].reverse()[0];
   if(prev){
     const cloned = JSON.parse(JSON.stringify(prev.state));
-    // ★ 既存タブから複製した場合でも、insurances がデフォルト（type:none のみ）の場合は
-    //   通常CFセッションの mg-insurance-cont に入力済みの個人年金/死亡保険金を取り込む
-    //   （これをしないと、通常CFで入れた保険が Q&Aタブ作成時に消える）
     // ★ 以前は保険が空のとき裏の旧入力欄から取り込んでいたが、直前に表示した別タブの保険が
     //   紛れ込むため廃止（新しいタブの最初の1枚だけ、下の初期値で旧データを取り込む）
     return cloned;
@@ -132,8 +116,7 @@ function mgQA_buildDefaultState(target){
   // 駐車場の年齢範囲も通常CFから継承（歳単位なので直接）
   const parkFromDef = mgQA_iv('park-from-age') || 0;
   const parkToDef = mgQA_iv('park-to-age') || 0;
-  // 通常CFの mg-insurance-cont に既に入力済みの個人年金/死亡保険金を取り込む
-  // （新規Q&Aタブ作成時に従来データを引き継ぐ）
+  // 新しい画面になる前のファイルの死亡保険金・年金型保険を取り込む（最初のタブだけ）
   const _legacyIns = _mgQA_collectLegacyInsurances();
   const _initialIns = _legacyIns.length>0 ? _legacyIns : [{ type:'none', amount:0 }];
   return {
@@ -423,118 +406,38 @@ function mgQA_showRightError(tab, msg){
   `;
 }
 
-// --- Q&A state を既存の万が一DOMフィールドに書き込む ---
+// --- Q&A state を計算に渡す（window._mgIn と window._mg* ） ---
 function mgQA_applyStateToDOM(tab){
   const s = tab.state;
 
   // 対象者（ご主人様/奥様）
-  if(typeof setMGTarget === 'function') setMGTarget(tab.target);
+  setMGTarget(tab.target);
 
-  // 死亡年
-  const dy = document.getElementById('mg-death-year');
-  if(dy) dy.value = s.deathYear;
-
-  // 保険金：既存をクリアして再構築
-  const insCont = document.getElementById('mg-insurance-cont');
-  if(insCont && typeof addMGInsurance === 'function'){
-    // ★ 防御: tab.state.insurances が空（type:'none'のみ）の場合に、
-    //   通常CF側 mg-insurance-cont に既に入力されている個人年金/保険金があれば
-    //   それを Q&A state に取り込んでから処理する（データ消失を防ぐ）
-    // ★ 空のときに裏の旧入力欄から取り込む処理は廃止（別タブの保険が紛れ込む不具合のため）
-    if(!Array.isArray(s.insurances)) s.insurances = [];
-    insCont.innerHTML = '';
-    // mgInsCnt は contingency.js で `let` 宣言されたグローバル変数（window非経由）
-    // addMGInsurance() が ++mgInsCnt して新ID生成するので、カウンタはそのまま使う
-    s.insurances.forEach(ins => {
-      if(!ins || ins.type === 'none') return;
-      addMGInsurance();
-      // 直前にDOMに追加された保険ボックスのIDを末尾から取得
-      const box = insCont.lastElementChild;
-      if(!box) return;
-      const m = box.id && box.id.match(/^mg-ins-(\d+)$/);
-      if(!m) return;
-      const id = parseInt(m[1]);
-      const _nm = document.getElementById(`mg-ins-name-${id}`); if(_nm) _nm.value = ins.name || '';
-      if(ins.type === 'lump'){
-        if(typeof setMGInsType === 'function') setMGInsType(id, 'lump');
-        const amtEl = document.getElementById(`mg-ins-amt-${id}`);
-        if(amtEl) amtEl.value = ins.amount || 0;
-      } else if(ins.type === 'annuity'){
-        if(typeof setMGInsType === 'function') setMGInsType(id, 'annuity');
-        const annualEl = document.getElementById(`mg-ins-annual-${id}`);
-        if(annualEl) annualEl.value = mgQA_insAnnual(ins);
-        box.dataset.endby = ins.endBy==='insured' ? 'insured' : 'receiver';
-        const endEl = document.getElementById(`mg-ins-end-age-${id}`);
-        if(endEl) endEl.value = ins.endAge || 65;
-      }
-    });
-  }
+  // 計算に渡す値（contingency.js の window._mgIn）
+  const mi = window._mgIn = mgIn_default();
+  // 死亡年（障害タブは障害になった年）
+  mi.deathYear = parseInt(s.deathYear)||1;
+  // 保険金
+  if(!Array.isArray(s.insurances)) s.insurances = [];
+  mi.insurances = s.insurances;
 
   // 必要保障額（標準の年数）と見出し帯の種類色
   window._mgNeedYears = s.needYears || 3;
   window._mgKindColor = (MGQA_KIND_INFO[tab.kind]||MGQA_KIND_INFO.death).color;
-  // 亡くなった方の加入年金（厚生／国民のみ）
+  // 亡くなった方の加入年金（厚生／国民のみ）。持たない旧タブは前の画面の設定（保存データ）を引き継ぐ
   if(s.pensionType!=='kosei' && s.pensionType!=='kokumin'){
-    s.pensionType = (typeof getMGPensionType==='function') ? getMGPensionType() : 'kosei';
+    s.pensionType = (window._mgLegacy && window._mgLegacy.pensionType==='kokumin') ? 'kokumin' : 'kosei';
   }
-  if(typeof setMGPensionType==='function') setMGPensionType(s.pensionType);
+  mi.pensionType = s.pensionType;
   // 遺族年金モード
-  if(typeof setMGSurvMode === 'function') setMGSurvMode(s.pensionMode);
-  const sa = document.getElementById('mg-surv-amt');
-  if(sa) sa.value = s.pensionManual || 0;
+  setMGSurvMode(s.pensionMode);
+  mi.survManual = s.pensionManual || 0;
 
-  // 生活費：新形式（通常どおり／期間ごと）は関数で渡す。％は従来どおりDOM経由
+  // 生活費：新形式（通常どおり／期間ごと）は関数で渡す。％と以前の段階形式は値で渡す
   window._mgLcFn = (typeof mgQA_lcFn==='function') ? mgQA_lcFn(tab) : null;
-  const lcRatio = document.getElementById('mg-lc-ratio');
-  if(lcRatio) lcRatio.value = s.lcRatio;
-  const ratioBtn = document.getElementById('mg-lc-mode-ratio');
-  const stepBtn = document.getElementById('mg-lc-mode-step');
-  const rF = document.getElementById('mg-lc-ratio-fields');
-  const sF = document.getElementById('mg-lc-step-fields');
-  if(ratioBtn && stepBtn && rF && sF){
-    if(s.lcMode === 'step'){
-      ratioBtn.classList.remove('on');
-      stepBtn.classList.add('on');
-      rF.style.display = 'none';
-      sF.style.display = '';
-    } else {
-      ratioBtn.classList.add('on');
-      stepBtn.classList.remove('on');
-      rF.style.display = '';
-      sF.style.display = 'none';
-    }
-  }
-  // 段階モードの場合、Q&A state.lcSteps を旧UIの DOM (.mg-lc-step) に反映
-  // contingency.js の getMGLCSteps() がこの DOM を読んで計算する
-  if(s.lcMode === 'step' && Array.isArray(s.lcSteps)){
-    const stepsCont = document.getElementById('mg-lc-steps-container');
-    if(stepsCont && typeof addMGLCStep === 'function'){
-      stepsCont.innerHTML='';  // 既存の段階をクリア
-      // ★ 重要: addMGLCStep が使う _mgLCStepCount を必ず 0 に戻す
-      //   （state.js で var 宣言したため window._mgLCStepCount として確実にアクセス可能）
-      window._mgLCStepCount = 0;
-      try { _mgLCStepCount = 0; } catch(e){ /* レキシカル変数の安全リセット */ }
-      s.lcSteps.forEach((st, i) => {
-        addMGLCStep();
-        const n = i + 1;
-        // 値を反映
-        const baseEl = document.getElementById(`mg-lsb-${n}`);
-        const rateEl = document.getElementById(`mg-lsr-${n}`);
-        const fromEl = document.getElementById(`mg-lsf-${n}`);
-        const toEl = document.getElementById(`mg-lst-${n}`);
-        const pctEl = document.getElementById(`mg-lspct-${n}`);
-        if(baseEl) baseEl.value = st.base || '';
-        if(rateEl) rateEl.value = st.rate || 0;
-        if(fromEl) fromEl.value = st.fromYr || '';
-        if(toEl) toEl.value = st.toYr || '';
-        if(pctEl) pctEl.value = st.pct || 80;
-        // モード（自由入力 / 前段階の割合）切替（段階1は常にfree）
-        if(i > 0 && typeof setMGLCMode === 'function'){
-          setMGLCMode(n, st.mode === 'pct' ? 'pct' : 'free');
-        }
-      });
-    }
-  }
+  mi.lcRatio = s.lcRatio;
+  mi.lcMode = s.lcMode==='step' ? 'step' : 'ratio';
+  mi.lcSteps = Array.isArray(s.lcSteps) ? s.lcSteps : [];
 
   // 住まい：その後の住まいを渡す。死亡タブの団信は選ばせない（⑤住宅の名義人・一般団信で自動）
   window._mgHousingStages = null;
@@ -542,8 +445,8 @@ function mgQA_applyStateToDOM(tab){
   // 障害タブは団信を選ぶ（完済／残る）。⑤の名義人・一般団信の設定と両方満たす時だけ完済
   if(typeof mgQA_disApply==='function') mgQA_disApply(tab);
   const _dansinOn = (tab.kind==='dis1'||tab.kind==='dis2') ? (s.disDansin==='clear') : true;
-  if(typeof setMGDansin === 'function') setMGDansin(_dansinOn);
-  if(typeof setMGDansinPair === 'function'){ setMGDansinPair('h', _dansinOn); setMGDansinPair('w', _dansinOn); }
+  setMGDansin(_dansinOn);
+  setMGDansinPair('h', _dansinOn); setMGDansinPair('w', _dansinOn);
 
   // 車：手放す車・追加する車（新形式）
   if(typeof mgQA_carApply==='function') mgQA_carApply(tab);
@@ -559,41 +462,13 @@ function mgQA_applyStateToDOM(tab){
     window._mgQA_existingCars = null;
     window._mgQA_futureCars   = null;
   }
-  // 車両（keep/stop）— 継承時は keep 扱い（通常CF用）。変更時は state.carMode に従う
-  if(typeof setMGCarPark === 'function'){
-    const carOn = s.carInherit !== false ? true : (s.carMode === 'keep');
-    setMGCarPark('car', carOn);
-  }
-  // 車の詳細フィールド（target側のみ書き込み）
-  const cp = tab.target;  // 'h' or 'w'
-  if(s.carInherit === false && s.carMode === 'keep'){
-    if(typeof setMGCarType === 'function') setMGCarType(cp, s.carType === 'used' ? 'used' : 'new');
-    const priceEl = document.getElementById(`mg-car-${cp}-price`);
-    if(priceEl) priceEl.value = s.carPrice || 0;
-    const cycleEl = document.getElementById(`mg-car-${cp}-cycle`);
-    if(cycleEl) cycleEl.value = s.carCycle || 7;
-    const inspEl = document.getElementById(`mg-car-${cp}-insp`);
-    if(inspEl) inspEl.value = s.carInsp || 0;
-    const firstEl = document.getElementById(`mg-car-${cp}-first`);
-    if(firstEl) firstEl.value = s.carFirstAge || '';
-    const endEl = document.getElementById(`mg-car-${cp}-end-age`);
-    if(endEl) endEl.value = s.carEndAge || '';
-  }
-
   // 駐車場（keep/stop）— 継承時は keep 扱い
-  if(typeof setMGCarPark === 'function'){
-    const parkOn = s.parkInherit !== false ? true : (s.parkMode === 'keep');
-    setMGCarPark('park', parkOn);
-  }
-  // 駐車場の詳細
-  if(s.parkInherit === false && s.parkMode === 'keep'){
-    const monEl = document.getElementById('mg-parking');
-    if(monEl) monEl.value = s.parkMonthly || 0;
-    const fromEl = document.getElementById(`mg-park-${cp}-from-age`);
-    if(fromEl) fromEl.value = s.parkFromAge || '';
-    const toEl = document.getElementById(`mg-park-${cp}-to-age`);
-    if(toEl) toEl.value = s.parkToAge || '';
-  }
+  mi.park = {
+    on: s.parkInherit !== false ? true : (s.parkMode === 'keep'),
+    monthly: parseFloat(String(s.parkMonthly??'').replace(/,/g,''))||0,
+    from: parseInt(s.parkFromAge)||0,
+    to: parseInt(s.parkToAge)||0
+  };
 
   // 就労収入オーバーライド（新形式：window._mgIncomeOverride で contingency.js に渡す）
   // 生存者側のみ上書きする: target='h'→奥様(w)を上書き、target='w'→ご主人様(h)を上書き
@@ -641,26 +516,8 @@ function mgQA_applyStateToDOM(tab){
       }
     });
     window._mgScholarshipItems = items;
-    // 既存の単一入力はクリア（新形式を優先的に使う合図）
-    const oldScOn = document.getElementById('mg-scholarship-yes');
-    const oldScNo = document.getElementById('mg-scholarship-none');
-    if(oldScNo && oldScOn){
-      oldScNo.classList.add('on');
-      oldScOn.classList.remove('on');
-      const fields = document.getElementById('mg-scholarship-fields');
-      if(fields) fields.style.display = 'none';
-    }
   } else {
-    // 無効：旧形式も無効化
     window._mgScholarshipItems = [];
-    const oldScOn = document.getElementById('mg-scholarship-yes');
-    const oldScNo = document.getElementById('mg-scholarship-none');
-    if(oldScNo && oldScOn){
-      oldScNo.classList.add('on');
-      oldScOn.classList.remove('on');
-      const fields = document.getElementById('mg-scholarship-fields');
-      if(fields) fields.style.display = 'none';
-    }
   }
 }
 
@@ -703,6 +560,7 @@ function mgQA_hideLeftPanel(){
   window._mgDisCfg = null;
   window._mgSelfIncFn = null;
   window._mgScholarAt = null;
+  window._mgIn = mgIn_default();
 }
 
 // --- 既存 setRTab をラップ：通常タブに切替えられたら左Q&Aを隠す ---

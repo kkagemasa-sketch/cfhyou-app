@@ -222,42 +222,9 @@ function _collectDynamic(){
     const id=el.id.split('-')[1];
     d.otherMembers.push({label:$(`oml-${id}`)?.value||'',age:$(`oma-${id}`)?.value||'',notes:$(`omn-${id}`)?.value||''});
   });
-  // 万が一シミュレーション
-  d.mg={target:mgTarget,dansin:mgDansin,dansinH:mgDansinH,dansinW:mgDansinW,survMode:mgSurvMode,
-    // 死亡時の年金区分（厚生年金加入 / 国民年金のみ）
-    pensionType:(typeof getMGPensionType==='function')?getMGPensionType():'kosei',
-    deathYear:$('mg-death-year')?.value||'',survAmt:$('mg-surv-amt')?.value||'',lcRatio:$('mg-lc-ratio')?.value||'',
-    // 遺族年金の段階入力
-    survSteps:(()=>{const arr=[];document.querySelectorAll('#mg-surv-steps-cont>[id^="mss-"]').forEach(el=>{const m=el.id.match(/^mss-(\d+)$/);if(!m)return;const sid=m[1];arr.push({from:$(`mss-from-${sid}`)?.value||'',to:$(`mss-to-${sid}`)?.value||'',amt:$(`mss-amt-${sid}`)?.value||''});});return arr;})(),
-    lcMode:$('mg-lc-mode-step')?.classList.contains('on')?'step':'ratio',
-    scholarshipOn:$('mg-scholarship-yes')?.classList.contains('on')||false,
-    scholarshipAmt:$('mg-scholarship-amt')?.value||'',scholarshipAge:$('mg-scholarship-age')?.value||'',
-    carOn:$('mg-car-keep')?.classList.contains('on')!==false,
-    carHPrice:$('mg-car-h-price')?.value||'',carHCycle:$('mg-car-h-cycle')?.value||'',carHInsp:$('mg-car-h-insp')?.value||'',carHEndAge:$('mg-car-h-end-age')?.value||'',carHFirst:$('mg-car-h-first')?.value||'',carHType:typeof getMGCarType==='function'?getMGCarType('h'):'new',
-    carWPrice:$('mg-car-w-price')?.value||'',carWCycle:$('mg-car-w-cycle')?.value||'',carWInsp:$('mg-car-w-insp')?.value||'',carWEndAge:$('mg-car-w-end-age')?.value||'',carWFirst:$('mg-car-w-first')?.value||'',carWType:typeof getMGCarType==='function'?getMGCarType('w'):'new',
-    parkOn:$('mg-park-keep')?.classList.contains('on')!==false,parking:$('mg-parking')?.value||'',
-    parkHFromAge:$('mg-park-h-from-age')?.value||'',parkHToAge:$('mg-park-h-to-age')?.value||'',
-    parkWFromAge:$('mg-park-w-from-age')?.value||'',parkWToAge:$('mg-park-w-to-age')?.value||'',
-    insurances:[],lcSteps:[]};
-  document.querySelectorAll('#mg-insurance-cont>[id^="mg-ins-"]').forEach(el=>{
-    const id=el.id.split('-').pop();
-    const isAnnuity=$(`mg-ins-type-annuity-${id}`)?.classList.contains('on')||false;
-    d.mg.insurances.push({name:$(`mg-ins-name-${id}`)?.value||'',amt:$(`mg-ins-amt-${id}`)?.value||'',
-      insType:isAnnuity?'annuity':'lump',annual:$(`mg-ins-annual-${id}`)?.value||'',endAge:$(`mg-ins-end-age-${id}`)?.value||''});
-  });
-  let _mgIdx=0;
-  document.querySelectorAll('#mg-lc-steps-container>.mg-lc-step').forEach(el=>{
-    _mgIdx++;
-    const isPct=el.querySelector(`[id$="lsmode-pct-${_mgIdx}"]`)?.classList.contains('on')||false;
-    d.mg.lcSteps.push({
-      base:$(`mg-lsb-${_mgIdx}`)?.value||'',
-      rate:$(`mg-lsr-${_mgIdx}`)?.value||'',
-      from:$(`mg-lsf-${_mgIdx}`)?.value||'',
-      to:$(`mg-lst-${_mgIdx}`)?.value||'',
-      mode:isPct?'pct':'free',
-      pct:isPct?($(`mg-lspct-${_mgIdx}`)?.value||'80'):''
-    });
-  });
+  // 万が一（新しい画面になる前の設定）：読み込んだファイルの値をそのまま引き継ぐ
+  // （最初の万が一タブを作るときに保険・年金区分を取り込むため。今の設定は mgQATabs に保存）
+  d.mg=window._mgLegacy?JSON.parse(JSON.stringify(window._mgLegacy)):null;
   // 生活費タブの備考
   d.lcBikou=typeof _lcBikou==='object'?{..._lcBikou}:{};
   // CF表行名カスタムラベル
@@ -578,131 +545,14 @@ function _restoreDynamic(d){
     if($(`oma-${id}`))$(`oma-${id}`).value=s.age;
     if($(`omn-${id}`))$(`omn-${id}`).value=s.notes;
   });
-  // 万が一シミュレーション
+  // 万が一（新しい画面になる前の設定）：保存データのまま預かる（最初の万が一タブ作成時の取り込み用）
+  window._mgLegacy=d.mg?JSON.parse(JSON.stringify(d.mg)):null;
   if(d.mg){
     const mg=d.mg;
-    if(typeof setMGTarget==='function')setMGTarget(mg.target||'h');
-    if(typeof setMGDansin==='function')setMGDansin(mg.dansin!==false);
-    if(typeof setMGDansinPair==='function'){setMGDansinPair('h',mg.dansinH!==false);setMGDansinPair('w',mg.dansinW!==false);}
-    if(typeof setMGSurvMode==='function')setMGSurvMode(mg.survMode||'auto');
-    // 死亡時の年金区分（厚生年金 / 国民年金のみ）— 旧データには無いので既定 kosei
-    if(typeof setMGPensionType==='function')setMGPensionType(mg.pensionType==='kokumin'?'kokumin':'kosei');
-    if($('mg-death-year'))$('mg-death-year').value=mg.deathYear||'1';
-    if($('mg-surv-amt'))$('mg-surv-amt').value=mg.survAmt||'0';
-    // 遺族年金の段階入力を復元
-    const _ssCont = document.getElementById('mg-surv-steps-cont');
-    if(_ssCont){
-      _ssCont.innerHTML = '';
-      if(typeof _mgSurvStepCnt !== 'undefined') _mgSurvStepCnt = 0;
-      if(Array.isArray(mg.survSteps)){
-        mg.survSteps.forEach(s=>{
-          if(typeof addMgSurvStep==='function') addMgSurvStep(s.from, s.to, s.amt);
-        });
-      }
-    }
-    if($('mg-lc-ratio'))$('mg-lc-ratio').value=mg.lcRatio||'70';
-    // 生活費モード
-    if(mg.lcMode==='step'){
-      $('mg-lc-mode-step')?.classList.add('on');$('mg-lc-mode-ratio')?.classList.remove('on');
-      if($('mg-lc-ratio-fields'))$('mg-lc-ratio-fields').style.display='none';
-      if($('mg-lc-step-fields'))$('mg-lc-step-fields').style.display='';
-    } else {
-      $('mg-lc-mode-ratio')?.classList.add('on');$('mg-lc-mode-step')?.classList.remove('on');
-      if($('mg-lc-ratio-fields'))$('mg-lc-ratio-fields').style.display='';
-      if($('mg-lc-step-fields'))$('mg-lc-step-fields').style.display='none';
-    }
-    // ★ L2修正: 旧コードの「段階1（静的HTML）」復元ブロックは dead code。
-    //   _collectSaveData 側に mg.lcStep1 を書き込む処理が無く、保存データに lcStep1 が
-    //   登場することがない。静的step1の値は mg.lcSteps[0] として下記ループで復元される。
-    //   （HTMLの静的step1は line 585 の forEach(.mg-lc-step).remove() で消され、
-    //    その後 addMGLCStep() が新しい mg-lsb-1 等を生成、ループで値設定される）
-    // 追加段階
-    if($('mg-lc-steps-container')){
-      $('mg-lc-steps-container').querySelectorAll('.mg-lc-step').forEach(el=>el.remove());
-      _mgLCStepCount=0;
-      (mg.lcSteps||[]).forEach(s=>{
-        if(typeof addMGLCStep==='function')addMGLCStep();
-        const n=_mgLCStepCount;
-        if($(`mg-lsb-${n}`))$(`mg-lsb-${n}`).value=s.base;
-        if($(`mg-lsr-${n}`))$(`mg-lsr-${n}`).value=s.rate;
-        if($(`mg-lsf-${n}`))$(`mg-lsf-${n}`).value=s.from;
-        if($(`mg-lst-${n}`))$(`mg-lst-${n}`).value=s.to;
-        // 割合モード復元
-        if(s.mode==='pct'){
-          const pctBtn=$(`mg-lsmode-pct-${n}`);
-          const freeBtn=$(`mg-lsmode-free-${n}`);
-          if(pctBtn&&freeBtn){pctBtn.classList.add('on');freeBtn.classList.remove('on');}
-          const fw=$(`mg-lsfree-wrap-${n}`);const pw=$(`mg-lspct-wrap-${n}`);
-          if(fw)fw.style.display='none';if(pw)pw.style.display='block';
-          if($(`mg-lspct-${n}`))$(`mg-lspct-${n}`).value=s.pct||80;
-        }
-      });
-    }
-    // 奨学金
-    if(mg.scholarshipOn){
-      $('mg-scholarship-yes')?.classList.add('on');$('mg-scholarship-none')?.classList.remove('on');
-      if($('mg-scholarship-fields'))$('mg-scholarship-fields').style.display='';
-    } else {
-      $('mg-scholarship-none')?.classList.add('on');$('mg-scholarship-yes')?.classList.remove('on');
-      if($('mg-scholarship-fields'))$('mg-scholarship-fields').style.display='none';
-    }
-    if($('mg-scholarship-amt'))$('mg-scholarship-amt').value=mg.scholarshipAmt||'0';
-    if($('mg-scholarship-age'))$('mg-scholarship-age').value=mg.scholarshipAge||'19';
-    // 車
-    $('mg-car-keep')?.classList.toggle('on',mg.carOn!==false);
-    $('mg-car-stop')?.classList.toggle('on',mg.carOn===false);
-    // 旧データ互換: 旧carPrice等があれば両方に適用
-    const _cp=mg.carHPrice?'new':'old';
-    if(_cp==='new'){
-      if($('mg-car-h-price'))$('mg-car-h-price').value=mg.carHPrice||'300';
-      if($('mg-car-h-cycle'))$('mg-car-h-cycle').value=mg.carHCycle||'7';
-      if($('mg-car-h-insp'))$('mg-car-h-insp').value=mg.carHInsp||'10';
-      if($('mg-car-h-end-age'))$('mg-car-h-end-age').value=mg.carHEndAge||'';
-      if($('mg-car-h-first'))$('mg-car-h-first').value=mg.carHFirst||'';
-      if(typeof setMGCarType==='function')setMGCarType('h',mg.carHType||'new');
-      if($('mg-car-w-price'))$('mg-car-w-price').value=mg.carWPrice||'300';
-      if($('mg-car-w-cycle'))$('mg-car-w-cycle').value=mg.carWCycle||'7';
-      if($('mg-car-w-insp'))$('mg-car-w-insp').value=mg.carWInsp||'10';
-      if($('mg-car-w-end-age'))$('mg-car-w-end-age').value=mg.carWEndAge||'';
-      if($('mg-car-w-first'))$('mg-car-w-first').value=mg.carWFirst||'';
-      if(typeof setMGCarType==='function')setMGCarType('w',mg.carWType||'new');
-    }else{
-      ['h','w'].forEach(p=>{
-        if($(`mg-car-${p}-price`))$(`mg-car-${p}-price`).value=mg.carPrice||'300';
-        if($(`mg-car-${p}-cycle`))$(`mg-car-${p}-cycle`).value=mg.carCycle||'7';
-        if($(`mg-car-${p}-insp`))$(`mg-car-${p}-insp`).value=mg.carInsp||'10';
-        if($(`mg-car-${p}-end-age`))$(`mg-car-${p}-end-age`).value=mg.carEndAge||'';
-      });
-    }
-    // 駐車場
-    $('mg-park-keep')?.classList.toggle('on',mg.parkOn!==false);
-    $('mg-park-stop')?.classList.toggle('on',mg.parkOn===false);
-    if($('mg-park-fields'))$('mg-park-fields').style.display=mg.parkOn!==false?'':'none';
-    if($('mg-parking'))$('mg-parking').value=mg.parking||'1.5';
-    if($('mg-park-h-from-age')&&(mg.parkHFromAge||mg.parkFromAge))$('mg-park-h-from-age').value=mg.parkHFromAge||mg.parkFromAge||'';
-    if($('mg-park-h-to-age')&&(mg.parkHToAge||mg.parkToAge))$('mg-park-h-to-age').value=mg.parkHToAge||mg.parkToAge||'';
-    if($('mg-park-w-from-age')&&mg.parkWFromAge)$('mg-park-w-from-age').value=mg.parkWFromAge;
-    if($('mg-park-w-to-age')&&mg.parkWToAge)$('mg-park-w-to-age').value=mg.parkWToAge;
-    if(typeof updateMGCarParkVisibility==='function')updateMGCarParkVisibility();
-    // 保険金
-    if($('mg-insurance-cont'))$('mg-insurance-cont').innerHTML='';
-    mgInsCnt=0;
-    if((mg.insurances||[]).length>0){
-      (mg.insurances).forEach(s=>{
-        if(typeof addMGInsurance==='function')addMGInsurance();
-        if($(`mg-ins-name-${mgInsCnt}`))$(`mg-ins-name-${mgInsCnt}`).value=s.name;
-        if(s.insType==='annuity'){
-          if(typeof setMGInsType==='function')setMGInsType(mgInsCnt,'annuity');
-          if($(`mg-ins-annual-${mgInsCnt}`))$(`mg-ins-annual-${mgInsCnt}`).value=s.annual||'';
-          if($(`mg-ins-end-age-${mgInsCnt}`))$(`mg-ins-end-age-${mgInsCnt}`).value=s.endAge||'65';
-        }else{
-          if($(`mg-ins-amt-${mgInsCnt}`))$(`mg-ins-amt-${mgInsCnt}`).value=s.amt;
-        }
-      });
-    } else {
-      if(typeof addMGInsurance==='function')addMGInsurance();
-    }
-    if(typeof updateMGHints==='function')updateMGHints();
+    setMGTarget(mg.target||'h');
+    setMGDansin(mg.dansin!==false);
+    setMGDansinPair('h',mg.dansinH!==false); setMGDansinPair('w',mg.dansinW!==false);
+    setMGSurvMode(mg.survMode||'auto');
   }
   // フラグ系
   // 修繕積立金 手入力チェック復元（旧 repMode='manual' も手入力扱いで互換）
@@ -1341,14 +1191,8 @@ function _resetSheetState(){
   // 繰上返済（手入力ステップ）
   if($('rep-steps-cont'))$('rep-steps-cont').innerHTML='';
   if(typeof repStepCnt!=='undefined')repStepCnt=0;
-  // 万一の保険
-  if($('mg-insurance-cont'))$('mg-insurance-cont').innerHTML='';
-  if(typeof mgInsCnt!=='undefined')mgInsCnt=0;
-  // 万一の遺族年金（手入力ステップ）
-  if($('mg-surv-steps-cont'))$('mg-surv-steps-cont').innerHTML='';
-  if(typeof _mgSurvStepCnt!=='undefined')_mgSurvStepCnt=0;
-  // 万一の生活費（手入力ステップ）
-  if($('mg-lc-steps-container'))$('mg-lc-steps-container').innerHTML='';
+  // 万一（新しい画面になる前の設定）
+  window._mgLegacy=null;
   // 市場シミュ表示（裏データ marketShocks は既にリセット済。表示だけ作り直し）
   if($('msp-index-list'))$('msp-index-list').innerHTML='';
   if($('msp-shock-list'))$('msp-shock-list').innerHTML='';

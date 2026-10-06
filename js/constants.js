@@ -240,7 +240,7 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   'lc-travel','lc-social','lc-clothes','lc-ins-y','lc-medical','lc-home','lc-car-tax',
   'lc-other-y','lc-other-y2','lc-other-y3','lc-other-y4',
   'lc-other-y-name','lc-other-y2-name','lc-other-y3-name','lc-other-y4-name',
-  'parking','park-from-age','park-to-age','mg-park-h-from-age','mg-park-h-to-age','mg-park-w-from-age','mg-park-w-to-age','prop-tax','furn-cycle','furn-cost',
+  'parking','park-from-age','park-to-age','prop-tax','furn-cycle','furn-cost',
   'cash-h','cash-w','cash-joint','moving-cost','furniture-init','move-type',
   // 定期借地権付き物件
   'leasehold-on','leasehold-chidai','leasehold-kaitai','leasehold-years','leasehold-maeharai',

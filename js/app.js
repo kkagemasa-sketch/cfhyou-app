@@ -7,8 +7,6 @@ window.onload=()=>{
   addIncomeStep('w');addIncomeStep('w');
   // 特別支出の初期値（1件）
   addExtraItem(getCfStartYear(),'','');
-  // 死亡保険金の初期値（1件）
-  addMGInsurance();
   // 初期値を設定
   loadMansionMaster();
   initFlatRateSelect();
@@ -124,8 +122,6 @@ window.onload=()=>{
   document.querySelector('.panel-l')?.addEventListener('input',()=>scheduleAutoSave());
   document.querySelector('.panel-l')?.addEventListener('change',()=>scheduleAutoSave());
 
-  // ペアローン状態に応じて団信UIを切り替え
-  if(typeof updateMGDansinUI==='function')updateMGDansinUI();
 };
 
 // CF表セル: キーボード操作（document委譲・onload外で確実に登録）
