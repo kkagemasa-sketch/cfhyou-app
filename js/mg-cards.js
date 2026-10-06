@@ -789,7 +789,7 @@ function mgQA_applyKindDefaults(tab){
   if(!mgC_isDis(tab)) return;
   const g1 = tab.kind==='dis1';
   Object.assign(s, {
-    selfMode: g1 ? 'none' : 'pct', selfPct: 50, selfSteps: [], selfBasis:'net',
+    selfMode: 'none', selfPct: 50, selfSteps: [], selfBasis:'net',   // ご本人の収入は1級・2級とも初期値0（％で減らすを選ぶと50%減から）
     selfRetire: g1 ? 'onset' : 'normal',
     disPenMode:'auto', disPenManual:0, pensionType:'kosei',
     disDansin: g1 ? 'clear' : 'keep', stopIns:false, stopInv:false,

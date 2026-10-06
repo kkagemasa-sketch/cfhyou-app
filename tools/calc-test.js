@@ -476,7 +476,7 @@ const SCENARIOS = {
     $('rate-h-base').value=0.6; $('rate-w-base').value=0.7;
     calcLoanAmt();
     setRTab('cf'); mgQA_addTab('w','dis2'); const t=mgQA_tabs[mgQA_tabs.length-1];
-    Object.assign(t.state,{deathYear:2,stopIns:true}); mgQA_calcAndRender(t,true);
+    Object.assign(t.state,{deathYear:2,stopIns:true,selfMode:'pct',selfPct:50}); mgQA_calcAndRender(t,true);
   },
   'M25_夫死亡_万が一の年に売却_団信で完済済み': function(){
     // 団信で完済された年に売る → 残債は引かない（売却4000−費用160＝3840）
