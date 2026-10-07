@@ -466,6 +466,8 @@ function _restoreDynamic(d){
   ['h','w'].forEach(p=>{if($(`ins-lump-cont-${p}`))$(`ins-lump-cont-${p}`).innerHTML='';});
   insLumpCnt=0;
   (d.insLumps||[]).forEach(s=>{
+    // 一時払い保険の入力欄は2026-04に画面から撤去済み。旧データに残っていても読み込み全体を止めない
+    if(!$(`ins-lump-cont-${s.person}`)){console.warn('一時払い保険の旧データは読み込み対象外のためスキップ',s);return;}
     addInsLump(s.person);
     const id=insLumpCnt;const p=s.person;
     if($(`ins-lump-label-${p}-${id}`))$(`ins-lump-label-${p}-${id}`).value=s.label||'';
