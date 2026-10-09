@@ -624,6 +624,29 @@ window.closeAboutModal=closeAboutModal;
             </div>
           </div>
 
+          <!-- 企業型DC・iDeCoの受取（退職金の下に移動 2026-10-09） -->
+              <div style="background:#f0f8f4;border:1px solid #b8e8c8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
+                <div style="font-size:11px;font-weight:700;color:#1a6a3a;margin-bottom:6px">企業型DC・iDeCoの受取<span style="font-size:9px;font-weight:600;color:#64748b;margin-left:6px">いつから・どう受け取るか</span></div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">受取開始年齢</label>
+                    <div class="suf"><input class="inp age-inp" id="dc-h-receive-age" type="number" value="60" min="60" max="75" oninput="updateDCTaxHint('h');live()" style="font-size:11px"><span class="sl">歳</span></div></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">受取方法</label>
+                    <select id="dc-h-method" onchange="updateDCTaxHint('h');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
+                      <option value="lump">一時金</option>
+                      <option value="annuity5">年金（5年）</option>
+                      <option value="annuity10">年金（10年）</option>
+                      <option value="annuity15">年金（15年）</option>
+                      <option value="annuity">年金（20年）</option>
+                      <option value="combo5">併用 / 年金5年</option>
+                      <option value="combo10">併用 / 年金10年</option>
+                      <option value="combo15">併用 / 年金15年</option>
+                      <option value="combo">併用 / 年金20年</option>
+                    </select></div>
+                </div>
+                <div id="dc-h-receipt-hint" style="font-size:10px;color:#666;margin-top:2px"></div>
+              </div>
+
+
           <!-- DC・iDeCo（ご主人様） -->
           <div style="background:#f0f8f4;border:1px solid #b8e8c8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -675,27 +698,6 @@ window.closeAboutModal=closeAboutModal;
                     <div class="suf"><input class="inp amt-inp" id="ideco-h-bal" type="number" value="" placeholder="0" min="0" step="1" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
                 </div>
                 <div id="ideco-h-hint" style="font-size:10px;color:#3a8a3a;margin-top:2px"></div>
-              </div>
-              <!-- 受取設定 -->
-              <div style="background:#fff;border:1px solid #d8e8d8;border-radius:var(--rs);padding:8px;margin-bottom:8px">
-                <div style="font-size:10px;font-weight:700;color:#2a7a4a;margin-bottom:6px">受取設定</div>
-                <div class="g2" style="margin-bottom:6px">
-                  <div class="fg"><label class="lbl" style="font-size:9px">受取開始年齢</label>
-                    <div class="suf"><input class="inp age-inp" id="dc-h-receive-age" type="number" value="60" min="60" max="75" oninput="updateDCTaxHint('h');live()" style="font-size:11px"><span class="sl">歳</span></div></div>
-                  <div class="fg"><label class="lbl" style="font-size:9px">受取方法</label>
-                    <select id="dc-h-method" onchange="updateDCTaxHint('h');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
-                      <option value="lump">一時金</option>
-                      <option value="annuity5">年金（5年）</option>
-                      <option value="annuity10">年金（10年）</option>
-                      <option value="annuity15">年金（15年）</option>
-                      <option value="annuity">年金（20年）</option>
-                      <option value="combo5">併用 / 年金5年</option>
-                      <option value="combo10">併用 / 年金10年</option>
-                      <option value="combo15">併用 / 年金15年</option>
-                      <option value="combo">併用 / 年金20年</option>
-                    </select></div>
-                </div>
-                <div id="dc-h-receipt-hint" style="font-size:10px;color:#666;margin-top:2px"></div>
               </div>
               <!-- 節税ヒント -->
               <div id="dc-h-tax-hint" style="font-size:10px;color:#d4790a;font-weight:600;margin-top:4px"></div>
@@ -947,6 +949,29 @@ window.closeAboutModal=closeAboutModal;
             </div>
           </div>
 
+          <!-- 企業型DC・iDeCoの受取（退職金の下に移動 2026-10-09） -->
+              <div style="background:#f0f8f4;border:1px solid #b8e8c8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
+                <div style="font-size:11px;font-weight:700;color:#1a6a3a;margin-bottom:6px">企業型DC・iDeCoの受取<span style="font-size:9px;font-weight:600;color:#64748b;margin-left:6px">いつから・どう受け取るか</span></div>
+                <div class="g2" style="margin-bottom:6px">
+                  <div class="fg"><label class="lbl" style="font-size:9px">受取開始年齢</label>
+                    <div class="suf"><input class="inp age-inp" id="dc-w-receive-age" type="number" value="60" min="60" max="75" oninput="updateDCTaxHint('w');live()" style="font-size:11px"><span class="sl">歳</span></div></div>
+                  <div class="fg"><label class="lbl" style="font-size:9px">受取方法</label>
+                    <select id="dc-w-method" onchange="updateDCTaxHint('w');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
+                      <option value="lump">一時金</option>
+                      <option value="annuity5">年金（5年）</option>
+                      <option value="annuity10">年金（10年）</option>
+                      <option value="annuity15">年金（15年）</option>
+                      <option value="annuity">年金（20年）</option>
+                      <option value="combo5">併用 / 年金5年</option>
+                      <option value="combo10">併用 / 年金10年</option>
+                      <option value="combo15">併用 / 年金15年</option>
+                      <option value="combo">併用 / 年金20年</option>
+                    </select></div>
+                </div>
+                <div id="dc-w-receipt-hint" style="font-size:10px;color:#666;margin-top:2px"></div>
+              </div>
+
+
           <!-- DC・iDeCo（奥様） -->
           <div style="background:#f0f8f4;border:1px solid #b8e8c8;border-radius:var(--rs);padding:10px;margin-bottom:10px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -998,27 +1023,6 @@ window.closeAboutModal=closeAboutModal;
                     <div class="suf"><input class="inp amt-inp" id="ideco-w-bal" type="number" value="" placeholder="0" min="0" step="1" oninput="live()" style="font-size:11px"><span class="sl">万円</span></div></div>
                 </div>
                 <div id="ideco-w-hint" style="font-size:10px;color:#3a8a3a;margin-top:2px"></div>
-              </div>
-              <!-- 受取設定 -->
-              <div style="background:#fff;border:1px solid #d8e8d8;border-radius:var(--rs);padding:8px;margin-bottom:8px">
-                <div style="font-size:10px;font-weight:700;color:#2a7a4a;margin-bottom:6px">受取設定</div>
-                <div class="g2" style="margin-bottom:6px">
-                  <div class="fg"><label class="lbl" style="font-size:9px">受取開始年齢</label>
-                    <div class="suf"><input class="inp age-inp" id="dc-w-receive-age" type="number" value="60" min="60" max="75" oninput="updateDCTaxHint('w');live()" style="font-size:11px"><span class="sl">歳</span></div></div>
-                  <div class="fg"><label class="lbl" style="font-size:9px">受取方法</label>
-                    <select id="dc-w-method" onchange="updateDCTaxHint('w');live()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)">
-                      <option value="lump">一時金</option>
-                      <option value="annuity5">年金（5年）</option>
-                      <option value="annuity10">年金（10年）</option>
-                      <option value="annuity15">年金（15年）</option>
-                      <option value="annuity">年金（20年）</option>
-                      <option value="combo5">併用 / 年金5年</option>
-                      <option value="combo10">併用 / 年金10年</option>
-                      <option value="combo15">併用 / 年金15年</option>
-                      <option value="combo">併用 / 年金20年</option>
-                    </select></div>
-                </div>
-                <div id="dc-w-receipt-hint" style="font-size:10px;color:#666;margin-top:2px"></div>
               </div>
               <!-- 節税ヒント -->
               <div id="dc-w-tax-hint" style="font-size:10px;color:#d4790a;font-weight:600;margin-top:4px"></div>
