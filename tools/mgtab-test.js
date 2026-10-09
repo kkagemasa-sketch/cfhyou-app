@@ -351,6 +351,37 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     if(LK.leaked.length) f8.push('新規作成で前の値が残る欄: '+LK.leaked.join(', '));
     if(f8.length){ bad++; console.log('❌ 入力欄の保存・新規作成\n   - '+f8.join('\n   - ')); }
     else console.log(`✅ 入力欄の保存・新規作成: 左の入力欄${LK.n}個すべて、保存→読込で戻り・新規作成で消える`);
+
+    /* ---- 資産が空のときの種類ボタン：クリックでその種類のカードが追加される ---- */
+    await page.evaluate(pageBaseSetup);
+    const QA=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const oc=window.confirm, oa=window.alert;
+      window.confirm=(()=>{let n=0;return ()=>(n++%2===1);})(); window.alert=()=>{};
+      const out={};
+      try{
+        for(const t of ['tax-accum','nisa-tsumi','nisa-grow','stock','bond','ins','zaikei']){
+          await newCFSheet(); await wait(200);
+          if(typeof setAssetPerson==='function') setAssetPerson('h');
+          if(typeof refreshAssetUI==='function') refreshAssetUI();
+          const empty=document.getElementById('asset-empty-h');
+          const btn=[...(empty?empty.querySelectorAll('button'):[])].find(b=>(b.getAttribute('onclick')||'').includes(`'${t}'`));
+          if(!btn){ out[t]='ボタンなし'; continue; }
+          btn.click(); await wait(150);
+          let got='';
+          if(t==='ins') got=document.querySelector('#ins-savings-cont-h>[id^="ins-h-"]')?'ins':'';
+          else if(t==='zaikei') got=(typeof _zaikeiVisible==='function'&&_zaikeiVisible('h'))?'zaikei':'';
+          else { const id=secCnt; got=(typeof secCurType==='function')?secCurType('h',id):''; }
+          out[t]=got===t?'OK':`違う(${got})`;
+          out[t+'_empty']=empty.hidden?'消えた':'残った';
+        }
+      } finally { window.confirm=oc; window.alert=oa; }
+      return out;
+    });
+    const f9=Object.entries(QA).filter(([k,v])=>!k.endsWith('_empty')&&v!=='OK').map(([k,v])=>`${k}: ${v}`)
+      .concat(Object.entries(QA).filter(([k,v])=>k.endsWith('_empty')&&v!=='消えた').map(([k])=>`${k.replace('_empty','')}: 追加後も「まだ登録されていません」が残る`));
+    if(f9.length){ bad++; console.log('❌ 資産の種類ボタン\n   - '+f9.join('\n   - ')); }
+    else console.log('✅ 資産の種類ボタン: 空のときの7種類（課税積立・NISAつみたて・NISA成長枠・課税一括・債券・積立保険・財形）をクリックでその種類のカードが追加される');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

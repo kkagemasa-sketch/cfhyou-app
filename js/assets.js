@@ -209,6 +209,24 @@ function addAsset(person){
   if(el)el.focus();
 }
 window.addAsset=addAsset;
+// 種類を指定して資産を追加（資産が空のときに出る種類のボタンから）
+// t: 'tax-accum'|'nisa-tsumi'|'nisa-grow'|'stock'|'bond'|'ins'|'zaikei'
+function addAssetOfType(person,t){
+  if(t==='ins'){
+    addInsSaving(person);
+    const nm=document.getElementById(`ins-label-${person}-${insSavCnt}`); if(nm) nm.focus();
+  }else if(t==='zaikei'){
+    zaikeiShow(person);
+    const z=document.getElementById(`zaikei-${person}-bal`); if(z) z.focus();
+  }else{
+    addSecurity(person);
+    const id=secCnt;
+    if(t!=='tax-accum') secPickType(person,id,t);
+    const el=document.getElementById(`sec-label-${person}-${id}`); if(el) el.focus();
+  }
+  live(); if(typeof refreshAssetUI==='function') refreshAssetUI();
+}
+window.addAssetOfType=addAssetOfType;
 function setSecTax(person,id,t){
   document.getElementById(`sec-taxable-${person}-${id}`).classList.toggle('on',t==='taxable');
   document.getElementById(`sec-nisa-${person}-${id}`).classList.toggle('on',t==='nisa');

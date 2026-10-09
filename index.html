@@ -310,8 +310,8 @@ window.closeAboutModal=closeAboutModal;
         </div>
         <div id="ins-savings-cont-h"></div>
         <div class="a-empty" id="asset-empty-h" hidden>
-          まだ資産が登録されていません。<br>「＋ 資産を追加」を押すと、下の種類がすべてここに入ります
-          <div class="bset"><span class="abdg ab-tax">課税・積立</span><span class="abdg ab-nisa">NISAつみたて</span><span class="abdg ab-grow">NISA成長枠</span><span class="abdg ab-stk">課税・一括</span><span class="abdg ab-bond">債券</span><span class="abdg ab-ins">積立保険</span><span class="abdg ab-zaikei">財形</span></div>
+          まだ資産が登録されていません。<br>下の種類をクリックすると、その種類ですぐ追加できます
+          <div class="bset"><button type="button" class="abdg ab-tax" onclick="addAssetOfType('h','tax-accum')" title="クリックで「課税・積立」を追加">＋ 課税・積立</button><button type="button" class="abdg ab-nisa" onclick="addAssetOfType('h','nisa-tsumi')" title="クリックで「NISAつみたて」を追加">＋ NISAつみたて</button><button type="button" class="abdg ab-grow" onclick="addAssetOfType('h','nisa-grow')" title="クリックで「NISA成長枠」を追加">＋ NISA成長枠</button><button type="button" class="abdg ab-stk" onclick="addAssetOfType('h','stock')" title="クリックで「課税・一括」を追加">＋ 課税・一括</button><button type="button" class="abdg ab-bond" onclick="addAssetOfType('h','bond')" title="クリックで「債券」を追加">＋ 債券</button><button type="button" class="abdg ab-ins" onclick="addAssetOfType('h','ins')" title="クリックで「積立保険」を追加">＋ 積立保険</button><button type="button" class="abdg ab-zaikei" onclick="addAssetOfType('h','zaikei')" title="クリックで「財形」を追加">＋ 財形</button></div>
         </div>
         <button class="btn-add" onclick="addAsset('h')">＋ 資産を追加（種別は追加後にバッジで変更できます）</button>
         <div id="nisa-summary-h" class="nisa-summary" style="margin-top:8px"></div>
@@ -343,8 +343,8 @@ window.closeAboutModal=closeAboutModal;
         </div>
         <div id="ins-savings-cont-w"></div>
         <div class="a-empty" id="asset-empty-w" hidden>
-          まだ資産が登録されていません。<br>「＋ 資産を追加」を押すと、下の種類がすべてここに入ります
-          <div class="bset"><span class="abdg ab-tax">課税・積立</span><span class="abdg ab-nisa">NISAつみたて</span><span class="abdg ab-grow">NISA成長枠</span><span class="abdg ab-stk">課税・一括</span><span class="abdg ab-bond">債券</span><span class="abdg ab-ins">積立保険</span><span class="abdg ab-zaikei">財形</span></div>
+          まだ資産が登録されていません。<br>下の種類をクリックすると、その種類ですぐ追加できます
+          <div class="bset"><button type="button" class="abdg ab-tax" onclick="addAssetOfType('w','tax-accum')" title="クリックで「課税・積立」を追加">＋ 課税・積立</button><button type="button" class="abdg ab-nisa" onclick="addAssetOfType('w','nisa-tsumi')" title="クリックで「NISAつみたて」を追加">＋ NISAつみたて</button><button type="button" class="abdg ab-grow" onclick="addAssetOfType('w','nisa-grow')" title="クリックで「NISA成長枠」を追加">＋ NISA成長枠</button><button type="button" class="abdg ab-stk" onclick="addAssetOfType('w','stock')" title="クリックで「課税・一括」を追加">＋ 課税・一括</button><button type="button" class="abdg ab-bond" onclick="addAssetOfType('w','bond')" title="クリックで「債券」を追加">＋ 債券</button><button type="button" class="abdg ab-ins" onclick="addAssetOfType('w','ins')" title="クリックで「積立保険」を追加">＋ 積立保険</button><button type="button" class="abdg ab-zaikei" onclick="addAssetOfType('w','zaikei')" title="クリックで「財形」を追加">＋ 財形</button></div>
         </div>
         <button class="btn-add" onclick="addAsset('w')">＋ 資産を追加（種別は追加後にバッジで変更できます）</button>
         <div id="nisa-summary-w" class="nisa-summary" style="margin-top:8px"></div>
