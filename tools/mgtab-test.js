@@ -320,6 +320,37 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     if(!NE.shown1||!NE.hidden||!NE.outlineHidden||!NE.keep||!NE.back) f7.push(`カードの表示切替 ${JSON.stringify({shown:NE.shown1,hidden:NE.hidden,outline:NE.outlineHidden,keep:NE.keep,back:NE.back})}`);
     if(f7.length){ bad++; console.log('❌ 必要保障額\n   - '+f7.join('\n   - ')); }
     else console.log(`✅ 必要保障額: 通常も赤字の家計で 最低限${NE.nd.min.toLocaleString()}＜標準${NE.nd.std.toLocaleString()}＜安心${NE.nd.safe.toLocaleString()}（${NE.nd.safeMode==='floor'?'標準＋2年分':'最後の年の比較'}）・カードを隠す/表示（色枠も連動・再計算後も保持）`);
+
+    /* ---- 入力欄の保存漏れ・新規作成の残り：左の入力欄すべてに値を入れて確かめる ---- */
+    await page.evaluate(pageBaseSetup);
+    const LK=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      if(typeof setHouseholdType==='function') setHouseholdType('couple');   // 前のテストの単身世帯を戻す（単身は奥様欄を使わない）
+      const oc=window.confirm, oa=window.alert;
+      window.confirm=(()=>{let n=0;return ()=>(n++%2===1);})(); window.alert=()=>{};
+      try{
+        const targets=()=>[...document.querySelectorAll('.panel-l input[id]')].filter(el=>(el.type==='number'||el.type==='text')&&!el.readOnly&&!el.disabled);
+        // 意図して残す／オンのときだけ保存する欄（その他の文言は端末に記憶、奨学金・結婚援助・収入％はオンのときだけ）
+        const skip=id=>/-other-text$/.test(id)||/^(sc|wed)-(amt|start|age)-\d+$/.test(id)||/^[hw]-is-\d+-pct$/.test(id);
+        // 入れる値：年齢はありえる値（読込時にありえない年齢は自動で直るため）、ほかは7
+        const mk=id=>/death-age/.test(id)?'95':/age/.test(id)?'50':'7';
+        targets().forEach(el=>{el.value=mk(el.id);});
+        const filled=targets().map(el=>el.id).filter(id=>!skip(id));
+        const d=JSON.parse(JSON.stringify(_collectSaveData()));
+        targets().forEach(el=>{el.value='';});
+        _applyData(d); await wait(400);
+        const notSaved=filled.filter(id=>document.getElementById(id)&&document.getElementById(id).value!==mk(id)).map(id=>id+'（保存'+JSON.stringify((d.fields||{})[id])+'→読込後'+JSON.stringify(document.getElementById(id).value)+'・'+d.householdType+'）');
+        targets().forEach(el=>{el.value=mk(el.id);});
+        await newCFSheet(); await wait(600);
+        const leaked=filled.filter(id=>document.getElementById(id)&&document.getElementById(id).value===mk(id)&&mk(id)!==({'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60'}[id]||''));
+        return {n:filled.length,notSaved,leaked};
+      } finally { window.confirm=oc; window.alert=oa; }
+    });
+    const f8=[];
+    if(LK.notSaved.length) f8.push('保存→読込で戻らない欄: '+LK.notSaved.join(', '));
+    if(LK.leaked.length) f8.push('新規作成で前の値が残る欄: '+LK.leaked.join(', '));
+    if(f8.length){ bad++; console.log('❌ 入力欄の保存・新規作成\n   - '+f8.join('\n   - ')); }
+    else console.log(`✅ 入力欄の保存・新規作成: 左の入力欄${LK.n}個すべて、保存→読込で戻り・新規作成で消える`);
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

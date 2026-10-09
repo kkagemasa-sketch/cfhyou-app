@@ -245,10 +245,13 @@ const _STATIC_FIELDS=['client-name','husband-age','wife-age','h-death-age','w-de
   // 定期借地権付き物件
   'leasehold-on','leasehold-chidai','leasehold-kaitai','leasehold-years','leasehold-maeharai',
   'lctrl-year','lctrl-type','lctrl-household',
-  'dc-h-employer','dc-h-matching','dc-h-other-pension','dc-h-rate','dc-h-receive-age','dc-h-method',
-  'ideco-h-job','ideco-h-monthly','ideco-h-rate',
-  'dc-w-employer','dc-w-matching','dc-w-other-pension','dc-w-rate','dc-w-receive-age','dc-w-method',
-  'ideco-w-job','ideco-w-monthly','ideco-w-rate',
+  // ★ 2026-10-09: DC・iDeCoの現在残高（dc-*-bal / ideco-*-bal）が漏れていて、保存されず新規作成でも前のお客様の値が残っていた
+  'dc-h-employer','dc-h-matching','dc-h-other-pension','dc-h-rate','dc-h-receive-age','dc-h-method','dc-h-bal',
+  'ideco-h-job','ideco-h-monthly','ideco-h-rate','ideco-h-bal',
+  'dc-w-employer','dc-w-matching','dc-w-other-pension','dc-w-rate','dc-w-receive-age','dc-w-method','dc-w-bal',
+  'ideco-w-job','ideco-w-monthly','ideco-w-rate','ideco-w-bal',
+  // ③収入の手取り計算機の入力（新規作成で前のお客様の年収が残らないように）
+  'calc-gross','w-calc-gross',
   'flat-loan-yrs','flat-loan-type','flat-rate-base','flat-rate-month','flat-perf','flat-maintain','flat-used-plus','flat-region','flat-children','flat-young-couple',
   'flat-loan-h-amt','flat-loan-h-yrs','flat-loan-h-type','flat-loan-w-amt','flat-loan-w-yrs','flat-loan-w-type',
   'mansion-sqm',

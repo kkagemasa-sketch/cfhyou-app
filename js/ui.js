@@ -18,8 +18,13 @@ function setHouseholdType(type){
     if(wAgeEl)wAgeEl.value='';
     if(wDeathEl)wDeathEl.value='';
   } else {
-    if(wAgeEl&&wAgeEl._savedValue)wAgeEl.value=wAgeEl._savedValue;
-    if(wDeathEl&&wDeathEl._savedValue)wDeathEl.value=wDeathEl._savedValue;
+    // ★ 2026-10-09: 覚えておいた値は「欄が空のときだけ」戻し、戻したら忘れる。
+    //   以前はファイル読込のあとにも戻していたため、読み込んだ奥様の年齢・想定寿命が
+    //   前に単身に切り替えたときの値（前のお客様の値）で上書きされていた
+    if(wAgeEl&&wAgeEl._savedValue&&!wAgeEl.value)wAgeEl.value=wAgeEl._savedValue;
+    if(wDeathEl&&wDeathEl._savedValue&&!wDeathEl.value)wDeathEl.value=wDeathEl._savedValue;
+    if(wAgeEl)wAgeEl._savedValue='';
+    if(wDeathEl)wDeathEl._savedValue='';
   }
   // ラベル変更
   const hLabel=single?'ご本人':'ご主人様';

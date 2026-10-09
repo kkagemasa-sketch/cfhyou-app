@@ -1018,6 +1018,7 @@ function _applyData(d){
     loanCategory=d.loanCategory||'standard';
     flat35Sub=d.flat35Sub||'flat35';
     // 世帯タイプ復元
+    ['wife-age','w-death-age'].forEach(id=>{const e=$(id);if(e)e._savedValue='';});   // 前に単身へ切り替えたときの値を使わない
     if(typeof setHouseholdType==='function')setHouseholdType(d.householdType||'couple');
     // マンション選択復元
     _selectedMansionId=d._selectedMansionId||'';
@@ -1111,6 +1112,7 @@ async function _migrateFromLocalStorage(){
 
 // ===== シートの全状態をリセット（ダイアログ無し、内部利用） =====
 function _resetSheetState(){
+  ['wife-age','w-death-age'].forEach(id=>{const e=document.getElementById(id);if(e)e._savedValue='';});   // 前のお客様の奥様の年齢を残さない
   // 全フィールドをクリア（デフォルト値があるものは復元）
   var _defaults={'h-death-age':'83','w-death-age':'88','retire-age':'60','w-retire-age':'60','pension-h-start':'22','pension-w-start':'22','pension-h-receive':'65','pension-w-receive':'65'};
   // ★ 残留バグ根絶(2026-09-13): 旧実装は checkbox にも .value を代入していて
