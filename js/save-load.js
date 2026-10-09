@@ -466,6 +466,8 @@ function _restoreDynamic(d){
   ['h','w'].forEach(p=>{if($(`ins-lump-cont-${p}`))$(`ins-lump-cont-${p}`).innerHTML='';});
   insLumpCnt=0;
   (d.insLumps||[]).forEach(s=>{
+    // 一時払い保険の入力欄は2026-04に画面から撤去済み。旧データに残っていても読み込み全体を止めない
+    if(!$(`ins-lump-cont-${s.person}`)){console.warn('一時払い保険の旧データは読み込み対象外のためスキップ',s);return;}
     addInsLump(s.person);
     const id=insLumpCnt;const p=s.person;
     if($(`ins-lump-label-${p}-${id}`))$(`ins-lump-label-${p}-${id}`).value=s.label||'';
@@ -1023,6 +1025,7 @@ function _applyData(d){
     // マンション選択復元
     _selectedMansionId=d._selectedMansionId||'';
     if(_selectedMansionId){const msel=$('mansion-select');if(msel)msel.value=_selectedMansionId;}
+    else _resetMansionSel(); // マンションなしの表を開いたとき、選択欄に前の表のマンションが残らないように
     // ★ 復元中フラグ: ペア自動配分・半々初期化・総額モードの裏書き換え等の
     //   「編集時ヘルパー」を全停止する（復元途中は前のCF表のモードが残っており、
     //   復元済みの値を書き換えてCF表間の干渉バグを起こしていた）
@@ -1260,11 +1263,22 @@ function _resetSheetState(){
   if(typeof initFlatRateSelect==='function')initFlatRateSelect();
   // 保育料デフォルト: 新規作成は現行世代（一律12万）
   window._hoikuDefaultsVer='2';
+  // マンション選択も白紙に（前のお客様のマンションの修繕積立金単価・値上げ予定が新しい表に残っていた）
+  _resetMansionSel();
 
   _lastInputHash='';  // ハッシュキャッシュをリセットして強制再描画
 }
 
 // ===== 新規作成（オールリセット、ダイアログ付き・Undo履歴クリア・自動保存） =====
+// マンション選択を「選択なし」に戻す（選択欄・専有面積行・自動入力ヒント・修繕積立金の自動表示）
+function _resetMansionSel(){
+  _selectedMansionId='';
+  const msel=$('mansion-select'); if(msel)msel.value='';
+  const sr=$('mansion-sqm-row'); if(sr)sr.style.display='none';
+  const mh=$('mansion-auto-hint'); if(mh)mh.style.display='none';
+  if(typeof _renderRepAutoDisplay==='function')_renderRepAutoDisplay();
+}
+
 async function newCFSheet(){
   // 未保存確認
   const msg='現在のデータを破棄して新規作成します。\n\n先にファイルに保存しますか？';
