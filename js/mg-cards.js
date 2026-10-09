@@ -12,9 +12,10 @@ function mgC_ageAtEvent(tab, p){ return mgC_ageNow(p) + (tab.state.deathYear||1)
 function mgC_yearOfAge(p, age){ return mgC_startYear() + (age - mgC_ageNow(p)); }
 function mgC_man(x){ return `${Math.round(x||0).toLocaleString()}万円`; }
 // 額面→手取り（社会保険に加入する前提。公務員はその計算）
-function mgC_g2n(p, gross, age){
+function mgC_g2n(p, gross, age, wtIn){
   if(!(gross>0)) return 0;
-  const wt = (typeof getWorkType==='function' && getWorkType(p)==='komuin') ? 'komuin' : 'kaishain';
+  // wtIn：その年の働き方を指定するとき（通常の収入を％で変える場合）。指定なしは社会保険に入る前提
+  const wt = wtIn || ((typeof getWorkType==='function' && getWorkType(p)==='komuin') ? 'komuin' : 'kaishain');
   return Math.round(grossToNetYearly(gross, age, wt, 0, 0, 0));
 }
 function mgC_seg(tabId, key, opts, cur, extra){
@@ -65,7 +66,7 @@ function mgQA_incomeFn(tab){
       if(r.mode==='pct'){
         if(normGross){
           const g = getIncomeAtAge(getIncomeSteps(p), age);
-          return mgC_g2n(p, g*(1+(+r.pct||0)/100), age);
+          return mgC_g2n(p, g*(1+(+r.pct||0)/100), age, getWorkTypeAtAge(p, age));
         }
         return Math.round((base||0)*(1+(+r.pct||0)/100));
       }
@@ -811,7 +812,7 @@ function mgQA_selfIncFn(tab){
 function mgC_sick(tab){
   const p = tab.target, s = tab.state;
   const age = mgC_ageAtEvent(tab, p);
-  const wt = (typeof isGrossInputMode==='function' && isGrossInputMode(p)) ? getWorkType(p) : 'kaishain';
+  const wt = getWorkTypeAtAge(p, age);   // 障害になった年の働き方（収入の段階ごと）
   const ok = s.pensionType!=='kokumin' && wt!=='part' && (typeof sickBenefitAt==='function');
   if(!ok) return {ok:false, reason: s.pensionType==='kokumin' ? '国民年金のみ（自営業など）の方は傷病手当金がありません' : '扶養内パートの方は傷病手当金がありません'};
   const sb = sickBenefitAt(p, age);

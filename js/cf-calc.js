@@ -83,8 +83,10 @@ function render(){
   // 夫婦それぞれの入力モード（2026-09-13: 世帯一括→個人別に変更）
   const _grossH=(typeof isGrossInputMode==='function')&&isGrossInputMode('h');
   const _grossW=(typeof isGrossInputMode==='function')&&isGrossInputMode('w');
-  const _wtH=_grossH?getWorkType('h'):null;
-  const _wtW=_grossW?getWorkType('w'):null;
+  // その年齢の働き方（収入の段階ごと。2026-10-09）
+  const _stepsWtH=getIncomeSteps('h'), _stepsWtW=getIncomeSteps('w');
+  const _wtH=a=>getWorkTypeAtAge('h',a,_stepsWtH);
+  const _wtW=a=>getWorkTypeAtAge('w',a,_stepsWtW);
   // 退職後の税・社保の自動計上（トグル・国保概算は任意入力）
   const _retTaxOn=!!document.getElementById('retire-tax-on')?.checked;
   const _kokuhoAnnual=fv('retire-kokuho')||0;
@@ -949,7 +951,7 @@ function render(){
           // 配偶者控除: 奥様のこの年の額面で判定（育休給付は非課税所得のため0扱い=適用側）
           const _wGrossY=(!_isSingle&&!(wDeathAge>0&&wa>wDeathAge))?(_wLeaveY?0:getIncomeAtAge(wSteps,wa)):0;
           const _spDedY=!_isSingle&&canApplySpouseDed(hInc,_wGrossY);
-          hInc=ri(grossToNetYearly(hInc,ha,_wtH,_spDedY,_fuyoY.it,_fuyoY.ju));
+          hInc=ri(grossToNetYearly(hInc,ha,_wtH(ha),_spDedY,_fuyoY.it,_fuyoY.ju));
         }
       }
       // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
@@ -976,7 +978,7 @@ function render(){
         // ★ バグ修正: 奥様の育休ステップ（給付金=非課税の手取り額）はご主人側と同様に変換しない
         //   （旧: 判定が無く、額面モードで給付金がさらに手取り換算され目減りしていた）
         const _wOnLeaveY=_wStepLeaves.some(s=>s.isMatLeave&&wa>=s.fromAge&&wa<=s.toAge);
-        if(_grossW&&wInc>0&&!_wOnLeaveY)wInc=ri(grossToNetYearly(wInc,wa,_wtW,false,0,0));
+        if(_grossW&&wInc>0&&!_wOnLeaveY)wInc=ri(grossToNetYearly(wInc,wa,_wtW(wa),false,0,0));
       }
       // DC・iDeCo節税効果（拠出期間中のみ）— 別行で計上
       if(wInc>0&&wa<dcIdeco.w.retAge){
@@ -1128,17 +1130,17 @@ function render(){
         let _lastNetH=getIncomeAtAge(hSteps,retAge);
         // 額面モード: 手取りに変換してから逆算経路へ（往復同エンジンのため誤差極小）
         const _fuyoRT=calcFuyoDed(children,i-1);
-        if(_grossH&&_lastNetH>0)_lastNetH=grossToNetYearly(_lastNetH,retAge,_wtH,false,_fuyoRT.it,_fuyoRT.ju);
+        if(_grossH&&_lastNetH>0)_lastNetH=grossToNetYearly(_lastNetH,retAge,_wtH(retAge),false,_fuyoRT.it,_fuyoRT.ju);
         if(_lastNetH>0){
           let _spNetRT=_isSingle?0:getIncomeAtAge(wSteps,wa-1);
-          if(_grossW&&_spNetRT>0)_spNetRT=grossToNetYearly(_spNetRT,wa-1,_wtW,false,0,0);
+          if(_grossW&&_spNetRT>0)_spNetRT=grossToNetYearly(_spNetRT,wa-1,_wtW(wa-1),false,0,0);
           const _bdLast=_calcNetBreakdown(_lastNetH,retAge,_isSingle,_spNetRT,true,_fuyoRT.it,_fuyoRT.ju);
           if(_bdLast)_rtax+=ri(_bdLast.jumin);
         }
       }
       if(_wAliveRT&&wa===wRetAge+1){
         let _lastNetW=getIncomeAtAge(wSteps,wRetAge);
-        if(_grossW&&_lastNetW>0)_lastNetW=grossToNetYearly(_lastNetW,wRetAge,_wtW,false,0,0);
+        if(_grossW&&_lastNetW>0)_lastNetW=grossToNetYearly(_lastNetW,wRetAge,_wtW(wRetAge),false,0,0);
         if(_lastNetW>0){
           const _bdLastW=_calcNetBreakdown(_lastNetW,wRetAge,true,0,false);
           if(_bdLastW)_rtax+=ri(_bdLastW.jumin);

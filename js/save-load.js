@@ -117,7 +117,9 @@ function _collectDynamic(){
         pct:document.getElementById(`${base}-pct`)?.value||'',
         mode:isPct?'pct':'amt',
         leave:document.getElementById(`${base}-leave`)?.value||'',
-        matLeave:!!document.getElementById(`${base}-matleave`)?.checked
+        matLeave:!!document.getElementById(`${base}-matleave`)?.checked,
+        workType:document.getElementById(`${base}-wt`)?.value||'',
+        wtLegacy:document.getElementById(base)?.dataset.wtLegacy==='1'
       });
     });
   });
@@ -393,6 +395,10 @@ function _restoreDynamic(d){
       if(document.getElementById(`${base}-to`))document.getElementById(`${base}-to`).value=s.to;
       if(document.getElementById(`${base}-net-from`))document.getElementById(`${base}-net-from`).value=s.netFrom||'';
       if(document.getElementById(`${base}-net-to`))document.getElementById(`${base}-net-to`).value=s.netTo||'';
+      // 段階の働き方：古いデータ（項目なし）は「全体の設定に合わせる」＝前のまま
+      if(document.getElementById(`${base}-wt`))document.getElementById(`${base}-wt`).value=s.workType||'';
+      // 働き方を段階ごとに持つ前のデータは目印を付け、年金を前のまま計算する（保存し直しても目印は残す）
+      if(s.workType===undefined||s.wtLegacy){const _el=document.getElementById(base); if(_el)_el.dataset.wtLegacy='1';}
       if(s.mode==='pct'&&typeof setStepMode==='function'){
         // ★ 順序重要：pct値を先にセットしないと setStepMode→calcPctIncome が
         //   デフォルトpct=100%で netFrom/netTo を上書きしてしまう（育休給付金リセットバグ）

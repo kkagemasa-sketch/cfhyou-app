@@ -359,6 +359,16 @@ function addIncomeStep(person){
       <button class="btn-tog on" id="${id}-mode-amt" onclick="setStepMode('${id}','amt')" style="flex:1;padding:6px 4px">金額で入力</button>
       <button class="btn-tog" id="${id}-mode-pct" onclick="setStepMode('${id}','pct')" style="flex:1;padding:6px 4px">割合で入力</button>
     </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap">働き方</span>
+      <select class="sel" id="${id}-wt" onchange="onStepWorkTypeChange('${id}')" style="flex:1;font-size:11px;padding:4px 6px">
+        <option value="">全体の設定に合わせる</option>
+        <option value="kaishain">会社員</option>
+        <option value="komuin">公務員</option>
+        <option value="part">扶養内パート（社会保険なし）</option>
+        <option value="shaho-part">社保ありパート（厚生年金に加入）</option>
+      </select>
+    </div>
     <div id="${id}-amt-body">
       <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center">
         <div class="fg">
@@ -391,6 +401,11 @@ function addIncomeStep(person){
       <span style="font-size:10px;color:var(--muted);white-space:nowrap">← CF表のイベント行に表示</span>
     </div>
     </div><!-- /body -->`;
+  // 働き方の初期値：直前の段階と同じ（無ければ「全体の設定に合わせる」）
+  const _prevWts=cont?cont.querySelectorAll('select[id$="-wt"]'):[];
+  const _prevWt=_prevWts.length?_prevWts[_prevWts.length-1].value:'';
+  const _wtSel=el.querySelector(`#${id}-wt`);
+  if(_wtSel)_wtSel.value=_prevWt;
   document.getElementById(`${person}-income-cont`).appendChild(el);
   // 初期サマリーを描画（空の状態）
   if(typeof updateIncomeStepSummary==='function') updateIncomeStepSummary(id);
@@ -442,8 +457,8 @@ function showGrossFlowPopup(stepId, btnEl){
   const gross=_amtVal(document.getElementById(`${stepId}-net-from`));
   const fromAge=parseInt(document.getElementById(`${stepId}-from`)?.value)||40;
   if(gross<=0){alert('開始時の額面年収を入力してください');return;}
-  const wt=getWorkType(person);
-  const wtLabel=wt==='komuin'?'公務員':wt==='part'?'扶養内パート':'会社員';
+  const wt=stepWorkType(stepId);
+  const wtLabel=WORK_TYPE_LABELS[wt]||'会社員';
   // CF表と同じ基準で配偶者控除・扶養控除を判定（この段階の開始年齢時点）
   const _single=(typeof householdType!=='undefined'&&householdType==='single');
   const baseAge=person==='h'?(iv('husband-age')||30):(iv('wife-age')||29);
@@ -617,7 +632,7 @@ function calcStepHint(id){
       // 額面入力モード: 手取り換算をその場で表示（育休ステップは給付金=手取りのため対象外）
       if(_gm&&!_isLeaveStep){
         const person=id.startsWith('h-is')?'h':'w';
-        const wt=getWorkType(person);
+        const wt=stepWorkType(id);
         const netF=nf>0?Math.round(grossToNetYearly(nf,af||40,wt,false,0,0)):0;
         const netT=nt>0?Math.round(grossToNetYearly(nt,at||af||40,wt,false,0,0)):netF;
         txt+=`<br>手取り換算: 約 ${netF.toLocaleString()}万 → ${netT.toLocaleString()}万円/年
@@ -807,7 +822,7 @@ function updateDCTaxHint(p){
   const baseAge=p==='h'?(iv('husband-age')||30):(iv('wife-age')||29);
   let takeHome=getIncomeAtAge(steps, baseAge)||0;
   // 額面入力モード: 節税効果の推計は手取りベースのため換算してから渡す
-  if(isGrossInputMode(p==='h'?'h':'w')&&takeHome>0)takeHome=grossToNetYearly(takeHome, baseAge, getWorkType(p==='h'?'h':'w'), false, 0, 0);
+  if(isGrossInputMode(p==='h'?'h':'w')&&takeHome>0)takeHome=grossToNetYearly(takeHome, baseAge, getWorkTypeAtAge(p==='h'?'h':'w',baseAge,steps), false, 0, 0);
   const saving=estimateTaxSaving(takeHome, annualDeduction);
   const hint=document.getElementById(`dc-${p}-tax-hint`);
   if(hint){
@@ -880,6 +895,14 @@ function calcAvgHyojun(person, startAge, retireAge){
 
 // ===== メイン計算 =====
 // グローバル版（万が一シミュレーションからも利用）
+// 段階の働き方を変えたとき：ヒント・要約・年金を計算し直す
+function onStepWorkTypeChange(id){
+  const el=document.getElementById(id); if(el) delete el.dataset.wtLegacy;   // 働き方を選び直した段階は新しい計算
+  try{calcStepHint(id);}catch(e){}
+  if(typeof updateIncomeStepSummary==='function')updateIncomeStepSummary(id);
+  if(typeof updateBonusUI==='function')updateBonusUI();
+  live();
+}
 function getIncomeSteps(person){
   const steps=[];
   const ids=new Set();
@@ -900,7 +923,9 @@ function getIncomeSteps(person){
     const hasNF=typeof nfRaw==='string'&&nfRaw.replace(/,/g,'').trim()!=='';
     const hasNT=typeof ntRaw==='string'&&ntRaw.replace(/,/g,'').trim()!=='';
     if(ageFrom>0&&ageTo>=ageFrom&&(hasNF||hasNT||netFrom>0||netTo>0)){
-      steps.push({ageFrom,ageTo,netFrom,netTo});
+      // legacy：働き方を段階ごとに持つ前の保存データ（年金は前のまま計算する）
+      steps.push({ageFrom,ageTo,netFrom,netTo,workType:document.getElementById(`${base}-wt`)?.value||'',
+        legacy:document.getElementById(base)?.dataset.wtLegacy==='1'});
     }
   });
   return steps.sort((a,b)=>a.ageFrom-b.ageFrom);

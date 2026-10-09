@@ -24,9 +24,10 @@ function sickBenefitDaily(hyojunMan){
 // 傷病手当金の対象か（健康保険に本人加入：会社員・公務員。扶養内パートは対象外）
 function bonusApplies(p){
   if(p==='w'&&householdType==='single')return false;
-  if(isGrossInputMode(p)&&getWorkType(p)==='part')return false;
+  // 収入がある段階のうち、扶養内パートでない段階が1つでもあれば対象（段階ごとの働き方）
   const steps=getIncomeSteps(p);
-  return steps.some(s=>(s.netFrom||0)>0||(s.netTo||0)>0);
+  const wtOf=s=>s.workType||(isGrossInputMode(p)?getWorkType(p):'kaishain');
+  return steps.some(s=>((s.netFrom||0)>0||(s.netTo||0)>0)&&wtOf(s)!=='part');
 }
 // 未入力か（入力方法に応じた欄が空）
 function isBonusBlank(p){
@@ -40,7 +41,7 @@ function incomeGrossAtAge(p,age){
   const val=getIncomeAtAge(getIncomeSteps(p),age);
   if(!(val>0))return 0;
   if(isGrossInputMode(p))return val;
-  const wt=getWorkType(p);
+  const wt=getWorkTypeAtAge(p,age);
   let lo=val,hi=val*2.2;
   for(let k=0;k<40;k++){
     const mid=(lo+hi)/2;

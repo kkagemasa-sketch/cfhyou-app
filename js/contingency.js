@@ -159,8 +159,9 @@ function _renderContingencyInner(_mgStopOv){
   // 夫婦それぞれの入力モード（2026-09-13: 世帯一括→個人別に変更）
   const _grossH_mg=(typeof isGrossInputMode==='function')&&isGrossInputMode('h');
   const _grossW_mg=(typeof isGrossInputMode==='function')&&isGrossInputMode('w');
-  const _wtH_mg=_grossH_mg?getWorkType('h'):null;
-  const _wtW_mg=_grossW_mg?getWorkType('w'):null;
+  const _stWtH_mg=getIncomeSteps('h'), _stWtW_mg=getIncomeSteps('w');
+  const _wtH_mg=a=>getWorkTypeAtAge('h',a,_stWtH_mg);   // その年齢の働き方（収入の段階ごと）
+  const _wtW_mg=a=>getWorkTypeAtAge('w',a,_stWtW_mg);
   // ★ バグ修正: 育休ステップ（給付金=非課税の手取り額）は額面→手取り変換の対象外（通常CFと同じ）
   const _mlSteps_mg={h:[],w:[]};
   ['h','w'].forEach(p=>{
@@ -173,8 +174,8 @@ function _renderContingencyInner(_mgStopOv){
     });
   });
   const _onML_mg=(p,age)=>_mlSteps_mg[p].some(s=>age>=s.fromAge&&age<=s.toAge);
-  const _g2nH_mg=(v,age,fu)=>(_grossH_mg&&v>0&&!_onML_mg('h',age))?ri(grossToNetYearly(v,age,_wtH_mg,false,fu?fu.it:0,fu?fu.ju:0)):v;
-  const _g2nW_mg=(v,age)=>(_grossW_mg&&v>0&&!_onML_mg('w',age))?ri(grossToNetYearly(v,age,_wtW_mg,false,0,0)):v;
+  const _g2nH_mg=(v,age,fu)=>(_grossH_mg&&v>0&&!_onML_mg('h',age))?ri(grossToNetYearly(v,age,_wtH_mg(age),false,fu?fu.it:0,fu?fu.ju:0)):v;
+  const _g2nW_mg=(v,age)=>(_grossW_mg&&v>0&&!_onML_mg('w',age))?ri(grossToNetYearly(v,age,_wtW_mg(age),false,0,0)):v;
   const pHReceive=iv('pension-h-receive')||65;
   const pWReceive=_isSingle_mg?99:(iv('pension-w-receive')||65);
   const retPay=fv('retire-pay'), retPayAge=iv('retire-pay-age')||iv('retire-age')||60;

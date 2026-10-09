@@ -238,6 +238,36 @@ function isGrossInputMode(person){
 function getWorkType(person){
   return document.getElementById(`${person}-work-type`)?.value||'kaishain';
 }
+// ★ 2026-10-09: 収入の段階ごとの働き方（奥様の途中からパート等）
+//   段階の働き方 'kaishain'|'komuin'|'part'(扶養内パート)|'shaho-part'(社保ありパート) を優先。
+//   空（古いデータ）は人ごとの働き方（額面入力のときだけ。手取り入力は会社員扱い＝従来どおり）
+const WORK_TYPE_LABELS={kaishain:'会社員',komuin:'公務員',part:'扶養内パート','shaho-part':'社保ありパート'};
+// その年齢を受け持つ段階（getIncomeAtAge と同じ決まり。最初の段階より前は最初、最後より後は最後）
+function getIncomeStepAtAge(steps,age){
+  if(!steps||!steps.length)return null;
+  for(let si=0;si<steps.length;si++){
+    const s=steps[si], isLast=si===steps.length-1;
+    const nextFrom=isLast?Infinity:steps[si+1].ageFrom;
+    if(age>=s.ageFrom&&(isLast?age<=s.ageTo:age<nextFrom))return s;
+  }
+  return age<steps[0].ageFrom?steps[0]:steps[steps.length-1];
+}
+function getWorkTypeAtAge(p,age,steps){
+  const s=getIncomeStepAtAge(steps||getIncomeSteps(p),age);
+  if(s&&s.workType)return s.workType;
+  return isGrossInputMode(p)?getWorkType(p):'kaishain';
+}
+// 年金で「扶養内パート（第3号・厚生年金なし）」の年か。段階で明示したときだけ（古いファイルの数字を変えない）
+function isPart3AtAge(p,age,steps){
+  const s=getIncomeStepAtAge(steps||getIncomeSteps(p),age);
+  if(!s||s.legacy)return false;
+  return (s.workType||(isGrossInputMode(p)?getWorkType(p):'kaishain'))==='part';
+}
+// 段階の画面の働き方（空なら人ごとの設定）
+function stepWorkType(stepId){
+  const p=stepId.startsWith('h-is')?'h':'w';
+  return document.getElementById(`${stepId}-wt`)?.value||(isGrossInputMode(p)?getWorkType(p):'kaishain');
+}
 
 // ===== 有価証券のCF行ラベル共通生成（2026-09-13統一） =====
 // 規則: 行名の末尾に必ず所有者「(ご主人様)/(奥様)」を付ける。
