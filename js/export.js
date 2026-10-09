@@ -295,11 +295,39 @@ async function exportExcelMG(opt){
   // ★ B3修正: アプリ画面の万一CFサマリーで最大の売りである「必要保障額」を
   //   Excel にも 1行 info として出力する。営業資料での印象が大きく変わる。
   // 画面の3枚カード（最低限・標準・安心）と同じ値
+  // ★ 2026-10-09: 1行の文から「4行（見出し／金額／根拠の年／考え方）×3つの枠」に（年の列を3等分）
   const _nd = MR.need;
+  const xlNeed={rows:[], cells:[], legend:-1, label:-1}; // 行番号と枠のセル {r,c0,c1,tier,line}
   if(_nd){
-    const needRow = ['必要保障額','',`最低限 ${_nd.min.toLocaleString()}万円 ／ 標準（生活費${_nd.years}年分） ${_nd.std.toLocaleString()}万円 ／ 安心 ${_nd.safe.toLocaleString()}万円`];
-    while(needRow.length < disp+3) needRow.push('');
-    push(needRow, 'info');
+    const _sgl=householdType==='single';
+    const _isDisN=!!MR._isDis;
+    const pLblN=_isDisN?(_sgl?'ご本人':targetLabel):(_sgl?'':(targetIsH?'奥様':'ご主人様'));
+    const ageN=i=>(_isDisN?(targetIsH?hAge:wAge):(targetIsH?wAge:hAge))+i;
+    const yr0N=getCfStartYear();
+    const basisN=i=>(i==null||i<0)?'':`根拠：${yr0N+i}年${pLblN?`（${pLblN}${ageN(i)}歳）`:''}`;
+    const tiers=[
+      {color:'FFD97706',bg:'FFFFF7E6',h:'最低限　お金が尽きないために',v:_nd.min,i:_nd.min>0?_nd.iMin:-1,x:'CF表の最後の年に、預貯金と有価証券がマイナスにならない額'},
+      {color:'FF0F9D58',bg:'FFEAF7EF',h:`標準（生活費${_nd.years}年分）　暮らしが行き詰まらないために`,v:_nd.std,i:_nd.iStd,x:`どの年も、預貯金と有価証券で生活費${_nd.years}年分を確保できる額`},
+      {color:'FF1E3A5F',bg:'FFEEF2F9',h:'安心　今の生活と資産計画を守るために',v:_nd.safe,i:_nd.iSafe,x:'CF表の最後の年に残るお金が、万が一がなかった場合と同じになる額'+(_nd.safeMode==='floor'?'（標準＋生活費2年分）':'')}];
+    const nf=2, nl=disp+2, nw=Math.floor((nl-nf+1)/3);
+    const spans=[[nf,nf+nw-1],[nf+nw,nf+2*nw-1],[nf+2*nw,nl]];
+    for(let line=0;line<4;line++){
+      const row=[line===0?'必要保障額':'',''];
+      while(row.length<disp+3)row.push('');
+      tiers.forEach((t,ti)=>{
+        row[spans[ti][0]]=[t.h,`${(t.v||0).toLocaleString()}万円`,basisN(t.i),t.x][line];
+      });
+      push(row,'need');
+      const r=rows.length-1;
+      if(line===0)xlNeed.label=r;
+      xlNeed.rows.push(r);
+      tiers.forEach((t,ti)=>xlNeed.cells.push({r,c0:spans[ti][0],c1:spans[ti][1],tier:t,line}));
+    }
+    const lg=['',''];
+    while(lg.length<disp+3)lg.push('');
+    lg[2]='枠の色：■最低限の根拠（オレンジ）　■標準の根拠（緑）　■安心の根拠（青）＝総金融資産のマス。保険金などで万が一の年に受け取る想定の額です';
+    push(lg,'need');
+    xlNeed.legend=rows.length-1;
   }
 
   // ── 情報欄（頭金の内訳・住宅ローン条件・その他金融資産）──
@@ -1087,6 +1115,50 @@ async function exportExcelMG(opt){
     });
   });
 
+  // ── 必要保障額の枠（4行×3）と、総金融資産の根拠のマスの色枠 ──
+  if(xlNeed.rows.length){
+    const bd=(rgb,style)=>({style:style||'thin',color:{rgb}});
+    const hpts=[18,24,16,16];
+    if(!ws['!rows'])ws['!rows']=[];
+    xlNeed.rows.forEach((r,li)=>{ ws['!rows'][r]={hpt:hpts[li]}; });
+    ws['!rows'][xlNeed.legend]={hpt:16};
+    // A列の「必要保障額」を4行で縦に結合
+    ws['!merges'].push({s:{r:xlNeed.label,c:0},e:{r:xlNeed.label+3,c:1}});
+    for(let r=xlNeed.label;r<=xlNeed.label+3;r++)for(let c=0;c<=1;c++){
+      const a=XLSX.utils.encode_cell({r,c}); if(!ws[a])ws[a]={t:'s',v:''};
+      ws[a].s={font:{name:'Yu Gothic',sz:10,bold:true,color:{rgb:C.white}},fill:{patternType:'solid',fgColor:{rgb:'FF2d5282'}},
+        alignment:{vertical:'center',horizontal:'center'},border:{top:bd('FFc8d6e8'),bottom:bd('FFc8d6e8'),left:bd('FFc8d6e8'),right:bd('FFc8d6e8')}};
+    }
+    xlNeed.cells.forEach(x=>{
+      if(x.c1>x.c0) ws['!merges'].push({s:{r:x.r,c:x.c0},e:{r:x.r,c:x.c1}});
+      const t=x.tier;
+      const font=[{sz:10,bold:true,color:{rgb:t.color}},{sz:15,bold:true,color:{rgb:'FF1E3A5F'}},{sz:9,color:{rgb:'FF475569'}},{sz:9,color:{rgb:'FF334155'}}][x.line];
+      for(let c=x.c0;c<=x.c1;c++){
+        const a=XLSX.utils.encode_cell({r:x.r,c}); if(!ws[a])ws[a]={t:'s',v:''};
+        const border={};
+        if(x.line===0)border.top=bd(t.color,'medium');
+        if(x.line===3)border.bottom=bd('FFcbd5e1');
+        if(c===x.c0)border.left=bd('FFcbd5e1');
+        if(c===x.c1)border.right=bd('FFcbd5e1');
+        ws[a].s={font:{name:'Yu Gothic',...font},fill:{patternType:'solid',fgColor:{rgb:t.bg}},
+          alignment:{vertical:'center',horizontal:'left',indent:1,wrapText:false,shrinkToFit:true},border};
+      }
+    });
+    for(let c=0;c<=disp+2;c++){
+      const a=XLSX.utils.encode_cell({r:xlNeed.legend,c}); if(!ws[a])ws[a]={t:'s',v:''};
+      ws[a].s={font:{name:'Yu Gothic',sz:9,color:{rgb:'FF64748b'}},alignment:{vertical:'center',horizontal:'left',wrapText:false}};
+    }
+    ws['!merges'].push({s:{r:xlNeed.legend,c:2},e:{r:xlNeed.legend,c:disp+2}});
+    // 総金融資産の根拠のマス（画面と同じ色：最低限 オレンジ／標準 緑／安心 青）
+    const _taR=types.findIndex(t=>((t&&typeof t==='object')?t.type:t)==='totalAsset');
+    if(_taR>=0){
+      [[_nd.min>0?_nd.iMin:-1,'FFF59E0B'],[_nd.iStd,'FF0F9D58'],[_nd.iSafe,'FF60A5FA']].forEach(([i,rgb])=>{
+        if(i==null||i<0||i>=disp)return;
+        const a=XLSX.utils.encode_cell({r:_taR,c:2+i}); if(!ws[a])return;
+        ws[a].s=Object.assign({},ws[a].s,{border:{top:bd(rgb,'medium'),bottom:bd(rgb,'medium'),left:bd(rgb,'medium'),right:bd(rgb,'medium')}});
+      });
+    }
+  }
   XLSX.utils.book_append_sheet(wb,ws,opt.sheetName||'万が一CF表');
   if(opt.noWrite) return {scale:_printScale};
   // 末尾に「ご確認事項」シート（A4縦）を追加

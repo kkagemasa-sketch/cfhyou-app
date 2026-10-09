@@ -434,6 +434,13 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
         mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,{deathYear:3}); mgQA_calcAndRender(t,true);
         await exportExcelMG(); await wait(300);
         const mgBad=check();
+        // 必要保障額の3つの金額と、総金融資産の根拠のマスの色枠
+        { const nd=window.lastMR.need; const ws=(caught.find(x=>!/確認/.test(x.name||''))||{}).ws||{};
+          const vals=Object.keys(ws).filter(k=>k[0]!=='!').map(k=>String(ws[k].v||''));
+          [['最低限',nd.min],['標準',nd.std],['安心',nd.safe]].forEach(([n,v])=>{ if(!vals.includes(v.toLocaleString()+'万円')) mgBad.push('必要保障額の'+n+' '+v+'万円がExcelにない'); });
+          const taR=Object.keys(ws).filter(k=>k[0]!=='!'&&ws[k].v==='総金融資産').map(k=>XLSX.utils.decode_cell(k).r)[0];
+          [['標準',nd.iStd],['安心',nd.iSafe]].forEach(([n,i])=>{ if(i==null||i<0)return; const c=ws[XLSX.utils.encode_cell({r:taR,c:2+i})]; if(!(c&&c.s&&c.s.border&&c.s.border.top&&c.s.border.top.style==='medium')) mgBad.push(n+'の根拠のマスに色枠がない'); });
+        }
         if(nChecked<10) normalBad.push('調べた情報欄のセルが少なすぎる（'+nChecked+'個）');
         return {normalBad,mgBad,nChecked};
       } finally { XLSX.utils.book_append_sheet=oA; XLSX.writeFile=oW; window.saveAs=oS; }
