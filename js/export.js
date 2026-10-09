@@ -302,93 +302,62 @@ async function exportExcelMG(opt){
     push(needRow, 'info');
   }
 
-  // ── 頭金の内訳（通常CFと同じ個別セル形式） ──
-  // info行：ラベル:値を1セルに統合しinfoSpan列分統合（隠れ防止）
-  const _pad=(n)=>Array(n-1).fill('');
-  const infoRow1=['頭金の内訳','',
-    `現預金: ${cashTotal}万円`,..._pad(infoSpan),
-    `${downType==='gift'?'頭金(贈与)':downType==='other'?`頭金(${(()=>{try{return localStorage.getItem('cf_down_other_text')||'その他'}catch(e){return 'その他'}})()})`:'頭金'}: ${downPay}万円`,..._pad(infoSpan),
-    `${costTypeV_mg==='loan'?'諸費用(込)':costTypeV_mg==='other'?`諸費用(${(()=>{try{return localStorage.getItem('cf_cost_other_text')||'その他'}catch(e){return 'その他'}})()})`:'諸費用'}: ${houseCostV}万円`,..._pad(infoSpan),
-    `${(document.getElementById('move-type')?.value||'own')==='other'?`引越家具(${(()=>{try{return localStorage.getItem('cf_move_other_text')||'その他'}catch(e){return 'その他'}})()})`:'引越家具(引渡年に計上)'}: ${(movingCostV+furnitureInitV)}万円`,..._pad(infoSpan),
-    `購入後残高: ${cashAfter}万円`,..._pad(infoSpan),
-  ];
-  const infoRow1Len=infoRow1.length;
-  while(infoRow1.length<disp+3)infoRow1.push('');
-  push(infoRow1,'info');
+  // ── 情報欄（頭金の内訳・住宅ローン条件・その他金融資産）──
+  // ★ 2026-10-09: 1項目=3列固定で折り返していたのをやめ、文字の幅から結合列数を決めて1行で並べる
+  //   （入りきらない項目は次の行へ送る。xl-layout.js の xlPack）
+  const xlInfoCells=[]; // 情報欄の項目セル {r,c0,c1}（結合と書式に使う）
+  const pushInfo=(label, items)=>{
+    const lines=xlPack(items.filter(Boolean).map(t=>({text:t})), 2, disp+2);
+    lines.forEach((ln,li)=>{
+      const row=[li===0?label:'',''];
+      while(row.length<disp+3)row.push('');
+      ln.forEach(c=>{row[c.c0]=c.text;});
+      push(row,'info');
+      const r=rows.length-1;
+      ln.forEach(c=>xlInfoCells.push({r,c0:c.c0,c1:c.c1}));
+    });
+  };
+  const _otherTxt=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}};
+  pushInfo('頭金の内訳',[
+    `現預金: ${cashTotal}万円`,
+    `${downType==='gift'?'頭金(贈与)':downType==='other'?`頭金(${_otherTxt('cf_down_other_text','その他')})`:'頭金'}: ${downPay}万円`,
+    `${costTypeV_mg==='loan'?'諸費用(込)':costTypeV_mg==='other'?`諸費用(${_otherTxt('cf_cost_other_text','その他')})`:'諸費用'}: ${houseCostV}万円`,
+    `${(document.getElementById('move-type')?.value||'own')==='other'?`引越家具(${_otherTxt('cf_move_other_text','その他')})`:'引越家具(引渡年に計上)'}: ${(movingCostV+furnitureInitV)}万円`,
+    `購入後残高: ${cashAfter}万円`,
+  ]);
 
   // ── 住宅ローン条件 ──
-  const infoRow2=['住宅ローン条件','',
-    `物件価格: ${housePrice}万円`,..._pad(infoSpan),
-  ];
-  const infoDataLens=[infoRow1Len];
-  const extraPairRows=[]; // ペアローン時のご主人様・奥様行
+  const loanItems=[`物件価格: ${housePrice}万円`];
+  const pairLoanRows=[]; // ペアローン時のご主人様・奥様の行 [label, items]
   if(_flatPair_e){
-    // フラット35ペアローン — 1行目:物件価格・借入総額・引渡し / 2行目:ご主人様 / 3行目:奥様
     const fhAmt=fv('flat-loan-h-amt')||0, fwAmt=fv('flat-loan-w-amt')||0;
     const fhYrs=iv('flat-loan-h-yrs')||35, fwYrs=iv('flat-loan-w-yrs')||35;
-    const totalLoan=fhAmt+fwAmt;
     const stepStr=rates.length>1?rates.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join(''):'';
-    infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
-    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
-    const rowH=['ご主人様のローン','',
-      `借入額: ${fhAmt}万円`,..._pad(infoSpan),
-      `期間: ${fhYrs}年`,..._pad(infoSpan),
-      `金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan),
-    ];
-    const rowW=['奥様のローン','',
-      `借入額: ${fwAmt}万円`,..._pad(infoSpan),
-      `期間: ${fwYrs}年`,..._pad(infoSpan),
-      `金利: 1年目〜${rateDisp}${stepStr}`,..._pad(infoSpan),
-    ];
-    extraPairRows.push(rowH,rowW);
+    loanItems.push(`借入総額: ${fhAmt+fwAmt}万円`);
+    if(deliveryYrV>0)loanItems.push(`引渡し: ${deliveryYrV}年`);
+    pairLoanRows.push(['ご主人様のローン',[`借入額: ${fhAmt}万円`,`期間: ${fhYrs}年`,`金利: 1年目〜${rateDisp}${stepStr}`]]);
+    pairLoanRows.push(['奥様のローン',[`借入額: ${fwAmt}万円`,`期間: ${fwYrs}年`,`金利: 1年目〜${rateDisp}${stepStr}`]]);
   } else if(pairLoanMode){
-    // 変動ペアローン — 1行目:物件価格・借入総額・引渡し / 2行目:ご主人様 / 3行目:奥様
     const lhAmt=fv('loan-h-amt')||0, lwAmt=fv('loan-w-amt')||0;
     const rHBase=fv('rate-h-base')||0.5, rWBase=fv('rate-w-base')||0.5;
     const lhYrs=iv('loan-h-yrs')||35, lwYrs=iv('loan-w-yrs')||35;
     const ratesH=getPairRates('h'), ratesW=getPairRates('w');
-    const totalLoan=lhAmt+lwAmt;
-    infoRow2.push(`借入総額: ${totalLoan}万円`,..._pad(infoSpan));
-    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+    loanItems.push(`借入総額: ${lhAmt+lwAmt}万円`);
+    if(deliveryYrV>0)loanItems.push(`引渡し: ${deliveryYrV}年`);
     let hRateLabel=`金利: 1年目〜${rHBase}%`;
     if(ratesH.length>1)hRateLabel+=ratesH.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
     let wRateLabel=`金利: 1年目〜${rWBase}%`;
     if(ratesW.length>1)wRateLabel+=ratesW.slice(1).map(s=>` →${s.from+1}年〜${s.rate.toFixed(2)}%`).join('');
-    const rowH=['ご主人様のローン','',
-      `借入額: ${lhAmt}万円`,..._pad(infoSpan),
-      `期間: ${lhYrs}年`,..._pad(infoSpan),
-      hRateLabel,..._pad(infoSpan),
-    ];
-    const rowW=['奥様のローン','',
-      `借入額: ${lwAmt}万円`,..._pad(infoSpan),
-      `期間: ${lwYrs}年`,..._pad(infoSpan),
-      wRateLabel,..._pad(infoSpan),
-    ];
-    extraPairRows.push(rowH,rowW);
+    pairLoanRows.push(['ご主人様のローン',[`借入額: ${lhAmt}万円`,`期間: ${lhYrs}年`,hRateLabel]]);
+    pairLoanRows.push(['奥様のローン',[`借入額: ${lwAmt}万円`,`期間: ${lwYrs}年`,wRateLabel]]);
   } else {
     // 通常ローン — 金額→年数→金利→段階金利→引渡し
-    infoRow2.push(`借入額: ${loanAmtV}万円`,..._pad(infoSpan));
-    infoRow2.push(`期間: ${loanYrsV}年`,..._pad(infoSpan));
-    infoRow2.push(`当初金利: ${rateDisp}`,..._pad(infoSpan));
-    // 段階金利（通常ローン・フラット35単独）— 当初金利の直後に並べる
-    if(rates.length>1){
-      rates.slice(1).forEach(s=>{
-        infoRow2.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`,..._pad(infoSpan));
-      });
-    }
-    if(deliveryYrV>0){infoRow2.push(`引渡し: ${deliveryYrV}年`,..._pad(infoSpan));}
+    loanItems.push(`借入額: ${loanAmtV}万円`,`期間: ${loanYrsV}年`,`当初金利: ${rateDisp}`);
+    if(rates.length>1)rates.slice(1).forEach(s=>loanItems.push(`${s.from+1}年目〜: ${s.rate.toFixed(2)}%`));
+    if(deliveryYrV>0)loanItems.push(`引渡し: ${deliveryYrV}年`);
   }
-  const infoRow2Len=infoRow2.length;
-  while(infoRow2.length<disp+3)infoRow2.push('');
-  push(infoRow2,'info');
-  infoDataLens.push(infoRow2Len);
-  // ペアローン時のご主人様・奥様行を追加
-  extraPairRows.forEach(row=>{
-    const rowLen=row.length;
-    while(row.length<disp+3)row.push('');
-    push(row,'info');
-    infoDataLens.push(rowLen);
-  });
+  pushInfo('住宅ローン条件',loanItems);
+  pairLoanRows.forEach(([lbl,items])=>pushInfo(lbl,items));
 
   // その他金融資産の現時点合計
   const _secItems_mg=[];
@@ -414,16 +383,7 @@ async function exportExcelMG(opt){
   });
   if(_secItems_mg.length>0){
     const _secTotal_mg=_secItems_mg.reduce((s,it)=>s+it.val,0);
-    const secInfoRow=['その他金融資産','',];
-    _secItems_mg.forEach(it=>{
-      const lbl=it.custom||`${it.catLbl}(${it.pLbl})`;
-      secInfoRow.push(`${lbl}: ${it.val}万円`,..._pad(infoSpan));
-    });
-    secInfoRow.push(`合計: ${_secTotal_mg}万円`,..._pad(infoSpan));
-    const secInfoLen=secInfoRow.length;
-    while(secInfoRow.length<disp+3)secInfoRow.push('');
-    push(secInfoRow,'info');
-    infoDataLens.push(secInfoLen);
+    pushInfo('その他金融資産',[..._secItems_mg.map(it=>`${it.custom||`${it.catLbl}(${it.pLbl})`}: ${it.val}万円`),`合計: ${_secTotal_mg}万円`]);
   }
 
   // 注釈・補足メモ（自由記入欄、localStorage保存）
@@ -434,7 +394,6 @@ async function exportExcelMG(opt){
     while(noteRow.length<disp+3)noteRow.push('');
     push(noteRow,'info');
     _noteRowIdx_mg = rows.length-1;
-    infoDataLens.push(2);
   }
 
   // 空行
@@ -816,16 +775,8 @@ async function exportExcelMG(opt){
   // info行(row1,row2)のA+B結合＋各項目をinfoSpan列統合
   const infoRowIndices=[];
   types.forEach((t,i)=>{if(t==='info')infoRowIndices.push(i);});
-  infoRowIndices.forEach((ri,idx)=>{
-    ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}});
-    const dataLen=idx<infoDataLens.length?infoDataLens[idx]:20;
-    const chipCount=Math.ceil(Math.max(0,dataLen-2)/infoSpan);
-    for(let k=0;k<chipCount;k++){
-      const sc=2+k*infoSpan;
-      const ec=Math.min(sc+infoSpan-1,disp+2);
-      if(sc<=disp+2)ws['!merges'].push({s:{r:ri,c:sc},e:{r:ri,c:ec}});
-    }
-  });
+  infoRowIndices.forEach(ri=>{ ws['!merges'].push({s:{r:ri,c:0},e:{r:ri,c:1}}); });
+  xlInfoCells.forEach(x=>{ if(x.c1>x.c0) ws['!merges'].push({s:{r:x.r,c:x.c0},e:{r:x.r,c:x.c1}}); });
   // 注釈行：col 2 から行末までマージ
   if(_noteRowIdx_mg>=0){
     ws['!merges'].push({s:{r:_noteRowIdx_mg,c:2},e:{r:_noteRowIdx_mg,c:disp+2}});
@@ -857,11 +808,9 @@ async function exportExcelMG(opt){
     if(t==='savWarn')return{hpt:28};
     if(t==='incTotal'||t==='expTotal')return{hpt:24};
     if(t==='info'){
-      // ペア行(ご主人様/奥様)は高さ23
-      const row=rows[ri]||[];
-      const s=String(row[0]||'')+String(row[1]||'');
-      if(/[\u{1F454}\u{1F469}]/u.test(s))return{hpt:23};
-      return{hpt:30};
+      // 情報欄は折り返さないので1行分。注釈・補足は書いた改行の行数に合わせる
+      if(ri===_noteRowIdx_mg)return{hpt:Math.max(20,Math.min(120,8+(_cfNote_mg.split('\n').length)*14))};
+      return{hpt:20};
     }
     return{hpt:18};
   });
@@ -969,9 +918,7 @@ async function exportExcelMG(opt){
       // info行：ラベルセルは太字、値セル（万円等）は強調
       if(tp==='info'&&c===0){fObj.bold=true;fObj.sz=9;fObj.color={rgb:C.white};}
       if(tp==='info'&&c>=2){
-        const infoIdx=infoRowIndices.indexOf(r);
-        const dataLen=infoIdx>=0&&infoIdx<infoDataLens.length?infoDataLens[infoIdx]:999;
-        if(c>=dataLen){
+        if(!xlInfoCells.some(x=>x.r===r&&c>=x.c0&&c<=x.c1)){
           cell._noFill=true;
         }else{
           const v=String(cell.v||'');
@@ -1119,10 +1066,10 @@ async function exportExcelMG(opt){
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const finalAlign=cell._centerAlign?'center':hAlign;
       // ペアローン行（/）は1行表示にしたいのでwrap無効＋shrinkで縮小
-      const isPairRow=tp==='info'&&row[0]&&/[\u{1F454}\u{1F469}]/u.test(String(row[0]));
-      const wrapText=(tp==='info'&&c>=2&&!isPairRow);
-      // shrinkToFitはペア行（高さ23pt固定で1行表示）のみ。通常info行は折り返し表示にする。
-      const shrinkToFit=isPairRow;
+      // 情報欄は折り返さない（文字の幅に合わせて結合済み）。注釈・補足だけ改行を保つため wrapText
+      const wrapText=(tp==='info'&&c>=2&&r===_noteRowIdx_mg);
+      // 念のため：幅の見積りより長い文字は縮小して1行に収める
+      const shrinkToFit=(tp==='info'&&c>=2&&r!==_noteRowIdx_mg);
       cell.s={
         font:fObj,
         fill:finalFill,

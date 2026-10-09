@@ -32,6 +32,7 @@ const ASSETS = [
   './js/lc-tab.js',
   './js/cf-highlight.js',
   './js/graphs.js',
+  './js/xl-layout.js',
   './js/export.js',
   './js/print.js',
   './img/housingfp-logo.png',
