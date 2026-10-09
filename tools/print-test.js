@@ -167,7 +167,7 @@ const CASES = [
         await openPrintPreviewMG([a,b,c]);
         const res = window._ppLastResult || {};
         const box = document.getElementById('pp-preview');
-        const titles = [...box.querySelectorAll('.pp-cover .t3')].map(e=>e.textContent);
+        const titles = [...box.querySelectorAll('.ppc-scn')].map(e=>e.textContent);   // 表紙（案A-1）の帯の「○○した場合」
         return {pages:res.pages, sections:res.sections, problems:res.problems, overflow:res.overflow, years,
           titles, back: window._mgQA_activeTabId===a, tables: box.querySelectorAll('.pp-tbl').length};
       });

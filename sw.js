@@ -34,6 +34,7 @@ const ASSETS = [
   './js/graphs.js',
   './js/xl-layout.js',
   './js/export.js',
+  './js/cover.js',
   './js/print.js',
   './img/housingfp-logo.png',
   './js/loan-plan.js',

@@ -448,6 +448,60 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     const f10=[...XW.normalBad.map(x=>'通常 '+x),...XW.mgBad.map(x=>'万が一 '+x)];
     if(f10.length){ bad++; console.log('❌ Excelの折り返し・はみ出し\n   - '+f10.slice(0,12).join('\n   - ')); }
     else console.log('✅ Excel: 通常・万が一とも、CF表シートに折り返しなし・情報欄の文字'+XW.nChecked+'個が結合したセルに収まる（ペアローン・長い銘柄名・注釈あり）');
+
+    /* ---- PDF表紙（案A-1）：1ページに収まる・必要保障額と前提条件の数字が画面と同じ（通常／万が一／現金一括／長いメモ） ---- */
+    await page.evaluate(pageBaseSetup);
+    const CV=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const $=id=>document.getElementById(id);
+      const out=[];
+      const coverOf=()=>document.querySelector('#pp-preview .pp-page-cover');
+      const fits=c=>{const m=c&&c.querySelector('.ppc-main');return !!m&&m.scrollHeight<=m.clientHeight+1;};
+      const num=t=>parseInt(String(t||'').replace(/[^\d-]/g,''))||0;
+      if(typeof setHouseholdType==='function') setHouseholdType('couple');
+      $('client-name').value='山田 太郎';
+      setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+      $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+      setCostType('cash'); setDownType('own');
+      $('loan-h-amt').value=2800; $('loan-w-amt').value=1200; calcLoanAmt();
+      $('lc-food').value=600000; $('lc-elec').value=60000; $('lc-comm').value=60000;
+      addAssetOfType('h','nisa-tsumi'); $('sec-bal-h-'+secCnt).value=120;
+      window._cfSummaryNote=Array.from({length:9},(_,i)=>`補足メモ${i+1}行目：退職金で一部繰上返済を予定しています。`).join('\n');
+      setRTab('cf'); live(true); await wait(900);
+      // 通常（長いメモ）
+      openPrintPreview('cf'); await wait(900);
+      let c=coverOf();
+      if(!c) out.push('通常の表紙が無い'); else {
+        if(!fits(c)) out.push('通常の表紙が1ページに収まらない（長いメモ）');
+        const cashV=num(c.querySelector('.ppc-flow .b .v')?.textContent);
+        if(cashV!==1100) out.push(`通常の表紙の現預金合計 ${cashV}（画面は1,100）`);
+      }
+      closePrintPreview();
+      // 万が一
+      window._cfSummaryNote='教育費は私立大学を想定。';
+      mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
+      Object.assign(t.state,{deathYear:3,insurances:[{type:'lump',amount:500}]}); mgQA_calcAndRender(t,true); await wait(300);
+      openPrintPreview('mg'); await wait(900);
+      c=coverOf();
+      if(!c) out.push('万が一の表紙が無い'); else {
+        if(!fits(c)) out.push('万が一の表紙が1ページに収まらない');
+        const nd=window.lastMR.need;
+        const vs=[...c.querySelectorAll('.ppc-tier .v')].map(e=>num(e.textContent));
+        if(JSON.stringify(vs)!==JSON.stringify([nd.min,nd.std,nd.safe])) out.push(`表紙の必要保障額 ${vs} が画面 ${[nd.min,nd.std,nd.safe]} と違う`);
+        if(!/死亡した場合/.test(c.querySelector('.ppc-scn')?.textContent||'')) out.push('帯に「死亡した場合」が無い');
+      }
+      closePrintPreview();
+      // 現金一括購入
+      setRTab('cf'); setFundingMode('cash'); live(true); await wait(700);
+      openPrintPreview('cf'); await wait(900);
+      c=coverOf();
+      if(!c||!/住宅ローンは利用しない/.test(c.textContent)) out.push('現金一括購入の表紙に「住宅ローンは利用しない」が無い');
+      else if(!fits(c)) out.push('現金一括購入の表紙が1ページに収まらない');
+      closePrintPreview();
+      return out;
+    });
+    if(CV.length){ bad++; console.log('❌ PDF表紙\n   - '+CV.join('\n   - ')); }
+    else console.log('✅ PDF表紙: 通常（長いメモ）・万が一・現金一括とも1ページに収まり、必要保障額と前提条件の数字が画面と同じ');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

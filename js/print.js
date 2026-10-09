@@ -77,7 +77,8 @@ async function openPrintPreviewMG(ids){
       const banner = document.querySelector('#right-body .r-summary > div');
       const m = (banner?.textContent||'').match(/【万が一】[^\n]*?場合/);
       const pre = document.getElementById('mg-summary-detail');
-      secs.push({src: tbl.cloneNode(true), mgTitle: m ? m[0].replace(/\s+/g,'') : '【万が一】', preEl: pre ? pre.cloneNode(true) : null});
+      secs.push({src: tbl.cloneNode(true), mgTitle: m ? m[0].replace(/\s+/g,'') : '【万が一】', preEl: pre ? pre.cloneNode(true) : null,
+        cover: (typeof getCoverData==='function') ? getCoverData('mg') : null});
     }
   }finally{ if(act) mgQA_switchTab(act); }
   if(!secs.length){ alert('万が一CF表が表示されていません'); return; }
@@ -104,7 +105,8 @@ function _ppBuild(kind, src, sections){
       const m=(banner?.textContent||'').match(/【万が一】[^\n]*?場合/);
       mgTitle = m ? m[0].replace(/\s+/g,'') : '【万が一】';
     }
-    sections=[{src, mgTitle, preEl: document.getElementById(isMg?'mg-summary-detail':'cf-summary-detail')}];
+    sections=[{src, mgTitle, preEl: document.getElementById(isMg?'mg-summary-detail':'cf-summary-detail'),
+      cover: (typeof getCoverData==='function') ? getCoverData(isMg?'mg':'cf') : null}];
   }
 
   // ── ご確認事項（Excel出力と同じ文面：export.js getDisclaimerContent） ──
@@ -143,6 +145,12 @@ function _ppBuild(kind, src, sections){
     box.appendChild(p); return p.querySelector('.pp-body');
   };
 
+  // 表紙（案A-1）：見出し帯なしの全面ページ（下の注意書きとページ番号は残す）
+  const addCover=(html)=>{
+    const p=document.createElement('div'); p.className='pp-page pp-page-cover';
+    p.innerHTML=`<div class="pp-body">${html}</div><div class="pp-foot"><span>本資料は一定の前提に基づく試算であり、将来の結果を保証するものではありません。</span><span class="pp-pno"></span></div>`;
+    box.appendChild(p); return p.querySelector('.pp-body');
+  };
   const tableBodies=[], problems=[];
   let hiddenCount=0;
   sections.forEach((sec,si)=>{
@@ -194,10 +202,15 @@ function _ppBuild(kind, src, sections){
     }
     // 表紙（前提条件）
     const y0=_ppYear(allRows[0].cells[2]), yN=_ppYear(allRows[0].cells[nCols-2]);
-    addPage(isMg?_ppEsc(mgTitle):'前提条件', `<div class="pp-cover"><div class="pp-cover-hero${isMg?' mg':''}"><img class="pp-cover-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="t1">${docTitle}</div>
+    if(sec.cover){
+      const cb=addCover(_ppCoverHtml(sec.cover, {dStr, staff, docTitle}));
+      _ppFitCover(cb);
+    }else{
+      addPage(isMg?_ppEsc(mgTitle):'前提条件', `<div class="pp-cover"><div class="pp-cover-hero${isMg?' mg':''}"><img class="pp-cover-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="t1">${docTitle}</div>
         <div class="t2">${_ppEsc(cn)}${cn?'　／　':''}${y0}年〜${yN}年（全${yearIdx.length}年間）</div>
         ${isMg?`<div class="t3">${_ppEsc(mgTitle)}</div>`:''}</div>
       ${preHtml?`<div class="pp-cover-lbl">前提条件</div>${preHtml}`:''}</div>`);
+    }
     // 生活費の内訳（出力画面で「生活費の内訳を入れる」を選んだときだけ・最初の表の後に1回）
     if(si===0 && typeof _exportExtra!=='undefined' && _exportExtra.includeLC) addPage('生活費の内訳', _ppLCHtml());
     // CF表（20年ごと・縦は1枚）
@@ -248,6 +261,66 @@ function _ppBuild(kind, src, sections){
   // 画面が狭い端末（iPad縦など）では、プレビューだけ画面幅に合わせて縮小表示（印刷には影響しない）
   _ppFitScreen();
   window.addEventListener('resize',_ppFitScreen);
+}
+
+// ── 表紙（案A-1：左に紺の帯・右に必要保障額と前提条件）。値は cover.js の getCoverData ──
+function _ppCoverHtml(d, o){
+  const E=_ppEsc, f=n=>Math.round(n||0).toLocaleString();
+  const isMg=!!d.mg;
+  const cn=d.client?(d.client.endsWith('様')?d.client:d.client+' 様'):'';
+  const tags=[d.isM?'マンション':'戸建て', d.loan.form==='cash'?'現金一括購入':(d.loan.label||'')].filter(Boolean);
+  const fam=d.family.map(x=>`${E(x.lbl)}${x.age}歳`).join('・');
+  const side=`<div class="ppc-side">
+      <img class="ppc-logo" src="img/housingfp-logo.png" alt="Housing FP">
+      <div class="ppc-k">CASH FLOW REPORT</div>
+      <div class="ppc-h1">${isMg?'万が一<br>キャッシュフロー表':'キャッシュフロー表'}</div>
+      <div class="ppc-who">${E(cn||'—')}</div>
+      <div class="ppc-tags">${tags.map(t=>`<span>${E(t)}</span>`).join('')}</div>
+      <div class="ppc-per">${d.period.y0}年〜${d.period.yN}年（全${d.period.n}年間）<br>${fam}</div>
+      ${isMg?`<div class="ppc-scn">${E(d.mg.title1)}<br>${E(d.mg.title2)}<small>${E(d.mg.sub)}</small></div>`:''}
+      <div class="ppc-meta">作成日：${E(o.dStr)}${o.staff?`<br>担当：${E(o.staff)}`:''}</div>
+    </div>`;
+  // 必要保障額（万が一）
+  let need='';
+  if(isMg){
+    const n=d.mg.need;
+    const card=(cls,bd,bg,t,v,b,x)=>`<div class="ppc-tier ${cls}"><span class="bd" style="background:${bg};${cls==='safe'?'color:#1e3a5f':''}">${bd}</span><div class="tt">${t}</div><div class="v">${f(v)}<small>万円</small></div><div class="g">${E(b)}</div><div class="x">${x}</div></div>`;
+    need=`<div class="ppc-need"><div class="ppc-t">必要保障額<span>万が一の年に、保険金などで受け取る想定の額</span></div>
+      <div class="ppc-tiers">
+        ${card('','最低限','#d97706','お金が尽きないために',n.min,n.bMin,'CF表の最後の年に、預貯金と有価証券がマイナスにならない額')}
+        ${card('',`標準・生活費${n.years}年分`,'#0f9d58','暮らしが行き詰まらないために',n.std,n.bStd,`どの年も、預貯金と有価証券で生活費${n.years}年分を確保できる額`)}
+        ${card('safe','安心','#fff','今の生活と資産計画を守るために',n.safe,n.bSafe,'CF表の最後の年に残るお金が、万が一がなかった場合と同じになる額'+(n.safeMode==='floor'?'（標準＋生活費2年分）':''))}
+      </div>
+      <div class="ppc-legend">CF表の総金融資産の色枠：<i style="background:#f59e0b"></i>最低限の根拠<i style="background:#0f9d58"></i>標準の根拠<i style="background:#60a5fa"></i>安心の根拠</div></div>`;
+  }
+  // 前提条件
+  const c=d.cash;
+  const cashBlk=`<div class="ppc-blk"><div class="ppc-bh">自己資金の内訳${c.move>0?`<span>${E(c.moveLbl)} ${f(c.move)}万円は、引き渡し年の支出としてCF表に計上</span>`:''}</div>
+    <div class="ppc-flow"><div class="b"><div class="l">現預金合計</div><div class="v">${f(c.total)}<small>万円</small></div></div><div class="ar">▶</div>
+      <div class="b"><div class="l">${E(c.downLbl)}</div><div class="v ${c.downOut?'neg':''}">${f(c.down)}<small>万円</small></div></div>
+      <div class="b"><div class="l">${E(c.costLbl)}</div><div class="v ${c.costOut?'neg':''}">${f(c.cost)}<small>万円</small></div></div><div class="ar">▶</div>
+      <div class="b ok"><div class="l">購入後残高</div><div class="v ${c.after>=0?'pos':'neg'}">${f(c.after)}<small>万円</small></div></div></div></div>`;
+  const L=d.loan;
+  const loanHead=`住宅ローン条件${L.label?`（${E(L.label)}）`:''}<span>住宅価格 ${f(L.price)}万円${L.delivery?`　／　引き渡し ${L.delivery}年`:''}</span>`;
+  const loanBlk=L.form==='cash'
+    ? `<div class="ppc-blk"><div class="ppc-bh">${loanHead}</div><div class="ppc-note">住宅ローンは利用しない（現金で購入）</div></div>`
+    : `<div class="ppc-blk"><div class="ppc-bh">${loanHead}</div><div class="ppc-loan">
+        <div class="hd"></div><div class="hd">借入額</div><div class="hd">当初金利</div><div class="hd">返済期間</div>
+        ${L.rows.map(r=>`<div class="who ${r.p}">${E(r.who)}</div><div class="v">${f(r.amt)}<small>万円</small></div><div class="v">${r.rate}<small>%${r.steps.length?`（${E(r.steps.join('・'))}）`:''}</small></div><div class="v">${r.yrs}<small>年</small></div>`).join('')}
+      </div></div>`;
+  const swapBlk=d.swap.length?`<div class="ppc-blk"><div class="ppc-bh">買い替え・住み替え予定</div><div class="ppc-swap">${d.swap.map((w,i)=>`<span>${i+1}回目：${w.age}歳　売却 ${f(w.sell)}万円 → 購入 ${f(w.price)}万円</span>`).join('')}</div></div>`:'';
+  const assetBlk=`<div class="ppc-blk"><div class="ppc-bh">その他金融資産（現時点）</div>${d.assets.items.length
+    ? `<table class="ppc-kv">${d.assets.items.map(a=>`<tr><td>${E(a.lbl)}</td><td>${f(a.val)}万円</td></tr>`).join('')}<tr class="tot"><td>合計</td><td>${f(d.assets.total)}万円</td></tr></table>`
+    : '<div class="ppc-note">なし</div>'}</div>`;
+  const memoBlk=`<div class="ppc-blk"><div class="ppc-bh">注釈・補足メモ</div>${d.memo?`<div class="ppc-memo">${E(d.memo).replace(/\n/g,'<br>')}</div>`:'<div class="ppc-note">なし</div>'}</div>`;
+  const pre=`<div class="ppc-box">${isMg?'<div class="ppc-blk ppc-pt"><div class="ppc-t">前提条件</div></div>':''}${cashBlk}${loanBlk}${swapBlk}<div class="ppc-two">${assetBlk}${memoBlk}</div></div>`;
+  return `<div class="ppc${isMg?' mg':''}" style="--kc:${E(d.color||'#2bb3a3')}">${side}<div class="ppc-main">${isMg?need:'<div class="ppc-t">前提条件</div>'}${pre}</div></div>`;
+}
+// 表紙の右側が1ページに収まらないときは、文字を少しずつ小さくする（最大5回）
+function _ppFitCover(body){
+  const m=body.querySelector('.ppc-main'); if(!m)return;
+  let z=1;
+  for(let k=0;k<5 && m.scrollHeight>m.clientHeight+1;k++){ z-=0.07; m.style.zoom=z; }
 }
 
 // ── 生活費の内訳ページ（生活費タブと同じ項目・金額・備考。lc-tab.js の項目定義を共用） ──
