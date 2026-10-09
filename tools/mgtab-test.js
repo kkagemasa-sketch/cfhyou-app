@@ -382,6 +382,65 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       .concat(Object.entries(QA).filter(([k,v])=>k.endsWith('_empty')&&v!=='消えた').map(([k])=>`${k.replace('_empty','')}: 追加後も「まだ登録されていません」が残る`));
     if(f9.length){ bad++; console.log('❌ 資産の種類ボタン\n   - '+f9.join('\n   - ')); }
     else console.log('✅ 資産の種類ボタン: 空のときの7種類（課税積立・NISAつみたて・NISA成長枠・課税一括・債券・積立保険・財形）をクリックでその種類のカードが追加される');
+
+    /* ---- Excel：CF表シートで折り返さない・情報欄の文字が結合したセルの幅に収まる（通常・万が一） ---- */
+    await page.evaluate(pageBaseSetup);
+    const XW=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const $=id=>document.getElementById(id);
+      if(typeof setHouseholdType==='function') setHouseholdType('couple');
+      $('client-name').value='山田 太郎';
+      setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('pair');
+      $('house-price').value=5000; $('down-payment').value=500; $('house-cost').value=200;
+      setCostType('cash'); setDownType('own');
+      $('loan-h-amt').value=3000; $('loan-w-amt').value=1500; $('loan-h-yrs').value=35; $('loan-w-yrs').value=30;
+      $('rate-h-base').value=0.6; $('rate-w-base').value=0.7; calcLoanAmt();
+      addSecurity('h'); { const els=document.querySelectorAll('[id^="sec-bal-h-"]'); const sid=els[els.length-1].id.split('-').pop(); document.getElementById('sec-acc-h-'+sid)?.classList.add('on'); $('sec-bal-h-'+sid).value=120; $('sec-monthly-h-'+sid).value=3; $('sec-label-h-'+sid).value='eMAXIS Slim 全世界株式（オール・カントリー）'; }
+      window._cfSummaryNote='退職金で一部繰上返済を予定。\n教育費は私立大学を想定。';
+      live(true); await wait(900);
+      // ws を横取り（ファイルは作らない）
+      const caught=[];
+      const oA=XLSX.utils.book_append_sheet, oW=XLSX.writeFile, oS=window.saveAs;
+      XLSX.utils.book_append_sheet=function(wb,ws,name){caught.push({ws,name});return oA.apply(this,arguments);};
+      XLSX.writeFile=function(){}; window.saveAs=function(){};
+      let nChecked=0;
+      const check=()=>{
+        const bad=[];
+        caught.filter(x=>!/確認/.test(x.name||'')).forEach(({ws,name})=>{
+          const merges=ws['!merges']||[];
+          const cols=ws['!cols']||[];
+          const colPx=c=>((cols[c]&&cols[c].wch)||8)*7+5;
+          Object.keys(ws).filter(k=>k[0]!=='!').forEach(k=>{
+            const cell=ws[k]; const st=cell.s||{}; const al=st.alignment||{};
+            const v=String(cell.v==null?'':cell.v);
+            const rc=XLSX.utils.decode_cell(k);
+            const isNote=/退職金で一部繰上返済/.test(v);
+            if(al.wrapText && !isNote && v && !/お金が不足|マイナス/.test(v)) bad.push(`${name} ${k} 折り返し設定:「${v.slice(0,20)}」`);
+            if(rc.c>=2 && v && /: /.test(v) && !isNote){
+              const m=merges.find(x=>x.s.r===rc.r&&x.s.c===rc.c);
+              const c1=m?m.e.c:rc.c;
+              let w=0; for(let c=rc.c;c<=c1;c++) w+=colPx(c);
+              const f=st.font||{};
+              const need=xlTextPx(v,f.sz||10,!!f.bold)+8; nChecked++;
+              if(need>w) bad.push(`${name} ${k} はみ出し「${v.slice(0,24)}」 必要${Math.round(need)}px／幅${w}px`);
+            }
+          });
+        });
+        return bad;
+      };
+      try{
+        setRTab('cf'); render(); await exportExcel(); await wait(300);
+        const normalBad=check(); caught.length=0;
+        mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,{deathYear:3}); mgQA_calcAndRender(t,true);
+        await exportExcelMG(); await wait(300);
+        const mgBad=check();
+        if(nChecked<10) normalBad.push('調べた情報欄のセルが少なすぎる（'+nChecked+'個）');
+        return {normalBad,mgBad,nChecked};
+      } finally { XLSX.utils.book_append_sheet=oA; XLSX.writeFile=oW; window.saveAs=oS; }
+    });
+    const f10=[...XW.normalBad.map(x=>'通常 '+x),...XW.mgBad.map(x=>'万が一 '+x)];
+    if(f10.length){ bad++; console.log('❌ Excelの折り返し・はみ出し\n   - '+f10.slice(0,12).join('\n   - ')); }
+    else console.log('✅ Excel: 通常・万が一とも、CF表シートに折り返しなし・情報欄の文字'+XW.nChecked+'個が結合したセルに収まる（ペアローン・長い銘柄名・注釈あり）');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });
