@@ -177,6 +177,9 @@ function calcPension(person){
   const retireAge = isH ? (iv('retire-age')||60) : (iv('w-retire-age')||60);
   // 加入月数（最大480ヶ月=40年）
   const months = Math.min(480, Math.max(0, retireAge - startAge) * 12);
+  // 扶養内パート（第3号）の年は厚生年金に入らない（基礎年金は満額のまま）
+  const p3Yrs = (typeof part3Years==='function') ? part3Years(person, startAge, retireAge) : 0;
+  const koseiMonths = Math.max(0, Math.min(480, Math.max(0, retireAge - startAge - p3Yrs) * 12));
   // 生涯平均標準報酬月額を精密計算（収入ステップ活用）
   let avgMonthly;
   const avgH=calcAvgHyojun(person, startAge, retireAge);
@@ -192,7 +195,7 @@ function calcPension(person){
     avgMonthly = Math.round(avgGrossYear / 12);
   }
   // 老齢厚生年金（本来水準）= 平均標準報酬月額 × 5.481/1000 × 加入月数
-  const koseiRaw = Math.round(avgMonthly * 5.481 / 1000 * months);
+  const koseiRaw = Math.round(avgMonthly * 5.481 / 1000 * koseiMonths);
   // 老齢基礎年金 = 満額（令和8年度84.73万円）× 加入月数/480 ※旧: 80万のハードコード
   const kisoRaw = Math.round(KISO_FULL_AMT * months / 480);
   // 手取り化: 公的年金等控除・社保天引き・所得税・住民税の詳細計算
@@ -205,7 +208,7 @@ function calcPension(person){
   if(el) el.value = total;
   // ヒントに内訳表示
   const hint = document.getElementById(`${person}-pension-hint`);
-  if(hint&&bd) hint.textContent = `✓ 額面${grossP}万（厚生${koseiRaw}万+基礎${kisoRaw}万）− 社保${bd.shakai}万 − 税${Math.round((bd.itax+bd.jumin)*10)/10}万 = 手取り${total}万円/年（平均月収${avgMonthly}万・加入${Math.round(months/12)}年）`;
+  if(hint&&bd) hint.textContent = `✓ 額面${grossP}万（厚生${koseiRaw}万+基礎${kisoRaw}万）− 社保${bd.shakai}万 − 税${Math.round((bd.itax+bd.jumin)*10)/10}万 = 手取り${total}万円/年（平均月収${avgMonthly}万・加入${Math.round(months/12)}年${p3Yrs>0?`うち厚生年金${Math.round(koseiMonths/12)}年・扶養内パート${p3Yrs}年`:''}）`;
   live();
 }
 // ===== 繰上げ・繰下げ受給の調整率計算 =====
@@ -541,6 +544,8 @@ function updateIncomeStepSummary(id){
   const evName=(document.getElementById(`${id}-leave`)?.value||'').trim();
   const tags=[];
   if(mlOn) tags.push('育休');
+  const _wtv=document.getElementById(`${id}-wt`)?.value||'';
+  if(_wtv && typeof WORK_TYPE_LABELS!=='undefined') tags.push(WORK_TYPE_LABELS[_wtv]);   // 段階の働き方
   if(evName) tags.push(evName.length>10 ? evName.slice(0,10)+'…' : evName);
   const parts=[ageRange, amtPart, ...tags].filter(Boolean);
   summaryEl.textContent = parts.length ? parts.join(' / ') : '（未入力）';
@@ -872,7 +877,7 @@ function calcAvgHyojun(person, startAge, retireAge){
     const c=net<300?0.84:net<500?0.80:net<700?0.77:net<900?0.74:net<1100?0.71:0.68;
     return net/c;
   };
-  let sumHyojun=0, countMonths=0;
+  let sumHyojun=0, countMonths=0, _skipPart=false;
   const firstAgeFrom=steps[0].ageFrom;
   const firstNetFrom=steps[0].netFrom;
   for(let age=startAge; age<retireAge; age++){
@@ -884,13 +889,15 @@ function calcAvgHyojun(person, startAge, retireAge){
       net=firstNetFrom*(0.6+0.4*progress);
     }
     if(net<=0) continue; // カバーされない期間はスキップ
+    // 扶養内パート（第3号）の年は厚生年金に入らないので平均に含めない
+    if(typeof isPart3AtAge==='function'&&isPart3AtAge(person,age,steps)){_skipPart=true;continue;}
     // 額面入力モードならステップ値=額面をそのまま使用（係数変換の誤差がなくなり年金推計が正確に）
     const grossYear=(typeof isGrossInputMode==='function'&&isGrossInputMode(person))?net:NET2GROSS(net);
     const hyojunMonth=Math.min(grossYear/12, 65); // 標準報酬月額上限65万
     sumHyojun+=hyojunMonth*12;
     countMonths+=12;
   }
-  return countMonths>0 ? sumHyojun/countMonths : null;
+  return countMonths>0 ? sumHyojun/countMonths : (_skipPart?0:null);
 }
 
 // ===== メイン計算 =====

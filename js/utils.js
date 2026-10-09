@@ -21,7 +21,9 @@ function ri(n){return Math.round(n)}// 整数丸め（小数点なし）
 function calcKosei(person, startAge, retAge, fallbackPension, kisoAmt){
   const CAREER_FACTOR=0.75;
   const avg=calcAvgHyojun(person, startAge, retAge);
-  const joinM=Math.min(480,Math.max((retAge-startAge)*12,300));
+  // 扶養内パート（第3号）の年は厚生年金に入らない。その年があるときは実際の月数（300月みなしなし）
+  const _p3=part3Years(person,startAge,retAge);
+  const joinM=_p3>0 ? Math.min(480,Math.max(0,(retAge-startAge-_p3)*12)) : Math.min(480,Math.max((retAge-startAge)*12,300));
   if(avg!==null) return avg*5.481/1000*joinM;
   const gM=fv(`${person}-gross-monthly`)||0, gB=fv(`${person}-gross-bonus`)||0;
   if(gM>0){const hyojun=(Math.min(gM,65)*12+Math.min(gB,300))/12*CAREER_FACTOR;return hyojun*5.481/1000*joinM;}
@@ -36,10 +38,12 @@ function calcKoseiForSurvP(person, startAge, deathAge, fallbackPension, kisoAmt,
   // ★ B7修正: 「300月みなし」は短期要件（在職中の死亡など）で適用される特例。
   //   退職後の死亡（厚生年金被保険者ではない期間の死亡）では長期要件で計算され、
   //   実加入月数のみが使われる。デフォルト true で後方互換性を維持。
-  const _shortTerm = (isInsuredAtDeath !== false);
+  // 扶養内パート（第3号）の期間中の死亡は厚生年金の被保険者ではない（長期要件＝実月数）
+  const _shortTerm = (isInsuredAtDeath !== false) && !isPart3AtAge(person, deathAge);
+  const _p3 = part3Years(person, startAge, deathAge);   // 厚生年金に入っていない年
   const joinM = _shortTerm
-    ? Math.min(480, Math.max((deathAge-startAge)*12, 300))   // 短期要件: 300月みなしあり
-    : Math.min(480, Math.max((deathAge-startAge)*12, 0));     // 長期要件: 実加入月数のみ
+    ? Math.min(480, Math.max((deathAge-startAge-_p3)*12, 300))   // 短期要件: 300月みなしあり
+    : Math.min(480, Math.max((deathAge-startAge-_p3)*12, 0));     // 長期要件: 実加入月数のみ
   if(avg!==null) return avg*5.481/1000*joinM;
   const gM=fv(`${person}-gross-monthly`)||0, gB=fv(`${person}-gross-bonus`)||0;
   if(gM>0){const hyojun=(Math.min(gM,65)*12+Math.min(gB,300))/12*CAREER_FACTOR;return hyojun*5.481/1000*joinM;}
@@ -262,6 +266,12 @@ function isPart3AtAge(p,age,steps){
   const s=getIncomeStepAtAge(steps||getIncomeSteps(p),age);
   if(!s||s.legacy)return false;
   return (s.workType||(isGrossInputMode(p)?getWorkType(p):'kaishain'))==='part';
+}
+// startAge〜endAge-1 のうち扶養内パート（第3号）の年数
+function part3Years(p,startAge,endAge,steps){
+  const st=steps||getIncomeSteps(p); let n=0;
+  for(let a=startAge;a<endAge;a++){ if(isPart3AtAge(p,a,st)) n++; }
+  return n;
 }
 // 段階の画面の働き方（空なら人ごとの設定）
 function stepWorkType(stepId){

@@ -625,7 +625,7 @@ function _renderContingencyInner(_mgStopOv){
     _mgRetOnset=(_mgOnsetAge<_rpAge&&_rpAge>_st)?ri((_rpFull||0)*Math.max(0,_mgOnsetAge-_st)/(_rpAge-_st)):-1;
   }
   const _mgDisKisoOk=_mgOnsetAge<65;   // 障害基礎年金は65歳前の初診（発病）が要件
-  const _mgDisKosei=(_mgDis&&getMGPensionType()!=='kokumin'&&_mgOnsetAge<(targetIsH?retAge_mg:wRetAge_mg))   // 障害厚生は厚生年金加入中（退職前）の初診
+  const _mgDisKosei=(_mgDis&&getMGPensionType()!=='kokumin'&&_mgOnsetAge<(targetIsH?retAge_mg:wRetAge_mg)&&!isPart3AtAge(targetIsH?'h':'w',_mgOnsetAge))   // 障害厚生は厚生年金加入中（退職前）の初診
     ? calcKoseiForSurvP(targetIsH?'h':'w', targetIsH?pHStart_mg:pWStart_mg, _mgOnsetAge, targetIsH?pSelf:pWife, targetIsH?kisoH_mg:kisoW_mg, true)
     : 0;
 

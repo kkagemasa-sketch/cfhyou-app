@@ -502,6 +502,63 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(CV.length){ bad++; console.log('❌ PDF表紙\n   - '+CV.join('\n   - ')); }
     else console.log('✅ PDF表紙: 通常（長いメモ）・万が一・現金一括とも1ページに収まり、必要保障額と前提条件の数字が画面と同じ');
+
+    /* ---- 収入の段階ごとの働き方：奥様 会社員(29〜34)→扶養内パート(35〜60)、社保ありパート、前の形式は数字そのまま ---- */
+    await page.evaluate(pageBaseSetup);
+    const WT=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const $=id=>document.getElementById(id);
+      const out=[], info={};
+      if(typeof setHouseholdType==='function') setHouseholdType('couple');
+      $('wife-age').value=29; $('w-retire-age').value=60; $('pension-w-start').value=22;
+      $('w-income-mode').value='gross'; if(typeof onIncomeModeChange==='function') onIncomeModeChange();
+      // 奥様の段階を作り直す
+      $('w-income-cont').innerHTML=''; wIncomeCnt=0;
+      addIncomeStep('w'); { const b='w-is-'+wIncomeCnt; $(b+'-from').value=29; $(b+'-to').value=34; $(b+'-net-from').value=400; $(b+'-net-to').value=400; $(b+'-wt').value='kaishain'; }
+      addIncomeStep('w'); { const b='w-is-'+wIncomeCnt; $(b+'-from').value=35; $(b+'-to').value=60; $(b+'-net-from').value=100; $(b+'-net-to').value=100; $(b+'-wt').value='part'; }
+      live(true); await wait(900);
+      const R=window.lastR, wa0=29;
+      const net30=R.wInc[30-wa0], net40=R.wInc[40-wa0];
+      info.net30=net30; info.net40=net40;
+      if(!(net30>0&&net30<400)) out.push(`会社員の年の手取り ${net30}（社会保険料が引かれていない）`);
+      if(Math.round(net40)!==100) out.push(`扶養内パートの年の手取り ${net40}（100のはず：社会保険料なし・税なし）`);
+      // 老齢年金：厚生年金は 22〜34歳の13年、扶養内パート26年
+      calcPension('w'); const hint=$('w-pension-hint')?.textContent||''; info.hint=hint;
+      if(!/厚生年金13年・扶養内パート25年/.test(hint)&&!/厚生年金13年・扶養内パート26年/.test(hint)) out.push('年金のヒントに厚生年金・扶養内パートの年数が出ない: '+hint);
+      const pPart=+$('pension-w').value;
+      // 社保ありパートなら厚生年金に入る → 年金が増える
+      $('w-is-2-wt').value='shaho-part'; calcPension('w'); const pShaho=+$('pension-w').value;
+      info.pPart=pPart; info.pShaho=pShaho;
+      if(!(pShaho>pPart)) out.push(`社保ありパートの年金(${pShaho})が扶養内パート(${pPart})より多くない`);
+      $('w-is-2-wt').value='part';
+      // 障害（扶養内パートの年に発病）：障害厚生年金なし・傷病手当金なし
+      setRTab('cf'); mgQA_addTab('w','dis2'); const t=mgQA_tabs[mgQA_tabs.length-1];
+      Object.assign(t.state,{deathYear:13}); mgQA_calcAndRender(t,true);   // 41歳
+      const sick=mgC_sick(t); info.sick=sick.ok;
+      if(sick.ok) out.push('扶養内パートの年に障害：傷病手当金が出ている');
+      // 遺族厚生（扶養内パートの年の死亡）は長期要件＝実月数（13年）
+      const kShort=calcKoseiForSurvP('w',22,41,0,0,true);
+      const avg=calcAvgHyojun('w',22,41);
+      const expect=avg*5.481/1000*(41-22-(41-35))*12;
+      if(Math.abs(kShort-expect)>0.5) out.push(`扶養内パート中の死亡の遺族厚生の基礎 ${kShort.toFixed(1)}（実月数 ${expect.toFixed(1)} のはず）`);
+      // 前の形式（段階に働き方なし＋全体の働き方が扶養内パート）は年金が前のまま
+      const d=JSON.parse(JSON.stringify(_collectSaveData()));
+      d.dynamic.incSteps.w.forEach(x=>{delete x.workType; delete x.wtLegacy;});
+      d.fields['w-work-type']='part';
+      _applyData(d); await wait(500);
+      const legacyMarked=[...document.querySelectorAll('#w-income-cont>[id^="w-is-"]')].every(el=>el.dataset.wtLegacy==='1');
+      calcPension('w'); const pLegacy=+$('pension-w').value;
+      const hintL=$('w-pension-hint')?.textContent||'';
+      info.pLegacy=pLegacy;
+      if(!legacyMarked) out.push('前の形式の段階に目印が付かない');
+      if(/扶養内パート\d+年/.test(hintL)) out.push('前の形式なのに扶養内パートの年を厚生年金から外している');
+      // 目印は保存し直しても残る
+      const d2=JSON.parse(JSON.stringify(_collectSaveData()));
+      if(!d2.dynamic.incSteps.w.every(x=>x.wtLegacy)) out.push('保存し直すと前の形式の目印が消える');
+      return {out,info};
+    });
+    if(WT.out.length){ bad++; console.log('❌ 収入の段階ごとの働き方\n   - '+WT.out.join('\n   - ')+'\n   '+JSON.stringify(WT.info)); }
+    else console.log(`✅ 段階ごとの働き方: 会社員→扶養内パート（手取り${WT.info.net30}→${WT.info.net40}・年金${WT.info.pPart}万／社保ありなら${WT.info.pShaho}万）・パート中の障害は傷病手当金なし・遺族厚生は実月数・前の形式は前のまま`);
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });
