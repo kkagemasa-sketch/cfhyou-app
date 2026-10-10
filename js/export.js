@@ -524,6 +524,9 @@ async function exportExcelMG(opt){
   addI('奥様手取年収',MR.wInc);
   addISkip('iDeCo/DC節税(ご主人様)',MR.dcTaxSavingH,N.dcTaxSavingH);
   addISkip('iDeCo/DC節税(奥様)',MR.dcTaxSavingW,N.dcTaxSavingW);
+  // 障害タブ：傷病手当金・障害年金は収入のすぐ下（画面と同じ順）
+  if(MR.sickBenefit&&MR.sickBenefit.some(v=>v>0)) addI(_rl('mg-sickBenefit','傷病手当金'),MR.sickBenefit);
+  if(MR.disPension&&MR.disPension.some(v=>v>0)) addI(_rl('mg-disPension','障害年金'),MR.disPension);
   addISkip('副業・その他収入',MR.otherInc,N.otherInc);
   addISkip('退職金（ご主人様）',MR.rPay,N.rPay);
   addISkip('退職金（奥様）',MR.wRPay,N.wRPay);
@@ -551,8 +554,6 @@ async function exportExcelMG(opt){
   addISkip('奨学金',MR.scholarship,N.scholarship);
   addI('児童手当',MR.teate||N.teate);
   addI('住宅ローン控除',MR.lCtrl||N.lCtrl);
-  if(MR.sickBenefit&&MR.sickBenefit.some(v=>v>0)) addI(_rl('mg-sickBenefit','傷病手当金'),MR.sickBenefit);
-  if(MR.disPension&&MR.disPension.some(v=>v>0)) addI(_rl('mg-disPension','障害年金'),MR.disPension);
   if(MR.houseSale&&MR.houseSale.some(v=>v!==0)) addI(_rl('mg-houseSale','住宅売却（売却額−費用−残債）'),MR.houseSale);
   // 自動資産取崩し（万一CF用）
   if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) addI('自動資産取崩し',MR.autoLiq);

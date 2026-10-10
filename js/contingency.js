@@ -2216,6 +2216,9 @@ function _renderContingencyInner(_mgStopOv){
     h+=mgRow('奥様手取年収',MR.wInc,N.wInc,'wInc');
     h+=mgRow('iDeCo/DC節税(奥様)',MR.dcTaxSavingW,N.dcTaxSavingW,'dcTaxSavingW');
   }
+  // 障害タブ：傷病手当金・障害年金は収入のすぐ下（2026-10-10）
+  if(MR.sickBenefit&&MR.sickBenefit.some(v=>v>0)) h+=mgRow('傷病手当金',MR.sickBenefit,null,'sickBenefit');
+  if(MR.disPension&&MR.disPension.some(v=>v>0)) h+=mgRow('障害年金',MR.disPension,null,'disPension');
   h+=mgRow('副業・その他収入',MR.otherInc,N.otherInc,'otherInc');
   h+=mgRow(_isSingle_mg?'退職金':'退職金（ご主人様）',MR.rPay,N.rPay,'rPay');
   if(!_isSingle_mg)h+=mgRow('退職金（奥様）',MR.wRPay,N.wRPay,'wRPay');
@@ -2238,8 +2241,6 @@ function _renderContingencyInner(_mgStopOv){
   h+=mgRow('奨学金',MR.scholarship,N.scholarship,'scholarship');
   h+=mgRow('児童手当',MR.teate,null,'teate');
   h+=mgRow('住宅ローン控除',MR.lCtrl,N.lCtrl,'lCtrl');
-  if(MR.sickBenefit&&MR.sickBenefit.some(v=>v>0)) h+=mgRow('傷病手当金',MR.sickBenefit,null,'sickBenefit');
-  if(MR.disPension&&MR.disPension.some(v=>v>0)) h+=mgRow('障害年金',MR.disPension,null,'disPension');
   if(MR.houseSale&&MR.houseSale.some(v=>v!==0)) h+=mgRow('住宅売却（売却額−費用−残債）',MR.houseSale,null,'houseSale');
   // 自動資産取崩し（預貯金マイナス補填）
   if(MR.autoLiq&&MR.autoLiq.some(v=>v>0)) h+=mgRow('自動資産取崩し',MR.autoLiq,null,'autoLiq');
