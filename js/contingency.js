@@ -843,16 +843,23 @@ function _renderContingencyInner(_mgStopOv){
       // 連帯債務 + 団信「両者」なら奥様死亡でもローン完済 → 控除も0
       
       const _dansinClears=_mgDS;
-      lctrlVal=_dansinClears?0:baseCtrl;
+      // ★ 2026-10-10: 単独ローンの名義人が亡くなったら、団信が無くて返済が続いても控除は0（所得税・住民税を払う人がいない）
+      const _borrowerDead=isDead&&!jointLoanMode&&((typeof getLoanBorrower==='function')?getLoanBorrower():'h')===_deadP;
+      lctrlVal=(_dansinClears||_borrowerDead)?0:baseCtrl;
     }
     else{
-      if((targetIsH&&_mgDH)||(!targetIsH&&_mgDW)){
+      // ★ 2026-10-10: 亡くなった方の分は団信の有無にかかわらず除く（以前は団信で完済されるときだけ減らしていた）。
+      //   残る方の分は、通常CFでのその方の控除額（その方の税額による上限込み）をそのまま使う
+      const _bdL=(normalR.lCtrlBreakdown&&normalR.lCtrlBreakdown[i])||null;
+      if((isDead||(targetIsH&&_mgDH)||(!targetIsH&&_mgDW))&&_bdL&&_bdL.hApplied!==undefined){
+        lctrlVal=Math.round(targetIsH?(_bdL.wApplied||0):(_bdL.hApplied||0));
+      }else if(isDead||(targetIsH&&_mgDH)||(!targetIsH&&_mgDW)){
         if(active&&lcYr>=0){
           // ★ 繰上返済スケジュールがあれば逐次計算の残高を使用
           const _mgBalH=(el)=>{const s=window._prepaySchedules?.h;return s?(lcYr<=0?lhAmt:(s.yearEndBal[lcYr-1]??0)):(lhAmt>0&&lcYr<lhYrs?lbal(lhAmt,lhYrs,effRate(lcYr,ratesH),lcYr):0);};
           const _mgBalW=(el)=>{const s=window._prepaySchedules?.w;return s?(lcYr<=0?lwAmt:(s.yearEndBal[lcYr-1]??0)):(lwAmt>0&&lcYr<lwYrs?lbal(lwAmt,lwYrs,effRate(lcYr,ratesW),lcYr):0);};
-          const hBal2=(isEvt&&targetIsH&&_mgDH)?0:_mgBalH();
-          const wBal2=(isEvt&&!targetIsH&&_mgDW)?0:_mgBalW();
+          const hBal2=(isEvt&&targetIsH&&(_mgDH||isDead))?0:_mgBalH();
+          const wBal2=(isEvt&&!targetIsH&&(_mgDW||isDead))?0:_mgBalW();
           const origHBal=_mgBalH();
           const origWBal=_mgBalW();
           const origTotal=origHBal+origWBal;

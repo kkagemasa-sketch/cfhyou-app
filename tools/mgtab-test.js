@@ -516,7 +516,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       $('w-income-cont').innerHTML=''; wIncomeCnt=0;
       addIncomeStep('w'); { const b='w-is-'+wIncomeCnt; $(b+'-from').value=29; $(b+'-to').value=34; $(b+'-net-from').value=400; $(b+'-net-to').value=400; $(b+'-wt').value='kaishain'; }
       addIncomeStep('w'); { const b='w-is-'+wIncomeCnt; $(b+'-from').value=35; $(b+'-to').value=60; $(b+'-net-from').value=100; $(b+'-net-to').value=100; $(b+'-wt').value='part'; }
-      live(true); await wait(900);
+      live(true); await wait(900); render();   // 待ち時間に左右されないよう直接計算してから読む
       const R=window.lastR, wa0=29;
       const net30=R.wInc[30-wa0], net40=R.wInc[40-wa0];
       info.net30=net30; info.net40=net40;
