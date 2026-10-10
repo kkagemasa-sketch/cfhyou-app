@@ -74,6 +74,34 @@ function renderContingency(){
   try{ return _renderContingencyInner(); }
   finally{ _mgRendering=false; }
 }
+// ★ 2026-10-10: 万が一で積立の金額を変えた分の合成。S=やめた計算、F=続けた計算、chg={`${p}|${sid}`: 割合}
+//   その積立の行だけ S + 割合×(F−S) にし、合計（積立額・その他金融資産）にも差を足す
+function _mgBlendSurvChg(S,F,chg){
+  const R2=Object.assign({},S);
+  const cp=a=>Array.isArray(a)?a.slice():a;
+  ['secInvest','finAsset','finAssetBase','finAssetNL','finAssetBaseNL'].forEach(k=>{ R2[k]=cp(S[k]); });
+  R2.secInvestRows=(S.secInvestRows||[]).map(r=>Object.assign({},r,{vals:r.vals.slice()}));
+  R2.finAssetRows=(S.finAssetRows||[]).map(r=>Object.assign({},r,{vals:cp(r.vals),baseVals:cp(r.baseVals),nlVals:cp(r.nlVals),nlBaseVals:cp(r.nlBaseVals)}));
+  const addTo=(tot,i,d)=>{ if(Array.isArray(tot)&&i<tot.length) tot[i]=Math.round((tot[i]||0)+d); };
+  Object.entries(chg).forEach(([k,r])=>{
+    const [p,sid]=k.split('|');
+    const ik=`secInv-${p}-${sid}`;
+    const sI=R2.secInvestRows.find(x=>x.key===ik), fI=(F.secInvestRows||[]).find(x=>x.key===ik);
+    if(fI){
+      let row=sI; if(!row){ row={lbl:fI.lbl,key:ik,vals:new Array(fI.vals.length).fill(0)}; R2.secInvestRows.push(row); }
+      for(let i=0;i<fI.vals.length;i++){ const d=Math.round(r*((fI.vals[i]||0)-(row.vals[i]||0))); row.vals[i]=(row.vals[i]||0)+d; addTo(R2.secInvest,i,d); }
+    }
+    const lbl=secRowLabel(p,sid,'課税積立');
+    const sA=R2.finAssetRows.find(x=>x.lbl===lbl), fA=(F.finAssetRows||[]).find(x=>x.lbl===lbl);
+    if(sA&&fA){
+      [['vals','finAsset'],['baseVals','finAssetBase'],['nlVals','finAssetNL'],['nlBaseVals','finAssetBaseNL']].forEach(([rk,tk])=>{
+        const a=sA[rk], b=fA[rk]; if(!Array.isArray(a)||!Array.isArray(b))return;
+        for(let i=0;i<Math.min(a.length,b.length);i++){ const d=Math.round(r*((b[i]||0)-(a[i]||0))); a[i]=(a[i]||0)+d; addTo(R2[tk],i,d); }
+      });
+    }
+  });
+  return R2;
+}
 function _renderContingencyInner(_mgStopOv){
   // _mgStopOv: 2回目の計算でだけ入る「積立をやめる年齢」（万が一の後に預貯金が足りなくなった年から）
   if(!_mgStopOv) render();
@@ -110,11 +138,38 @@ function _renderContingencyInner(_mgStopOv){
       const k=`${_pT}|${sid}`; _mgBaseOv[k]=_mgBaseOv[k]===undefined?_aT:Math.min(_mgBaseOv[k],_aT);
     });
   }
+  // ★ 2026-10-10: 死亡タブ「残された方の積立投資（NISAなど）」を 続ける／止める／金額を変える
+  //   window._mgSurvInv = {`${p}|${sid}`: {mode:'keep'|'stop'|'change', monthly:万円/月}}
+  //   止める・金額を変えるは、万が一の年から積立をやめた計算を土台にする。
+  //   金額を変えるは「やめた計算」と「続けた計算」の差に（新しい月額÷いまの月額）を掛けて足す（積立額に比例するので正確）
+  const _mgFullOv=Object.assign({},_mgBaseOv);   // 金額を変える前（続けた場合）の止める年齢
+  const _mgSurvChg={};                           // `${p}|${sid}` → 新しい月額の割合
+  const _mgSurvAdded=[];                         // ここで止める年齢を入れた積立（2回目の計算の判定から除く）
+  if(!_mgDis&&!_isSingle_mg&&window._mgSurvInv){
+    const _pS=targetIsH?'w':'h', _aS=(targetIsH?wAge:hAge)+deathYearOffset-2;   // 万が一の年から積立なし
+    Object.entries(window._mgSurvInv).forEach(([k,c])=>{
+      if(!c||(c.mode!=='stop'&&c.mode!=='change'))return;
+      const [p,sid]=k.split('|'); if(p!==_pS)return;
+      if(!document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on'))return;
+      const m0=fv(`sec-monthly-${p}-${sid}`)||0; if(m0<=0)return;
+      if(_mgBaseOv[k]!==undefined&&_mgBaseOv[k]<=_aS)return;   // その前にもう止まっている
+      if(c.mode==='change'){
+        const m1=Math.max(0,+c.monthly||0);
+        if(Math.abs(m1-m0)<1e-9)return;
+        _mgSurvChg[k]=m1/m0;
+      }
+      _mgBaseOv[k]=_aS; _mgSurvAdded.push(k);
+    });
+  }
   const _mgHasStopSec=[...document.querySelectorAll('[id^="sec-stopliq-"].on')].some(el=>/^sec-stopliq-[hw]-\d+$/.test(el.id));
-  const normalR=((_mgHasStopSec||Object.keys(_mgBaseOv).length)&&typeof calcNormalWithStops==='function')
+  let normalR=((_mgHasStopSec||Object.keys(_mgBaseOv).length)&&typeof calcNormalWithStops==='function')
     ? calcNormalWithStops(_mgBaseOv) : trueNR;
-  function _mgSecEnd(p,sid){
-    const e=iv(`sec-end-${p}-${sid}`)||0; const o=_mgBaseOv[`${p}|${sid}`];
+  if(Object.keys(_mgSurvChg).length&&typeof calcNormalWithStops==='function'){
+    const _fR=(_mgHasStopSec||Object.keys(_mgFullOv).length)?calcNormalWithStops(_mgFullOv):trueNR;
+    normalR=_mgBlendSurvChg(normalR,_fR,_mgSurvChg);
+  }
+  function _mgSecEnd(p,sid,ov){
+    const e=iv(`sec-end-${p}-${sid}`)||0; const o=(ov||_mgBaseOv)[`${p}|${sid}`];
     return o===undefined?e:(e===0?o:Math.min(e,o));
   }
   const disp=window.lastDisp;
@@ -464,6 +519,7 @@ function _renderContingencyInner(_mgStopOv){
         rate:fvd(`sec-rate-${p}-${sid}`,5)/100,
         redeemAge:iv(`sec-redeem-${p}-${sid}`)||0,
         basisInput:fv(`sec-basis-${p}-${sid}`)||0,
+        chgK:_mgSurvChg[`${p}|${sid}`], endFull:_mgSecEnd(p,sid,_mgFullOv),   // 金額を変えた積立（割合・続けた場合の終了年齢）
         liquidations:[]
       });
     });
@@ -526,15 +582,18 @@ function _renderContingencyInner(_mgStopOv){
     if(s.type==='accum'){
       const yrs=i+1;
       const mr=s.rate/12;
-      if(s.endAge===0||pAge<=s.endAge){
-        const cpd=Math.pow(1+mr,12*yrs);
-        return s.bal*cpd + (mr>0?s.monthly*(cpd-1)/mr:s.monthly*12*yrs);
-      } else {
-        const yrsAccum=s.endAge-s.baseAge+1;
+      const fvAt=endAge=>{
+        if(endAge===0||pAge<=endAge){
+          const cpd=Math.pow(1+mr,12*yrs);
+          return s.bal*cpd + (mr>0?s.monthly*(cpd-1)/mr:s.monthly*12*yrs);
+        }
+        const yrsAccum=endAge-s.baseAge+1;
         const yrsAfter=yrs-yrsAccum;
         const cpdA=Math.pow(1+mr,12*yrsAccum);
         return (s.bal*cpdA + (mr>0?s.monthly*(cpdA-1)/mr:s.monthly*12*yrsAccum))*Math.pow(1+mr,12*Math.max(0,yrsAfter));
-      }
+      };
+      const v0=fvAt(s.endAge);
+      return s.chgK===undefined ? v0 : v0+s.chgK*(fvAt(s.endFull)-v0);
     } else {
       if(s.investAge>0 && pAge<s.investAge)return 0;
       const yrsHeld=s.investAge>0?(pAge-s.investAge):(i+1);
@@ -559,8 +618,9 @@ function _renderContingencyInner(_mgStopOv){
       const contribYrs=Math.min(i+1,Math.max(0,stopAge-s.baseAge));
       cost = s.bal + s.monthly*12*contribYrs;
     } else if(s.type==='accum'){
-      const effYrs=(s.endAge>0&&pAge>s.endAge)?(s.endAge-s.baseAge+1):(i+1);
-      cost = (s.basisInput>0?s.basisInput:s.bal) + s.monthly*12*Math.max(0,effYrs);
+      const yrsAt=endAge=>Math.max(0,(endAge>0&&pAge>endAge)?(endAge-s.baseAge+1):(i+1));
+      const y0=yrsAt(s.endAge), yE=s.chgK===undefined?y0:y0+s.chgK*(yrsAt(s.endFull)-y0);
+      cost = (s.basisInput>0?s.basisInput:s.bal) + s.monthly*12*yE;
     } else {
       cost = s.basisInput>0?s.basisInput:s.bal;
     }
@@ -1858,6 +1918,7 @@ function _renderContingencyInner(_mgStopOv){
     const _yM=MR.yr.findIndex((_,i)=>(MR.autoLiq[i]||0)>0.5||(MR.sav[i]||0)<-0.5);
     if(_yM>=0){
       const _ov2=Object.assign({},_mgBaseOv); let _add=false;
+      _mgSurvAdded.forEach(k=>{ delete _ov2[k]; });   // 残された方の積立の設定は次の計算でまた入る
       (MR.secInvestRows||[]).forEach(row=>{
         const m=(row.key||'').match(/^secInv-([hw])-(\d+)$/); if(!m)return;
         if(!((row.vals[_yM]||0)>0))return;

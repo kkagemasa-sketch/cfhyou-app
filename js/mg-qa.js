@@ -559,6 +559,7 @@ function mgQA_hideLeftPanel(){
   window._mgKindColor = null;
   window._mgDisCfg = null;
   window._mgSelfIncFn = null;
+  window._mgSurvInv = null;
   window._mgScholarAt = null;
   window._mgIn = mgIn_default();
 }
@@ -753,6 +754,7 @@ function mgQA_buildPanel(tab){
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
     ${card('lc','exp','生','生活費', mgQA_lcCard(tab))}
     ${_isDis ? card('stops','exp','保',`${deceased}の保険料・積立投資`, mgQA_stopsCard(tab)) : ''}
+    ${(!_isDis && !_single) ? card('survinv','exp','積',`${spouse}の積立投資（NISAなど）`, mgQA_survInvCard(tab)) : ''}
 
     ${card('house','exp','家','住まいとローン', mgQA_houseCard(tab))}
 
@@ -856,7 +858,7 @@ const MGQA_KIND_INFO = {
   dis2: {label:'障害2級',short:'2級',  color:'#159ea3', event:'障害2級'}
 };
 const MGQA_CARD_KEYS = ['ins','pension','income','lc','house','edu','car'];
-function mgQA_cardKeys(tab){ return (tab.kind==='dis1'||tab.kind==='dis2') ? ['self','sick','dispen','ins','income','lc','stops','house','edu','car'] : MGQA_CARD_KEYS; }
+function mgQA_cardKeys(tab){ return (tab.kind==='dis1'||tab.kind==='dis2') ? ['self','sick','dispen','ins','income','lc','stops','house','edu','car'] : (householdType==='single' ? MGQA_CARD_KEYS : ['ins','pension','income','lc','survinv','house','edu','car']); }
 window._mgQA_openCards = window._mgQA_openCards || {};
 function mgQA_isCardOpen(tabId,key){ return !!(window._mgQA_openCards[tabId]||{})[key]; }
 function mgQA_toggleCard2(tabId,key,hdEl){
@@ -891,6 +893,14 @@ function mgQA_cardSummary(tab, key){
     }
     case 'dispen':
       return s.disPenMode==='manual' ? {changed:true, v:`年${man(s.disPenManual)}`, sub:'手入力'} : {changed:false, v:'自動計算', sub:(tab.kind==='dis1'?'障害1級':'障害2級')+(s.pensionType==='kokumin'?'・国民年金のみ':'')};
+    case 'survinv': {
+      const list = mgC_survAccums(tab), sv = s.survInv || {};
+      if(!list.length) return {changed:false, v:'なし'};
+      const ch = list.filter(a=>sv[a.key] && sv[a.key].mode && sv[a.key].mode!=='keep');
+      if(!ch.length) return {changed:false, v:'続ける', sub:`${list.length}件`};
+      const st = ch.filter(a=>sv[a.key].mode==='stop').length, cg = ch.length - st;
+      return {changed:true, v:[st?`止める${st}件`:'', cg?`金額変更${cg}件`:''].filter(Boolean).join('・'), sub:`${list.length}件中`};
+    }
     case 'stops': {
       const a = mgC_bool(s.stopIns), b = mgC_bool(s.stopInv);
       if(!a&&!b) return {changed:false, v:'続ける'};

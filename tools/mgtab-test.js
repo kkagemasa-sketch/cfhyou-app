@@ -559,6 +559,44 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(WT.out.length){ bad++; console.log('❌ 収入の段階ごとの働き方\n   - '+WT.out.join('\n   - ')+'\n   '+JSON.stringify(WT.info)); }
     else console.log(`✅ 段階ごとの働き方: 会社員→扶養内パート（手取り${WT.info.net30}→${WT.info.net40}・年金${WT.info.pPart}万／社保ありなら${WT.info.pShaho}万）・パート中の障害は傷病手当金なし・遺族厚生は実月数・前の形式は前のまま`);
+
+    /* ---- 死亡タブ：残された方の積立投資（NISAなど）を 続ける／止める／金額を変える ---- */
+    await page.evaluate(pageBaseSetup);
+    const SV=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const $=id=>document.getElementById(id);
+      const out=[], info={};
+      if(typeof setHouseholdType==='function') setHouseholdType('couple');
+      addSecurity('w');
+      const els=document.querySelectorAll('[id^="sec-bal-w-"]'); const sid=els[els.length-1].id.split('-').pop();
+      $('sec-acc-w-'+sid)?.classList.add('on'); $('sec-nisa-w-'+sid)?.classList.add('on');
+      $('sec-bal-w-'+sid).value=100; $('sec-monthly-w-'+sid).value=3; $('sec-rate-w-'+sid).value=4;
+      setRTab('cf'); live(true); await wait(900); render();
+      mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=4;
+      const key='w|'+sid, ev=3;
+      const run=cfg=>{ t.state.survInv=cfg?{[key]:cfg}:{}; mgQA_calcAndRender(t,true); const M=window.lastMR; return {inv:M.secInvest.slice(), fin:M.finAsset.slice()}; };
+      const K=run(null), S=run({mode:'stop'}), H=run({mode:'change',monthly:1.5}), Z=run({mode:'change',monthly:0}), E=run({mode:'change',monthly:3});
+      if(K.inv[ev]!==36) out.push('続ける：万が一の年の積立 '+K.inv[ev]+'（36のはず）');
+      if(S.inv[ev-1]!==36||S.inv[ev]!==0||S.inv[ev+5]!==0) out.push('止める：前年36・万が一の年から0のはず '+S.inv.slice(ev-1,ev+2));
+      if(H.inv[ev]!==18) out.push('月1.5万：万が一の年の積立 '+H.inv[ev]+'（18のはず）');
+      const y=20; info.fin=[K.fin[y],H.fin[y],S.fin[y]];
+      if(!(S.fin[y]<H.fin[y]&&H.fin[y]<K.fin[y])) out.push('20年目の金融資産が 止める<1.5万<続ける になっていない '+info.fin);
+      if(Math.abs(H.fin[y]-(K.fin[y]+S.fin[y])/2)>2) out.push('月1.5万の金融資産が続けると止めるの中間でない '+info.fin);
+      if(Z.fin[y]!==S.fin[y]||Z.inv[ev]!==0) out.push('月0万が「止める」と違う');
+      if(E.fin[y]!==K.fin[y]||E.inv[ev]!==36) out.push('いまと同じ月額が「続ける」と違う');
+      if(K.fin[ev-1]!==S.fin[ev-1]) out.push('万が一の前の年の金融資産が変わっている');
+      // 通常のCF表は変わらない
+      if(window.lastR.secInvest[ev+2]!==36) out.push('通常のCF表の積立が変わった');
+      // カードと保存
+      t.state.survInv={[key]:{mode:'change',monthly:1.5}}; mgQA_switchTab(t.id);
+      const hd=document.querySelector('[data-card="survinv"] .mgqa-c2-hd')?.innerText||'';
+      if(!/金額変更1件/.test(hd)) out.push('カードの要約が出ない: '+hd.replace(/\s+/g,' '));
+      const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state?.survInv;
+      if(!st||!st[key]||st[key].monthly!==1.5) out.push('保存データに設定が入らない');
+      return {out,info};
+    });
+    if(SV.out.length){ bad++; console.log('❌ 残された方の積立投資\n   - '+SV.out.join('\n   - ')); }
+    else console.log('✅ 残された方の積立投資（NISAなど）: 続ける／止める／金額を変える（20年目の金融資産 '+SV.info.fin.join('／')+'）・通常CFは変わらない・保存される');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

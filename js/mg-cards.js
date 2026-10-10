@@ -822,6 +822,7 @@ function mgC_sick(tab){
 function mgQA_disApply(tab){
   const s = tab.state;
   window._mgKind = tab.kind || 'death';
+  window._mgSurvInv = mgC_survInvCfg(tab);   // 残された方の積立投資（死亡タブのみ）
   if(!mgC_isDis(tab)){ window._mgDisCfg = null; window._mgSelfIncFn = null; return; }
   const sk = mgC_sick(tab);
   window._mgDisCfg = {
@@ -919,6 +920,43 @@ function mgC_disPenTable(tab){
   if(!shown.length) return '<div class="hint" style="margin-top:6px">障害年金はありません</div>';
   return `<div class="mgqa-tl"><div class="r h"><span>期間（${mgC_name(tab.target)}の年齢）</span><span>年額</span></div>${
     shown.slice(0,8).map(r=>`<div class="r"><span class="p">${r.from===r.to?r.from+'歳':`${r.from}〜${r.to}歳`}</span><span class="a">${r.v.toLocaleString()}万円</span></div>`).join('')}</div>`;
+}
+// ===== 死亡タブ：残された方の積立投資（NISAなど）=====
+// state.survInv: {`${p}|${sid}`: {mode:'keep'|'stop'|'change', monthly:万円/月}}（万が一の年から切り替わる）
+function mgC_survAccums(tab){
+  if(householdType==='single') return [];
+  const p = tab.target==='h' ? 'w' : 'h', out = [];
+  document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+    const sid = el.id.split('-').pop();
+    if(!document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on')) return;
+    const monthly = parseFloat(document.getElementById(`sec-monthly-${p}-${sid}`)?.value)||0;
+    if(monthly<=0) return;
+    out.push({p, sid, key:`${p}|${sid}`, lbl:secRowLabel(p,sid,'課税積立'), monthly,
+      nisa: !!document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on')});
+  });
+  return out;
+}
+function mgQA_survInvCard(tab){
+  const id = tab.id, list = mgC_survAccums(tab), sv = tab.state.survInv || {};
+  if(!list.length) return '<div class="hint">積み立て中の投資（NISA・課税口座）はありません。④資産で積立額を入力すると、ここで「続ける・止める・金額を変える」を選べます</div>';
+  return list.map(a=>{
+    const c = sv[a.key] || {}, m = c.mode || 'keep';
+    const k = `survInv.${a.key}`;
+    const mv = (c.monthly===undefined||c.monthly===null||c.monthly==='') ? a.monthly : c.monthly;
+    return `<div class="mgqa-lbl2">${a.lbl} <span style="font-weight:400;color:var(--muted)">（いまは月${a.monthly}万円）</span></div>
+      ${mgC_seg(id,k+'.mode',[['keep','続ける'],['stop','止める'],['change','金額を変える']],m)}
+      ${m==='change'?`<div class="fg" style="max-width:220px;margin-top:4px"><label class="lbl">万が一の後の積立額</label><div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${mv}" data-k="${k}.monthly" data-cf-row="secInvest"><span class="sl">万円/月</span></div></div>`:''}`;
+  }).join('<div style="height:8px"></div>') + `<div class="hint">万が一の年から切り替わります。止めた・減らした分は、それまでに積み立てた残高だけが運用で増えていきます</div>`;
+}
+function mgC_survInvCfg(tab){
+  if(mgC_isDis(tab)) return null;
+  const sv = tab.state.survInv || {}, out = {};
+  mgC_survAccums(tab).forEach(a=>{
+    const c = sv[a.key]; if(!c || !c.mode || c.mode==='keep') return;
+    const mv = (c.monthly===undefined||c.monthly===null||c.monthly==='') ? a.monthly : (+c.monthly||0);
+    out[a.key] = {mode:c.mode, monthly:mv};
+  });
+  return Object.keys(out).length ? out : null;
 }
 function mgQA_stopsCard(tab){
   const s = tab.state, id = tab.id;
