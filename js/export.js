@@ -296,7 +296,7 @@ async function exportExcelMG(opt){
   //   Excel にも 1行 info として出力する。営業資料での印象が大きく変わる。
   // 画面の3枚カード（最低限・標準・安心）と同じ値
   // ★ 2026-10-09: 1行の文から「4行（見出し／金額／根拠の年／考え方）×3つの枠」に（年の列を3等分）
-  const _nd = MR.need;
+  const _nd = MG_NEED_SHOW ? MR.need : null;   // 必要保障額の欄・色枠（出さない設定のときは無し）
   const xlNeed={rows:[], cells:[], legend:-1, label:-1}; // 行番号と枠のセル {r,c0,c1,tier,line}
   if(_nd){
     const _sgl=householdType==='single';

@@ -282,7 +282,7 @@ function _ppCoverHtml(d, o){
     </div>`;
   // 必要保障額（万が一）
   let need='';
-  if(isMg){
+  if(isMg&&MG_NEED_SHOW){
     const n=d.mg.need;
     const card=(cls,bd,bg,t,v,b,x)=>`<div class="ppc-tier ${cls}"><span class="bd" style="background:${bg};${cls==='safe'?'color:#1e3a5f':''}">${bd}</span><div class="tt">${t}</div><div class="v">${f(v)}<small>万円</small></div><div class="g">${E(b)}</div><div class="x">${x}</div></div>`;
     need=`<div class="ppc-need"><div class="ppc-t">必要保障額<span>万が一の年に、保険金などで受け取る想定の額</span></div>

@@ -304,22 +304,15 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
       Object.assign(t.state,{deathYear:3,insurances:[{type:'lump',amount:500}],lcMode:'ratio',lcRatio:80}); mgQA_calcAndRender(t,true);
       const nd=JSON.parse(JSON.stringify(window.lastMR.need));
-      const shown1=$('mg-need-wrap')?.style.display!=='none';
-      toggleMgNeed();
-      const hidden=$('mg-need-wrap')?.style.display==='none';
-      const cell=document.querySelector('#right-body table.cf td.need-m1,#right-body table.cf td.need-m2,#right-body table.cf td.need-m3');
-      const outlineHidden=cell?getComputedStyle(cell).outlineStyle==='none':true;
-      mgQA_calcAndRender(t,true);
-      const keep=$('mg-need-wrap')?.style.display==='none' && /表示/.test($('mg-need-toggle')?.textContent||'');
-      toggleMgNeed();
-      const back=$('mg-need-wrap')?.style.display!=='none';
-      return {nd,shown1,hidden,outlineHidden,keep,back};
+      // ★ 2026-10-11 必要保障額は画面に出さない（MG_NEED_SHOW=false）。カード・ボタン・色枠が無いこと
+      const gone=!$('mg-need-wrap') && !$('mg-need-toggle') && !document.querySelector('#right-body table.cf td.need-m1,#right-body table.cf td.need-m2,#right-body table.cf td.need-m3');
+      return {nd,gone};
     });
     const f7=[];
     if(!(NE.nd.min<NE.nd.std && NE.nd.std<NE.nd.safe)) f7.push(`最低限＜標準＜安心 になっていない 最低限${NE.nd.min}・標準${NE.nd.std}・安心${NE.nd.safe}`);
-    if(!NE.shown1||!NE.hidden||!NE.outlineHidden||!NE.keep||!NE.back) f7.push(`カードの表示切替 ${JSON.stringify({shown:NE.shown1,hidden:NE.hidden,outline:NE.outlineHidden,keep:NE.keep,back:NE.back})}`);
+    if(!NE.gone) f7.push('出さない設定なのに、画面に必要保障額のカード・ボタン・色枠が出ている');
     if(f7.length){ bad++; console.log('❌ 必要保障額\n   - '+f7.join('\n   - ')); }
-    else console.log(`✅ 必要保障額: 通常も赤字の家計で 最低限${NE.nd.min.toLocaleString()}＜標準${NE.nd.std.toLocaleString()}＜安心${NE.nd.safe.toLocaleString()}（${NE.nd.safeMode==='floor'?'標準＋2年分':'最後の年の比較'}）・カードを隠す/表示（色枠も連動・再計算後も保持）`);
+    else console.log(`✅ 必要保障額: 通常も赤字の家計で 最低限${NE.nd.min.toLocaleString()}＜標準${NE.nd.std.toLocaleString()}＜安心${NE.nd.safe.toLocaleString()}（${NE.nd.safeMode==='floor'?'標準＋2年分':'最後の年の比較'}）・計算は残り、画面・PDF・Excelには出さない（MG_NEED_SHOW=false）`);
 
     /* ---- 入力欄の保存漏れ・新規作成の残り：左の入力欄すべてに値を入れて確かめる ---- */
     await page.evaluate(pageBaseSetup);
@@ -437,9 +430,9 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
         // 必要保障額の3つの金額と、総金融資産の根拠のマスの色枠
         { const nd=window.lastMR.need; const ws=(caught.find(x=>!/確認/.test(x.name||''))||{}).ws||{};
           const vals=Object.keys(ws).filter(k=>k[0]!=='!').map(k=>String(ws[k].v||''));
-          [['最低限',nd.min],['標準',nd.std],['安心',nd.safe]].forEach(([n,v])=>{ if(!vals.includes(v.toLocaleString()+'万円')) mgBad.push('必要保障額の'+n+' '+v+'万円がExcelにない'); });
+          if(vals.includes('必要保障額')) mgBad.push('出さない設定なのにExcelに必要保障額の欄がある');
           const taR=Object.keys(ws).filter(k=>k[0]!=='!'&&ws[k].v==='総金融資産').map(k=>XLSX.utils.decode_cell(k).r)[0];
-          [['標準',nd.iStd],['安心',nd.iSafe]].forEach(([n,i])=>{ if(i==null||i<0)return; const c=ws[XLSX.utils.encode_cell({r:taR,c:2+i})]; if(!(c&&c.s&&c.s.border&&c.s.border.top&&c.s.border.top.style==='medium')) mgBad.push(n+'の根拠のマスに色枠がない'); });
+          [['標準',nd.iStd],['安心',nd.iSafe]].forEach(([n,i])=>{ if(i==null||i<0)return; const c=ws[XLSX.utils.encode_cell({r:taR,c:2+i})]; if(c&&c.s&&c.s.border&&c.s.border.top&&c.s.border.top.style==='medium') mgBad.push('出さない設定なのに'+n+'の根拠のマスに色枠がある'); });
         }
         if(nChecked<10) normalBad.push('調べた情報欄のセルが少なすぎる（'+nChecked+'個）');
         return {normalBad,mgBad,nChecked};
@@ -486,8 +479,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       if(!c) out.push('万が一の表紙が無い'); else {
         if(!fits(c)) out.push('万が一の表紙が1ページに収まらない');
         const nd=window.lastMR.need;
-        const vs=[...c.querySelectorAll('.ppc-tier .v')].map(e=>num(e.textContent));
-        if(JSON.stringify(vs)!==JSON.stringify([nd.min,nd.std,nd.safe])) out.push(`表紙の必要保障額 ${vs} が画面 ${[nd.min,nd.std,nd.safe]} と違う`);
+        if(c.querySelector('.ppc-need,.ppc-tier')) out.push('出さない設定なのに表紙に必要保障額がある');
         if(!/死亡した場合/.test(c.querySelector('.ppc-scn')?.textContent||'')) out.push('帯に「死亡した場合」が無い');
       }
       closePrintPreview();
@@ -501,7 +493,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       return out;
     });
     if(CV.length){ bad++; console.log('❌ PDF表紙\n   - '+CV.join('\n   - ')); }
-    else console.log('✅ PDF表紙: 通常（長いメモ）・万が一・現金一括とも1ページに収まり、必要保障額と前提条件の数字が画面と同じ');
+    else console.log('✅ PDF表紙: 通常（長いメモ）・万が一・現金一括とも1ページに収まり、前提条件の数字が画面と同じ（必要保障額は出さない）');
 
     /* ---- 収入の段階ごとの働き方：奥様 会社員(29〜34)→扶養内パート(35〜60)、社保ありパート、前の形式は数字そのまま ---- */
     await page.evaluate(pageBaseSetup);

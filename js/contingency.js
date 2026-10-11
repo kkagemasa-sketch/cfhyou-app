@@ -1998,13 +1998,13 @@ function _renderContingencyInner(_mgStopOv){
       </div>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-    <button id="mg-need-toggle" onclick="toggleMgNeed()" title="必要保障額（最低限・標準・安心）のカードを表示／非表示" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.55);padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_mgNeedHidden?'▸ 必要保障額を表示':'▾ 必要保障額を隠す'}</button>
+    ${MG_NEED_SHOW?`<button id="mg-need-toggle" onclick="toggleMgNeed()" title="必要保障額（最低限・標準・安心）のカードを表示／非表示" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.55);padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_mgNeedHidden?'▸ 必要保障額を表示':'▾ 必要保障額を隠す'}</button>`:''}
     <button id="mg-summary-toggle" onclick="toggleMgSummaryDetail()" title="自己資金内訳と住宅ローン条件の詳細ボックスを表示／非表示" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.55);padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">${_mgTogLabel}</button>
     </div>
   </div>`;
 
-  // 必要保障額の3枚カード
-  {
+  // 必要保障額の3枚カード（MG_NEED_SHOW=false の間は出さない）
+  if(MG_NEED_SHOW){
     const nd=MR.need, yr0=getCfStartYear();
     const sAgeOf=i=>(_mgDis?(targetIsH?hAge:wAge):(targetIsH?wAge:hAge))+i;
     const basis=i=>i<0?'':`<small>根拠：${yr0+i}年（${_mgDis?mgTargetLabel2:mgSurvivorLabel}${sAgeOf(i)}歳）</small>`;
@@ -2437,7 +2437,7 @@ function _renderContingencyInner(_mgStopOv){
   }
   // 総金融資産
   h+=`<tr class="rttl"><td>総金融資産</td><td></td>`;
-  for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.totalAsset[i2]);const nd=MR.need||{};const mk=(i2===nd.iMin&&nd.min>0?' need-m1':'')+(i2===nd.iStd?' need-m2':'')+(i2===nd.iSafe?' need-m3':'');h+=`<td class="${v<0?'vn':''}${mk}">${v.toLocaleString()}</td>`;}
+  for(let i2=0;i2<mgDisp;i2++){const v=ri(MR.totalAsset[i2]);const nd=MR.need||{};const mk=!MG_NEED_SHOW?'':(i2===nd.iMin&&nd.min>0?' need-m1':'')+(i2===nd.iStd?' need-m2':'')+(i2===nd.iSafe?' need-m3':'');h+=`<td class="${v<0?'vn':''}${mk}">${v.toLocaleString()}</td>`;}
   h+=`<td>${ri(MR.totalAsset[mgDisp-1]).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">総金融資産</span></td></tr>`;
   // （参考）通常の総金融資産・通常との差の2行は表示しない（2026-10-06 ユーザー指示で削除）
   // ローン残高
