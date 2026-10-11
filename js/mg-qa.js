@@ -130,7 +130,7 @@ function mgQA_buildDefaultState(target){
       // { ageFrom, ageTo, netFrom, netTo } - 空で初期化。必要時に追加
     ],
     lcMode: 'ratio',
-    lcRatio: 70,
+    lcRatio: 100,   // 死亡タブの生活費は初期値100%（2026-10-11。保存済みのタブはその値のまま）
     // 段階モード（lcMode='step'時に使用）: {base, rate, fromYr, toYr, mode:'free'|'pct', pct}
     lcSteps: [],
     houseMode: 'keep',

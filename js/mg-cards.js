@@ -301,7 +301,7 @@ function mgQA_lcCard(tab){
   }else if(mode==='ratio'){
     const r = +s.lcRatio||100;
     body += `<div class="g2"><div class="fg"><label class="lbl">通常に対する割合</label><div class="suf"><input class="inp" type="number" min="10" max="200" value="${r}" data-k="lcRatio" data-cf-row="lc"><span class="sl">％</span></div></div><div></div></div>
-      <div class="mgqa-quick">${[60,70,80,90].map(v=>`<button type="button" class="${v===r?'on':''}" onclick="mgQA_setState('${id}','lcRatio',${v},{rebuild:true})">${v}%</button>`).join('')}</div>
+      <div class="mgqa-quick">${[60,70,80,90,100].map(v=>`<button type="button" class="${v===r?'on':''}" onclick="mgQA_setState('${id}','lcRatio',${v},{rebuild:true})">${v}%</button>`).join('')}</div>
       <div class="mgqa-note">通常 年${mgC_man(normEv)} → <b>年${mgC_man(normEv*r/100)}</b>（月約${Math.round(normEv*r/100/12*10)/10}万円）。物価上昇の設定はそのまま適用</div>`;
   }else if(mode==='step'){
     body += `<div class="mgqa-note">以前の形式の段階設定（${(s.lcSteps||[]).length}期間）が入っています。「期間ごと」を押すと新しい形式で入力し直せます</div>`;
