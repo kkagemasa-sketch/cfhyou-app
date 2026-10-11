@@ -1552,7 +1552,7 @@ function mgQA_renderIns(tabId, idx, ins){
         <input class="inp" type="text" placeholder="保険の名前（例：収入保障保険）" value="${mgQA_escHtml(ins.name||'')}" data-k="insurances.${idx}.name">
         <button type="button" class="mgqa-del" onclick="mgQA_removeIns('${tabId}', ${idx})">削除</button>
       </div>
-      <div class="mgqa-mini-seg">${seg('lump','一時金')}${seg('annuity','年金受取')}</div>
+      <div class="mgqa-mini-seg">${seg('lump','一時金')}${seg('annuity','収入保障保険')}</div>
       ${body}
     </div>`;
 }
