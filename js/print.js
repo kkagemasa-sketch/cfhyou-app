@@ -173,7 +173,9 @@ function _ppBuild(kind, src, sections){
     };
     const buildTable=(cols,isLast)=>{
       const take = isLast ? [0,1,...cols,nCols-1] : [0,1,...cols];
-      let t=`<table class="pp-tbl cf"><colgroup><col class="c1"><col class="c2">${cols.map(()=>'<col>').join('')}${isLast?'<col class="cT">':''}</colgroup>`;
+      // 年数が少ないページ（最後のページなど）は、年の列を20年のページと同じ幅にして表を狭くする（横に広がらないように）
+      const _w=cols.length<PP_YEARS_PER_PAGE?` style="width:min(100%,calc(54mm + ${isLast?'19mm + ':''}(100% - 54mm) * ${cols.length} / ${PP_YEARS_PER_PAGE}))!important"`:'';
+      let t=`<table class="pp-tbl cf"${_w}><colgroup><col class="c1"><col class="c2">${cols.map(()=>'<col>').join('')}${isLast?'<col class="cT">':''}</colgroup>`;
       srcRows.forEach(r=>{
         const cls=(r.className||'').replace(/\bcf-row-highlight\b/g,'');
         t+=`<tr class="${cls}" style="${r.getAttribute('style')||''}">`+take.map(i=>cloneCell(r,i)).join('')
