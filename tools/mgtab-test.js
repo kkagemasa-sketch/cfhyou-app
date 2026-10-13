@@ -617,7 +617,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       if(Math.abs(M.lc[i49+1]-N.lc[i48]*0.7*1.01)>1) out.push('上昇率1%が2年目にかからない '+M.lc[i49+1]);
       // 目安の書き直し（入力のたびに）
       mgQA_switchTab(t.id); await wait(300);
-      { const h0=document.getElementById('mgqa-lcf-'+t.id+'-a1')?.textContent||''; if(!/通常/.test(h0)) out.push('お任せの目安が出ない: '+h0); }
+      { const h0=document.getElementById('mgqa-lcf-'+t.id+'-a1')?.textContent||''; if(!/年[0-9,]+万/.test(h0)||/通常/.test(h0)) out.push('お任せの目安が出ない: '+h0); }
       t.state.lcInfl=0;
       // カード
       mgQA_switchTab(t.id);

@@ -387,7 +387,7 @@ function mgC_lcFirstHtml(tab, r){
   const n = Math.round(mgC_lcNormalAtAge(p, from));
   const sim = mgC_lcSim(tab, a=>mgC_lcNormalAtAge(p, a));
   const v = sim[from]!==undefined ? sim[from] : n;
-  return `<small>通常${n.toLocaleString()}→</small><b>年${v.toLocaleString()}万</b>`;
+  return `<b>年${v.toLocaleString()}万</b>`;   // 2026-10-13 ユーザー指示で「通常◯→」の表示は外した
 }
 function mgC_lcRefreshHints(tab){
   const rows = mgC_lcRowsOf(tab);
