@@ -893,8 +893,8 @@ function _renderContingencyInner(_mgStopOv){
     }
     MR.survPension.push(survP);
     // 遺族年金の受給者（ご主人死亡→奥様が受給 / 奥様死亡→ご主人が受給）
-    const _survPH_mg=(isDead&&!targetIsH)?survP:0;
-    const _survPW_mg=(isDead&&targetIsH)?survP:0;
+    let _survPH_mg=(isDead&&!targetIsH)?survP:0;
+    let _survPW_mg=(isDead&&targetIsH)?survP:0;
 
     // その他収入
     const oiVal=i<normalR.otherInc.length?normalR.otherInc[i]:0;
@@ -974,6 +974,16 @@ function _renderContingencyInner(_mgStopOv){
       }
       const own=targetIsH?pSelfVal:pWifeVal;
       if(own>0){ if(own>=_disP){_disP=0;} else { if(targetIsH)pSelfVal=0; else pWifeVal=0; } }
+    }
+    // ★ 2026-10-13: 障害タブで、障害の方が通常のCF表の想定寿命を過ぎた年からは通常のCF表と同じ年金
+    //   （ご本人の老齢年金・障害年金は0、配偶者はご自身の老齢年金＋通常のCF表と同じ遺族年金）
+    if(_mgDis&&i<normalR.pS.length&&((targetIsH?ha:wa)>(targetIsH?(iv('h-death-age')||83):(iv('w-death-age')||88)))){
+      pSelfVal=ri(i<normalR.pS.length?(normalR.pS[i]||0):0);
+      pWifeVal=ri(i<normalR.pW.length?(normalR.pW[i]||0):0);
+      _disP=0; _sickV=0;
+      survP=ri(i<normalR.survPension.length?(normalR.survPension[i]||0):0);
+      MR.survPension[MR.survPension.length-1]=survP;
+      _survPH_mg=targetIsH?0:survP; _survPW_mg=targetIsH?survP:0;
     }
     MR.disPension=MR.disPension||[]; MR.disPension.push(_disP);
     MR.sickBenefit=MR.sickBenefit||[]; MR.sickBenefit.push(_sickV);
