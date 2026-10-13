@@ -13,6 +13,17 @@ function render(){
     if(o!==undefined) return o;
     return iv(kind==='accum'?`sec-redeem-${p}-${sid}`:`sec-stk-redeem-${p}-${sid}`)||0;
   }
+  // ★ 2026-10-13: 万が一のタブで変えた財形の積立終了・解約の年齢
+  function _zkEndOf(p){
+    const e=iv(`zaikei-${p}-end`)||0, o=_secStopOv?_secStopOv[`zk:end|${p}`]:undefined;
+    if(o===undefined) return e;
+    const pr=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
+    return Math.min(e>0?e:pr, o);
+  }
+  function _zkRedeemOf(p){
+    const o=_secStopOv?_secStopOv[`zk:rd|${p}`]:undefined;
+    return o!==undefined?o:(iv(`zaikei-${p}-redeem`)||0);
+  }
   function _secEndAgeOf(p,sid){
     const e=iv(`sec-end-${p}-${sid}`)||0;
     const o=_secStopOv?_secStopOv[`${p}|${sid}`]:undefined;
@@ -688,8 +699,8 @@ function render(){
       const zm=fv(`zaikei-${p}-monthly`)||0;
       if(zbal>0||zm>0){
         const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
-        const ze=iv(`zaikei-${p}-end`)||0;
-        const zr=iv(`zaikei-${p}-redeem`)||0;
+        const ze=_zkEndOf(p);
+        const zr=_zkRedeemOf(p);
         const _zEnd=ze>0?ze:pRetAge;
         securityState.push({
           sid:'zk', p, type:'zaikei', lbl:`財形貯蓄(${pLbl})`, isNisa:false, baseAge:pBaseAge,
@@ -1831,8 +1842,8 @@ function render(){
       const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
       const zbal=fv(`zaikei-${p}-bal`)||0;
       const zm=fv(`zaikei-${p}-monthly`)||0;
-      const ze=iv(`zaikei-${p}-end`)||0;
-      const zr=iv(`zaikei-${p}-redeem`)||0;
+      const ze=_zkEndOf(p);
+      const zr=_zkRedeemOf(p);
       if(zbal<=0&&zm<=0)return;
       // 積立終了年齢（未入力なら定年）／解約年齢（未入力なら積立終了と同時）
       const _zEnd=ze>0?ze:pRetAge;
@@ -2774,8 +2785,8 @@ function render(){
       const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
       const zbal=fv(`zaikei-${p}-bal`)||0;
       const zm=fv(`zaikei-${p}-monthly`)||0;
-      const ze=iv(`zaikei-${p}-end`)||0;
-      const zr=iv(`zaikei-${p}-redeem`)||0;
+      const ze=_zkEndOf(p);
+      const zr=_zkRedeemOf(p);
       if(zbal<=0&&zm<=0)return;
       const _zEnd=ze>0?ze:pRetAge;
       const _zRedeemAge=zr>0?zr:_zEnd;

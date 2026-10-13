@@ -566,7 +566,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       setRTab('cf'); live(true); await wait(900); render();
       mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=4;
       const key='w|'+sid, ev=3;
-      const run=cfg=>{ t.state.survInv=cfg?{[key]:cfg}:{}; mgQA_calcAndRender(t,true); const M=window.lastMR; return {inv:M.secInvest.slice(), fin:M.finAsset.slice()}; };
+      const run=cfg=>{ t.state.assets=cfg?{['accum|'+key]:{acc:cfg.mode,monthly:cfg.monthly}}:{}; mgQA_calcAndRender(t,true); const M=window.lastMR; return {inv:M.secInvest.slice(), fin:M.finAsset.slice()}; };
       const K=run(null), S=run({mode:'stop'}), H=run({mode:'change',monthly:1.5}), Z=run({mode:'change',monthly:0}), E=run({mode:'change',monthly:3});
       if(K.inv[ev]!==36) out.push('続ける：万が一の年の積立 '+K.inv[ev]+'（36のはず）');
       if(S.inv[ev-1]!==36||S.inv[ev]!==0||S.inv[ev+5]!==0) out.push('止める：前年36・万が一の年から0のはず '+S.inv.slice(ev-1,ev+2));
@@ -580,11 +580,11 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       // 通常のCF表は変わらない
       if(window.lastR.secInvest[ev+2]!==36) out.push('通常のCF表の積立が変わった');
       // カードと保存
-      t.state.survInv={[key]:{mode:'change',monthly:1.5}}; mgQA_switchTab(t.id);
-      const hd=document.querySelector('[data-card="survinv"] .mgqa-c2-hd')?.innerText||'';
+      t.state.assets={['accum|'+key]:{acc:'change',monthly:1.5}}; mgQA_switchTab(t.id);
+      const hd=document.querySelector('[data-card="assets"] .mgqa-c2-hd')?.innerText||'';
       if(!/金額変更/.test(hd)) out.push('カードの要約が出ない: '+hd.replace(/\s+/g,' '));
-      const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state?.survInv;
-      if(!st||!st[key]||st[key].monthly!==1.5) out.push('保存データに設定が入らない');
+      const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state?.assets;
+      if(!st||!st['accum|'+key]||st['accum|'+key].monthly!==1.5) out.push('保存データに設定が入らない');
       return {out,info};
     });
     if(SV.out.length){ bad++; console.log('❌ 残された方の積立投資\n   - '+SV.out.join('\n   - ')); }
@@ -678,16 +678,59 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       const wa=+$("wife-age").value; const key="accum|w|"+sid;
       mgQA_addTab("h"); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=4;
       const at=()=>{ const rw=(window.lastMR.secRedeemRows||[]).find(r=>r.vals.some(v=>v>0)); return rw? wa+rw.vals.findIndex(v=>v>0) : 0; };
-      t.state.survRd={}; mgQA_calcAndRender(t,true); if(at()!==65) out.push("④と同じで65歳に解約されない "+at());
-      t.state.survRd={[key]:{mode:"age",age:70}}; mgQA_calcAndRender(t,true); if(at()!==70) out.push("70歳に変えても解約が70歳にならない "+at());
+      t.state.assets={}; mgQA_calcAndRender(t,true); if(at()!==65) out.push("④と同じで65歳に解約されない "+at());
+      t.state.assets={[key]:{rd:"age",age:70}}; mgQA_calcAndRender(t,true); if(at()!==70) out.push("70歳に変えても解約が70歳にならない "+at());
       if(!(window.lastMR.finAsset[66-wa]>0)) out.push("70歳に変えたのに66歳で資産が0");
-      t.state.survRd={[key]:{mode:"never"}}; mgQA_calcAndRender(t,true); if(at()!==0||!(window.lastMR.finAsset[75-wa]>0)) out.push("解約しないにしても解約される");
+      t.state.assets={[key]:{rd:"never"}}; mgQA_calcAndRender(t,true); if(at()!==0||!(window.lastMR.finAsset[75-wa]>0)) out.push("解約しないにしても解約される");
       const nr=(window.lastR.secRedeemRows||[]).find(r=>r.vals.some(v=>v>0)); if(!nr||wa+nr.vals.findIndex(v=>v>0)!==65) out.push("通常のCF表の解約年齢が変わった");
-      const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state; if(!st||!st.survRd||st.survRd[key].mode!=="never") out.push("保存データに解約の設定が入らない");
+      const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state; if(!st||!st.assets||st.assets[key].rd!=="never") out.push("保存データに解約の設定が入らない");
       return out;
     });
     if(RD.length){ bad++; console.log("❌ 残された方の投資の解約年齢\n   - "+RD.join("\n   - ")); }
     else console.log("✅ 残された方の投資の解約年齢: ④と同じ・70歳に変更・解約しない が万が一のタブだけに効く・通常CFは変わらない・保存される");
+
+    /* ---- 万が一の金融資産（商品ごと）：万が一の年に解約・障害タブはおふたり・財形・以前の設定の読み替え ---- */
+    await page.evaluate(pageBaseSetup);
+    const AS=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      if(typeof setHouseholdType==="function") setHouseholdType("couple");
+      const addAcc=(p,bal,m,rd)=>{ addSecurity(p); const els=document.querySelectorAll('[id^="sec-bal-'+p+'-"]'); const sid=els[els.length-1].id.split("-").pop();
+        $("sec-acc-"+p+"-"+sid)?.classList.add("on"); $("sec-bal-"+p+"-"+sid).value=bal; $("sec-monthly-"+p+"-"+sid).value=m; $("sec-rate-"+p+"-"+sid).value=3; $("sec-redeem-"+p+"-"+sid).value=rd; return sid; };
+      const sw=addAcc("w",300,3,65), sh=addAcc("h",200,2,65);
+      if($("zaikei-w-bal")){ $("zaikei-w-bal").value=100; $("zaikei-w-monthly").value=1; }
+      setRTab("cf"); live(true); await wait(900); render();
+      const N=window.lastR, wa=+$("wife-age").value, ha=+$("husband-age").value;
+      const redeemAt=(rows,base)=>{ const rw=(rows||[]).find(r=>/奥様/.test(r.lbl||r.name||"")&&r.vals.some(v=>v>0)); return rw? base+rw.vals.findIndex(v=>v>0) : 0; };
+      // 死亡タブ：万が一の年に解約
+      mgQA_addTab("h"); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=4;
+      t.state.assets={["accum|w|"+sw]:{rd:"event"}}; mgQA_calcAndRender(t,true);
+      const evW=wa+3; if(redeemAt(window.lastMR.secRedeemRows,wa)!==evW) out.push("万が一の年に解約にしても、その年に解約されない "+redeemAt(window.lastMR.secRedeemRows,wa));
+      mgQA_switchTab(t.id); await wait(300);
+      const card=document.querySelector('[data-card="assets"]')?.textContent||"";
+      if(!/奥様の金融資産/.test(card)||!/財形貯蓄/.test(card)||/ご主人様（障害の方）/.test(card)) out.push("死亡タブのカードに遺された方の商品だけが並ばない");
+      // 財形を止める：万が一の年から積立0、止めた年に解約しない
+      t.state.assets={["zaikei|w"]:{acc:"stop"}}; mgQA_calcAndRender(t,true);
+      const zr=(window.lastMR.zaikeiExp||[]); if(zr.length&&zr[3]>0) out.push("財形を止めても万が一の年に積立がある "+zr[3]);
+      // 障害タブ：おふたりの商品が並び、障害の方の積立だけ止められる
+      mgQA_addTab("h","dis1"); const t2=mgQA_tabs[mgQA_tabs.length-1]; t2.state.deathYear=4;
+      t2.state.assets={["accum|h|"+sh]:{acc:"stop"}}; mgQA_calcAndRender(t2,true);
+      const rows=window.lastMR.secInvestRows||[]; const rh=rows.find(r=>r.key==="secInv-h-"+sh), rw=rows.find(r=>r.key==="secInv-w-"+sw);
+      if(!rh||rh.vals[3]!==0||rh.vals[2]!==24) out.push("障害タブでご主人様の積立が止まらない "+(rh&&rh.vals.slice(1,5)));
+      if(!rw||rw.vals[3]!==36) out.push("障害タブで止めていない奥様の積立が変わった "+(rw&&rw.vals[3]));
+      mgQA_switchTab(t2.id); await wait(300);
+      const c2=document.querySelector('[data-card="assets"]')?.textContent||"";
+      if(!/おふたりの金融資産/.test(c2)||!/ご主人様（障害の方）/.test(c2)||!/奥様/.test(c2)) out.push("障害タブのカードにおふたりの商品が並ばない");
+      // 以前の形式（survInv/survRd）を読み替える
+      mgQA_addTab("h"); const t3=mgQA_tabs[mgQA_tabs.length-1]; t3.state.deathYear=4; delete t3.state.assets;
+      t3.state.survInv={["w|"+sw]:{mode:"stop"}}; t3.state.survRd={["accum|w|"+sw]:{mode:"age",age:70}}; mgQA_calcAndRender(t3,true);
+      const a3=t3.state.assets||{}; if(!a3["accum|w|"+sw]||a3["accum|w|"+sw].acc!=="stop"||a3["accum|w|"+sw].rd!=="age") out.push("以前の設定が読み替えられない "+JSON.stringify(a3));
+      if(redeemAt(window.lastMR.secRedeemRows,wa)!==70) out.push("以前の設定の解約年齢70歳が効かない");
+      // 通常のCF表は変わらない
+      if(redeemAt(window.lastR.secRedeemRows,wa)!==65) out.push("通常のCF表の解約年齢が変わった");
+      return out;
+    });
+    if(AS.length){ bad++; console.log("❌ 万が一の金融資産（商品ごと）\n   - "+AS.join("\n   - ")); }
+    else console.log("✅ 万が一の金融資産（商品ごと）: 万が一の年に解約・財形を止める・障害タブはおふたり（障害の方だけ止める）・以前の設定の読み替え・通常CFは変わらない");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

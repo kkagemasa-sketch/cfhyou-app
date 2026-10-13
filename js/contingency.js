@@ -145,11 +145,12 @@ function _renderContingencyInner(_mgStopOv){
   const _mgFullOv=Object.assign({},_mgBaseOv);   // 金額を変える前（続けた場合）の止める年齢
   const _mgSurvChg={};                           // `${p}|${sid}` → 新しい月額の割合
   const _mgSurvAdded=[];                         // ここで止める年齢を入れた積立（2回目の計算の判定から除く）
-  if(!_mgDis&&!_isSingle_mg&&window._mgSurvInv){
-    const _pS=targetIsH?'w':'h', _aS=(targetIsH?wAge:hAge)+deathYearOffset-2;   // 万が一の年から積立なし
+  if(window._mgSurvInv&&(_mgDis||!_isSingle_mg)){
+    const _pS=targetIsH?'w':'h';
     Object.entries(window._mgSurvInv).forEach(([k,c])=>{
       if(!c||(c.mode!=='stop'&&c.mode!=='change'))return;
-      const [p,sid]=k.split('|'); if(p!==_pS)return;
+      const [p,sid]=k.split('|'); if(!_mgDis&&p!==_pS)return;   // 死亡タブは遺された方だけ（亡くなった方の分は万が一の年に現金化）
+      const _aS=(p==='h'?hAge:wAge)+deathYearOffset-2;   // 万が一の年から積立なし
       if(!document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on'))return;
       const m0=fv(`sec-monthly-${p}-${sid}`)||0; if(m0<=0)return;
       if(_mgBaseOv[k]!==undefined&&_mgBaseOv[k]<=_aS)return;   // その前にもう止まっている
@@ -163,8 +164,24 @@ function _renderContingencyInner(_mgStopOv){
   }
   // ★ 2026-10-13: 死亡タブ「残された方の投資」で変えた解約年齢（window._mgSurvRedeem = {'accum|p|sid': 年齢(0=解約しない)}）
   //   通常CFの計算し直し（calcNormalWithStops）に 'rd:' で渡し、万が一側の取り崩し・解約行にも使う
-  const _mgSurvRd=(!_mgDis&&!_isSingle_mg&&window._mgSurvRedeem)||null;
-  if(_mgSurvRd){ Object.entries(_mgSurvRd).forEach(([k,a])=>{ _mgBaseOv['rd:'+k]=a; _mgFullOv['rd:'+k]=a; }); }
+  const _mgSurvRd=((_mgDis||!_isSingle_mg)&&window._mgSurvRedeem)||null;
+  if(_mgSurvRd){ Object.entries(_mgSurvRd).forEach(([k,a])=>{
+    const zk=k.match(/^zaikei\|([hw])$/);
+    if(zk){ _mgBaseOv['zk:rd|'+zk[1]]=a; _mgFullOv['zk:rd|'+zk[1]]=a; }
+    else{ _mgBaseOv['rd:'+k]=a; _mgFullOv['rd:'+k]=a; }
+  }); }
+  // 財形の積立を止める（万が一の年から）。解約の年齢を決めていなければ、④の解約年齢のまま（止めた年に解約しない）
+  if(window._mgZkStop&&(_mgDis||!_isSingle_mg)){ Object.keys(window._mgZkStop).forEach(p=>{
+    if(!_mgDis&&p!==(targetIsH?'w':'h'))return;
+    const a=(p==='h'?hAge:wAge)+deathYearOffset-2;
+    _mgBaseOv['zk:end|'+p]=a; _mgFullOv['zk:end|'+p]=a;
+    if(_mgBaseOv['zk:rd|'+p]===undefined){
+      const pr=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60), ze=iv(`zaikei-${p}-end`)||0, zr=iv(`zaikei-${p}-redeem`)||0;
+      const r0=zr>0?zr:(ze>0?ze:pr); _mgBaseOv['zk:rd|'+p]=r0; _mgFullOv['zk:rd|'+p]=r0;
+    }
+  }); }
+  function _mgZkEnd(p){ const e=iv(`zaikei-${p}-end`)||0, o=_mgBaseOv['zk:end|'+p]; if(o===undefined) return e; const pr=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60); return Math.min(e>0?e:pr,o); }
+  function _mgZkRd(p){ const o=_mgBaseOv['zk:rd|'+p]; return o!==undefined?o:(iv(`zaikei-${p}-redeem`)||0); }
   function _mgRedeemOf(kind,p,sid){
     const k=`${kind}|${p}|${sid}`;
     if(_mgSurvRd&&_mgSurvRd[k]!==undefined) return _mgSurvRd[k];
@@ -559,8 +576,8 @@ function _renderContingencyInner(_mgStopOv){
       const zm=fv(`zaikei-${p}-monthly`)||0;
       if(zbal>0||zm>0){
         const pRetAge=p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60);
-        const ze=iv(`zaikei-${p}-end`)||0;
-        const zr=iv(`zaikei-${p}-redeem`)||0;
+        const ze=_mgZkEnd(p);
+        const zr=_mgZkRd(p);
         const _zEnd=ze>0?ze:pRetAge;
         _mgSecurityState.push({
           sid:'zk', p, type:'zaikei', lbl:`財形貯蓄(${pLbl})`, isNisa:false, baseAge:pBaseAge,

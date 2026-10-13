@@ -1022,7 +1022,8 @@ function mgQA_disApply(tab){
   const s = tab.state;
   window._mgKind = tab.kind || 'death';
   window._mgSurvInv = mgC_survInvCfg(tab);   // 残された方の積立投資（死亡タブのみ）
-  window._mgSurvRedeem = mgC_isDis(tab) ? null : mgC_survRedeemCfg(tab);   // 残された方の解約年齢（死亡タブのみ）
+  window._mgSurvRedeem = mgC_survRedeemCfg(tab);   // 金融資産の解約年齢（死亡＝遺された方／障害＝おふたり）
+  window._mgZkStop = mgC_zkStopCfg(tab);           // 財形の積立を止める
   if(!mgC_isDis(tab)){ window._mgDisCfg = null; window._mgSelfIncFn = null; return; }
   const sk = mgC_sick(tab);
   window._mgDisCfg = {
@@ -1157,7 +1158,7 @@ function mgC_survSecs(tab){
   });
   return out;
 }
-function mgC_survRedeemCfg(tab){
+function mgC_survRedeemCfg_v1(tab){
   const rd = tab.state.survRd || {}, out = {};
   mgC_survSecs(tab).forEach(a=>{
     const c = rd[a.rkey]; if(!c || !c.mode || c.mode==='same') return;
@@ -1196,7 +1197,107 @@ function mgQA_survInvCard_old(tab){
       ${m==='change'?`<div class="fg" style="max-width:220px;margin-top:4px"><label class="lbl">万が一の後の積立額</label><div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${mv}" data-k="${k}.monthly" data-cf-row="secInvest"><span class="sl">万円/月</span></div></div>`:''}`;
   }).join('<div style="height:8px"></div>') + `<div class="hint">万が一の年から切り替わります。止めた・減らした分は、それまでに積み立てた残高だけが運用で増えていきます</div>`;
 }
+// ===== 万が一の金融資産（商品ごと）=====
+// state.assets = {rkey: {acc:'keep'|'stop'|'change', monthly, rd:'same'|'event'|'age'|'never', age}}
+//   rkey: 'accum|p|sid'（積立）/'stock|p|sid'（一括）/'zaikei|p'（財形）
+//   死亡タブ＝遺された方の商品、障害タブ＝おふたりの商品。以前の survInv/survRd（v624〜629）は最初に読み替える
+function mgC_assetPersons(tab){
+  if(mgC_isDis(tab)) return householdType==='single' ? [tab.target] : [tab.target, tab.target==='h'?'w':'h'];
+  return householdType==='single' ? [] : [mgC_survivor(tab)];
+}
+function mgC_assetsList(tab){
+  const out = [], num = id => parseFloat(document.getElementById(id)?.value)||0;
+  mgC_assetPersons(tab).forEach(p=>{
+    const ev = mgC_ageAtEvent(tab, p);
+    document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+      const sid = el.id.split('-').pop();
+      if(!document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on')) return;
+      const bal = num(`sec-bal-${p}-${sid}`), monthly = num(`sec-monthly-${p}-${sid}`);
+      if(bal<=0 && monthly<=0) return;
+      out.push({kind:'accum', p, sid, rkey:`accum|${p}|${sid}`, ikey:`${p}|${sid}`, lbl:secRowLabel(p,sid,'課税積立'), bal, monthly, canChange:true, redeem: mgQA_iv(`sec-redeem-${p}-${sid}`)||0, ev});
+    });
+    document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+      const sid = el.id.split('-').pop();
+      if(!document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on')) return;
+      const bal = num(`sec-stk-bal-${p}-${sid}`); if(bal<=0) return;
+      out.push({kind:'stock', p, sid, rkey:`stock|${p}|${sid}`, lbl:secRowLabel(p,sid,'課税一括投資'), bal, monthly:0, redeem: mgQA_iv(`sec-stk-redeem-${p}-${sid}`)||0, ev});
+    });
+    const zb = num(`zaikei-${p}-bal`), zm = num(`zaikei-${p}-monthly`);
+    if(zb>0 || zm>0){
+      const pr = p==='h' ? (mgQA_iv('retire-age')||60) : (mgQA_iv('w-retire-age')||60), ze = mgQA_iv(`zaikei-${p}-end`)||0, zr = mgQA_iv(`zaikei-${p}-redeem`)||0;
+      out.push({kind:'zaikei', p, sid:'zk', rkey:`zaikei|${p}`, lbl:`財形貯蓄(${p==='h'?'ご主人様':'奥様'})`, bal:zb, monthly:zm, canChange:false, redeem: zr>0?zr:(ze>0?ze:pr), ev});
+    }
+  });
+  return out;
+}
+function mgC_assetsState(tab){
+  const s = tab.state;
+  if(s.assets && typeof s.assets==='object') return s.assets;
+  const a = {};
+  Object.entries(s.survInv||{}).forEach(([k,c])=>{ if(c && c.mode && c.mode!=='keep') a['accum|'+k] = {acc:c.mode, monthly:c.monthly}; });
+  Object.entries(s.survRd||{}).forEach(([k,c])=>{ if(c && c.mode && c.mode!=='same'){ a[k] = Object.assign(a[k]||{}, {rd:c.mode, age:c.age}); } });
+  s.assets = a;
+  return a;
+}
 function mgC_survInvCfg(tab){
+  const st = mgC_assetsState(tab), out = {};
+  mgC_assetsList(tab).forEach(a=>{
+    if(a.kind!=='accum' || a.monthly<=0) return;
+    const c = st[a.rkey]; if(!c || !c.acc || c.acc==='keep') return;
+    const mv = (c.monthly===undefined||c.monthly===null||c.monthly==='') ? a.monthly : (+c.monthly||0);
+    out[a.ikey] = {mode:c.acc, monthly:mv};
+  });
+  return Object.keys(out).length ? out : null;
+}
+function mgC_survRedeemCfg(tab){
+  const st = mgC_assetsState(tab), out = {};
+  mgC_assetsList(tab).forEach(a=>{
+    const c = st[a.rkey]; if(!c || !c.rd || c.rd==='same') return;
+    if(c.rd==='event') out[a.rkey] = a.ev;
+    else if(c.rd==='never') out[a.rkey] = a.kind==='zaikei' ? 999 : 0;
+    else if(c.rd==='age' && +c.age>0) out[a.rkey] = +c.age;
+  });
+  return Object.keys(out).length ? out : null;
+}
+function mgC_zkStopCfg(tab){
+  const st = mgC_assetsState(tab), out = {};
+  mgC_assetsList(tab).forEach(a=>{ if(a.kind==='zaikei' && a.monthly>0 && st[a.rkey] && st[a.rkey].acc==='stop') out[a.p] = true; });
+  return Object.keys(out).length ? out : null;
+}
+function mgC_assetsCount(tab){
+  const st = mgC_assetsState(tab), list = mgC_assetsList(tab);
+  let stop = 0, chg = 0, rd = 0;
+  list.forEach(a=>{ const c = st[a.rkey]||{};
+    if(c.acc==='stop' && a.monthly>0) stop++; else if(c.acc==='change' && a.canChange && a.monthly>0) chg++;
+    if(c.rd && c.rd!=='same' && !(c.rd==='age' && !(+c.age>0))) rd++; });
+  return {n:list.length, stop, chg, rd};
+}
+function mgQA_assetsCard(tab){
+  const id = tab.id, st = mgC_assetsState(tab), list = mgC_assetsList(tab);
+  if(!list.length) return '<div class="hint">④資産に金融資産（NISA・課税口座・財形など）が入っていません</div>';
+  const hc = (p,a) => (+a||0) - mgC_ageNow(p) + mgC_ageNow('h');
+  const opt = (k, opts, cur) => `<select class="sel mgqa-asel" data-k="${k}">${opts.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select>`;
+  const head = `<div class="mgqa-ag h"><span>商品（④資産）</span><span>積立</span><span>解約</span></div>`;
+  let h = '', cur = null;
+  list.forEach(a=>{
+    if(mgC_isDis(tab) && a.p!==cur){ cur = a.p; h += `<div class="mgqa-agp">${mgC_name(a.p)}${a.p===tab.target?'（障害の方）':''}</div>` + head; }
+    else if(!h) h += head;
+    const c = st[a.rkey] || {}, k = `assets.${a.rkey}`;
+    const acc = c.acc || 'keep', rd = c.rd || 'same';
+    const sub = a.kind==='stock' ? `残高${a.bal}万` : `残高${a.bal}万${a.monthly>0?`・月${a.monthly}万`:''}`;
+    const accSel = a.monthly>0 ? opt(k+'.acc', a.canChange ? [['keep','続ける'],['stop','止める'],['change','金額を変える']] : [['keep','続ける'],['stop','止める']], acc) : '<span class="mgqa-agn">（積立なし）</span>';
+    const rdSel = opt(k+'.rd', [['same', a.redeem>0 && a.redeem<900 ? `④と同じ（${a.redeem}歳）` : '④と同じ（解約しない）'],['event','万が一の年に解約'],['age','年齢を決めて解約'],['never','解約しない']], rd);
+    let ex = '';
+    if(acc==='change' && a.canChange && a.monthly>0) ex += `<span class="mgqa-agx">万が一の後の積立 <input class="inp" type="text" inputmode="decimal" value="${c.monthly??a.monthly}" data-k="${k}.monthly" data-cf-row="secInvest">万円/月</span>`;
+    if(rd==='age') ex += `<span class="mgqa-agx">解約 <input class="inp" type="text" inputmode="numeric" value="${c.age??''}" placeholder="${a.redeem||''}" data-k="${k}.age" data-cf-row="totalAsset" data-cf-from="${hc(a.p, c.age||a.redeem||a.ev)}">歳</span>`;
+    let note = '';
+    if(acc==='stop' && a.monthly>0) note = '万が一の年から積立0。それまでの残高は運用を続けます';
+    if(rd==='event') note = (note?note+'。':'') + `万が一の年（${a.ev}歳）に現金にします`;
+    h += `<div class="mgqa-ag"><span><b>${a.lbl}</b><small>${sub}</small></span><span>${accSel}</span><span>${rdSel}</span>${ex?`<span class="mgqa-agex">${ex}</span>`:''}${note?`<span class="mgqa-agnote">→ ${note}</span>`:''}</div>`;
+  });
+  return h + `<div class="hint">変えた内容はこの万が一のタブだけに使います（④資産・通常のCF表は変わりません）。「止める」は積立をやめて、それまでの残高は運用を続けます${mgC_isDis(tab)?'':'。亡くなった方の分は万が一の年に現金にします'}</div>`;
+}
+function mgC_survInvCfg_v1(tab){
   if(mgC_isDis(tab)) return null;
   const sv = tab.state.survInv || {}, out = {};
   mgC_survAccums(tab).forEach(a=>{
@@ -1210,7 +1311,7 @@ function mgQA_stopsCard(tab){
   const s = tab.state, id = tab.id;
   return `<div class="g2">
       <div class="fg"><label class="lbl">保険料</label>${mgC_seg(id,'stopIns',[['false','続ける'],['true','止める（払込免除）']], String(mgC_bool(s.stopIns)))}</div>
-      <div class="fg"><label class="lbl">積立投資</label>${mgC_seg(id,'stopInv',[['false','続ける'],['true','止める']], String(mgC_bool(s.stopInv)))}</div>
+      ${mgC_bool(s.stopInv) ? `<div class="fg"><label class="lbl">積立投資（全部）</label>${mgC_seg(id,'stopInv',[['false','続ける'],['true','止める']], String(mgC_bool(s.stopInv)))}</div>` : '<div class="fg"><label class="lbl">積立投資</label><div class="hint" style="margin:0">「おふたりの金融資産」で商品ごとに選べます</div></div>'}
     </div><div class="hint">払込免除の有無は保険ごとに違うため、初期値は「続ける」です。止めるとご本人の分だけ止まります</div>`;
 }
 // 障害タブの住まい：団信は選ぶ（一般団信は高度障害が対象のため、初期値 1級=完済／2級=残る）

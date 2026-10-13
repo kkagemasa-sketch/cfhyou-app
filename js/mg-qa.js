@@ -564,6 +564,7 @@ function mgQA_hideLeftPanel(){
   window._mgSelfIncFn = null;
   window._mgSurvInv = null;
   window._mgSurvRedeem = null;
+  window._mgZkStop = null;
   window._mgScholarAt = null;
   window._mgIn = mgIn_default();
 }
@@ -758,7 +759,7 @@ function mgQA_buildPanel(tab){
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
     ${card('lc','exp','生','生活費', mgQA_lcCard(tab))}
     ${_isDis ? card('stops','exp','保',`${deceased}の保険料・積立投資`, mgQA_stopsCard(tab)) : ''}
-    ${(!_isDis && !_single) ? card('survinv','exp','積',`${spouse}の投資（NISAなど）`, mgQA_survInvCard(tab)) : ''}
+    ${(_isDis || !_single) ? card('assets','exp','資', _isDis ? (_single ? 'ご本人の金融資産' : 'おふたりの金融資産') : `${spouse}の金融資産`, mgQA_assetsCard(tab)) : ''}
 
     ${card('house','exp','家','住まいとローン', mgQA_houseCard(tab))}
 
@@ -862,7 +863,7 @@ const MGQA_KIND_INFO = {
   dis2: {label:'障害2級',short:'2級',  color:'#159ea3', event:'障害2級'}
 };
 const MGQA_CARD_KEYS = ['ins','pension','income','lc','house','edu','car'];
-function mgQA_cardKeys(tab){ return (tab.kind==='dis1'||tab.kind==='dis2') ? ['self','sick','dispen','ins','income','lc','stops','house','edu','car'] : (householdType==='single' ? MGQA_CARD_KEYS : ['ins','pension','income','lc','survinv','house','edu','car']); }
+function mgQA_cardKeys(tab){ return (tab.kind==='dis1'||tab.kind==='dis2') ? ['self','sick','dispen','ins','income','lc','stops','assets','house','edu','car'] : (householdType==='single' ? MGQA_CARD_KEYS : ['ins','pension','income','lc','assets','house','edu','car']); }
 window._mgQA_openCards = window._mgQA_openCards || {};
 function mgQA_isCardOpen(tabId,key){ return !!(window._mgQA_openCards[tabId]||{})[key]; }
 function mgQA_toggleCard2(tabId,key,hdEl){
@@ -897,6 +898,12 @@ function mgQA_cardSummary(tab, key){
     }
     case 'dispen':
       return s.disPenMode==='manual' ? {changed:true, v:`年${man(s.disPenManual)}`, sub:'手入力'} : {changed:false, v:'自動計算', sub:(tab.kind==='dis1'?'障害1級':'障害2級')+(s.pensionType==='kokumin'?'・国民年金のみ':'')};
+    case 'assets': {
+      const c = mgC_assetsCount(tab);
+      if(!c.n) return {changed:false, v:'なし'};
+      if(!c.stop && !c.chg && !c.rd) return {changed:false, v:'そのまま', sub:`${c.n}件`};
+      return {changed:true, v:[c.stop?'積立を止める':'', c.chg?'金額変更':'', c.rd?'解約':''].filter(Boolean).join('・'), sub:`${c.n}件中`};
+    }
     case 'survinv': {
       const list = mgC_survAccums(tab), sv = s.survInv || {}, secs = mgC_survSecs(tab);
       if(!secs.length) return {changed:false, v:'なし'};
@@ -1754,6 +1761,7 @@ function mgQA_updateState(tab, el){
     }
     obj[parts[parts.length-1]] = val;
     // 生活費（2段）：区切りの年齢を入れたら「独立後」の欄を出す
+    if(key.startsWith('assets.') && (key.endsWith('.acc') || key.endsWith('.rd'))){ mgQA_switchTab(tab.id); return; }
     // 生活費（詳細入力）：入力のたびに「最初の年」の目安を書き直す（以前はカードを作り直すまで古いままだった）
     if(key.startsWith('lcRows.') && typeof mgC_lcRefreshHints==='function') setTimeout(()=>mgC_lcRefreshHints(tab),0);
     // 生活費（詳細入力）：期間の終わりを入れたら、次の期間の始まりをその次の年齢に
