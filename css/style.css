@@ -1888,3 +1888,32 @@ table.cf tr.rref.gap td{background:#fdf2f7;color:#9d174d}
 .mg-need .nw{font-size:10.5px;color:#b45309;margin-top:6px;line-height:1.5}
 /* 必要保障額を隠しているときは、画面のCF表の根拠の色枠も出さない（印刷プレビューには影響しない） */
 body.mg-need-hide #right-body table.cf td.need-m1,body.mg-need-hide #right-body table.cf td.need-m2,body.mg-need-hide #right-body table.cf td.need-m3{outline:none}
+
+/* ===== 万が一（死亡）の生活費：お任せ／詳細入力（2026-10-13） ===== */
+.mgqa-lcn{background:#f6f8fc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;margin:8px 0;font-size:11px}
+.mgqa-lcn-h{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.mgqa-lcn-h b{color:#1e3a5f}.mgqa-lcn-h small{font-size:10px;color:#94a3b8}
+.mgqa-lcn-h a{margin-left:auto;font-size:10px;color:#2563eb;text-decoration:underline;cursor:pointer}
+.mgqa-lcn-g{display:grid;grid-template-columns:auto auto 1fr;gap:1px 10px;color:#334155}
+.mgqa-lcn-a{color:#94a3b8}
+.mgqa-lcg{display:grid;gap:4px;align-items:center;font-size:11px}
+.mgqa-lcg.a{grid-template-columns:72px 1fr auto}
+.mgqa-lcg.d{grid-template-columns:42px 8px 42px 64px 54px 1fr 14px}
+.mgqa-lcg:not(.r){font-size:10px;color:#94a3b8;padding-bottom:2px;border-bottom:1px solid #e2e8f0}
+.mgqa-lcg.r{padding:4px 0;border-bottom:1px solid #eef2f7}
+.mgqa-lcg.a.r b{color:#1e3a5f}
+.mgqa-lcg.a.r small{display:block;font-size:10px;color:#94a3b8}
+.mgqa-lcg.d.r .inp{height:26px;padding:0 3px!important;min-width:0!important;text-align:right;font-size:12px;box-sizing:border-box;width:100%}
+.mgqa-lcg .tl{text-align:center;color:#94a3b8}
+.mgqa-lcg .x{border:none;background:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:0}
+.mgqa-lct{display:inline-flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden}
+.mgqa-lct button{border:none;background:#fff;color:#475569;font-size:10.5px;font-weight:700;padding:3px 6px;white-space:nowrap;cursor:pointer;font-family:inherit}
+.mgqa-lct button.on{background:#1e3a5f;color:#fff}
+.mgqa-lcu{color:#475569;line-height:1.25;white-space:nowrap}
+.mgqa-lcf{display:block;text-align:right;white-space:nowrap}
+.mgqa-lcu .mgqa-lcf{text-align:left}
+.mgqa-lcf small{font-size:10px;color:#94a3b8}.mgqa-lcf b{font-size:10.5px;color:#1e3a5f}
+.mgqa-lci{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:11px}
+.mgqa-lci label{font-weight:700;color:#334155}.mgqa-lci .suf{width:90px}
+.mgqa-lci small{flex-basis:100%;font-size:10px;color:#94a3b8}
+.mgqa-pill{font-size:10.5px;border:1px solid #cbd5e1;background:#fff;border-radius:12px;padding:3px 10px;margin-top:6px;cursor:pointer;font-family:inherit}

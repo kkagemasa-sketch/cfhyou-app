@@ -617,8 +617,8 @@ const SCENARIOS = {
     setRTab('cf'); mgQA_addTab('w'); const t=mgQA_tabs[mgQA_tabs.length-1];
     Object.assign(t.state,{deathYear:10}); mgQA_calcAndRender(t,true);
   },
-  'M29_夫死亡_生活費2段_独立まで90%_58歳から年240万': function(){
-    // 死亡タブの生活費（2段）：独立するまで通常の90%、奥様58歳から年240万（今の金額・⑥の上昇率で物価上昇）
+  'M29_夫死亡_生活費お任せ': function(){
+    // 死亡タブの生活費「お任せ」：末子22歳の年まで通常どおり／23歳の年〜奥様64歳は通常の70%／65歳〜は64歳の年の独立後の70%（年額）
     const $=id=>document.getElementById(id);
     setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
     $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
@@ -627,7 +627,20 @@ const SCENARIOS = {
     if(typeof syncRateBase==='function')syncRateBase();
     calcLoanAmt();
     setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
-    Object.assign(t.state,{deathYear:4, lcMode:'two', lc2:{pre:{basis:'pct',pct:90,amt:''}, splitAge:58, post:{basis:'amt',pct:100,amt:240}}});
+    Object.assign(t.state,{deathYear:4, lcMode:'auto'});
+    mgQA_calcAndRender(t,true);
+  },
+  'M30_夫死亡_生活費詳細入力_年額は上昇率1%': function(){
+    // 詳細入力：奥様32〜48歳 100%／49〜64歳 80%／65歳〜 年60万（上昇率1%/年）
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
+    Object.assign(t.state,{deathYear:4, lcMode:'detail', lcInfl:1, lcRows:[{from:32,to:48,basis:'pct',val:100},{from:49,to:64,basis:'pct',val:80},{from:65,to:'',basis:'amt',val:60}]});
     mgQA_calcAndRender(t,true);
   },
   'D5_夫障害1級_本人の積立を不足年でやめる': function(){
