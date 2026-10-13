@@ -264,9 +264,36 @@ function mgC_ensureLcNormal(tab){
   s.lcNormal = rows;
 }
 // 万が一の後の生活費（年額）。null＝通常の計算（％など）に任せる
+// ===== 死亡タブの生活費（2段）：お子様が独立するまで／独立後（おひとり）=====
+// state.lc2 = {pre:{basis:'pct'|'amt', pct, amt}, splitAge:(遺された方の年齢・空=区切りなし), post:{basis, pct, amt}}
+function mgC_lc2Use(tab){ return !mgC_isDis(tab) && householdType!=='single'; }
+function mgC_lc2(s){
+  const d = {pre:{basis:'pct',pct:100,amt:''}, splitAge:'', post:{basis:'pct',pct:100,amt:''}};
+  const v = s.lc2 || {};
+  return {pre:Object.assign({},d.pre,v.pre||{}), splitAge:(v.splitAge===undefined||v.splitAge===null)?'':v.splitAge, post:Object.assign({},d.post,v.post||{})};
+}
+// 年額は「今（CF表の1年目）の金額」。物価上昇は⑥生活費の段階の上昇率（その年に有効な段階の率）で毎年かける
+function mgC_lcInfl(yr){
+  const y0 = mgC_startYear();
+  const steps = (typeof getLCSteps==='function') ? getLCSteps() : [];
+  let f = 1;
+  for(let y=y0+1; y<=yr; y++){
+    let r = 0; for(const st of steps){ if(st.from<=y) r = +st.rate||0; else break; }
+    f *= 1 + r/100;
+  }
+  return f;
+}
+function mgC_lc2Val(seg, yr, normalLC){
+  if(seg.basis==='amt') return Math.round((+seg.amt||0) * mgC_lcInfl(yr));
+  return Math.round(normalLC * (+seg.pct||0) / 100);
+}
 function mgQA_lcFn(tab){
   const s = tab.state, p = mgC_survivor(tab);
   const mode = mgC_lcMode(s);
+  if(mode==='two' && mgC_lc2Use(tab)){
+    const c = mgC_lc2(s), sp = String(c.splitAge).trim()==='' ? null : +c.splitAge;
+    return (yr, sAge, normalLC) => mgC_lc2Val((sp!==null && sAge>=sp) ? c.post : c.pre, yr, normalLC);
+  }
   if(mode==='same') return (yr, sAge, normalLC) => normalLC;   // 通常どおり
   if(mode!=='steps') return null;
   if((s.lcStepsSub||'free')==='normal'){
@@ -289,9 +316,56 @@ function mgQA_lcFn(tab){
     return month ? Math.round((+r.val||0)*12) : Math.round(normalLC*(+r.val||0)/100);
   };
 }
+// 死亡タブの生活費カード（2段）
+function mgQA_lc2Card(tab){
+  const s = tab.state, id = tab.id, p = mgC_survivor(tab), c = mgC_lc2(s);
+  const R = window.lastR || {}, y0 = mgC_startYear(), i0 = (s.deathYear||1)-1;
+  const ev = mgC_ageAtEvent(tab, p);
+  const sp = String(c.splitAge).trim()==='' ? null : +c.splitAge;
+  const iSp = sp!==null ? i0 + Math.max(0, sp - ev) : -1;
+  const seg = (key, title, idx) => {
+    const g = c[key], amt = g.basis==='amt';
+    const n = Math.round((R.lc||[])[idx]||0), yr = y0 + idx;
+    const v = mgC_lc2Val(g, yr, n);
+    return `<div class="mgqa-lbl2">${title}</div>
+      <div class="g2"><div class="fg">${mgC_seg(id,'lc2.'+key+'.basis',[['pct','％'],['amt','年額']], amt?'amt':'pct')}</div>
+      <div class="fg"><div class="suf"><input class="inp" type="number" min="0" step="${amt?1:1}" value="${amt?(g.amt??''):(g.pct??100)}" placeholder="${amt?'例：240':'100'}" data-k="lc2.${key}.${amt?'amt':'pct'}" data-cf-row="lc"><span class="sl">${amt?'万円/年':'％'}</span></div></div></div>
+      ${idx>=0&&idx<(R.lc||[]).length?`<div class="mgqa-note">${yr}年：通常 年${mgC_man(n)} → <b>年${mgC_man(v)}</b>${amt?'（今の金額。物価上昇は⑥生活費の上昇率で）':''}</div>`:''}`;
+  };
+  let body = seg('pre', 'お子様が独立するまで', i0);
+  body += `<div class="fg" style="margin:8px 0 2px"><label class="lbl">${mgC_name(p)}が何歳から おひとりの生活費にするか</label>
+    <div class="suf" style="max-width:150px"><input class="inp age-inp" type="text" inputmode="numeric" placeholder="区切りなし" value="${c.splitAge}" data-k="lc2.splitAge" data-cf-row="lc"><span class="sl">歳から</span></div>
+    <div class="hint">空欄のときは区切りなし（上の設定がずっと続きます）。万が一の年の${mgC_name(p)}は${ev}歳</div></div>`;
+  // 年齢を入れたら出す（入力中は再描画せず、表示だけ切り替える）
+  body += `<div id="mgqa-lc2post-${id}" style="${sp===null?'display:none':''}">${seg('post', `独立後（${mgC_name(p)}おひとり）`, iSp)}</div>`;
+  body += `<div class="mgqa-cmp" data-cmp="lc"></div>`;
+  return body;
+}
+// 以前の形式の生活費設定の要約（死亡タブ）
+function mgC_lcLegacyText(s){
+  const m = mgC_lcMode(s);
+  if(m==='same') return '通常どおり';
+  if(m==='step') return `期間ごと（${(s.lcSteps||[]).length}期間・以前の形式）`;
+  if(m==='steps') return (s.lcStepsSub==='normal') ? '期間ごと（通常の期間をもとに）' : `期間ごと（${(s.lcFree||[]).length}期間）`;
+  return `通常の${s.lcRatio||100}%`;
+}
+function mgC_lc2Convert(tabId){
+  const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
+  const s = tab.state;
+  const pct = (mgC_lcMode(s)==='ratio') ? (+s.lcRatio||100) : 100;
+  s.lc2 = {pre:{basis:'pct',pct,amt:''}, splitAge:'', post:{basis:'pct',pct:100,amt:''}};
+  mgQA_setState(tabId, 'lcMode', 'two', {rebuild:true});
+}
 function mgQA_lcCard(tab){
   const s = tab.state, id = tab.id, p = mgC_survivor(tab);
-  const mode = mgC_lcMode(s);
+  const mode = (mgC_lcMode(s)==='two' && !mgC_lc2Use(tab)) ? 'ratio' : mgC_lcMode(s);   // 単身の死亡タブは％のまま
+  if(mgC_lc2Use(tab)){
+    if(mode==='two') return mgQA_lc2Card(tab);
+    // 保存済みの以前の形式：計算はそのまま。新しい形に切り替えるボタンだけ
+    return `<div class="mgqa-note">以前の形式の設定が入っています：<b>${mgC_lcLegacyText(s)}</b>（このまま計算します）</div>
+      <button type="button" class="btn-add" onclick="mgC_lc2Convert('${id}')" style="margin-top:4px">新しい形（独立するまで／独立後）にする</button>
+      <div class="mgqa-cmp" data-cmp="lc"></div>`;
+  }
   const R = window.lastR || {};
   const i0 = (s.deathYear||1)-1;
   const normEv = Math.round((R.lc||[])[i0]||0);

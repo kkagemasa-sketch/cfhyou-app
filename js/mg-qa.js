@@ -129,7 +129,8 @@ function mgQA_buildDefaultState(target){
     incomeSteps: [
       // { ageFrom, ageTo, netFrom, netTo } - 空で初期化。必要時に追加
     ],
-    lcMode: 'ratio',
+    lcMode: 'two',   // 死亡タブは「独立するまで／独立後（おひとり）」の2段（2026-10-13）。障害タブ・単身は mgQA_applyKindDefaults などで ratio
+    lc2: {pre:{basis:'pct',pct:100,amt:''}, splitAge:'', post:{basis:'pct',pct:100,amt:''}},
     lcRatio: 100,   // 死亡タブの生活費は初期値100%（2026-10-11。保存済みのタブはその値のまま）
     // 段階モード（lcMode='step'時に使用）: {base, rate, fromYr, toYr, mode:'free'|'pct', pct}
     lcSteps: [],
@@ -926,6 +927,12 @@ function mgQA_cardSummary(tab, key){
       return {changed:true, v:'期間ごと', sub: mgC_incSub(s)==='normal' ? '通常時の期間で変更' : `${(s.incomeSteps||[]).length}期間`};
     }
     case 'lc':
+      if(s.lcMode==='two' && typeof mgC_lc2Use==='function' && mgC_lc2Use(tab)){
+        const c = mgC_lc2(s), f = g => g.basis==='amt' ? `年${man(g.amt)}` : `${g.pct}%`;
+        const sp = String(c.splitAge).trim();
+        const ch = !(c.pre.basis==='pct' && +c.pre.pct===100 && (sp==='' || (c.post.basis==='pct' && +c.post.pct===100)));
+        return {changed:ch, v: sp==='' ? (ch?f(c.pre):'通常どおり') : `${f(c.pre)}→${f(c.post)}`, sub: sp==='' ? '' : `${sp}歳から おひとり`};
+      }
       if(s.lcMode==='same') return {changed:false, v:'通常どおり'};
       if(s.lcMode==='step') return {changed:true, v:'期間ごと', sub:`${(s.lcSteps||[]).length}期間（以前の形式）`};
       if(s.lcMode==='steps') return {changed:true, v:'期間ごと', sub:(s.lcStepsSub==='normal')?'通常の期間をもとに':`${(s.lcFree||[]).length}期間`};
@@ -1742,6 +1749,8 @@ function mgQA_updateState(tab, el){
       obj = obj[p];
     }
     obj[parts[parts.length-1]] = val;
+    // 生活費（2段）：区切りの年齢を入れたら「独立後」の欄を出す
+    if(key==='lc2.splitAge'){ const el2=document.getElementById('mgqa-lc2post-'+tab.id); if(el2) el2.style.display=String(val).trim()===''?'none':''; }
     // 保険金のtype変更時はパネル再描画
     if(key.endsWith('.type')){
       mgQA_switchTab(tab.id);

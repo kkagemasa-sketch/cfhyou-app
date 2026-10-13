@@ -162,7 +162,7 @@ const SCENARIOS = {
     if(typeof syncRateBase==='function')syncRateBase();
     calcLoanAmt();
     const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
-    mg('h',{deathYear:3,houseMode:'danshin',lcRatio:70,insurances:[{type:'lump',amount:1000,annual:0,endAge:65}]});
+    mg('h',{deathYear:3,houseMode:'danshin',lcMode:'ratio',lcRatio:70,insurances:[{type:'lump',amount:1000,annual:0,endAge:65}]});
   },
   'M2_妻死亡_単独_ローン継続': function(){
     const $=id=>document.getElementById(id);
@@ -173,7 +173,7 @@ const SCENARIOS = {
     if(typeof syncRateBase==='function')syncRateBase();
     calcLoanAmt();
     const mg=(target,patch)=>{ setRTab('cf'); mgQA_addTab(target); const t=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t.state,patch); mgQA_calcAndRender(t,true); };
-    mg('w',{deathYear:5,houseMode:'keep',lcRatio:80});
+    mg('w',{deathYear:5,houseMode:'keep',lcMode:'ratio',lcRatio:80});
   },
   'M3_夫死亡_ペア_自動判定': function(){
     // ペアローン：亡くなった方のローンだけ⑤の一般団信で完済、もう一方は続く（死亡タブで団信は選ばない）
@@ -616,6 +616,19 @@ const SCENARIOS = {
     setSecStopLiq('h',sid,false);
     setRTab('cf'); mgQA_addTab('w'); const t=mgQA_tabs[mgQA_tabs.length-1];
     Object.assign(t.state,{deathYear:10}); mgQA_calcAndRender(t,true);
+  },
+  'M29_夫死亡_生活費2段_独立まで90%_58歳から年240万': function(){
+    // 死亡タブの生活費（2段）：独立するまで通常の90%、奥様58歳から年240万（今の金額・⑥の上昇率で物価上昇）
+    const $=id=>document.getElementById(id);
+    setFundingMode('detail'); setLoanCategory('standard'); setLoanMode('single');
+    $('house-price').value=4500; $('down-payment').value=500; $('house-cost').value=200;
+    setCostType('cash'); setDownType('own');
+    $('loan-yrs').value=35; $('rate-base').value=0.5;
+    if(typeof syncRateBase==='function')syncRateBase();
+    calcLoanAmt();
+    setRTab('cf'); mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1];
+    Object.assign(t.state,{deathYear:4, lcMode:'two', lc2:{pre:{basis:'pct',pct:90,amt:''}, splitAge:58, post:{basis:'amt',pct:100,amt:240}}});
+    mgQA_calcAndRender(t,true);
   },
   'D5_夫障害1級_本人の積立を不足年でやめる': function(){
     const $=id=>document.getElementById(id);

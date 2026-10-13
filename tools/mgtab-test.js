@@ -589,6 +589,54 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(SV.out.length){ bad++; console.log('❌ 残された方の積立投資\n   - '+SV.out.join('\n   - ')); }
     else console.log('✅ 残された方の積立投資（NISAなど）: 続ける／止める／金額を変える（20年目の金融資産 '+SV.info.fin.join('／')+'）・通常CFは変わらない・保存される');
+
+    /* ---- 死亡タブの生活費（2段）：独立するまで／独立後（おひとり）---- */
+    await page.evaluate(pageBaseSetup);
+    const L2=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms));
+      const out=[], info={};
+      if(typeof setHouseholdType==='function') setHouseholdType('couple');
+      setRTab('cf'); live(true); await wait(800); render();
+      const N=window.lastR;
+      mgQA_addTab('h'); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=3;
+      if(t.state.lcMode!=='two') out.push('新しい死亡タブが2段の形になっていない: '+t.state.lcMode);
+      mgQA_calcAndRender(t,true);
+      let M=window.lastMR;
+      if(M.lc[5]!==N.lc[5]) out.push('初期値（100%・区切りなし）で生活費が通常と違う '+M.lc[5]+'/'+N.lc[5]);
+      const wa=+document.getElementById('wife-age').value||29, ev=wa+2;
+      Object.assign(t.state,{lc2:{pre:{basis:'pct',pct:90,amt:''}, splitAge:ev+5, post:{basis:'amt',pct:100,amt:240}}});
+      mgQA_calcAndRender(t,true); M=window.lastMR;
+      const iS=2+5;
+      if(M.lc[3]!==Math.round(N.lc[3]*0.9)) out.push('独立するまで90%になっていない '+M.lc[3]+'/'+N.lc[3]);
+      const f=mgC_lcInfl(window.lastCYear+iS);
+      if(Math.abs(M.lc[iS]-Math.round(240*f))>1) out.push('独立後の年額240万が入っていない '+M.lc[iS]+'（'+Math.round(240*f)+'のはず）');
+      if(M.lc[iS-1]!==Math.round(N.lc[iS-1]*0.9)) out.push('区切りの前年が独立後になっている');
+      info.v=[M.lc[3],M.lc[iS]];
+      // カード
+      mgQA_switchTab(t.id);
+      const card=document.querySelector('[data-card="lc"]');
+      if(!card||!/お子様が独立するまで/.test(card.textContent)||!/おひとり/.test(card.textContent)) out.push('カードに2段の入力が出ない');
+      const hd=card?.querySelector('.mgqa-c2-hd')?.innerText||'';
+      if(!/90%→年240万円/.test(hd.replace(/\s+/g,''))) out.push('カードの要約: '+hd.replace(/\s+/g,' '));
+      // 保存
+      const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state;
+      if(!st||!st.lc2||st.lc2.post.amt!==240||st.lc2.splitAge!==ev+5) out.push('保存データに2段の設定が入らない');
+      // 以前の形式（％）はそのまま計算し、ボタンで新しい形にできる
+      mgQA_addTab('h'); const t2=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t2.state,{deathYear:3,lcMode:'ratio',lcRatio:70});
+      mgQA_calcAndRender(t2,true); M=window.lastMR;
+      if(M.lc[5]!==Math.round(N.lc[5]*0.7)) out.push('以前の形式（70%）の計算が変わった');
+      mgQA_switchTab(t2.id);
+      const c2=document.querySelector('[data-card="lc"]')?.textContent||'';
+      if(!/以前の形式/.test(c2)||!/通常の70%/.test(c2)) out.push('以前の形式の表示が出ない');
+      mgC_lc2Convert(t2.id);
+      if(t2.state.lcMode!=='two'||t2.state.lc2.pre.pct!==70) out.push('新しい形にするボタンで70%が引き継がれない');
+      // 障害タブは％のまま
+      mgQA_addTab('h','dis1'); const t3=mgQA_tabs[mgQA_tabs.length-1];
+      if(t3.state.lcMode!=='ratio'||t3.state.lcRatio!==130) out.push('障害タブの生活費の初期値が変わった');
+      return {out,info};
+    });
+    if(L2.out.length){ bad++; console.log('❌ 死亡タブの生活費（2段）\n   - '+L2.out.join('\n   - ')); }
+    else console.log('✅ 死亡タブの生活費（2段）: 初期値は通常どおり・独立まで90%→独立後 年240万（物価上昇つき '+L2.info.v.join('→')+'）・保存・以前の形式はそのまま・障害タブは％のまま');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });
