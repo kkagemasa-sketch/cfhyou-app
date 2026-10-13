@@ -325,8 +325,10 @@ function mgQA_calcAndRender(tab, immediate){
 
     // スクロール位置を保存
     const _oldTw = rb.querySelector('.tbl-wrap');
-    const _prevTop = _oldTw ? _oldTw.scrollTop : rb.scrollTop;
-    const _prevLeft = _oldTw ? _oldTw.scrollLeft : 0;
+    // ★ 2026-10-13: 計算の途中で表の位置が0に戻ることがあるため、計算前に保存した位置（_savedTop/_savedLeft）も使う
+    //   （入力のたびにCF表が最初の年に戻っていた）
+    const _prevTop = Math.max(_oldTw ? _oldTw.scrollTop : rb.scrollTop, _savedTop||0);
+    const _prevLeft = Math.max(_oldTw ? _oldTw.scrollLeft : 0, _savedLeft||0);
 
     // innerHTML 置換
     rb.innerHTML = html;

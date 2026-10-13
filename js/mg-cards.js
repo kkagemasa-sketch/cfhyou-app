@@ -381,18 +381,23 @@ function mgQA_lcNewCard(tab){
   }else{
     const rows = mgC_lcRowsOf(tab);
     h += `<div class="mgqa-lcg d"><span style="grid-column:1/4">${mgC_name(p)}の年齢</span><span>入れ方</span><span>金額/割合</span><span>最初の年</span><span></span></div>`;
+    // CF表の列はご主人様の年齢で数える。遺された方の年齢から変換して、入力中はその期間の年を表示する
+    const hc = a => (+a||0) - mgC_ageNow(p) + mgC_ageNow('h');
     rows.forEach((r,i)=>{
+      const cf = `data-cf-row="lc" data-cf-from="${hc(r.from)}" data-cf-to="${hc((r.to===''||r.to==null)?r.from:r.to)}"`;
       h += `<div class="mgqa-lcg d r">
-        <input class="inp" type="text" inputmode="numeric" value="${r.from}" data-k="lcRows.${i}.from" data-cf-row="lc"><span class="tl">〜</span>
-        <input class="inp" type="text" inputmode="numeric" placeholder="最後" value="${r.to??''}" data-k="lcRows.${i}.to" data-cf-row="lc">
+        <input class="inp" type="text" inputmode="numeric" value="${r.from}" data-k="lcRows.${i}.from" ${cf}><span class="tl">〜</span>
+        <input class="inp" type="text" inputmode="numeric" placeholder="最後" value="${r.to??''}" data-k="lcRows.${i}.to" ${cf}>
         ${tg(i, r.basis==='amt'?'amt':'pct')}
-        <input class="inp" type="text" inputmode="decimal" value="${r.val}" data-k="lcRows.${i}.val" data-cf-row="lc">
+        <input class="inp" type="text" inputmode="decimal" value="${r.val}" data-k="lcRows.${i}.val" ${cf}>
         <span class="mgqa-lcu">${r.basis==='amt'?'万/年':'％'}${first(r)}</span>
         <button type="button" class="x" onclick="mgC_lcRowDel('${id}',${i})" title="この期間を消す">×</button></div>`;
     });
     h += `<button class="btn-add" onclick="mgC_lcRowAdd('${id}')" style="margin-top:6px">＋ 期間</button>`;
   }
-  h += `<div class="mgqa-lci"><label>年額の上昇率</label><div class="suf"><input class="inp" type="text" inputmode="decimal" value="${infl}" data-k="lcInfl" style="text-align:right" data-cf-row="lc"><span class="sl">%/年</span></div><small>年額で決めた期間にだけかかります（％の期間は通常の生活費に合わせて動きます）</small></div>`;
+  const _amtR = mgC_lcRowsOf(tab).find(r=>r.basis==='amt');
+  const _infFrom = (_amtR ? (+_amtR.from||0) : mgC_ageAtEvent(tab, p)) - mgC_ageNow(p) + mgC_ageNow('h');
+  h += `<div class="mgqa-lci"><label>年額の上昇率</label><div class="suf"><input class="inp" type="text" inputmode="decimal" value="${infl}" data-k="lcInfl" style="text-align:right" data-cf-row="lc" data-cf-from="${_infFrom}"><span class="sl">%/年</span></div><small>年額で決めた期間にだけかかります（％の期間は通常の生活費に合わせて動きます）</small></div>`;
   h += `<div class="hint">年齢は${mgC_name(p)}（遺された方）の年齢です。どの期間にも入らない年は通常どおり</div>`;
   h += `<div class="mgqa-cmp" data-cmp="lc"></div>`;
   return h;

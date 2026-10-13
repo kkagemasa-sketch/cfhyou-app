@@ -633,6 +633,9 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       // 保存
       const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state;
       if(!st||st.lcMode!=='detail'||!st.lcRows||st.lcRows[2].val!==60) out.push('保存データに詳細入力が入らない');
+      // 入力のたびにCF表が最初の年に戻らない（計算の前の位置を保つ）・欄に期間の年がある
+      { const tw=()=>document.querySelector("#right-body .tbl-wrap"); if(tw()){ tw().scrollLeft=1500; mgQA_calcAndRender(t,true); await wait(300); if(tw().scrollLeft<1400) out.push("再計算でCF表の横の位置が戻る "+tw().scrollLeft); } }
+      { mgQA_switchTab(t.id); await wait(300); const e3=document.querySelector('[data-k="lcRows.2.val"]'); const hA=+document.getElementById("husband-age").value||30; if(!e3||+e3.dataset.cfFrom!==65-wa+hA) out.push("生活費の欄にCF表の年が無い "+(e3&&e3.dataset.cfFrom)); }
       // 以前の形式（％）はそのまま計算・ボタンで切替
       mgQA_addTab('h'); const t2=mgQA_tabs[mgQA_tabs.length-1]; Object.assign(t2.state,{deathYear:3,lcMode:'ratio',lcRatio:70});
       mgQA_calcAndRender(t2,true); M=window.lastMR;
