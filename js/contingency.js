@@ -1280,8 +1280,11 @@ function _renderContingencyInner(_mgStopOv){
     // 生活費
     const normalLC=i<normalR.lc.length?normalR.lc[i]:0;
     let lcVal=normalLC;
-    const _mgLcFnV=(isEvt&&typeof window._mgLcFn==='function')?window._mgLcFn(MR.yr[i],_mgPersonAge,normalLC):null;
-    if(_mgLcFnV!==null&&_mgLcFnV!==undefined){lcVal=ri(_mgLcFnV);}
+    // ★ 2026-10-13: 障害タブで、障害の方が通常のCF表の想定寿命を過ぎた年からは通常の生活費（介護・医療の上乗せをやめる）
+    const _mgDisGone=_mgDis&&((targetIsH?ha:wa)>(targetIsH?(iv('h-death-age')||83):(iv('w-death-age')||88)));
+    const _mgLcFnV=(isEvt&&!_mgDisGone&&typeof window._mgLcFn==='function')?window._mgLcFn(MR.yr[i],_mgPersonAge,normalLC):null;
+    if(_mgDisGone){lcVal=normalLC;}
+    else if(_mgLcFnV!==null&&_mgLcFnV!==undefined){lcVal=ri(_mgLcFnV);}
     else if(isEvt){
       if(mgLCMode==='step'&&mgLCSteps.length>0){
         for(let si=0;si<mgLCSteps.length;si++){const st=mgLCSteps[si];if(st.mode==='pct'&&si>0){st.base=ri((mgLCSteps[si-1].base||normalLC)*(st.pct||80)/100);}if(st.base<=0&&si===0)st.base=normalLC;}
