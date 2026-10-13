@@ -161,6 +161,15 @@ function _renderContingencyInner(_mgStopOv){
       _mgBaseOv[k]=_aS; _mgSurvAdded.push(k);
     });
   }
+  // ★ 2026-10-13: 死亡タブ「残された方の投資」で変えた解約年齢（window._mgSurvRedeem = {'accum|p|sid': 年齢(0=解約しない)}）
+  //   通常CFの計算し直し（calcNormalWithStops）に 'rd:' で渡し、万が一側の取り崩し・解約行にも使う
+  const _mgSurvRd=(!_mgDis&&!_isSingle_mg&&window._mgSurvRedeem)||null;
+  if(_mgSurvRd){ Object.entries(_mgSurvRd).forEach(([k,a])=>{ _mgBaseOv['rd:'+k]=a; _mgFullOv['rd:'+k]=a; }); }
+  function _mgRedeemOf(kind,p,sid){
+    const k=`${kind}|${p}|${sid}`;
+    if(_mgSurvRd&&_mgSurvRd[k]!==undefined) return _mgSurvRd[k];
+    return iv(kind==='accum'?`sec-redeem-${p}-${sid}`:`sec-stk-redeem-${p}-${sid}`)||0;
+  }
   const _mgHasStopSec=[...document.querySelectorAll('[id^="sec-stopliq-"].on')].some(el=>/^sec-stopliq-[hw]-\d+$/.test(el.id));
   let normalR=((_mgHasStopSec||Object.keys(_mgBaseOv).length)&&typeof calcNormalWithStops==='function')
     ? calcNormalWithStops(_mgBaseOv) : trueNR;
@@ -517,7 +526,7 @@ function _renderContingencyInner(_mgStopOv){
         bal, monthly,
         endAge:_mgSecEnd(p,sid),
         rate:fvd(`sec-rate-${p}-${sid}`,5)/100,
-        redeemAge:iv(`sec-redeem-${p}-${sid}`)||0,
+        redeemAge:_mgRedeemOf('accum',p,sid),
         basisInput:fv(`sec-basis-${p}-${sid}`)||0,
         chgK:_mgSurvChg[`${p}|${sid}`], endFull:_mgSecEnd(p,sid,_mgFullOv),   // 金額を変えた積立（割合・続けた場合の終了年齢）
         liquidations:[]
@@ -538,7 +547,7 @@ function _renderContingencyInner(_mgStopOv){
         bal, monthly:0,
         rate:(fv(`sec-div-${p}-${sid}`)||0)/100,
         investAge:iv(`sec-stk-age-${p}-${sid}`)||0,
-        redeemAge:iv(`sec-stk-redeem-${p}-${sid}`)||0,
+        redeemAge:_mgRedeemOf('stock',p,sid),
         basisInput:fv(`sec-basis-${p}-${sid}`)||0,
         liquidations:[]
       });
@@ -1052,7 +1061,7 @@ function _renderContingencyInner(_mgStopOv){
       document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');if(!isAccum)return;
-        const redeemAge=iv(`sec-redeem-${p}-${sid}`)||0;if(redeemAge<=0||pAge!==redeemAge)return;
+        const redeemAge=_mgRedeemOf('accum',p,sid);if(redeemAge<=0||pAge!==redeemAge)return;
         // 取り崩しプランのある銘柄: 事前計算した解約時残額を使う
         const _dpRA=_mgDrawPlans[`accum-${p}-${sid}`];
         if(_dpRA){
@@ -1110,7 +1119,7 @@ function _renderContingencyInner(_mgStopOv){
       document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');if(!isStock)return;
-        const redeemAge=iv(`sec-stk-redeem-${p}-${sid}`)||0;if(redeemAge<=0||pAge!==redeemAge)return;
+        const redeemAge=_mgRedeemOf('stock',p,sid);if(redeemAge<=0||pAge!==redeemAge)return;
         const _dpRS=_mgDrawPlans[`stock-${p}-${sid}`];
         if(_dpRS){
           const netP=Math.round(_dpRS.redeemNet||0);

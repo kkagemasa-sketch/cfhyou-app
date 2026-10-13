@@ -582,7 +582,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       // カードと保存
       t.state.survInv={[key]:{mode:'change',monthly:1.5}}; mgQA_switchTab(t.id);
       const hd=document.querySelector('[data-card="survinv"] .mgqa-c2-hd')?.innerText||'';
-      if(!/金額変更1件/.test(hd)) out.push('カードの要約が出ない: '+hd.replace(/\s+/g,' '));
+      if(!/金額変更/.test(hd)) out.push('カードの要約が出ない: '+hd.replace(/\s+/g,' '));
       const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state?.survInv;
       if(!st||!st[key]||st[key].monthly!==1.5) out.push('保存データに設定が入らない');
       return {out,info};
@@ -666,6 +666,28 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(L2.out.length){ bad++; console.log('❌ 死亡タブの生活費（お任せ／詳細入力）\n   - '+L2.out.join('\n   - ')); }
     else console.log('✅ 死亡タブの生活費: お任せ（通常→70%→65歳から '+L2.info.auto.join('→')+'）・％は前年の◯%（上昇率は2年目から）・目安は入力のたびに更新・詳細入力（直す/追加/削除/保存）・以前の形式はそのまま・障害タブは％のまま');
+    /* ---- 死亡タブ：残された方の投資の解約年齢を万が一のタブだけ変える ---- */
+    await page.evaluate(pageBaseSetup);
+    const RD=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      if(typeof setHouseholdType==="function") setHouseholdType("couple");
+      addSecurity("w"); const els=document.querySelectorAll('[id^="sec-bal-w-"]'); const sid=els[els.length-1].id.split("-").pop();
+      $("sec-acc-w-"+sid)?.classList.add("on"); $("sec-nisa-w-"+sid)?.classList.add("on");
+      $("sec-bal-w-"+sid).value=300; $("sec-monthly-w-"+sid).value=3; $("sec-rate-w-"+sid).value=4; $("sec-redeem-w-"+sid).value=65;
+      setRTab("cf"); live(true); await wait(900); render();
+      const wa=+$("wife-age").value; const key="accum|w|"+sid;
+      mgQA_addTab("h"); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=4;
+      const at=()=>{ const rw=(window.lastMR.secRedeemRows||[]).find(r=>r.vals.some(v=>v>0)); return rw? wa+rw.vals.findIndex(v=>v>0) : 0; };
+      t.state.survRd={}; mgQA_calcAndRender(t,true); if(at()!==65) out.push("④と同じで65歳に解約されない "+at());
+      t.state.survRd={[key]:{mode:"age",age:70}}; mgQA_calcAndRender(t,true); if(at()!==70) out.push("70歳に変えても解約が70歳にならない "+at());
+      if(!(window.lastMR.finAsset[66-wa]>0)) out.push("70歳に変えたのに66歳で資産が0");
+      t.state.survRd={[key]:{mode:"never"}}; mgQA_calcAndRender(t,true); if(at()!==0||!(window.lastMR.finAsset[75-wa]>0)) out.push("解約しないにしても解約される");
+      const nr=(window.lastR.secRedeemRows||[]).find(r=>r.vals.some(v=>v>0)); if(!nr||wa+nr.vals.findIndex(v=>v>0)!==65) out.push("通常のCF表の解約年齢が変わった");
+      const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state; if(!st||!st.survRd||st.survRd[key].mode!=="never") out.push("保存データに解約の設定が入らない");
+      return out;
+    });
+    if(RD.length){ bad++; console.log("❌ 残された方の投資の解約年齢\n   - "+RD.join("\n   - ")); }
+    else console.log("✅ 残された方の投資の解約年齢: ④と同じ・70歳に変更・解約しない が万が一のタブだけに効く・通常CFは変わらない・保存される");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

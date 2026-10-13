@@ -563,6 +563,7 @@ function mgQA_hideLeftPanel(){
   window._mgDisCfg = null;
   window._mgSelfIncFn = null;
   window._mgSurvInv = null;
+  window._mgSurvRedeem = null;
   window._mgScholarAt = null;
   window._mgIn = mgIn_default();
 }
@@ -757,7 +758,7 @@ function mgQA_buildPanel(tab){
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
     ${card('lc','exp','生','生活費', mgQA_lcCard(tab))}
     ${_isDis ? card('stops','exp','保',`${deceased}の保険料・積立投資`, mgQA_stopsCard(tab)) : ''}
-    ${(!_isDis && !_single) ? card('survinv','exp','積',`${spouse}の積立投資（NISAなど）`, mgQA_survInvCard(tab)) : ''}
+    ${(!_isDis && !_single) ? card('survinv','exp','積',`${spouse}の投資（NISAなど）`, mgQA_survInvCard(tab)) : ''}
 
     ${card('house','exp','家','住まいとローン', mgQA_houseCard(tab))}
 
@@ -897,12 +898,13 @@ function mgQA_cardSummary(tab, key){
     case 'dispen':
       return s.disPenMode==='manual' ? {changed:true, v:`年${man(s.disPenManual)}`, sub:'手入力'} : {changed:false, v:'自動計算', sub:(tab.kind==='dis1'?'障害1級':'障害2級')+(s.pensionType==='kokumin'?'・国民年金のみ':'')};
     case 'survinv': {
-      const list = mgC_survAccums(tab), sv = s.survInv || {};
-      if(!list.length) return {changed:false, v:'なし'};
+      const list = mgC_survAccums(tab), sv = s.survInv || {}, secs = mgC_survSecs(tab);
+      if(!secs.length) return {changed:false, v:'なし'};
       const ch = list.filter(a=>sv[a.key] && sv[a.key].mode && sv[a.key].mode!=='keep');
-      if(!ch.length) return {changed:false, v:'続ける', sub:`${list.length}件`};
       const st = ch.filter(a=>sv[a.key].mode==='stop').length, cg = ch.length - st;
-      return {changed:true, v:[st?`止める${st}件`:'', cg?`金額変更${cg}件`:''].filter(Boolean).join('・'), sub:`${list.length}件中`};
+      const rd = Object.keys(mgC_survRedeemCfg(tab)||{}).length;
+      if(!st && !cg && !rd) return {changed:false, v:'そのまま', sub:`${secs.length}件`};
+      return {changed:true, v:[st?'積立を止める':'', cg?'金額変更':'', rd?'解約年齢':''].filter(Boolean).join('・'), sub:`${secs.length}件中`};
     }
     case 'stops': {
       const a = mgC_bool(s.stopIns), b = mgC_bool(s.stopInv);

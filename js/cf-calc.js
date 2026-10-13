@@ -7,6 +7,12 @@ function render(){
   // ★ 取り崩しが起きたら積立を止める：2回目の計算でだけ入る「積立ごとの最後に積み立てる年齢」
   //   {`${p}|${sid}`: 年齢}（最初に預貯金が足りなくなった年の前年の年齢）。1回目は null
   const _secStopOv=render._stopOv||null;
+  // ★ 2026-10-13: 万が一のタブで変えた解約年齢（0＝解約しない）。通常のCF表では使わない
+  function _secRedeemOf(kind,p,sid){
+    const o=_secStopOv?_secStopOv[`rd:${kind}|${p}|${sid}`]:undefined;
+    if(o!==undefined) return o;
+    return iv(kind==='accum'?`sec-redeem-${p}-${sid}`:`sec-stk-redeem-${p}-${sid}`)||0;
+  }
   function _secEndAgeOf(p,sid){
     const e=iv(`sec-end-${p}-${sid}`)||0;
     const o=_secStopOv?_secStopOv[`${p}|${sid}`]:undefined;
@@ -649,7 +655,7 @@ function render(){
         bal, monthly,
         endAge:_secEndAgeOf(p,sid),
         rate:fvd(`sec-rate-${p}-${sid}`,5)/100,
-        redeemAge:iv(`sec-redeem-${p}-${sid}`)||0,
+        redeemAge:_secRedeemOf('accum',p,sid),
         // 取り崩しが起きたら積立を止めるか（ボタンが「止める」）
         stopOnShort:document.getElementById(`sec-stopliq-${p}-${sid}`)?.classList.contains('on')||false,
         basisInput:fv(`sec-basis-${p}-${sid}`)||0,
@@ -671,7 +677,7 @@ function render(){
         bal, monthly:0,
         rate:(fv(`sec-div-${p}-${sid}`)||0)/100,
         investAge:iv(`sec-stk-age-${p}-${sid}`)||0,
-        redeemAge:iv(`sec-stk-redeem-${p}-${sid}`)||0,
+        redeemAge:_secRedeemOf('stock',p,sid),
         basisInput:fv(`sec-basis-${p}-${sid}`)||0,
         liquidations:[]
       });
@@ -2388,7 +2394,7 @@ function render(){
         const parts=el.id.split('-');const sid=parts[parts.length-1];
         const isAccum=document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on');
         if(!isAccum)return;
-        const redeemAgeA=iv(`sec-redeem-${p}-${sid}`)||0;
+        const redeemAgeA=_secRedeemOf('accum',p,sid);
         if(redeemAgeA>0&&pAge>=redeemAgeA)return;
         const isNisa=document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
         const customLabel=document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
@@ -2484,7 +2490,7 @@ function render(){
         const isStock=document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on');
         if(!isStock)return;
         const pAge=p==='h'?ha:wa;
-        const redeemAgeS=iv(`sec-stk-redeem-${p}-${sid}`)||0;
+        const redeemAgeS=_secRedeemOf('stock',p,sid);
         if(redeemAgeS>0&&pAge>=redeemAgeS)return;
         const investAge=iv(`sec-stk-age-${p}-${sid}`)||0;
         if(investAge>0&&pAge<investAge)return;  // 未投資期間は除外

@@ -1022,6 +1022,7 @@ function mgQA_disApply(tab){
   const s = tab.state;
   window._mgKind = tab.kind || 'death';
   window._mgSurvInv = mgC_survInvCfg(tab);   // 残された方の積立投資（死亡タブのみ）
+  window._mgSurvRedeem = mgC_isDis(tab) ? null : mgC_survRedeemCfg(tab);   // 残された方の解約年齢（死亡タブのみ）
   if(!mgC_isDis(tab)){ window._mgDisCfg = null; window._mgSelfIncFn = null; return; }
   const sk = mgC_sick(tab);
   window._mgDisCfg = {
@@ -1135,7 +1136,55 @@ function mgC_survAccums(tab){
   });
   return out;
 }
+// 残された方の投資（積立・一括）。解約年齢を万が一のタブだけ変えられる
+//   state.survRd = {'accum|p|sid' or 'stock|p|sid': {mode:'same'|'age'|'never', age}}
+function mgC_survSecs(tab){
+  if(householdType==='single' || mgC_isDis(tab)) return [];
+  const p = tab.target==='h' ? 'w' : 'h', out = [];
+  const num = id => parseFloat(document.getElementById(id)?.value)||0;
+  document.querySelectorAll(`[id^="sec-bal-${p}-"]`).forEach(el=>{
+    const sid = el.id.split('-').pop();
+    if(!document.getElementById(`sec-acc-${p}-${sid}`)?.classList.contains('on')) return;
+    const bal = num(`sec-bal-${p}-${sid}`), monthly = num(`sec-monthly-${p}-${sid}`);
+    if(bal<=0 && monthly<=0) return;
+    out.push({kind:'accum', p, sid, rkey:`accum|${p}|${sid}`, key:`${p}|${sid}`, lbl:secRowLabel(p,sid,'課税積立'), monthly, redeem: mgQA_iv(`sec-redeem-${p}-${sid}`)||0});
+  });
+  document.querySelectorAll(`[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
+    const sid = el.id.split('-').pop();
+    if(!document.getElementById(`sec-stock-${p}-${sid}`)?.classList.contains('on')) return;
+    if(num(`sec-stk-bal-${p}-${sid}`)<=0) return;
+    out.push({kind:'stock', p, sid, rkey:`stock|${p}|${sid}`, lbl:secRowLabel(p,sid,'課税一括投資'), monthly:0, redeem: mgQA_iv(`sec-stk-redeem-${p}-${sid}`)||0});
+  });
+  return out;
+}
+function mgC_survRedeemCfg(tab){
+  const rd = tab.state.survRd || {}, out = {};
+  mgC_survSecs(tab).forEach(a=>{
+    const c = rd[a.rkey]; if(!c || !c.mode || c.mode==='same') return;
+    if(c.mode==='never') out[a.rkey] = 0;
+    else if(c.mode==='age' && +c.age>0) out[a.rkey] = +c.age;
+  });
+  return Object.keys(out).length ? out : null;
+}
 function mgQA_survInvCard(tab){
+  const id = tab.id, secs = mgC_survSecs(tab), sv = tab.state.survInv || {}, rd = tab.state.survRd || {};
+  if(!secs.length) return '<div class="hint">投資（NISA・課税口座の積立・一括投資）はありません。④資産で入力すると、ここで積立と解約の年齢を変えられます</div>';
+  const p = mgC_survivor(tab), hc = a => (+a||0) - mgC_ageNow(p) + mgC_ageNow('h');
+  return secs.map(a=>{
+    let h = `<div class="mgqa-lbl2">${a.lbl} <span style="font-weight:400;color:var(--muted)">（${a.kind==='stock'?'一括投資':a.monthly>0?`いまは月${a.monthly}万円`:'積立なし'}）</span></div>`;
+    if(a.kind==='accum' && a.monthly>0){
+      const c = sv[a.key] || {}, m = c.mode || 'keep', k = `survInv.${a.key}`;
+      const mv = (c.monthly===undefined||c.monthly===null||c.monthly==='') ? a.monthly : c.monthly;
+      h += `<div class="fg"><label class="lbl">積立</label>${mgC_seg(id,k+'.mode',[['keep','続ける'],['stop','止める'],['change','金額を変える']],m)}`
+        + (m==='change'?`<div class="fg" style="max-width:220px;margin-top:4px"><label class="lbl">万が一の後の積立額</label><div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${mv}" data-k="${k}.monthly" data-cf-row="secInvest"><span class="sl">万円/月</span></div></div>`:'') + '</div>';
+    }
+    const r = rd[a.rkey] || {}, rm = r.mode || 'same', rk = `survRd.${a.rkey}`;
+    h += `<div class="fg"><label class="lbl">解約</label>${mgC_seg(id, rk+'.mode', [['same', a.redeem>0?`④と同じ（${a.redeem}歳）`:'④と同じ（解約しない）'],['age','年齢を変える'],['never','解約しない']], rm)}`
+      + (rm==='age'?`<div class="suf" style="max-width:130px;margin-top:4px"><input class="inp age-inp" type="text" inputmode="numeric" value="${r.age??''}" placeholder="${a.redeem||''}" data-k="${rk}.age" data-cf-row="totalAsset" data-cf-from="${hc(r.age||a.redeem||mgC_ageAtEvent(tab,p))}"><span class="sl">歳で解約</span></div>`:'') + '</div>';
+    return h;
+  }).join('<div style="height:10px"></div>') + `<div class="hint">積立は万が一の年から切り替わります。解約の年齢は${mgC_name(p)}の年齢で、この万が一のタブだけに使います（④資産・通常のCF表は変わりません）</div>`;
+}
+function mgQA_survInvCard_old(tab){
   const id = tab.id, list = mgC_survAccums(tab), sv = tab.state.survInv || {};
   if(!list.length) return '<div class="hint">積み立て中の投資（NISA・課税口座）はありません。④資産で積立額を入力すると、ここで「続ける・止める・金額を変える」を選べます</div>';
   return list.map(a=>{
