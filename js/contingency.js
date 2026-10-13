@@ -211,7 +211,8 @@ function _renderContingencyInner(_mgStopOv){
   const insTotal=getMGInsuranceTotal();
   // 年金型保険の受取人年齢（受取人=生存者）
   const _aliveBaseAge=targetIsH?wAge:hAge;
-  const pSelf=fv('pension-h')||186, pWife=_isSingle_mg?0:(fv('pension-w')||66);
+  // ★ 2026-10-13: 年金の欄が空欄なら0（通常のCF表 cf-calc と同じ。以前は空欄で186万/66万が入っていた）
+  const pSelf=$('pension-h')?.value===''?0:(fv('pension-h')||186), pWife=_isSingle_mg?0:($('pension-w')?.value===''?0:(fv('pension-w')||66));
   // ★ 老齢年金の年次手取り: 手取り入力から額面を逆算し、受給時年齢別の詳細計算
   //   （65歳未満は公的年金等控除60万円）で手取り化する — 通常CF(cf-calc.js)と同方式。
   //   万一CFは従来から繰上げ/繰下げ調整なしの簡略のため調整率は掛けない。
