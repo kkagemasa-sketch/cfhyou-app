@@ -267,7 +267,7 @@ function mgC_ensureLcNormal(tab){
 // ===== 死亡タブの生活費：お任せ／詳細入力（2026-10-13 ユーザー決定）=====
 // state: lcMode 'auto'(お任せ)|'detail'(詳細入力)、lcInfl（年額の上昇率 %/年・初期0）、
 //   lcRows [{from, to(空=最後), basis:'pct'|'amt', val}]（遺された方の年齢。年額はその期間の最初の年の金額）
-// お任せ：万が一〜末子22歳の年=通常どおり／末子23歳の年〜64歳=通常の70%／65歳〜=64歳の年の「独立後の生活費」の70%（年額）
+// お任せ：万が一〜末子22歳の年=通常どおり／末子23歳の年〜64歳=前年の70%／65歳〜=前年（64歳の年）の70%／亡くなった方の想定寿命の年から=通常どおり
 //   お子様がいない・もう23歳以上なら万が一の年から独立後。独立が65歳以降なら独立の年から「独立後の70%」
 function mgC_lcNewUse(tab){ return !mgC_isDis(tab) && householdType!=='single'; }
 function mgC_lcIsNew(s){ return s.lcMode==='auto' || s.lcMode==='detail'; }
@@ -278,29 +278,27 @@ function mgC_lcNormalAtAge(p, age){
   const i = Math.min(lc.length-1, Math.max(0, age - mgC_ageNow(p)));
   return lc[i]||0;
 }
-// お任せの期間（詳細入力と同じ形）
+// お任せの期間（詳細入力と同じ形）。basis: 'normal'=通常どおり／'pct'=前年の◯%／'amt'=年額
+// ★ 2026-10-13: ％は「前年の生活費（万が一のCF表）の◯%」。期間の最初の年に下げ（上げ）、その後はその水準で一定（上昇率の欄で上げる）
 function mgC_lcAutoRows(tab){
   const p = mgC_survivor(tab), ev = mgC_ageAtEvent(tab, p);
   const ind = mgC_ageWhenYoungestIs(p, 23);
   const aInd = Math.max(ev, ind===null ? ev : ind);
   const rows = [];
-  if(aInd>ev) rows.push({from:ev, to:aInd-1, basis:'pct', val:100, why:'末子が22歳の年まで'});
+  if(aInd>ev) rows.push({from:ev, to:aInd-1, basis:'normal', val:'', why:'末子が22歳の年まで'});
   if(aInd<=64){
     rows.push({from:aInd, to:64, basis:'pct', val:70, why: aInd>ev ? '末子が23歳の年から（独立後）' : '独立後'});
-    const n64 = mgC_lcNormalAtAge(p, 64), b = Math.round(n64*0.7);
-    rows.push({from:65, to:'', basis:'amt', val:Math.round(b*0.7), why:`64歳の年の独立後の生活費 年${b.toLocaleString()}万円の70%`});
+    rows.push({from:65, to:'', basis:'pct', val:70, why:'65歳から（64歳の年の生活費の70%）'});
   }else{
-    const b = Math.round(mgC_lcNormalAtAge(p, aInd)*0.7);
-    rows.push({from:aInd, to:'', basis:'amt', val:Math.round(b*0.7), why:`独立後の生活費 年${b.toLocaleString()}万円の70%（65歳を過ぎているため）`});
+    rows.push({from:aInd, to:'', basis:'pct', val:49, why:'独立後の70%のさらに70%（65歳を過ぎているため）'});
   }
-  // ★ 2026-10-13: 通常のCF表で亡くなった方が想定寿命を迎える年からは、通常のCF表も遺された方おひとりの生活なので、
-  //   通常のCF表の生活費をそのまま使う（⑥生活で入れたおひとりの生活費が反映される）
+  // 通常のCF表で亡くなった方が想定寿命を迎える年からは、通常のCF表も遺された方おひとりの生活なので通常どおり
   const dAge = mgQA_iv(tab.target==='h' ? 'h-death-age' : 'w-death-age') || (tab.target==='h' ? 83 : 88);
   const aEnd = mgC_ageNow(p) + (dAge - mgC_ageNow(tab.target));   // その年の遺された方の年齢
   if(aEnd > ev){
     const kept = rows.filter(r=>(+r.from||0) < aEnd);
     if(kept.length){ const last = kept[kept.length-1]; if(last.to==='' || +last.to >= aEnd) last.to = aEnd-1; }
-    kept.push({from:aEnd, to:'', basis:'pct', val:100, why:`${mgC_name(tab.target)}の想定寿命（${dAge}歳）の年から：通常のCF表と同じ`});
+    kept.push({from:aEnd, to:'', basis:'normal', val:'', why:`${mgC_name(tab.target)}の想定寿命（${dAge}歳）の年から：通常のCF表と同じ`});
     return kept;
   }
   return rows;
@@ -308,21 +306,57 @@ function mgC_lcAutoRows(tab){
 function mgC_lcRowsOf(tab){
   const s = tab.state;
   if(s.lcMode==='auto') return mgC_lcAutoRows(tab);
-  if(!Array.isArray(s.lcRows) || !s.lcRows.length) s.lcRows = mgC_lcAutoRows(tab).map(r=>({from:r.from, to:r.to, basis:r.basis, val:r.val}));   // 詳細入力の始まりはお任せの内容
+  if(!Array.isArray(s.lcRows) || !s.lcRows.length){ s.lcRows = mgC_lcAutoRows(tab).map(r=>({from:r.from, to:r.to, basis:r.basis, val:r.val})); s.lcPctPrev = 1; }   // 詳細入力の始まりはお任せの内容
+  // 「％＝通常の◯%」だった頃（v626〜627）に保存した詳細入力：100%の期間は「通常」に読み替える（その期間の数字を変えない）
+  if(!s.lcPctPrev){ s.lcRows.forEach(r=>{ if(r.basis!=='amt' && r.basis!=='normal' && +r.val===100) r.basis = 'normal'; }); s.lcPctPrev = 1; }
   return s.lcRows;
 }
-function mgC_lcRowAt(rows, age){ return rows.find(r=>age>=(+r.from||0) && (r.to===''||r.to===null||r.to===undefined||age<=+r.to)); }
-// その期間の値（年額は期間の最初の年の金額。上昇率をかける）
-function mgC_lcRowVal(r, age, normalLC, infl){
-  if(r.basis==='amt') return Math.round((+r.val||0) * Math.pow(1+(+infl||0)/100, Math.max(0, age-(+r.from||0))));
-  return Math.round(normalLC * (+r.val||0) / 100);
+const _mgLcBlank = v => v===''||v===null||v===undefined||String(v).trim()==='';
+// 計算に使う期間：始まりが空欄なら前の期間の終わりの次の年齢。金額・割合が空欄の期間は使わない（通常どおり）
+function mgC_lcRowsCalc(rows){
+  const out = []; let prevTo = null;
+  rows.forEach(r=>{
+    const from = _mgLcBlank(r.from) ? (prevTo!==null ? prevTo+1 : null) : +r.from;
+    const to = _mgLcBlank(r.to) ? null : +r.to;
+    if(to!==null) prevTo = to;
+    if(from===null) return;
+    if(r.basis!=='normal' && _mgLcBlank(r.val)) return;
+    out.push({from, to, basis: r.basis==='amt' ? 'amt' : (r.basis==='normal' ? 'normal' : 'pct'), val: +r.val||0});
+  });
+  return out;
+}
+function mgC_lcRowAt(rows, age){ return rows.find(r=>age>=r.from && (r.to===null||age<=r.to)); }
+// 万が一の年から最後まで、遺された方の年齢ごとの生活費（年額）を順に決める
+//   normalAt(age)=その年の通常の生活費。％は期間の最初の年に「前年の生活費×％」、その後は上昇率で
+function mgC_lcSim(tab, normalAt){
+  const s = tab.state, p = mgC_survivor(tab), infl = (+s.lcInfl||0)/100;
+  const rows = mgC_lcRowsCalc(mgC_lcRowsOf(tab));
+  const ev = mgC_ageAtEvent(tab, p), lc = (window.lastR||{}).lc || [];
+  const last = mgC_ageNow(p) + Math.max(lc.length, 1) + 15;
+  const out = {}; let prev = normalAt(ev-1);
+  let cur = null, base = 0;
+  for(let a=ev; a<=last; a++){
+    const r = mgC_lcRowAt(rows, a), n = normalAt(a);
+    let v;
+    if(!r || r.basis==='normal'){ v = n; cur = null; }
+    else{
+      if(cur!==r){ cur = r; base = r.basis==='amt' ? r.val : prev * r.val / 100; }
+      v = base * Math.pow(1+infl, a - r.from);
+    }
+    v = Math.round(v); out[a] = v; prev = v;
+  }
+  return out;
 }
 function mgQA_lcFn(tab){
   const s = tab.state, p = mgC_survivor(tab);
   const mode = mgC_lcMode(s);
   if(mgC_lcIsNew(s) && mgC_lcNewUse(tab)){
-    const rows = mgC_lcRowsOf(tab), infl = +s.lcInfl||0;
-    return (yr, sAge, normalLC) => { const r = mgC_lcRowAt(rows, sAge); return r ? mgC_lcRowVal(r, sAge, normalLC, infl) : normalLC; };
+    const sim = mgC_lcSim(tab, a=>mgC_lcNormalAtAge(p, a));
+    return (yr, sAge, normalLC) => {
+      const r = mgC_lcRowAt(mgC_lcRowsCalc(mgC_lcRowsOf(tab)), sAge);
+      if(!r || r.basis==='normal') return normalLC;
+      return sim[sAge]!==undefined ? sim[sAge] : normalLC;
+    };
   }
   if(mode==='same') return (yr, sAge, normalLC) => normalLC;   // 通常どおり
   if(mode!=='steps') return null;
@@ -346,6 +380,19 @@ function mgQA_lcFn(tab){
     return month ? Math.round((+r.val||0)*12) : Math.round(normalLC*(+r.val||0)/100);
   };
 }
+// 各期間の「最初の年」の目安（通常◯→万が一◯）。入力のたびに書き直す
+function mgC_lcFirstHtml(tab, r){
+  const p = mgC_survivor(tab), from = _mgLcBlank(r.from) ? null : +r.from;
+  if(from===null || (r.basis!=='normal' && _mgLcBlank(r.val))) return `<small>—</small>`;
+  const n = Math.round(mgC_lcNormalAtAge(p, from));
+  const sim = mgC_lcSim(tab, a=>mgC_lcNormalAtAge(p, a));
+  const v = sim[from]!==undefined ? sim[from] : n;
+  return `<small>通常${n.toLocaleString()}→</small><b>年${v.toLocaleString()}万</b>`;
+}
+function mgC_lcRefreshHints(tab){
+  const rows = mgC_lcRowsOf(tab);
+  rows.forEach((r,i)=>{ const el = document.getElementById(`mgqa-lcf-${tab.id}-${i}`); if(el) el.innerHTML = mgC_lcFirstHtml(tab, r); });
+}
 // 通常時の生活費（⑥生活の期間ごと）
 function mgC_lcNormalBox(tab){
   const p = mgC_survivor(tab), a0 = mgC_ageNow(p), y0 = mgC_startYear(), lc = (window.lastR||{}).lc || [];
@@ -358,7 +405,7 @@ function mgC_lcNormalBox(tab){
 }
 function mgC_lcAutoToDetail(tabId){
   const tab = mgQA_tabs.find(t=>t.id===tabId); if(!tab) return;
-  tab.state.lcRows = mgC_lcAutoRows(tab).map(r=>({from:r.from, to:r.to, basis:r.basis, val:r.val}));
+  tab.state.lcRows = mgC_lcAutoRows(tab).map(r=>({from:r.from, to:r.to, basis:r.basis, val:r.val})); tab.state.lcPctPrev = 1;
   mgQA_setState(tabId, 'lcMode', 'detail', {rebuild:true});
 }
 function mgC_lcRowAdd(tabId){
@@ -379,13 +426,14 @@ function mgC_lcRowDel(tabId, i){
 function mgQA_lcNewCard(tab){
   const s = tab.state, id = tab.id, p = mgC_survivor(tab), auto = s.lcMode==='auto';
   const infl = +s.lcInfl||0;
-  const tg = (i, b) => `<span class="mgqa-lct">${[['pct','％'],['amt','年額']].map(([v,l])=>`<button type="button" class="${b===v?'on':''}" onclick="mgQA_setState('${id}','lcRows.${i}.basis','${v}',{rebuild:true})">${l}</button>`).join('')}</span>`;
-  const first = r => { const n = Math.round(mgC_lcNormalAtAge(p, +r.from||0)); return `<span class="mgqa-lcf"><small>通常${n.toLocaleString()}→</small><b>年${mgC_lcRowVal(r, +r.from||0, n, infl).toLocaleString()}万</b></span>`; };
+  const tg = (i, b) => `<span class="mgqa-lct">${[['normal','通常'],['pct','％'],['amt','年額']].map(([v,l])=>`<button type="button" class="${b===v?'on':''}" onclick="mgQA_setState('${id}','lcRows.${i}.basis','${v}',{rebuild:true})">${l}</button>`).join('')}</span>`;
+  const first = (r,i) => `<span class="mgqa-lcf" id="mgqa-lcf-${id}-${i}">${mgC_lcFirstHtml(tab, r)}</span>`;
+  const label = r => r.basis==='normal' ? '通常どおり' : r.basis==='amt' ? `年${(+r.val).toLocaleString()}万円` : `前年の${r.val}%`;
   let h = mgC_seg(id,'lcMode',[['auto','お任せ'],['detail','詳細入力']], auto?'auto':'detail') + mgC_lcNormalBox(tab);
   if(auto){
     h += `<div class="mgqa-lcg a"><span>${mgC_name(p)}の年齢</span><span>生活費</span><span>最初の年</span></div>`;
-    mgC_lcAutoRows(tab).forEach(r=>{
-      h += `<div class="mgqa-lcg a r"><b>${r.from}〜${r.to===''?'':r.to}歳</b><span>${r.basis==='amt'?`年${(+r.val).toLocaleString()}万円${infl?`（上昇${infl}%/年）`:''}`:(r.val===100?'通常どおり（100%）':`通常の${r.val}%`)}<small>${r.why}</small></span>${first(r)}</div>`;
+    mgC_lcAutoRows(tab).forEach((r,i)=>{
+      h += `<div class="mgqa-lcg a r"><b>${r.from}〜${r.to===''?'':r.to}歳</b><span>${label(r)}${infl&&r.basis!=='normal'?`（上昇${infl}%/年）`:''}<small>${r.why}</small></span>${first(r,'a'+i)}</div>`;
     });
     h += `<button type="button" class="mgqa-pill" onclick="mgC_lcAutoToDetail('${id}')">この内容を詳細入力で直す</button>`;
   }else{
@@ -395,20 +443,21 @@ function mgQA_lcNewCard(tab){
     const hc = a => (+a||0) - mgC_ageNow(p) + mgC_ageNow('h');
     rows.forEach((r,i)=>{
       const cf = `data-cf-row="lc" data-cf-from="${hc(r.from)}" data-cf-to="${hc((r.to===''||r.to==null)?r.from:r.to)}"`;
+      const b = r.basis==='amt' ? 'amt' : (r.basis==='normal' ? 'normal' : 'pct');
       h += `<div class="mgqa-lcg d r">
-        <input class="inp" type="text" inputmode="numeric" value="${r.from}" data-k="lcRows.${i}.from" ${cf}><span class="tl">〜</span>
+        <input class="inp" type="text" inputmode="numeric" value="${r.from??''}" data-k="lcRows.${i}.from" ${cf}><span class="tl">〜</span>
         <input class="inp" type="text" inputmode="numeric" placeholder="最後" value="${r.to??''}" data-k="lcRows.${i}.to" ${cf}>
-        ${tg(i, r.basis==='amt'?'amt':'pct')}
-        <input class="inp" type="text" inputmode="decimal" value="${r.val}" data-k="lcRows.${i}.val" ${cf}>
-        <span class="mgqa-lcu">${r.basis==='amt'?'万/年':'％'}${first(r)}</span>
+        ${tg(i, b)}
+        ${b==='normal' ? '<span class="mgqa-lcu" style="text-align:center">—</span>' : `<input class="inp" type="text" inputmode="decimal" value="${r.val??''}" data-k="lcRows.${i}.val" ${cf}>`}
+        <span class="mgqa-lcu">${b==='amt'?'万/年':b==='pct'?'前年の％':'通常どおり'}${first(r,i)}</span>
         <button type="button" class="x" onclick="mgC_lcRowDel('${id}',${i})" title="この期間を消す">×</button></div>`;
     });
     h += `<button class="btn-add" onclick="mgC_lcRowAdd('${id}')" style="margin-top:6px">＋ 期間</button>`;
   }
-  const _amtR = mgC_lcRowsOf(tab).find(r=>r.basis==='amt');
-  const _infFrom = (_amtR ? (+_amtR.from||0) : mgC_ageAtEvent(tab, p)) - mgC_ageNow(p) + mgC_ageNow('h');
-  h += `<div class="mgqa-lci"><label>年額の上昇率</label><div class="suf"><input class="inp" type="text" inputmode="decimal" value="${infl}" data-k="lcInfl" style="text-align:right" data-cf-row="lc" data-cf-from="${_infFrom}"><span class="sl">%/年</span></div><small>年額で決めた期間にだけかかります（％の期間は通常の生活費に合わせて動きます）</small></div>`;
-  h += `<div class="hint">年齢は${mgC_name(p)}（遺された方）の年齢です。どの期間にも入らない年は通常どおり</div>`;
+  const _r0 = mgC_lcRowsCalc(mgC_lcRowsOf(tab)).find(r=>r.basis!=='normal');
+  const _infFrom = (_r0 ? _r0.from : mgC_ageAtEvent(tab, p)) - mgC_ageNow(p) + mgC_ageNow('h');
+  h += `<div class="mgqa-lci"><label>上昇率</label><div class="suf"><input class="inp" type="text" inputmode="decimal" value="${infl}" data-k="lcInfl" style="text-align:right" data-cf-row="lc" data-cf-from="${_infFrom}"><span class="sl">%/年</span></div><small>「前年の％」「年額」の期間で、2年目から毎年かけます（「通常」の期間は通常のCF表のまま）</small></div>`;
+  h += `<div class="hint">％は前年の生活費に対する割合です（期間の最初の年に変わり、その後はその金額のまま）。年齢は${mgC_name(p)}（遺された方）の年齢。どの期間にも入らない年は通常どおり</div>`;
   h += `<div class="mgqa-cmp" data-cmp="lc"></div>`;
   return h;
 }
@@ -426,7 +475,7 @@ function mgC_lcLegacyConvert(tabId, toAuto){
   const s = tab.state;
   if(!toAuto){
     const pct = (mgC_lcMode(s)==='ratio') ? (+s.lcRatio||100) : 100;
-    s.lcRows = [{from:mgC_ageAtEvent(tab, mgC_survivor(tab)), to:'', basis:'pct', val:pct}];
+    s.lcRows = [{from:mgC_ageAtEvent(tab, mgC_survivor(tab)), to:'', basis: pct===100?'normal':'pct', val:pct}]; s.lcPctPrev = 1;
   }
   mgQA_setState(tabId, 'lcMode', toAuto?'auto':'detail', {rebuild:true});
 }

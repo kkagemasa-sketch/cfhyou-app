@@ -930,8 +930,8 @@ function mgQA_cardSummary(tab, key){
     }
     case 'lc':
       if(typeof mgC_lcIsNew==='function' && mgC_lcIsNew(s) && mgC_lcNewUse(tab)){
-        const rows = mgC_lcRowsOf(tab);
-        const f = r => r.basis==='amt' ? `年${man(r.val)}` : `${r.val}%`;
+        const rows = mgC_lcRowsCalc(mgC_lcRowsOf(tab));   // 空欄の期間は数えない
+        const f = r => r.basis==='amt' ? `年${man(r.val)}` : r.basis==='normal' ? '通常' : `${r.val}%`;
         if(s.lcMode==='auto') return {changed:true, v:'お任せ', sub: rows.map(f).join('→')};
         return {changed:true, v: rows.map(f).join('→') || '通常どおり', sub:`詳細入力・${rows.length}期間`};
       }
@@ -1752,6 +1752,8 @@ function mgQA_updateState(tab, el){
     }
     obj[parts[parts.length-1]] = val;
     // 生活費（2段）：区切りの年齢を入れたら「独立後」の欄を出す
+    // 生活費（詳細入力）：入力のたびに「最初の年」の目安を書き直す（以前はカードを作り直すまで古いままだった）
+    if(key.startsWith('lcRows.') && typeof mgC_lcRefreshHints==='function') setTimeout(()=>mgC_lcRefreshHints(tab),0);
     // 生活費（詳細入力）：期間の終わりを入れたら、次の期間の始まりをその次の年齢に
     { const m = key.match(/^lcRows\.(\d+)\.to$/);
       if(m && String(val).trim()!==''){ const i=+m[1], nx=(tab.state.lcRows||[])[i+1];
@@ -1777,6 +1779,7 @@ function mgQA_updateState(tab, el){
     }
   } else {
     tab.state[key] = val;
+    if(key==='lcInfl' && typeof mgC_lcRefreshHints==='function') setTimeout(()=>mgC_lcRefreshHints(tab),0);
     // 条件表示の更新
     // ★ L3修正: 旧コードは classList.toggle('hidden', ...) を使っていたが、
     //   mgQA_buildPanel は条件付き要素を style="display:none" インラインで生成しており、

@@ -610,23 +610,36 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       if(M.lc[i65]!==b65||M.lc[i65+5]!==b65) out.push('お任せ：65歳からが64歳の年の独立後の70%でない '+M.lc[i65]+'（'+b65+'のはず）');
       info.auto=[M.lc[i48],M.lc[i49],M.lc[i65]];
       { const hd=+document.getElementById("h-death-age").value||83, ha=+document.getElementById("husband-age").value||30, iE=hd-ha; if(iE<N.lc.length&&(M.lc[iE]!==N.lc[iE]||M.lc[iE-1]!==b65)) out.push("お任せ：ご主人様の想定寿命の年から通常のCF表と同じになっていない "+M.lc[iE-1]+"→"+M.lc[iE]+"（通常"+N.lc[iE]+"）"); }
-      // 上昇率1%：65歳からの年額だけ上がる
+      // 上昇率1%：「前年の％」の期間の2年目から毎年上がる。「通常」の期間・各期間の最初の年はそのまま
       t.state.lcInfl=1; mgQA_calcAndRender(t,true); M=window.lastMR;
-      if(M.lc[i65]!==b65||M.lc[i65+1]!==Math.round(b65*1.01)) out.push('上昇率1%が年額にかからない '+M.lc[i65+1]);
-      if(M.lc[i49]!==Math.round(N.lc[i49]*0.7)) out.push('上昇率が％の期間にかかっている');
+      if(M.lc[i48]!==N.lc[i48]) out.push('上昇率が「通常」の期間にかかっている');
+      if(M.lc[i49]!==Math.round(N.lc[i48]*0.7)) out.push('上昇率が期間の最初の年にかかっている '+M.lc[i49]);
+      if(Math.abs(M.lc[i49+1]-N.lc[i48]*0.7*1.01)>1) out.push('上昇率1%が2年目にかからない '+M.lc[i49+1]);
+      // 目安の書き直し（入力のたびに）
+      mgQA_switchTab(t.id); await wait(300);
+      { const h0=document.getElementById('mgqa-lcf-'+t.id+'-a1')?.textContent||''; if(!/通常/.test(h0)) out.push('お任せの目安が出ない: '+h0); }
       t.state.lcInfl=0;
       // カード
       mgQA_switchTab(t.id);
       let card=document.querySelector('[data-card="lc"]')?.textContent||'';
-      if(!/お任せ/.test(card)||!/詳細入力/.test(card)||!/通常時の生活費/.test(card)||!/年額の上昇率/.test(card)) out.push('お任せのカードの表示が足りない');
+      if(!/お任せ/.test(card)||!/詳細入力/.test(card)||!/通常時の生活費/.test(card)||!/上昇率/.test(card)||!/前年の/.test(card)) out.push('お任せのカードの表示が足りない');
       // 詳細入力で直す → お任せと同じ数字
       mgC_lcAutoToDetail(t.id);
       if(t.state.lcMode!=='detail'||(t.state.lcRows||[]).length!==4) out.push('「詳細入力で直す」で4期間が入らない '+(t.state.lcRows||[]).length);
       mgQA_calcAndRender(t,true); M=window.lastMR;
       if(M.lc[i49]!==Math.round(N.lc[i49]*0.7)||M.lc[i65]!==b65) out.push('詳細入力に移すと数字が変わる');
       // 詳細入力：2期間目を80%・3期間目を年60万に
-      t.state.lcRows[1].val=80; t.state.lcRows[2].val=60; mgQA_calcAndRender(t,true); M=window.lastMR;
-      if(M.lc[i49]!==Math.round(N.lc[i49]*0.8)||M.lc[i65]!==60) out.push('詳細入力の％・年額が効かない '+M.lc[i49]+'/'+M.lc[i65]);
+      t.state.lcInfl=0; t.state.lcRows[1].val=80; t.state.lcRows[2].basis='amt'; t.state.lcRows[2].val=60; mgQA_calcAndRender(t,true); M=window.lastMR;
+      if(M.lc[i49]!==Math.round(N.lc[i48]*0.8)||M.lc[i65]!==60) out.push('詳細入力の前年の％・年額が効かない '+M.lc[i49]+'/'+M.lc[i65]);
+      // 入力すると目安が書き直される
+      mgQA_switchTab(t.id); await wait(300);
+      { const e=document.querySelector('[data-k="lcRows.1.val"]'); if(e){ e.value='50'; e.dispatchEvent(new Event('input',{bubbles:true})); await wait(200);
+          const h1=document.getElementById('mgqa-lcf-'+t.id+'-1')?.textContent||''; if(!h1.includes('年'+Math.round(N.lc[i48]*0.5)+'万')) out.push('入力しても目安が変わらない: '+h1); }
+        t.state.lcRows[1].val=80; }
+      // 空欄の期間（始まり・金額なし）は使わない
+      t.state.lcRows.push({from:'',to:'',basis:'pct',val:''}); mgQA_calcAndRender(t,true);
+      if(window.lastMR.lc[i65]!==60) out.push('空欄の期間が計算に入っている');
+      t.state.lcRows.pop();
       // 期間を追加・削除
       mgC_lcRowAdd(t.id); const rs=t.state.lcRows;
       if(rs.length!==5||rs[3].to===''||rs[4].from!==+rs[3].to+1) out.push('期間を追加したときの年齢がつながらない '+JSON.stringify(rs));
@@ -652,7 +665,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       return {out,info};
     });
     if(L2.out.length){ bad++; console.log('❌ 死亡タブの生活費（お任せ／詳細入力）\n   - '+L2.out.join('\n   - ')); }
-    else console.log('✅ 死亡タブの生活費: お任せ（通常→70%→65歳から '+L2.info.auto.join('→')+'）・上昇率は年額だけ・詳細入力（直す/追加/削除/保存）・以前の形式はそのまま・障害タブは％のまま');
+    else console.log('✅ 死亡タブの生活費: お任せ（通常→70%→65歳から '+L2.info.auto.join('→')+'）・％は前年の◯%（上昇率は2年目から）・目安は入力のたびに更新・詳細入力（直す/追加/削除/保存）・以前の形式はそのまま・障害タブは％のまま');
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });
