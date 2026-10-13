@@ -293,6 +293,16 @@ function mgC_lcAutoRows(tab){
     const b = Math.round(mgC_lcNormalAtAge(p, aInd)*0.7);
     rows.push({from:aInd, to:'', basis:'amt', val:Math.round(b*0.7), why:`独立後の生活費 年${b.toLocaleString()}万円の70%（65歳を過ぎているため）`});
   }
+  // ★ 2026-10-13: 通常のCF表で亡くなった方が想定寿命を迎える年からは、通常のCF表も遺された方おひとりの生活なので、
+  //   通常のCF表の生活費をそのまま使う（⑥生活で入れたおひとりの生活費が反映される）
+  const dAge = mgQA_iv(tab.target==='h' ? 'h-death-age' : 'w-death-age') || (tab.target==='h' ? 83 : 88);
+  const aEnd = mgC_ageNow(p) + (dAge - mgC_ageNow(tab.target));   // その年の遺された方の年齢
+  if(aEnd > ev){
+    const kept = rows.filter(r=>(+r.from||0) < aEnd);
+    if(kept.length){ const last = kept[kept.length-1]; if(last.to==='' || +last.to >= aEnd) last.to = aEnd-1; }
+    kept.push({from:aEnd, to:'', basis:'pct', val:100, why:`${mgC_name(tab.target)}の想定寿命（${dAge}歳）の年から：通常のCF表と同じ`});
+    return kept;
+  }
   return rows;
 }
 function mgC_lcRowsOf(tab){

@@ -609,6 +609,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       const b65=Math.round(Math.round(N.lc[i64]*0.7)*0.7);
       if(M.lc[i65]!==b65||M.lc[i65+5]!==b65) out.push('お任せ：65歳からが64歳の年の独立後の70%でない '+M.lc[i65]+'（'+b65+'のはず）');
       info.auto=[M.lc[i48],M.lc[i49],M.lc[i65]];
+      { const hd=+document.getElementById("h-death-age").value||83, ha=+document.getElementById("husband-age").value||30, iE=hd-ha; if(iE<N.lc.length&&(M.lc[iE]!==N.lc[iE]||M.lc[iE-1]!==b65)) out.push("お任せ：ご主人様の想定寿命の年から通常のCF表と同じになっていない "+M.lc[iE-1]+"→"+M.lc[iE]+"（通常"+N.lc[iE]+"）"); }
       // 上昇率1%：65歳からの年額だけ上がる
       t.state.lcInfl=1; mgQA_calcAndRender(t,true); M=window.lastMR;
       if(M.lc[i65]!==b65||M.lc[i65+1]!==Math.round(b65*1.01)) out.push('上昇率1%が年額にかからない '+M.lc[i65+1]);
@@ -620,7 +621,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       if(!/お任せ/.test(card)||!/詳細入力/.test(card)||!/通常時の生活費/.test(card)||!/年額の上昇率/.test(card)) out.push('お任せのカードの表示が足りない');
       // 詳細入力で直す → お任せと同じ数字
       mgC_lcAutoToDetail(t.id);
-      if(t.state.lcMode!=='detail'||(t.state.lcRows||[]).length!==3) out.push('「詳細入力で直す」で3期間が入らない');
+      if(t.state.lcMode!=='detail'||(t.state.lcRows||[]).length!==4) out.push('「詳細入力で直す」で4期間が入らない '+(t.state.lcRows||[]).length);
       mgQA_calcAndRender(t,true); M=window.lastMR;
       if(M.lc[i49]!==Math.round(N.lc[i49]*0.7)||M.lc[i65]!==b65) out.push('詳細入力に移すと数字が変わる');
       // 詳細入力：2期間目を80%・3期間目を年60万に
@@ -628,8 +629,8 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       if(M.lc[i49]!==Math.round(N.lc[i49]*0.8)||M.lc[i65]!==60) out.push('詳細入力の％・年額が効かない '+M.lc[i49]+'/'+M.lc[i65]);
       // 期間を追加・削除
       mgC_lcRowAdd(t.id); const rs=t.state.lcRows;
-      if(rs.length!==4||rs[2].to===''||rs[3].from!==+rs[2].to+1) out.push('期間を追加したときの年齢がつながらない '+JSON.stringify(rs));
-      mgC_lcRowDel(t.id,3); if(t.state.lcRows.length!==3) out.push('期間を消せない');
+      if(rs.length!==5||rs[3].to===''||rs[4].from!==+rs[3].to+1) out.push('期間を追加したときの年齢がつながらない '+JSON.stringify(rs));
+      mgC_lcRowDel(t.id,4); if(t.state.lcRows.length!==4) out.push('期間を消せない');
       // 保存
       const d=_collectSaveData(); const st=(d.mgQATabs||[]).find(x=>x.id===t.id)?.state;
       if(!st||st.lcMode!=='detail'||!st.lcRows||st.lcRows[2].val!==60) out.push('保存データに詳細入力が入らない');
