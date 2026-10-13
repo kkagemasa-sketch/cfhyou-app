@@ -1898,7 +1898,7 @@ body.mg-need-hide #right-body table.cf td.need-m1,body.mg-need-hide #right-body 
 .mgqa-lcn-a{color:#94a3b8}
 .mgqa-lcg{display:grid;gap:4px;align-items:center;font-size:11px}
 .mgqa-lcg.a{grid-template-columns:72px 1fr auto}
-.mgqa-lcg.d{grid-template-columns:42px 8px 42px 64px 54px 1fr 14px}
+.mgqa-lcg.d{grid-template-columns:36px 8px 36px 100px 44px 1fr 12px}
 .mgqa-lcg:not(.r){font-size:10px;color:#94a3b8;padding-bottom:2px;border-bottom:1px solid #e2e8f0}
 .mgqa-lcg.r{padding:4px 0;border-bottom:1px solid #eef2f7}
 .mgqa-lcg.a.r b{color:#1e3a5f}
@@ -1907,7 +1907,7 @@ body.mg-need-hide #right-body table.cf td.need-m1,body.mg-need-hide #right-body 
 .mgqa-lcg .tl{text-align:center;color:#94a3b8}
 .mgqa-lcg .x{border:none;background:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:0}
 .mgqa-lct{display:inline-flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden}
-.mgqa-lct button{border:none;background:#fff;color:#475569;font-size:10.5px;font-weight:700;padding:3px 6px;white-space:nowrap;cursor:pointer;font-family:inherit}
+.mgqa-lct button{border:none;background:#fff;color:#475569;font-size:10.5px;font-weight:700;padding:3px 5px;white-space:nowrap;cursor:pointer;font-family:inherit}
 .mgqa-lct button.on{background:#1e3a5f;color:#fff}
 .mgqa-lcu{color:#475569;line-height:1.25;white-space:nowrap}
 .mgqa-lcf{display:block;text-align:right;white-space:nowrap}
