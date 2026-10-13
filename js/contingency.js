@@ -59,7 +59,7 @@ function getMGInsurances(){
     if(ins.type==='annuity'){
       const annual=_mgInNum(typeof mgQA_insAnnual==='function'?mgQA_insAnnual(ins):ins.annual);
       const endAge=parseInt(ins.endAge)||65;
-      if(annual>0)list.push({type:'annuity',name:name||'年金型保険',annual,endAge,endBy:ins.endBy==='insured'?'insured':'receiver'});
+      if(annual>0)list.push({type:'annuity',name:name||'収入保障保険',annual,endAge,endBy:ins.endBy==='insured'?'insured':'receiver'});
     }else if(ins.type==='lump'){
       const amt=_mgInNum(ins.amount);
       if(amt>0)list.push({type:'lump',name:name||'死亡保険金',amt});
