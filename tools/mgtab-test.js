@@ -742,6 +742,53 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(AS.length){ bad++; console.log("❌ 万が一の金融資産（商品ごと）\n   - "+AS.join("\n   - ")); }
     else console.log("✅ 万が一の金融資産（商品ごと）: 万が一の年に解約・財形を止める・障害タブはおふたり（障害の方だけ止める）・以前の設定の読み替え・通常CFは変わらない");
+    /* ---- 旧データの障害タブ「積立投資（全部）止める」(stopInv) → 口座ごとの「止める」に読み替え ---- */
+    await page.evaluate(pageBaseSetup);
+    const SI=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      if(typeof setHouseholdType==="function") setHouseholdType("couple");
+      const addAcc=(p,bal,m)=>{ addSecurity(p); const els=document.querySelectorAll('[id^="sec-bal-'+p+'-"]'); const sid=els[els.length-1].id.split("-").pop();
+        $("sec-acc-"+p+"-"+sid)?.classList.add("on"); $("sec-bal-"+p+"-"+sid).value=bal; $("sec-monthly-"+p+"-"+sid).value=m; $("sec-rate-"+p+"-"+sid).value=3; $("sec-redeem-"+p+"-"+sid).value=65; return sid; };
+      const h1=addAcc("h",200,2), h2=addAcc("h",100,1), w1=addAcc("w",300,3);
+      setRTab("cf"); live(true); await wait(900); render();
+      // 変換前の万が一CF表（旧の計算＝障害の方の積立を全部止める）を、計算の設定(_mgDisCfg.stopInv)を直接立てて作る
+      mgQA_addTab("h","dis1"); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=3;
+      const origApply=window.mgQA_disApply; window.mgQA_disApply=function(tab){ origApply(tab); window._mgDisCfg.stopInv=true; };
+      mgQA_calcAndRender(t,true); window.mgQA_disApply=origApply;
+      const oldInv=window.lastMR.secInvest.slice(), oldRows=(window.lastMR.secInvestRows||[]).map(r=>r.vals.slice()), oldAsset=(window.lastMR.finAsset||[]).slice();
+      if(!(oldInv[1]>oldInv[3])) out.push("旧の計算で積立が止まっていない "+oldInv.slice(0,5));
+      // 旧ファイルの形（stopInv=true・口座ごとの設定なし）で保存→読み込み
+      const saved=JSON.parse(JSON.stringify(_collectSaveData()));
+      const st=saved.mgQATabs.find(x=>x.id===t.id).state; st.stopInv=true; delete st.assets;
+      _applyData(saved); await wait(800);
+      const t1=mgQA_tabs.find(x=>x.id===t.id); mgQA_switchTab(t1.id); await wait(300); mgQA_calcAndRender(t1,true);
+      const a=t1.state.assets||{};
+      if(t1.state.stopInv!==false) out.push("読み替え後も stopInv が残っている "+t1.state.stopInv);
+      if(!a["accum|h|"+h1]||a["accum|h|"+h1].acc!=="stop"||!a["accum|h|"+h2]||a["accum|h|"+h2].acc!=="stop") out.push("障害の方の口座が「止める」にならない "+JSON.stringify(a));
+      if(a["accum|w|"+w1]&&a["accum|w|"+w1].acc==="stop") out.push("障害でない方の口座まで「止める」になった");
+      const newInv=window.lastMR.secInvest, newRows=(window.lastMR.secInvestRows||[]).map(r=>r.vals);
+      if(JSON.stringify(newInv)!==JSON.stringify(oldInv)) out.push("読み替え後の積立額が変換前と違う 前="+oldInv.slice(0,6)+" 後="+newInv.slice(0,6));
+      if(JSON.stringify(newRows)!==JSON.stringify(oldRows)) out.push("読み替え後の口座ごとの積立額が変換前と違う");
+      if(JSON.stringify((window.lastMR.finAsset||[]).slice())!==JSON.stringify(oldAsset)) out.push("読み替え後の金融資産が変換前と違う");
+      // 画面：積立投資の切替は「おふたりの金融資産」カードだけ（保険料カードには切替なし）
+      mgQA_switchTab(t1.id); await wait(300);
+      const stops=document.querySelector('[data-card="stops"]')?.textContent||"", assets=document.querySelector('[data-card="assets"]')?.textContent||"";
+      if(/積立投資（全部）/.test(stops)||document.querySelector('[data-card="stops"] button[onclick*="stopInv"]')) out.push("保険料カードに「積立投資（全部）」の切替が残っている");
+      if(!/おふたりの金融資産/.test(assets)) out.push("「おふたりの金融資産」カードがない");
+      const sels=[...document.querySelectorAll('[data-card="assets"] select[data-k$=".acc"]')].map(s=>s.dataset.k+"="+s.value);
+      if(!sels.includes("assets.accum|h|"+h1+".acc=stop")||!sels.includes("assets.accum|h|"+h2+".acc=stop")) out.push("カードの選択が「止める」になっていない "+sels.join(","));
+      // すでに口座に設定がある場合は上書きしない（解約だけ決めてある口座には「止める」を足す）
+      mgQA_addTab("h","dis1"); const t2=mgQA_tabs[mgQA_tabs.length-1]; t2.state.deathYear=3; t2.state.stopInv=true;
+      t2.state.assets={["accum|h|"+h2]:{acc:"change",monthly:0.5},["accum|h|"+h1]:{rd:"event"},["accum|w|"+w1]:{rd:"event"}}; mgQA_calcAndRender(t2,true);
+      const b=t2.state.assets;
+      if(b["accum|h|"+h2].acc!=="change"||b["accum|h|"+h2].monthly!==0.5) out.push("口座にあった「金額を変える」が上書きされた "+JSON.stringify(b));
+      if(b["accum|h|"+h1].acc!=="stop"||b["accum|h|"+h1].rd!=="event") out.push("解約だけ決めてあった口座に「止める」が足されない "+JSON.stringify(b["accum|h|"+h1]));
+      if(b["accum|w|"+w1].rd!=="event"||b["accum|w|"+w1].acc) out.push("障害でない方の口座の設定が変わった "+JSON.stringify(b["accum|w|"+w1]));
+      if(t2.state.stopInv!==false) out.push("設定ありの口座があるときに stopInv が残っている");
+      return out;
+    });
+    if(SI.length){ bad++; console.log("❌ 旧データの「積立投資（全部）止める」の読み替え\n   - "+SI.join("\n   - ")); }
+    else console.log("✅ 旧データの読み替え: 障害タブの「積立投資（全部）止める」が口座ごとの「止める」になり、万が一CF表の積立額・金融資産は変換前と同じ。切替は金融資産カードだけ・口座の設定は上書きしない");
     /* ---- 遺族年金：中高齢寡婦加算（子がいた妻は遺族基礎年金が終わった時点で40歳以上）・65歳以降は多い方 ---- */
     await page.evaluate(pageBaseSetup);
     const SVP=await page.evaluate(async()=>{

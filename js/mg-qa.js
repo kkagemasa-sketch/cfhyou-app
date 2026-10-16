@@ -758,7 +758,7 @@ function mgQA_buildPanel(tab){
 
     <div class="mgqa-sec exp"><span class="bar"></span>出ていくお金</div>
     ${card('lc','exp','生','生活費', mgQA_lcCard(tab))}
-    ${_isDis ? card('stops','exp','保',`${deceased}の保険料・積立投資`, mgQA_stopsCard(tab)) : ''}
+    ${_isDis ? card('stops','exp','保',`${deceased}の保険料`, mgQA_stopsCard(tab)) : ''}
     ${(_isDis || !_single) ? card('assets','exp','資', _isDis ? (_single ? 'ご本人の金融資産' : 'おふたりの金融資産') : `${spouse}の金融資産`, mgQA_assetsCard(tab)) : ''}
 
     ${card('house','exp','家','住まいとローン', mgQA_houseCard(tab))}
@@ -914,9 +914,9 @@ function mgQA_cardSummary(tab, key){
       return {changed:true, v:[st?'積立を止める':'', cg?'金額変更':'', rd?'解約年齢':''].filter(Boolean).join('・'), sub:`${secs.length}件中`};
     }
     case 'stops': {
-      const a = mgC_bool(s.stopIns), b = mgC_bool(s.stopInv);
-      if(!a&&!b) return {changed:false, v:'続ける'};
-      return {changed:true, v:[a?'保険料を止める':'',b?'積立を止める':''].filter(Boolean).join('・')};
+      // 積立投資は「金融資産」カード（口座ごと）で見るので、ここは保険料だけ
+      if(!mgC_bool(s.stopIns)) return {changed:false, v:'続ける'};
+      return {changed:true, v:'保険料を止める'};
     }
     case 'ins': {
       const list = (s.insurances||[]).filter(x=>x&&x.type!=='none');
