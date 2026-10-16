@@ -86,7 +86,50 @@ async function openPrintPreviewMG(ids){
   catch(e){ console.error('[print]', e); document.getElementById('pp-preview')?.remove(); alert('印刷プレビューの作成に失敗しました: '+e.message); }
 }
 
-// sections（省略可）: [{src, mgTitle, preEl}] … 万が一を複数タブまとめて印刷するとき
+// 通常のCF表と万が一のタブを選んでまとめて印刷（通常のCF表→万が一タブの並び順。ご確認事項は最後に1回）
+//   sel: {cf: 通常のCF表を入れる, mg: [万が一タブのid…]}
+async function openPrintPreviewAll(sel){
+  sel = sel || {};
+  const tabs = (typeof mgQA_tabs!=='undefined') ? mgQA_tabs : [];
+  const mg = (Array.isArray(sel.mg)?sel.mg:[]).filter(id=>tabs.find(t=>t.id===id));
+  const withCf = !!sel.cf;
+  if(!withCf && !mg.length){ alert('印刷するCF表を選んでください'); return; }
+  if(!withCf) return openPrintPreviewMG(mg);
+  if(!mg.length) return openPrintPreview('cf');
+  const act = window._mgQA_activeTabId, orig = (typeof rTab!=='undefined') ? rTab : 'cf';
+  const secs = [];
+  try{
+    // 通常のCF表（万が一タブを開いていれば通常のCF表に切り替えて写し取る）
+    if(orig!=='cf' && typeof setRTab==='function') setRTab('cf');
+    await _ppWaitCalcDone();
+    const tbl = document.querySelector('#right-body .tbl-wrap > table.cf');
+    if(tbl){
+      const pre = document.getElementById('cf-summary-detail');
+      secs.push({src: tbl.cloneNode(true), isMg:false, mgTitle:'', label:'通常のCF表', preEl: pre ? pre.cloneNode(true) : null,
+        cover: (typeof getCoverData==='function') ? getCoverData('cf') : null});
+    }
+    // 万が一のタブ（並び順）
+    for(const id of mg){
+      mgQA_switchTab(id);
+      const t2 = document.querySelector('#right-body .tbl-wrap > table.cf');
+      if(!t2) continue;
+      const banner = document.querySelector('#right-body .r-summary > div');
+      const m = (banner?.textContent||'').match(/【万が一】[^\n]*?場合/);
+      const pre2 = document.getElementById('mg-summary-detail');
+      secs.push({src: t2.cloneNode(true), isMg:true, mgTitle: m ? m[0].replace(/\s+/g,'') : '【万が一】', preEl: pre2 ? pre2.cloneNode(true) : null,
+        cover: (typeof getCoverData==='function') ? getCoverData('mg') : null});
+    }
+  }finally{
+    // 印刷の前に開いていたタブに戻す
+    if(act) mgQA_switchTab(act);
+    else if(typeof setRTab==='function') setRTab(orig==='mg-h'||orig==='mg-w' ? 'cf' : (orig||'cf'));
+  }
+  if(!secs.length){ alert('CF表が表示されていません'); return; }
+  try{ _ppBuild('cf', secs[0].src, secs); }
+  catch(e){ console.error('[print]', e); document.getElementById('pp-preview')?.remove(); alert('印刷プレビューの作成に失敗しました: '+e.message); }
+}
+
+// sections（省略可）: [{src, mgTitle, preEl, isMg, cover}] … 複数の表をまとめて印刷するとき（isMg は表ごと）
 function _ppBuild(kind, src, sections){
   document.getElementById('pp-preview')?.remove();
   const isMg = kind==='mg';
@@ -137,7 +180,8 @@ function _ppBuild(kind, src, sections){
   document.body.appendChild(box);
   document.body.classList.add('pp-open');
 
-  const head=sub=>`<div class="pp-head"><img class="pp-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="pp-title">${_ppEsc(cn)} ${docTitle}<small>${sub}</small></div>
+  let curTitle=docTitle;   // ページ見出しの資料名（通常＋万が一をまとめて印刷するときは表ごとに変わる）
+  const head=sub=>`<div class="pp-head"><img class="pp-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="pp-title">${_ppEsc(cn)} ${curTitle}<small>${sub}</small></div>
     <div class="pp-meta">作成日：${dStr}${staff?'<br>担当：'+_ppEsc(staff):''}</div></div>`;
   const addPage=(sub,bodyHtml)=>{
     const p=document.createElement('div'); p.className='pp-page';
@@ -155,6 +199,10 @@ function _ppBuild(kind, src, sections){
   let hiddenCount=0;
   sections.forEach((sec,si)=>{
     const mgTitle=sec.mgTitle||'';
+    // この表が万が一かどうか（通常＋万が一をまとめて印刷するときは表ごとに違う）
+    const secMg=(sec.isMg===undefined)?isMg:!!sec.isMg;
+    const secTitle=secMg?'万が一キャッシュフロー表':'キャッシュフロー表';
+    curTitle=secTitle;
     // ── 元の表から行を取得 ──
     //   ・「＋行を追加」ボタン行は除外
     //   ・画面で非表示の行（「金融資産行を隠す」等）は画面どおり印刷しない
@@ -205,12 +253,12 @@ function _ppBuild(kind, src, sections){
     // 表紙（前提条件）
     const y0=_ppYear(allRows[0].cells[2]), yN=_ppYear(allRows[0].cells[nCols-2]);
     if(sec.cover){
-      const cb=addCover(_ppCoverHtml(sec.cover, {dStr, staff, docTitle}));
+      const cb=addCover(_ppCoverHtml(sec.cover, {dStr, staff, docTitle:secTitle}));
       _ppFitCover(cb);
     }else{
-      addPage(isMg?_ppEsc(mgTitle):'前提条件', `<div class="pp-cover"><div class="pp-cover-hero${isMg?' mg':''}"><img class="pp-cover-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="t1">${docTitle}</div>
+      addPage(secMg?_ppEsc(mgTitle):'前提条件', `<div class="pp-cover"><div class="pp-cover-hero${secMg?' mg':''}"><img class="pp-cover-logo" src="img/housingfp-logo.png" alt="Housing FP"><div class="t1">${docTitle}</div>
         <div class="t2">${_ppEsc(cn)}${cn?'　／　':''}${y0}年〜${yN}年（全${yearIdx.length}年間）</div>
-        ${isMg?`<div class="t3">${_ppEsc(mgTitle)}</div>`:''}</div>
+        ${secMg?`<div class="t3">${_ppEsc(mgTitle)}</div>`:''}</div>
       ${preHtml?`<div class="pp-cover-lbl">前提条件</div>${preHtml}`:''}</div>`);
     }
     // 生活費の内訳（出力画面で「生活費の内訳を入れる」を選んだときだけ・最初の表の後に1回）
@@ -219,7 +267,7 @@ function _ppBuild(kind, src, sections){
     const bodies=[];
     chunks.forEach((cols,ci)=>{
       const isLast=ci===chunks.length-1;
-      const sub=`${_ppYear(allRows[0].cells[cols[0]])}年〜${_ppYear(allRows[0].cells[cols[cols.length-1]])}年${isMg?'　'+_ppEsc(mgTitle):''}`;
+      const sub=`${_ppYear(allRows[0].cells[cols[0]])}年〜${_ppYear(allRows[0].cells[cols[cols.length-1]])}年${secMg?'　'+_ppEsc(mgTitle):''}`;
       bodies.push(addPage(sub, buildTable(cols,isLast)));   // 「次ページへ続く」案内は置かず、表に高さを回す
     });
     bodies.forEach(_ppFitPage);
@@ -227,8 +275,9 @@ function _ppBuild(kind, src, sections){
     tableBodies.push(...bodies);
     // ── 抜け漏れチェック（この表の分）──
     const pr=_ppVerify(box, srcRows, allRows[0], nCols, si+':');
-    problems.push(...(sections.length>1?pr.map(t=>`［${mgTitle}］${t}`):pr));
+    problems.push(...(sections.length>1?pr.map(t=>`［${mgTitle||sec.label||''}］${t}`):pr));
   });
+  curTitle=docTitle;
 
   // ご確認事項（1枚に収まるよう文字サイズを調整）
   const dcBody=addPage('ご確認事項', discHtml);

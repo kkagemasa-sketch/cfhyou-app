@@ -155,7 +155,7 @@ function showExportModal(exportType){
           </div>
         </div>
       </div>
-      ${(exportType==='mg'||exportType==='print-mg')?_mgExportTabPicker():''}
+      ${exportType==='mg'?_mgExportTabPicker(false):(exportType==='print'||exportType==='print-mg')?_mgExportTabPicker(true, exportType==='print'):''}
       ${(exportType==='excel'||exportType==='mg')?`
       <div style="background:#fff5f8;border:1px solid #fbcfe8;border-radius:10px;padding:12px 14px">
         <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:#1e3a5f">
@@ -192,19 +192,23 @@ function _applyExportModalValues(){
   const incEl=document.getElementById('em-include-disclaimer');
   if(incEl) _exportExtra.includeDisclaimer = !!incEl.checked;   // チェック欄がある画面（Excel出力）でだけ変更
   const pick=[...document.querySelectorAll('#em-mg-tabs input[type=checkbox]:checked')].map(e=>e.value);
-  if(document.getElementById('em-mg-tabs')) _exportExtra.mgTabs = pick;
+  if(document.getElementById('em-mg-tabs')){ _exportExtra.mgTabs = pick.filter(v=>v!=='cf'); _exportExtra.printCf = pick.includes('cf'); }
   const lcEl=document.getElementById('em-include-lc');
   if(lcEl) _exportExtra.includeLC = !!lcEl.checked;   // 印刷・PDFの画面でだけ変更（他の出力では前回の選択を保持）
   _savePrintInfo();
 }
 function _doExport(type){
+  const hadPick = !!document.getElementById('em-mg-cf');   // 印刷の画面で「通常のCF表」も選べる一覧が出ていたか
   _applyExportModalValues();
   document.getElementById('export-modal')?.remove();
   if(type==='excel')exportExcel();
   else if(type==='mg')exportExcelMGTabs(_exportExtra.mgTabs);
   else if(type==='pdf')exportPDF();
-  else if(type==='print')openPrintPreview('cf');
-  else if(type==='print-mg')openPrintPreviewMG(_exportExtra.mgTabs);
+  else if(type==='print'||type==='print-mg'){
+    if(hadPick && typeof openPrintPreviewAll==='function') openPrintPreviewAll({cf:_exportExtra.printCf, mg:_exportExtra.mgTabs});
+    else if(type==='print') openPrintPreview('cf');
+    else openPrintPreviewMG(_exportExtra.mgTabs);
+  }
   else window.print();
 }
 
@@ -2398,16 +2402,19 @@ function exportPDF(){
 
 
 // ===== 万が一CF表：出力するタブを選ぶ（複数選ぶとまとめて出力。PDFは続けて、Excelはシート別） =====
-function _mgExportTabPicker(){
+function _mgExportTabPicker(withCf, cfChecked){
   if(typeof mgQA_tabs==='undefined' || !mgQA_tabs.length) return '';
   const act = window._mgQA_activeTabId;
   const K = {death:['死亡','#c2185b'], dis1:['1級','#3459ca'], dis2:['2級','#159ea3']};
+  const row=(val,checked,badge,color,name,id)=>`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#1e3a5f">
+      <input type="checkbox" value="${val}" ${checked?'checked':''} ${id?`id="${id}"`:''} style="cursor:pointer">
+      <span style="font-size:10px;font-weight:800;color:#fff;background:${color};border-radius:4px;padding:1px 6px">${badge}</span>${name}</label>`;
+  const cfRow = withCf ? row('cf', !!cfChecked, '通常', '#1e3a5f', '通常のCF表', 'em-mg-cf') : '';
+  const allBtn = `<button type="button" onclick="(function(){const b=[...document.querySelectorAll('#em-mg-tabs input[type=checkbox]')];const all=b.every(e=>e.checked);b.forEach(e=>e.checked=!all);})()" style="font-size:10px;padding:2px 8px;background:#fff;color:#1e3a5f;border:1px solid #cbd5e1;border-radius:5px;cursor:pointer;font-family:inherit">すべて選ぶ／外す</button>`;
   return `<div style="background:#f6f8fc;border:1px solid #dbe3ee;border-radius:10px;padding:12px 14px">
-    <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:.04em">出力する万が一のタブ（複数選ぶとまとめて出力）</div>
-    <div id="em-mg-tabs" style="display:flex;flex-direction:column;gap:6px">${mgQA_tabs.map(t=>{const k=K[t.kind]||K.death;return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#1e3a5f">
-      <input type="checkbox" value="${t.id}" ${t.id===act?'checked':''} style="cursor:pointer">
-      <span style="font-size:10px;font-weight:800;color:#fff;background:${k[1]};border-radius:4px;padding:1px 6px">${k[0]}</span>${_ppEsc?_ppEsc(t.name):t.name}</label>`;}).join('')}</div>
-    <div style="font-size:10px;color:#64748b;margin-top:6px">PDFはタブの並び順に続けて1つに、Excelはタブごとのシートにして1つのファイルにします</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.04em">${withCf?'印刷するCF表（複数選ぶとまとめて1つに）':'出力する万が一のタブ（複数選ぶとまとめて出力）'}</div>${allBtn}</div>
+    <div id="em-mg-tabs" style="display:flex;flex-direction:column;gap:6px">${cfRow}${mgQA_tabs.map(t=>{const k=K[t.kind]||K.death;return row(t.id, t.id===act, k[0], k[1], _ppEsc?_ppEsc(t.name):t.name);}).join('')}</div>
+    <div style="font-size:10px;color:#64748b;margin-top:6px">${withCf?'通常のCF表→万が一のタブの並び順に、表紙とCF表を続けて1つのPDFにします（ご確認事項は最後に1回）':'PDFはタブの並び順に続けて1つに、Excelはタブごとのシートにして1つのファイルにします'}</div>
   </div>`;
 }
 function _mgPickIds(ids){

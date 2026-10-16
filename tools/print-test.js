@@ -184,6 +184,53 @@ const CASES = [
       else console.log(`✅ 万が一_3タブまとめて（${r.pages}ページ・抜け漏れ0・はみ出し0・元のタブに戻る）`);
       await page.close();
     }
+    // ── 通常のCF表＋万が一（死亡・障害1級）をまとめて印刷 ──
+    {
+      const errors=[];
+      const page=await openApp(browser, origin, errors);
+      await page.evaluate(pageBaseSetup);
+      await page.evaluate(normalSetup);
+      const r = await page.evaluate(async()=>{
+        document.getElementById('client-name').value='テスト 太郎';
+        live(true); await new Promise(res=>setTimeout(res,1500));
+        setRTab('cf'); mgQA_addTab('h','death'); const a=mgQA_tabs[mgQA_tabs.length-1].id;
+        mgQA_addTab('w','dis1'); const b=mgQA_tabs[mgQA_tabs.length-1].id;
+        setRTab('cf');
+        const years = document.querySelector('#right-body .tbl-wrap > table.cf').rows[0].cells.length-3;
+        await openPrintPreviewAll({cf:true, mg:[a,b]});
+        const res = window._ppLastResult || {};
+        const box = document.getElementById('pp-preview');
+        const covers=[...box.querySelectorAll('.pp-page-cover')].map(p=>p.querySelector('.ppc-h1')?.textContent||'');   // 表紙の資料名（通常／万が一）
+        const heads=[...box.querySelectorAll('.pp-title')].map(e=>e.textContent);   // 表紙以外のページ見出し
+        const back1 = rTab==='cf' && !window._mgQA_activeTabId;
+        closePrintPreview();
+        // 万が一タブを開いた状態から印刷すると、そのタブに戻る
+        mgQA_switchTab(b);
+        await openPrintPreviewAll({cf:true, mg:[a]});
+        const res2 = window._ppLastResult || {};
+        const back2 = window._mgQA_activeTabId===b;
+        closePrintPreview();
+        return {pages:res.pages, sections:res.sections, problems:res.problems, overflow:res.overflow, years, covers, heads, back1, sections2:res2.sections, problems2:res2.problems, back2};
+      });
+      const per = 1 + Math.ceil(r.years/20);
+      const fails=[];
+      if(errors.length) fails.push('JSエラー: '+errors.slice(0,2).join(' / '));
+      if(r.sections!==3) fails.push(`まとめた表の数 ${r.sections}（3のはず）`);
+      if(r.pages!==per*3+1) fails.push(`ページ数 ${r.pages}（期待 ${per*3+1}）`);
+      if(!r.problems || r.problems.length) fails.push(`抜け漏れ ${r.problems?r.problems.length:'?'}件: ${(r.problems||[]).slice(0,2).join(' / ')}`);
+      if(r.overflow) fails.push(`はみ出し ${r.overflow}件`);
+      if(!(r.covers.length===3 && !/万が一/.test(r.covers[0]) && /万が一/.test(r.covers[1]) && /万が一/.test(r.covers[2]))) fails.push(`表紙の順番 ${r.covers.join(' / ')}`);
+      if(/万が一/.test(r.heads[0]||'')) fails.push('通常のCF表のページ見出しが万が一になっている');
+      if(!r.heads.some(h=>/万が一/.test(h))) fails.push('万が一のページ見出しがない');
+      if(/万が一/.test(r.heads[r.heads.length-1]||'')) fails.push('ご確認事項の見出しが万が一になっている');
+      if(!r.back1) fails.push('印刷のあと通常のCF表に戻っていない');
+      if(r.sections2!==2) fails.push(`万が一タブから印刷したときの表の数 ${r.sections2}（2のはず）`);
+      if(!r.problems2 || r.problems2.length) fails.push(`2回目の抜け漏れ ${r.problems2?r.problems2.length:'?'}件`);
+      if(!r.back2) fails.push('万が一タブから印刷したあと、そのタブに戻っていない');
+      if(fails.length){ bad++; console.log(`❌ 通常＋万が一まとめて\n   - ${fails.join('\n   - ')}`); }
+      else console.log(`✅ 通常＋万が一まとめて（${r.pages}ページ・表紙 通常→万が一→万が一・見出しは表ごと・抜け漏れ0・元のタブに戻る）`);
+      await page.close();
+    }
   } finally {
     try{ await browser.close(); }catch(e){}
     srv.close();
