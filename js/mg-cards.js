@@ -1180,7 +1180,7 @@ function mgQA_survInvCard(tab){
         + (m==='change'?`<div class="fg" style="max-width:220px;margin-top:4px"><label class="lbl">万が一の後の積立額</label><div class="suf"><input class="inp amt-inp" type="number" min="0" step="0.1" value="${mv}" data-k="${k}.monthly" data-cf-row="secInvest"><span class="sl">万円/月</span></div></div>`:'') + '</div>';
     }
     const r = rd[a.rkey] || {}, rm = r.mode || 'same', rk = `survRd.${a.rkey}`;
-    h += `<div class="fg"><label class="lbl">解約</label>${mgC_seg(id, rk+'.mode', [['same', a.redeem>0?`④と同じ（${a.redeem}歳）`:'④と同じ（解約しない）'],['age','年齢を変える'],['never','解約しない']], rm)}`
+    h += `<div class="fg"><label class="lbl">解約</label>${mgC_seg(id, rk+'.mode', [['same', a.redeem>0?`④資産の設定どおり（${a.redeem}歳で解約）`:'④資産の設定どおり（解約しない）'],['age','年齢を変える'],['never','解約しない']], rm)}`
       + (rm==='age'?`<div class="suf" style="max-width:130px;margin-top:4px"><input class="inp age-inp" type="text" inputmode="numeric" value="${r.age??''}" placeholder="${a.redeem||''}" data-k="${rk}.age" data-cf-row="totalAsset" data-cf-from="${hc(r.age||a.redeem||mgC_ageAtEvent(tab,p))}"><span class="sl">歳で解約</span></div>`:'') + '</div>';
     return h;
   }).join('<div style="height:10px"></div>') + `<div class="hint">積立は万が一の年から切り替わります。解約の年齢は${mgC_name(p)}の年齢で、この万が一のタブだけに使います（④資産・通常のCF表は変わりません）</div>`;
@@ -1286,13 +1286,14 @@ function mgQA_assetsCard(tab){
     const acc = c.acc || 'keep', rd = c.rd || 'same';
     const sub = a.kind==='stock' ? `残高${a.bal}万` : `残高${a.bal}万${a.monthly>0?`・月${a.monthly}万`:''}`;
     const accSel = a.monthly>0 ? opt(k+'.acc', a.canChange ? [['keep','続ける'],['stop','止める'],['change','金額を変える']] : [['keep','続ける'],['stop','止める']], acc) : '<span class="mgqa-agn">（積立なし）</span>';
-    const rdSel = opt(k+'.rd', [['same', a.redeem>0 && a.redeem<900 ? `④と同じ（${a.redeem}歳）` : '④と同じ（解約しない）'],['event','万が一の年に解約'],['age','年齢を決めて解約'],['never','解約しない']], rd);
+    const rdSel = opt(k+'.rd', [['same','④資産の設定どおり'],['event','万が一の年に解約'],['age','年齢を決めて解約'],['never','解約しない']], rd);
     let ex = '';
     if(acc==='change' && a.canChange && a.monthly>0) ex += `<span class="mgqa-agx">万が一の後の積立 <input class="inp" type="text" inputmode="decimal" value="${c.monthly??a.monthly}" data-k="${k}.monthly" data-cf-row="secInvest">万円/月</span>`;
     if(rd==='age') ex += `<span class="mgqa-agx">解約 <input class="inp" type="text" inputmode="numeric" value="${c.age??''}" placeholder="${a.redeem||''}" data-k="${k}.age" data-cf-row="totalAsset" data-cf-from="${hc(a.p, c.age||a.redeem||a.ev)}">歳</span>`;
     let note = '';
     if(acc==='stop' && a.monthly>0) note = '万が一の年から積立0。それまでの残高は運用を続けます';
     if(rd==='event') note = (note?note+'。':'') + `万が一の年（${a.ev}歳）に現金にします`;
+    if(rd==='same') note = (note?note+'。':'') + (a.redeem>0 && a.redeem<900 ? `④資産の設定どおり${a.redeem}歳で解約します` : '④資産の設定どおり解約しません（運用を続けます）');
     h += `<div class="mgqa-ag"><span><b>${a.lbl}</b><small>${sub}</small></span><span>${accSel}</span><span>${rdSel}</span>${ex?`<span class="mgqa-agex">${ex}</span>`:''}${note?`<span class="mgqa-agnote">→ ${note}</span>`:''}</div>`;
   });
   return h + `<div class="hint">変えた内容はこの万が一のタブだけに使います（④資産・通常のCF表は変わりません）。「止める」は積立をやめて、それまでの残高は運用を続けます${mgC_isDis(tab)?'':'。亡くなった方の分は万が一の年に現金にします'}</div>`;
