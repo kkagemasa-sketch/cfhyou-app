@@ -897,9 +897,9 @@ function _renderContingencyInner(_mgStopOv){
             // 死亡時55歳未満・子なし→受給権自体が発生しない（永久に）
             if(ha>=pHReceive){survP=survKosei65(kW,koseiH_mg)+kiso;}
             else{survP=ri(kW*0.75)+kiso;}
-          }else if(hadChildAtDeath||hAgeAtDeath>=55){
-            // 死亡時に子ありだった→子が18歳超後も厚生年金部分は残る
-            // 死亡時55歳以上→受給権あり、支給開始は60歳から
+          }else if(hAgeAtDeath>=55){
+            // ★ 2026-10-16: 夫の遺族厚生年金は「妻の死亡時に夫が55歳以上」のときだけ60歳から。
+            //   子がいた場合も、子が18歳を過ぎた後は夫に受給権がないので0（以前は60歳から出していた）
             if(ha>=60&&_meetsLivelihood){
               if(ha>=pHReceive){survP=survKosei65(kW,koseiH_mg);}
               else{survP=ri(kW*0.75);}
@@ -974,7 +974,7 @@ function _renderContingencyInner(_mgStopOv){
     if(targetIsH){pSelfVal=isDead?0:(ha>=pHReceive?ri(_pNetAt_mg(_pGrossH_mg,ha)):0);pWifeVal=wa>=pWReceive?ri(_pNetAt_mg(_pGrossW_mg,wa)):0;}
     else{pSelfVal=ha>=pHReceive?ri(_pNetAt_mg(_pGrossH_mg,ha)):0;pWifeVal=isDead?0:(wa>=pWReceive?ri(_pNetAt_mg(_pGrossW_mg,wa)):0);}
     // 障害年金・傷病手当金（障害タブ）。65歳以降はご本人の老齢年金と多いほうを選ぶ
-    let _disP=0,_sickV=0;
+    let _disP=0,_sickV=0,_disKisoPart=0;
     if(_mgDis&&isEvt){
       const k=i-(deathYearOffset-1);
       if(_mgDisCfg.sickOn&&k<=1) _sickV=ri((_mgDisCfg.sickAnnual||0)*(k===0?1:0.5));
@@ -988,11 +988,21 @@ function _renderContingencyInner(_mgStopOv){
           const spAge=targetIsH?wa:ha;
           const kakyu=(_mgDisKosei>0&&!_isSingle_mg&&spAge<65)?24.38:0;  // 配偶者加給年金（令和8年度 243,800円）
           v=kiso+_mgDisKosei*(_mgKind==='dis1'?1.25:1)+kakyu;
+          _disKisoPart=kiso;
         }
         _disP=ri(k===1?v*0.5:v);  // 障害認定（1年6か月後）の年は半年分
       }
+      // ★ 2026-10-16: 65歳以降は ①障害基礎＋障害厚生 ②老齢基礎＋老齢厚生 ③障害基礎＋老齢厚生 の多いもの
+      //   （障害年金は非課税。③の老齢厚生の部分だけ税金を引く）。手入力の障害年金は①②だけ
       const own=targetIsH?pSelfVal:pWifeVal;
-      if(own>0){ if(own>=_disP){_disP=0;} else { if(targetIsH)pSelfVal=0; else pWifeVal=0; } }
+      if(own>0){
+        const _ownKosei=targetIsH?koseiH_mg:koseiW_mg;
+        const o3=(_disKisoPart>0&&_ownKosei>0&&_mgDisCfg.penMode!=='manual')?ri(_disKisoPart)+ri(_pNetAt_mg(_ownKosei,targetIsH?ha:wa)):0;
+        const best=Math.max(_disP,own,o3);
+        if(best===o3&&o3>0){ _disP=ri(_disKisoPart); const _k=ri(_pNetAt_mg(_ownKosei,targetIsH?ha:wa)); if(targetIsH)pSelfVal=_k; else pWifeVal=_k; }
+        else if(best===own){_disP=0;}
+        else { if(targetIsH)pSelfVal=0; else pWifeVal=0; }
+      }
     }
     // ★ 2026-10-13: 障害タブで、障害の方が通常のCF表の想定寿命を過ぎた年からは通常のCF表と同じ年金
     //   （ご本人の老齢年金・障害年金は0、配偶者はご自身の老齢年金＋通常のCF表と同じ遺族年金）

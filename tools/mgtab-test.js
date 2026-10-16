@@ -759,13 +759,31 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       const sp2=window.lastMR.survPension; if(!(sp2[iOf(47)]-sp2[iOf(48)]<1 && sp2[iOf(47)]>0 && Math.abs((sp2[iOf(47)]||0)-(sp2[iOf(64)]||0))<1)) {}
       if(!(sp2[iOf(47)]>=63)) out.push("遺族基礎年金が終わった時点で40歳以上なのに中高齢寡婦加算が無い "+sp2[iOf(47)]);
       if(sp2[iOf(66)]>=sp2[iOf(64)]) out.push("65歳で中高齢寡婦加算が終わっていない");
+      // 夫の遺族厚生年金（現行）：妻の死亡時に夫が55歳未満なら、子が18歳を過ぎた後は0（60歳からも出ない）
+      { if($("ca-1")) $("ca-1").value=3; $("husband-age").value=32; live(true); await wait(900); render();
+        mgQA_addTab("w"); const tw=mgQA_tabs[mgQA_tabs.length-1]; tw.state.deathYear=1; mgQA_calcAndRender(tw,true);
+        const spw=window.lastMR.survPension, iH=a=>a-32;
+        if(!(spw[iH(40)]>0)) out.push("妻死亡：子が18歳までの遺族年金が無い "+spw[iH(40)]);
+        if(spw[iH(60)]!==0||spw[iH(62)]!==0) out.push("妻死亡（夫55歳未満）：60歳から遺族厚生年金が出ている "+spw[iH(60)]);
+        $("husband-age").value=56; $("wife-age").value=54; if($("ca-1")) $("ca-1").value=25; live(true); await wait(900); render();
+        mgQA_addTab("w"); const tw2=mgQA_tabs[mgQA_tabs.length-1]; tw2.state.deathYear=1; mgQA_calcAndRender(tw2,true);
+        const sp2=window.lastMR.survPension; if(!(sp2[60-56]>0)||sp2[58-56]!==0) out.push("妻死亡（夫55歳以上）：60歳から遺族厚生年金が出ない "+sp2[58-56]+"/"+sp2[60-56]);
+        $("husband-age").value=30; $("wife-age").value=29; if($("ca-1")) $("ca-1").value=3; live(true); await wait(900); render(); }
+      // 障害タブの65歳以降：障害基礎＋障害厚生／老齢／障害基礎＋老齢厚生 の多いもの
+      { $("pension-h").value=186; live(true); await wait(900); render();
+        mgQA_addTab("h","dis2"); const td=mgQA_tabs[mgQA_tabs.length-1]; td.state.deathYear=3; mgQA_calcAndRender(td,true);
+        const M=window.lastMR, i65=65-30, tot=M.disPension[i65]+M.pS[i65];
+        const o1=M.disPension[i65-1], o2=window.lastR.pS[i65];
+        if(tot<Math.max(o1,o2)-1) out.push("障害タブ65歳：3つの組み合わせの多いものになっていない 合計"+tot+"（障害"+o1+"・老齢"+o2+"）");
+        if(M.disPension[i65]>0&&M.pS[i65]>0&&M.disPension[i65]!==Math.round(KISO_FULL_AMT)) out.push("障害基礎＋老齢厚生のとき障害年金の行が障害基礎でない "+M.disPension[i65]);
+        $("pension-h").value=""; live(true); await wait(600); }
       // 65歳以降は多い方：survKosei65 の式
       if(Math.abs(survKosei65(160.04,94.02)-33)>0.1) out.push("65歳以降の多い方の式 "+survKosei65(160.04,94.02));
       if(survKosei65(160,0)!==120) out.push("本人の厚生年金が無いときは3/4のまま "+survKosei65(160,0));
       return {out,info};
     });
     if(SVP.out.length){ bad++; console.log("❌ 遺族年金の見直し\n   - "+SVP.out.join("\n   - ")+"\n   "+JSON.stringify(SVP.info)); }
-    else console.log("✅ 遺族年金: 中高齢寡婦加算は遺族基礎年金が終わった時点の年齢で判定・65歳で終了・65歳以降は3/4か1/2＋本人1/2の多い方");
+    else console.log("✅ 遺族年金: 中高齢寡婦加算は遺族基礎年金が終わった時点の年齢で判定・65歳で終了・65歳以降は3/4か1/2＋本人1/2の多い方・夫は妻の死亡時55歳以上のときだけ60歳から・障害タブの65歳以降は3つの組み合わせの多いもの");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

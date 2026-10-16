@@ -1256,8 +1256,9 @@ function render(){
           kosei3_4=ri(koseiWSurv*0.75);
           if(ha>=pHReceive){koseiAdj=survKosei65(koseiWSurv,koseiH);survP=koseiAdj+kiso;}
           else{koseiAdj=kosei3_4;survP=kosei3_4+kiso;}
-        }else if(hadChildAtDeath||hAgeAtDeath>=55){
-          // 死亡時に子ありだった or 55歳以上→受給権あり、60歳から支給
+        }else if(hAgeAtDeath>=55){
+          // ★ 2026-10-16: 夫の遺族厚生年金は「妻の死亡時に夫が55歳以上」のときだけ（60歳から支給）。
+          //   子がいた場合は子が18歳までは子の分として入るが、その後は夫に受給権がないので0（以前は60歳から出していた）
           if(ha>=60&&hIncome<850){
             kosei3_4=ri(koseiWSurv*0.75);
             if(ha>=pHReceive){koseiAdj=Math.max(kosei3_4-koseiH,0);survP=koseiAdj;}
@@ -3188,8 +3189,8 @@ function render(){
       autoW=ha0>=pHReceive?survKosei65(koseiW,koseiH,bairitsuW)+kiso0:ri(koseiW*0.75*bairitsuW)+kiso0;
     }else if(childUnder18>0){
       autoW=ha0>=pHReceive?survKosei65(koseiW,koseiH)+kiso0:ri(koseiW*0.75)+kiso0;
-    }else if(hadChildAtWDeath||hAgeAtWDeath>=55){
-      // 死亡時に子あり or 55歳以上→受給権あり
+    }else if(hAgeAtWDeath>=55){
+      // 死亡時に55歳以上→受給権あり（子がいても、子が18歳を過ぎた後は55歳未満なら受給権なし）
       const hInc0=getIncomeAtAge(hSteps,ha0);
       if(ha0>=60&&hInc0<850){
         autoW=ha0>=pHReceive?survKosei65(koseiW,koseiH):ri(koseiW*0.75);
@@ -3197,7 +3198,7 @@ function render(){
     }else{
       autoW=0; // 死亡時55歳未満・子なし→受給権なし
     }
-    if(!_izokuR2028)noRightW=!hadChildAtWDeath&&hAgeAtWDeath<55&&!children.length;
+    if(!_izokuR2028)noRightW=hAgeAtWDeath<55&&childUnder18===0;
     survWSpan.textContent=autoW.toLocaleString()+(noRightW?' (受給権なし)':is5yrW?' (5年有期)':'');
   }
 
