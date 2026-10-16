@@ -90,7 +90,7 @@ function getPrintInfo(){
   return{name:_v('pi-name'),company:_v('pi-company'),address:_v('pi-address'),tel:_v('pi-tel'),email:_v('pi-email'),notes:notesRaw};
 }
 // 出力モーダル用の一時情報（作成日・免責ページ有無）
-let _exportExtra = { date:'', includeDisclaimer:true, includeLC:false };   // includeLC: 印刷・PDFに生活費の内訳ページを入れる
+let _exportExtra = { date:'', includeDisclaimer:true, includeLC:false, ppYears:'auto' };   // includeLC: 印刷・PDFに生活費の内訳ページを入れる / ppYears: 印刷・PDFの1ページの年数('auto'|15|20|25、print.js参照)
 function _savePrintInfo(){
   const info=getPrintInfo();
   try{localStorage.setItem(PI_STORAGE_KEY,JSON.stringify(info));}catch(e){}
@@ -109,7 +109,7 @@ function _loadPrintInfo(){
       if(info.notes&&info.notes.length)$('pi-notes').value=info.notes.join('\n');
     }
     const e2=localStorage.getItem('exportExtra');
-    if(e2){const v=JSON.parse(e2);if(v){_exportExtra.date=v.date||'';_exportExtra.includeDisclaimer=v.includeDisclaimer!==false;_exportExtra.includeLC=v.includeLC===true;}}
+    if(e2){const v=JSON.parse(e2);if(v){_exportExtra.date=v.date||'';_exportExtra.includeDisclaimer=v.includeDisclaimer!==false;_exportExtra.includeLC=v.includeLC===true;_exportExtra.ppYears=[15,20,25].includes(+v.ppYears)?+v.ppYears:'auto';}}
   }catch(e){}
 }
 
@@ -175,6 +175,15 @@ function showExportModal(exportType){
             <span style="display:block;font-size:10px;color:#64748b;margin-top:2px">生活費タブの内訳（毎月の固定費・年間の変動費・備考）を、表紙の次に1ページ追加します</span>
           </span>
         </label>
+      </div>
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 14px">
+        <label for="em-pp-years" style="display:flex;align-items:center;gap:10px;font-size:12px;color:#1e3a5f;flex-wrap:wrap">
+          <span style="font-weight:700">CF表の1ページの年数</span>
+          <select id="em-pp-years" style="font-size:12px;padding:5px 8px;border:1.5px solid #cbd5e1;border-radius:6px;font-family:inherit;background:#fff;cursor:pointer">
+            ${[['auto','自動（20年目安・端数は前のページへ）'],['15','最大15年（ゆとり）'],['20','最大20年'],['25','最大25年（枚数を少なく）']].map(([v,t])=>`<option value="${v}" ${String(_exportExtra.ppYears||'auto')===v?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </label>
+        <div style="font-size:10px;color:#64748b;margin-top:6px">自動は1枚20年を目安に、端数が10年未満なら前のページに振り分けて枚数を減らします（例：62年→21・21・20年の3枚）。年数を選ぶとその上限で枚数を決め、各ページに均等に配ります（例：62年で最大20年→16・16・15・15年の4枚）。縦はどの場合も1枚に収めます</div>
       </div>`:''}
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button onclick="document.getElementById('export-modal').remove()" style="font-size:12px;padding:8px 16px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-weight:600">キャンセル</button>
@@ -195,6 +204,8 @@ function _applyExportModalValues(){
   if(document.getElementById('em-mg-tabs')){ _exportExtra.mgTabs = pick.filter(v=>v!=='cf'); _exportExtra.printCf = pick.includes('cf'); }
   const lcEl=document.getElementById('em-include-lc');
   if(lcEl) _exportExtra.includeLC = !!lcEl.checked;   // 印刷・PDFの画面でだけ変更（他の出力では前回の選択を保持）
+  const pyEl=document.getElementById('em-pp-years');
+  if(pyEl) _exportExtra.ppYears = [15,20,25].includes(+pyEl.value) ? +pyEl.value : 'auto';   // 印刷・PDFの1ページの年数（覚える）
   _savePrintInfo();
 }
 function _doExport(type){

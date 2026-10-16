@@ -1,12 +1,38 @@
-// print.js — CF表の印刷・PDF保存（A4横・1枚20年分・縦は1枚に収める）
+// print.js — CF表の印刷・PDF保存（A4横・1枚20年目安（均等割り・出力画面で変更可）・縦は1枚に収める）
 //
 // 方針: 画面に表示中のCF表(#right-body table.cf)をそのまま複製して印刷用ページを組み立てる。
 //   → セル上書き・追加行・行名変更・解約金などの個別行は、画面に出ていれば自動で印刷にも入る
 //     （Excel出力のような「書き出し側の対応漏れ」が構造的に起きない）。
 //   → 組み立て後に「画面の全マス ⇔ 印刷の全マス」を照合し、1マスでも違えばプレビューに警告を出す。
-// 構成: 表紙（前提条件） → CF表（20年ごと） → ご確認事項（Excel出力と同じ文面）
+// 構成: 表紙（前提条件） → CF表（1ページの年数は下記） → ご確認事項（Excel出力と同じ文面）
+//
+// 1ページの年数（出力画面「1ページの年数」・_exportExtra.ppYears）:
+//   'auto'（既定）: 1枚20年を目安。端数が10年未満なら前のページに振り分けて枚数を減らす（1枚は最大25年まで）
+//                   例: 62年 → 21・21・20 の3枚（以前は 20・20・20・2 で4枚目に2年だけ残った）
+//   15 / 20 / 25 : その年数を上限に枚数を決め、各ページに均等に配る。例: 62年で「最大20年」→ 16・16・15・15 の4枚
+//   どの場合も、ページごとの年数の差は1年以内（均等割り）
 
-const PP_YEARS_PER_PAGE = 20;
+const PP_YEARS_PER_PAGE = 20;   // 「自動」の目安
+const PP_YEARS_MAX_AUTO = 25;   // 「自動」で1枚に入れる上限
+const PP_YEARS_CHOICES = [15, 20, 25];
+
+// 出力画面で選んだ「1ページの年数」('auto' か 15/20/25）
+function _ppYearsSetting(){
+  const v = (typeof _exportExtra!=='undefined') ? _exportExtra.ppYears : 'auto';
+  return PP_YEARS_CHOICES.includes(+v) ? +v : 'auto';
+}
+// 年の列番号の並びを、設定に従ってページごとに分ける（均等割り）
+function _ppSplitYears(yearIdx, setting){
+  const n = yearIdx.length;
+  if(!n) return [];
+  let pages;
+  if(setting==='auto') pages = Math.max(1, Math.round(n/PP_YEARS_PER_PAGE), Math.ceil(n/PP_YEARS_MAX_AUTO));
+  else pages = Math.max(1, Math.ceil(n/setting));
+  const base = Math.floor(n/pages), rem = n%pages;   // 先頭の rem ページだけ1年多い
+  const chunks=[]; let at=0;
+  for(let p=0;p<pages;p++){ const len = base + (p<rem?1:0); chunks.push(yearIdx.slice(at, at+len)); at+=len; }
+  return chunks;
+}
 
 // 印刷・PDFボタン（Excel出力の横）
 function printCurrentTab(){
@@ -212,7 +238,8 @@ function _ppBuild(kind, src, sections){
     hiddenCount+=hiddenRows.length;
     const srcRows=allRows.filter(r=>r.cells.length===nCols && r.style.display!=='none' && !/行を追加/.test(r.textContent));
     const yearIdx=[]; for(let i=2;i<nCols-1;i++) yearIdx.push(i);
-    const chunks=[]; for(let i=0;i<yearIdx.length;i+=PP_YEARS_PER_PAGE) chunks.push(yearIdx.slice(i,i+PP_YEARS_PER_PAGE));
+    const chunks=_ppSplitYears(yearIdx, _ppYearsSetting());
+    const maxPer=Math.max(...chunks.map(c=>c.length));   // この表で1ページに入れる年数（列幅の基準）
     // ── 1マス分の複製（画面専用の部品・装飾を取り除く） ──
     const cloneCell=(r,i)=>{
       const c=_ppCleanCell(r.cells[i], i, nCols);
@@ -221,8 +248,8 @@ function _ppBuild(kind, src, sections){
     };
     const buildTable=(cols,isLast)=>{
       const take = isLast ? [0,1,...cols,nCols-1] : [0,1,...cols];
-      // 年数が少ないページ（最後のページなど）は、年の列を20年のページと同じ幅にして表を狭くする（横に広がらないように）
-      const _w=cols.length<PP_YEARS_PER_PAGE?` style="width:min(100%,calc(54mm + ${isLast?'19mm + ':''}(100% - 54mm) * ${cols.length} / ${PP_YEARS_PER_PAGE}))!important"`:'';
+      // 年数が少ないページ（均等割りで1年少ないページなど）は、年の列を一番多いページと同じ幅にして表を狭くする（横に広がらないように）
+      const _w=cols.length<maxPer?` style="width:min(100%,calc(54mm + ${isLast?'19mm + ':''}(100% - 54mm) * ${cols.length} / ${maxPer}))!important"`:'';
       let t=`<table class="pp-tbl cf"${_w}><colgroup><col class="c1"><col class="c2">${cols.map(()=>'<col>').join('')}${isLast?'<col class="cT">':''}</colgroup>`;
       srcRows.forEach(r=>{
         const cls=(r.className||'').replace(/\bcf-row-highlight\b/g,'');
@@ -263,12 +290,14 @@ function _ppBuild(kind, src, sections){
     }
     // 生活費の内訳（出力画面で「生活費の内訳を入れる」を選んだときだけ・最初の表の後に1回）
     if(si===0 && typeof _exportExtra!=='undefined' && _exportExtra.includeLC) addPage('生活費の内訳', _ppLCHtml());
-    // CF表（20年ごと・縦は1枚）
+    // CF表（1ページの年数は _ppSplitYears・縦は1枚）
     const bodies=[];
     chunks.forEach((cols,ci)=>{
       const isLast=ci===chunks.length-1;
       const sub=`${_ppYear(allRows[0].cells[cols[0]])}年〜${_ppYear(allRows[0].cells[cols[cols.length-1]])}年${secMg?'　'+_ppEsc(mgTitle):''}`;
-      bodies.push(addPage(sub, buildTable(cols,isLast)));   // 「次ページへ続く」案内は置かず、表に高さを回す
+      const b=addPage(sub, buildTable(cols,isLast));   // 「次ページへ続く」案内は置かず、表に高さを回す
+      b._years=cols.length;                             // テスト・確認用（このページの年数）
+      bodies.push(b);
     });
     bodies.forEach(_ppFitPage);
     bodies.forEach(_ppFitTextCells);
@@ -307,6 +336,7 @@ function _ppBuild(kind, src, sections){
   box.scrollTop=0;
   window._ppLastResult={pages:pgs.length, problems, hiddenRows:hiddenCount, sections:sections.length,
     fontPx:tableBodies.map(b=>+(b._fs||0).toFixed(1)),
+    yearsPerPage:tableBodies.map(b=>b._years||0), ppYears:_ppYearsSetting(),
     overflow:tableBodies.reduce((n,b)=>n+[...b.querySelectorAll('.pp-tbl td,.pp-tbl th')].filter(c=>c.scrollWidth>c.clientWidth).length,0)};
   document.addEventListener('keydown',_ppKey);
   // 画面が狭い端末（iPad縦など）では、プレビューだけ画面幅に合わせて縮小表示（印刷には影響しない）

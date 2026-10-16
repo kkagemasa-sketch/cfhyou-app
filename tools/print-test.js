@@ -3,7 +3,8 @@
  *  - 代表シナリオで印刷プレビューを組み立て、次を検査する
  *    ① 画面のCF表と印刷の全マスが一致（抜け・重複・値違いが0件）
  *    ② 数字・文字の欠け（はみ出し）が0件
- *    ③ ページ構成 = 表紙1 + CF表(20年ごと・縦1枚) + ご確認事項1
+ *    ③ ページ構成 = 表紙1 + CF表(1ページの年数の設定どおり・均等割り・縦1枚) + ご確認事項1
+ *       「1ページの年数」= 自動（20年目安・端数10年未満は前のページへ・最大25年）／最大15・20・25年（均等割り）
  *    ④ 印刷モードで各ページの中身が用紙からはみ出さない
  *    ⑤ わざと1マス消すと抜け漏れチェックが検知する（チェック自体の動作確認）
  *  - 使い方: node tools/print-test.js [--pdf 出力フォルダ]   ※--pdf で確認用PDFも保存
@@ -62,7 +63,38 @@ const CASES = [
   { name:'通常CF_金融資産行を隠す', setup:heavySetup, kind:'cf', hideFin:true },
   { name:'万が一CF_行が多い',  setup:heavySetup,  kind:'mg' },
   { name:'通常CF_生活費の内訳あり', setup:heavySetup, kind:'cf', includeLC:true },
+  { name:'通常CF_1ページ最大15年', setup:heavySetup, kind:'cf', ppYears:15 },
+  { name:'通常CF_1ページ最大25年', setup:heavySetup, kind:'cf', ppYears:25 },
+  { name:'万が一CF_1ページ最大20年', setup:heavySetup, kind:'mg', ppYears:20 },
 ];
+// print.js の _ppSplitYears と同じ決め方（CF表のページ数）。'auto'=20年目安・端数10年未満は前のページへ・最大25年／数字=その上限で均等割り
+function tablePagesFor(years, setting){
+  if(!years) return 0;
+  if(setting===undefined || setting==='auto') return Math.max(1, Math.round(years/20), Math.ceil(years/25));
+  return Math.max(1, Math.ceil(years/setting));
+}
+// ページごとの年数の検査（合計が年数・差は1年以内・多いページが先・上限を超えない）
+function splitFails(years, setting, perPage){
+  const f=[];
+  if(!Array.isArray(perPage) || !perPage.length) return ['ページごとの年数が記録されていない'];
+  if(perPage.reduce((a,b)=>a+b,0)!==years) f.push(`ページの年数の合計 ${perPage.join('+')} ≠ ${years}`);
+  if(Math.max(...perPage)-Math.min(...perPage)>1) f.push(`ページごとの年数の差が1年を超える（${perPage.join('/')}）`);
+  for(let i=1;i<perPage.length;i++) if(perPage[i]>perPage[i-1]) f.push(`年数の多いページが後ろにある（${perPage.join('/')}）`);
+  const cap = (setting===undefined || setting==='auto') ? 25 : setting;
+  if(Math.max(...perPage)>cap) f.push(`1ページ ${Math.max(...perPage)}年（上限 ${cap}年）`);
+  return f;
+}
+// 均等割りの決め方そのものの検査（print.js の _ppSplitYears をブラウザで呼ぶ）:
+//   62年→自動 21/21/20、最大20年 16/16/15/15、最大15年 5枚、最大25年 3枚、70年→自動 4枚、69年→3枚、29年→2枚、20年→1枚
+const SPLIT_RULE_CASES=[[62,'auto',[21,21,20]],[62,20,[16,16,15,15]],[62,15,[13,13,12,12,12]],[62,25,[21,21,20]],[70,'auto',[18,18,17,17]],[69,'auto',[23,23,23]],[29,'auto',[15,14]],[20,'auto',[20]],[3,'auto',[3]],[100,'auto',[20,20,20,20,20]],[0,'auto',[]]];
+function splitRuleFails(got){   // got: ブラウザで計算した [[n,s,[年数...]],...]
+  const f=[];
+  SPLIT_RULE_CASES.forEach(([n,s,want],i)=>{
+    const g=(got&&got[i])?got[i][2]:null;
+    if(!g || g.join('/')!==want.join('/')) f.push(`${n}年・${s}: ${g?g.join('/'):'?'}（期待 ${want.join('/')||'0枚'}）`);
+  });
+  return f;
+}
 
 (async()=>{
   let puppeteer;
@@ -90,6 +122,7 @@ const CASES = [
         } else if(typeof setRTab==='function') setRTab('cf');
         if(c.hideFin){ finAssetVisible=false; _applyFinAssetVisibility(); }
         _exportExtra.includeLC = !!c.includeLC;
+        _exportExtra.ppYears = c.ppYears || 'auto';   // 1ページの年数（出力画面の選択と同じ入れ物）
         if(c.includeLC){
           const sv=(id,v)=>{ const e=document.getElementById(id); if(e) e.value=v; };
           sv('lc-food',85000); _lcBikou['lc-food']='外食込み';
@@ -116,9 +149,11 @@ const CASES = [
         const lcPage = [...box.querySelectorAll('.pp-page')].find(p=>/生活費の内訳/.test(p.querySelector('.pp-title')?.textContent||''));
         const lcInfo = lcPage ? { food:/¥85,000/.test(lcPage.textContent), bikou:/外食込み/.test(lcPage.textContent),
           fits:(()=>{const b=lcPage.querySelector('.pp-body');return b.scrollHeight<=b.clientHeight+1;})() } : null;
-        return { pages:res.pages, problems:res.problems, hiddenRows:res.hiddenRows, fontPx:res.fontPx, overflow:res.overflow,
+        // 均等割りの決め方（print.js の関数そのもの）
+        const rule = c.splitRuleCases ? c.splitRuleCases.map(([n,s])=>[n,s,_ppSplitYears(Array.from({length:n},(_,i)=>i+2), s).map(ch=>ch.length)]) : null;
+        return { pages:res.pages, problems:res.problems, hiddenRows:res.hiddenRows, fontPx:res.fontPx, overflow:res.overflow, yearsPerPage:res.yearsPerPage, rule,
                  years, visibleRows, tablePages, detected, screenOverflow, lcInfo, title:box.querySelector('.pp-title')?.textContent||'' };
-      }, c);
+      }, Object.assign({}, c, {splitRuleCases: c===CASES[0] ? SPLIT_RULE_CASES : null}));
       // ④ 印刷モードでページからはみ出さないか（⑤で消したマスを戻すため作り直す）
       await page.evaluate(async(c)=>{ await openPrintPreview(c.kind); }, c);
       await page.emulateMediaType('print');
@@ -126,13 +161,16 @@ const CASES = [
       if(PDF_DIR){ fs.mkdirSync(PDF_DIR,{recursive:true}); await page.pdf({path:path.join(PDF_DIR,c.name+'.pdf'),preferCSSPageSize:true,printBackground:true}); }
       await page.emulateMediaType(null);
 
-      const expPages = 1 + (c.includeLC?1:0) + Math.ceil(r.years/20) + 1;
+      const expTable = tablePagesFor(r.years, c.ppYears);
+      const expPages = 1 + (c.includeLC?1:0) + expTable + 1;
       const fails=[];
       if(errors.length) fails.push('JSエラー: '+errors.slice(0,2).join(' / '));
       if(!r.problems || r.problems.length) fails.push(`抜け漏れ ${r.problems?r.problems.length:'?'}件: ${(r.problems||[]).slice(0,2).join(' / ')}`);
       if(r.overflow) fails.push(`はみ出し ${r.overflow}件`);
       if(r.pages!==expPages) fails.push(`ページ数 ${r.pages}（期待 ${expPages}）`);
-      if(r.tablePages!==Math.ceil(r.years/20)) fails.push(`CF表ページ ${r.tablePages}（縦1枚なら ${Math.ceil(r.years/20)}）`);
+      if(r.tablePages!==expTable) fails.push(`CF表ページ ${r.tablePages}（縦1枚なら ${expTable}）`);
+      fails.push(...splitFails(r.years, c.ppYears, r.yearsPerPage));
+      if(r.rule) fails.push(...splitRuleFails(r.rule).map(t=>'均等割りの決め方: '+t));
       if(!printFit) fails.push('印刷モードでページからはみ出し');
       if(!(r.detected>0)) fails.push('1マス消しても抜け漏れチェックが検知しない');
       if(c.expectRowsAtLeast && r.visibleRows<c.expectRowsAtLeast) fails.push(`行数 ${r.visibleRows}（${c.expectRowsAtLeast}行以上のはず）`);
@@ -145,7 +183,7 @@ const CASES = [
                if(!r.lcInfo.bikou) fails.push('生活費の内訳に備考が出ていない');
                if(!r.lcInfo.fits) fails.push('生活費の内訳ページが用紙からはみ出し'); }
       } else if(r.lcInfo) fails.push('生活費の内訳を選んでいないのにページがある');
-      const info=`${r.visibleRows}行・${r.pages}ページ・文字${(r.fontPx||[]).join('/')}px`;
+      const info=`${r.visibleRows}行・${r.pages}ページ・1ページ${(r.yearsPerPage||[]).join('/')}年・文字${(r.fontPx||[]).join('/')}px`;
       if(fails.length){ bad++; console.log(`❌ ${c.name}（${info}）\n   - ${fails.join('\n   - ')}`); }
       else console.log(`✅ ${c.name}（${info}・抜け漏れ0・はみ出し0・検知テストOK）`);
       await page.close();
@@ -171,7 +209,7 @@ const CASES = [
         return {pages:res.pages, sections:res.sections, problems:res.problems, overflow:res.overflow, years,
           titles, back: window._mgQA_activeTabId===a, tables: box.querySelectorAll('.pp-tbl').length};
       });
-      const per = 1 + Math.ceil(r.years/20);
+      const per = 1 + tablePagesFor(r.years, 'auto');
       const fails=[];
       if(errors.length) fails.push('JSエラー: '+errors.slice(0,2).join(' / '));
       if(r.sections!==3) fails.push(`まとめた表の数 ${r.sections}（3のはず）`);
@@ -212,7 +250,7 @@ const CASES = [
         closePrintPreview();
         return {pages:res.pages, sections:res.sections, problems:res.problems, overflow:res.overflow, years, covers, heads, back1, sections2:res2.sections, problems2:res2.problems, back2};
       });
-      const per = 1 + Math.ceil(r.years/20);
+      const per = 1 + tablePagesFor(r.years, 'auto');
       const fails=[];
       if(errors.length) fails.push('JSエラー: '+errors.slice(0,2).join(' / '));
       if(r.sections!==3) fails.push(`まとめた表の数 ${r.sections}（3のはず）`);
