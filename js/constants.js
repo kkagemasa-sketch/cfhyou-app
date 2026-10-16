@@ -304,3 +304,18 @@ const FLAT_RATE_TABLE=[
 // ★ 2026-10-11 ユーザー指示：万が一の必要保障額（最低限・標準・安心）を画面・PDF表紙・Excelに出さない。
 //   計算（MR.need）は残しているので、true に戻せば元どおり表示される
 const MG_NEED_SHOW=false;
+
+// ★ 2026-10-16: 65歳以上で自分の老齢厚生年金がある配偶者の遺族厚生年金
+//   ①亡くなった方の報酬比例×3/4 と ②その1/2＋本人の老齢厚生年金×1/2 の多い方から、本人の老齢厚生年金を引いた額（日本年金機構）
+//   deadHirei=亡くなった方の報酬比例（年額・万円）、own=本人の老齢厚生年金、b=有期給付加算の倍率（改正後の5年有期のみ）
+function survKosei65(deadHirei, own, b){
+  const a = deadHirei*0.75*(b||1), c = deadHirei*0.5 + (own||0)*0.5;
+  return Math.max(ri(Math.max(a, c)) - (own||0), 0);
+}
+// ★ 2026-10-16: 子のある妻の中高齢寡婦加算：遺族基礎年金が終わる年（末子が19歳になる年）の妻の年齢
+//   childAgesAtDeath=死亡した年の子の年齢、wAgeAtDeath=死亡した年の妻の年齢。18歳以下の子がいなければ null
+function wAgeAtKisoEnd(childAgesAtDeath, wAgeAtDeath){
+  const a = childAgesAtDeath.filter(x=>x<=18);
+  if(!a.length) return null;
+  return wAgeAtDeath + (19 - Math.min(...a));
+}

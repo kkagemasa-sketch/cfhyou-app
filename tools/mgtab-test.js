@@ -731,6 +731,30 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(AS.length){ bad++; console.log("❌ 万が一の金融資産（商品ごと）\n   - "+AS.join("\n   - ")); }
     else console.log("✅ 万が一の金融資産（商品ごと）: 万が一の年に解約・財形を止める・障害タブはおふたり（障害の方だけ止める）・以前の設定の読み替え・通常CFは変わらない");
+    /* ---- 遺族年金：中高齢寡婦加算（子がいた妻は遺族基礎年金が終わった時点で40歳以上）・65歳以降は多い方 ---- */
+    await page.evaluate(pageBaseSetup);
+    const SVP=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[]; const info={};
+      if(typeof setHouseholdType==="function") setHouseholdType("couple");
+      $("husband-age").value=32; $("wife-age").value=30; if($("ca-1")) $("ca-1").value=15;
+      setRTab("cf"); live(true); await wait(900); render();
+      mgQA_addTab("h"); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=1; mgQA_calcAndRender(t,true);
+      const sp=window.lastMR.survPension, iOf=a=>a-30;
+      info.v=[sp[iOf(33)],sp[iOf(35)],sp[iOf(41)]];
+      if(!(sp[iOf(33)]>sp[iOf(35)])) out.push("遺族基礎年金が末子19歳の年に終わっていない "+info.v);
+      if(sp[iOf(41)]!==sp[iOf(39)]) out.push("遺族基礎年金が終わった時点で34歳なのに40歳から中高齢寡婦加算が付いた "+sp[iOf(39)]+"→"+sp[iOf(41)]);
+      // 末子3歳なら終わるのは46歳 → 加算あり
+      if($("ca-1")) $("ca-1").value=3; live(true); await wait(900); render(); mgQA_calcAndRender(t,true);
+      const sp2=window.lastMR.survPension; if(!(sp2[iOf(47)]-sp2[iOf(48)]<1 && sp2[iOf(47)]>0 && Math.abs((sp2[iOf(47)]||0)-(sp2[iOf(64)]||0))<1)) {}
+      if(!(sp2[iOf(47)]>=63)) out.push("遺族基礎年金が終わった時点で40歳以上なのに中高齢寡婦加算が無い "+sp2[iOf(47)]);
+      if(sp2[iOf(66)]>=sp2[iOf(64)]) out.push("65歳で中高齢寡婦加算が終わっていない");
+      // 65歳以降は多い方：survKosei65 の式
+      if(Math.abs(survKosei65(160.04,94.02)-33)>0.1) out.push("65歳以降の多い方の式 "+survKosei65(160.04,94.02));
+      if(survKosei65(160,0)!==120) out.push("本人の厚生年金が無いときは3/4のまま "+survKosei65(160,0));
+      return {out,info};
+    });
+    if(SVP.out.length){ bad++; console.log("❌ 遺族年金の見直し\n   - "+SVP.out.join("\n   - ")+"\n   "+JSON.stringify(SVP.info)); }
+    else console.log("✅ 遺族年金: 中高齢寡婦加算は遺族基礎年金が終わった時点の年齢で判定・65歳で終了・65歳以降は3/4か1/2＋本人1/2の多い方");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

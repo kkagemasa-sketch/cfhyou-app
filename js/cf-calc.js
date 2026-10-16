@@ -1195,7 +1195,8 @@ function render(){
           survP=0; // 5年経過で遺族厚生年金失権
           _survBd={receiver:'w', manual:false, expired:true, total:0};
         }else{
-          const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
+          const _wKE=wAgeAtKisoEnd(children.map(c=>c.age+(hDeathAge-hAge)), wAgeAtDeath);
+          const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&_wKE!==null&&_wKE>=40;   // 子がいた妻は遺族基礎年金が終わった時点で40歳以上
           // 中高齢寡婦加算は改正後モードでは廃止（新規受給者向け完全移行後の姿）
           const chukorei=(!_izokuR2028&&kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
           // 遺族厚生年金用：死亡時点の被保険者期間ベース＋300月みなし
@@ -1205,7 +1206,7 @@ function render(){
           let kosei3_4=0, koseiAdj=0;
           if(wa>=pWReceive){
             kosei3_4=ri(koseiHSurv*0.75*_bairitsu);
-            koseiAdj=Math.max(kosei3_4-koseiW,0);
+            koseiAdj=survKosei65(koseiHSurv,koseiW,_bairitsu);
             survP=koseiAdj+kiso+chukorei;
           }else{
             kosei3_4=ri(koseiHSurv*0.75*_bairitsu);
@@ -1247,13 +1248,13 @@ function render(){
           }else{
             const _bairitsuH=_yuki5H?YUKI_KASAN_BAIRITSU:1;
             kosei3_4=ri(koseiWSurv*0.75*_bairitsuH);
-            if(ha>=pHReceive){koseiAdj=Math.max(kosei3_4-koseiH,0);survP=koseiAdj+kiso;}
+            if(ha>=pHReceive){koseiAdj=survKosei65(koseiWSurv,koseiH,_bairitsuH);survP=koseiAdj+kiso;}
             else{koseiAdj=kosei3_4;survP=kosei3_4+kiso;}
           }
         }else if(childUnder18>0){
           // ── 現行制度 ──
           kosei3_4=ri(koseiWSurv*0.75);
-          if(ha>=pHReceive){koseiAdj=Math.max(kosei3_4-koseiH,0);survP=koseiAdj+kiso;}
+          if(ha>=pHReceive){koseiAdj=survKosei65(koseiWSurv,koseiH);survP=koseiAdj+kiso;}
           else{koseiAdj=kosei3_4;survP=kosei3_4+kiso;}
         }else if(hadChildAtDeath||hAgeAtDeath>=55){
           // 死亡時に子ありだった or 55歳以上→受給権あり、60歳から支給
@@ -3152,7 +3153,8 @@ function render(){
     children.forEach(c=>{const ca=c.age+i0;if(ca>=0&&ca<=18)childUnder18++;});
     const kiso0=calcKiso(childUnder18);
     const hadChildren0=children.some(c=>c.age+(hDeathAge-hAge)<=18);
-    const routeA0=wAgeAtDeath0>=40;const routeB0=hadChildren0&&wa0>=40;
+    const _wKE0=wAgeAtKisoEnd(children.map(c=>c.age+(hDeathAge-hAge)), wAgeAtDeath0);
+    const routeA0=wAgeAtDeath0>=40;const routeB0=hadChildren0&&_wKE0!==null&&_wKE0>=40;
     // 中高齢寡婦加算は定数CHUKOREI_KAFUを参照（旧: 61.43のハードコードで定数と不一致だった）。改正後モードでは廃止
     const chukorei0=(!_izokuR2028&&kiso0===0&&wa0>=40&&wa0<65&&(routeA0||routeB0))?ri(CHUKOREI_KAFU):0;
     // 5年有期の対象（現行: 30歳未満・子なし妻 / 改正後: 死亡時60歳未満・子なし配偶者、×1.3加算）
@@ -3161,7 +3163,7 @@ function render(){
     const bairitsu0=(_izokuR2028&&is5yr)?YUKI_KASAN_BAIRITSU:1;
     let autoH;
     if(wa0>=pWReceive){
-      autoH=Math.max(ri(koseiH*0.75*bairitsu0)-koseiW,0)+kiso0+chukorei0;
+      autoH=survKosei65(koseiH,koseiW,bairitsu0)+kiso0+chukorei0;
     }else{
       autoH=ri(koseiH*0.75*bairitsu0)+kiso0+chukorei0;
     }
@@ -3183,14 +3185,14 @@ function render(){
       // 改正後: 男女差解消。子なし・死亡時60歳未満は5年有期×1.3、それ以外は終身
       is5yrW=!hadChildAtWDeath&&hAgeAtWDeath<60;
       const bairitsuW=is5yrW?YUKI_KASAN_BAIRITSU:1;
-      autoW=ha0>=pHReceive?Math.max(ri(koseiW*0.75*bairitsuW)-koseiH,0)+kiso0:ri(koseiW*0.75*bairitsuW)+kiso0;
+      autoW=ha0>=pHReceive?survKosei65(koseiW,koseiH,bairitsuW)+kiso0:ri(koseiW*0.75*bairitsuW)+kiso0;
     }else if(childUnder18>0){
-      autoW=ha0>=pHReceive?Math.max(ri(koseiW*0.75)-koseiH,0)+kiso0:ri(koseiW*0.75)+kiso0;
+      autoW=ha0>=pHReceive?survKosei65(koseiW,koseiH)+kiso0:ri(koseiW*0.75)+kiso0;
     }else if(hadChildAtWDeath||hAgeAtWDeath>=55){
       // 死亡時に子あり or 55歳以上→受給権あり
       const hInc0=getIncomeAtAge(hSteps,ha0);
       if(ha0>=60&&hInc0<850){
-        autoW=ha0>=pHReceive?Math.max(ri(koseiW*0.75)-koseiH,0):ri(koseiW*0.75);
+        autoW=ha0>=pHReceive?survKosei65(koseiW,koseiH):ri(koseiW*0.75);
       }else{autoW=0;}
     }else{
       autoW=0; // 死亡時55歳未満・子なし→受給権なし

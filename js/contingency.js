@@ -854,13 +854,14 @@ function _renderContingencyInner(_mgStopOv){
           if(_yuki5W&&yearsSinceDeath>=5){
             survP=0; // 5年経過で遺族厚生年金失権
           }else{
-            const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&wa>=40;
+            const _wKE=wAgeAtKisoEnd(children.map(c=>c.age+(deathYearOffset-1)), wAgeAtDeath);
+            const routeA=wAgeAtDeath>=40;const routeB=hadChildren&&_wKE!==null&&_wKE>=40;   // 子がいた妻は遺族基礎年金が終わった時点で40歳以上
             // ★ 中高齢寡婦加算も遺族厚生年金制度の一部 → 国民年金のみの死亡では 0
             //   改正後モードでは廃止（新規受給者向け完全移行後の姿）
             const chukorei=(!_izokuR2028 && !_isKokumin && kiso===0&&wa>=40&&wa<65&&(routeA||routeB))?ri(CHUKOREI_KAFU):0;
             // 改正後の5年有期対象者には有期給付加算（×1.3）を上乗せ
             const _bairitsu=(_izokuR2028&&_yuki5W)?YUKI_KASAN_BAIRITSU:1;
-            if(wa>=pWReceive){survP=Math.max(ri(kH*0.75*_bairitsu)-koseiW_mg,0)+kiso+chukorei;}
+            if(wa>=pWReceive){survP=survKosei65(kH,koseiW_mg,_bairitsu)+kiso+chukorei;}
             else{survP=ri(kH*0.75*_bairitsu)+kiso+chukorei;}
           }
         }else{
@@ -887,20 +888,20 @@ function _renderContingencyInner(_mgStopOv){
               survP=0; // 5年経過で失権
             }else{
               const _bairitsuH=_yuki5H?YUKI_KASAN_BAIRITSU:1;
-              if(ha>=pHReceive){survP=Math.max(ri(kW*0.75*_bairitsuH)-koseiH_mg,0)+kiso;}
+              if(ha>=pHReceive){survP=survKosei65(kW,koseiH_mg,_bairitsuH)+kiso;}
               else{survP=ri(kW*0.75*_bairitsuH)+kiso;}
             }
           }else if(childUnder18>0){
             // ── 現行制度 ──
             // 夫の遺族厚生年金要件: 死亡時に(子ありOR55歳以上)が必須
             // 死亡時55歳未満・子なし→受給権自体が発生しない（永久に）
-            if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0)+kiso;}
+            if(ha>=pHReceive){survP=survKosei65(kW,koseiH_mg)+kiso;}
             else{survP=ri(kW*0.75)+kiso;}
           }else if(hadChildAtDeath||hAgeAtDeath>=55){
             // 死亡時に子ありだった→子が18歳超後も厚生年金部分は残る
             // 死亡時55歳以上→受給権あり、支給開始は60歳から
             if(ha>=60&&_meetsLivelihood){
-              if(ha>=pHReceive){survP=Math.max(ri(kW*0.75)-koseiH_mg,0);}
+              if(ha>=pHReceive){survP=survKosei65(kW,koseiH_mg);}
               else{survP=ri(kW*0.75);}
             }else{survP=0;} // 60歳未満 or 高収入は支給停止
           }else{
