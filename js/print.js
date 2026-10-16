@@ -267,11 +267,12 @@ function _ppBuild(kind, src, sections){
 
 // ── 表紙（案A-1：左に紺の帯・右に必要保障額と前提条件）。値は cover.js の getCoverData ──
 function _ppCoverHtml(d, o){
-  const E=_ppEsc, f=n=>Math.round(n||0).toLocaleString();
+  const E=_ppEsc, f=n=>Math.round(n||0).toLocaleString(), f1=n=>(Math.round((n||0)*10)/10).toLocaleString();
   const isMg=!!d.mg;
   const cn=d.client?(d.client.endsWith('様')?d.client:d.client+' 様'):'';
   const tags=[d.isM?'マンション':'戸建て', d.loan.form==='cash'?'現金一括購入':(d.loan.label||'')].filter(Boolean);
   const fam=d.family.map(x=>`${E(x.lbl)}${x.age}歳`).join('・');
+  // 左の帯（今までと同じ）
   const side=`<div class="ppc-side">
       <img class="ppc-logo" src="img/housingfp-logo.png" alt="Housing FP">
       <div class="ppc-k">CASH FLOW REPORT</div>
@@ -282,47 +283,63 @@ function _ppCoverHtml(d, o){
       ${isMg?`<div class="ppc-scn">${E(d.mg.title1)}<br>${E(d.mg.title2)}<small>${E(d.mg.sub)}</small></div>`:''}
       <div class="ppc-meta">作成日：${E(o.dStr)}${o.staff?`<br>担当：${E(o.staff)}`:''}</div>
     </div>`;
-  // 必要保障額（万が一）
-  let need='';
-  if(isMg&&MG_NEED_SHOW){
-    const n=d.mg.need;
-    const card=(cls,bd,bg,t,v,b,x)=>`<div class="ppc-tier ${cls}"><span class="bd" style="background:${bg};${cls==='safe'?'color:#1e3a5f':''}">${bd}</span><div class="tt">${t}</div><div class="v">${f(v)}<small>万円</small></div><div class="g">${E(b)}</div><div class="x">${x}</div></div>`;
-    need=`<div class="ppc-need"><div class="ppc-t">必要保障額<span>万が一の年に、保険金などで受け取る想定の額</span></div>
-      <div class="ppc-tiers">
-        ${card('','最低限','#d97706','お金が尽きないために',n.min,n.bMin,'CF表の最後の年に、預貯金と有価証券がマイナスにならない額')}
-        ${card('',`標準・生活費${n.years}年分`,'#0f9d58','暮らしが行き詰まらないために',n.std,n.bStd,`どの年も、預貯金と有価証券で生活費${n.years}年分を確保できる額`)}
-        ${card('safe','安心','#fff','今の生活と資産計画を守るために',n.safe,n.bSafe,'CF表の最後の年に残るお金が、万が一がなかった場合と同じになる額'+(n.safeMode==='floor'?'（標準＋生活費2年分）':''))}
-      </div>
-      <div class="ppc-legend">CF表の総金融資産の色枠：<i style="background:#f59e0b"></i>最低限の根拠<i style="background:#0f9d58"></i>標準の根拠<i style="background:#60a5fa"></i>安心の根拠</div></div>`;
+  // ── 右側（2026-10-16 作り直し）──
+  const c=d.cash, L=d.loan;
+  // ① 自己資金：現預金 − 頭金 − 諸費用 ＝ 購入後の残高
+  const cashBlk=`<div class="ppn-blk"><div class="ppn-bh"><i>1</i><b>自己資金</b><span>購入のときのお金${c.move>0?`　／　${E(c.moveLbl)} ${f(c.move)}万円は引き渡し年の支出`:''}</span></div>
+    <div class="ppc-flow ppn-flow">
+      <div class="b"><div class="l">現預金合計</div><div class="v">${f(c.total)}<small>万円</small></div><div class="s">いまの預貯金</div></div><div class="op">−</div>
+      <div class="b out"><div class="l">${E(c.downLbl)}</div><div class="v ${c.downOut?'neg':''}">${f(c.down)}<small>万円</small></div><div class="s">${c.downOut?'自己資金から':'自己資金からは出ない'}</div></div><div class="op">−</div>
+      <div class="b out"><div class="l">${E(c.costLbl)}</div><div class="v ${c.costOut?'neg':''}">${f(c.cost)}<small>万円</small></div><div class="s">${c.costOut?'現金で支払い':'自己資金からは出ない'}</div></div><div class="op">＝</div>
+      <div class="b ok"><div class="l">購入後の残高</div><div class="v ${c.after>=0?'pos':'neg'}">${f(c.after)}<small>万円</small></div><div class="s">手元に残る預貯金</div></div>
+    </div></div>`;
+  // ② ローン条件
+  const lhead=`<div class="ppn-bh"><i>2</i><b>ローン条件</b><span>${d.isM?'マンション':'戸建て'}${L.delivery?`・${L.delivery}年 引き渡し`:''}${L.label?`・${E(L.label)}`:''}</span></div>`;
+  let loanBlk;
+  if(L.form==='cash'){
+    loanBlk=`<div class="ppn-blk">${lhead}<div class="ppn-lsum"><div><small>住宅価格</small><b>${f(L.price)}<u>万円</u></b></div><div style="grid-column:2/5"><small>住宅ローン</small><b class="ppn-note">住宅ローンは利用しない（現金で購入）</b></div></div></div>`;
+  }else{
+    const rows=L.rows.map(r=>`<tr><td class="n ${r.p}">${E(r.who)}</td><td>${f(r.amt)}<u>万円</u></td><td>${r.rate}<u>%</u>${r.steps.length?`<small>${E(r.steps.join('・'))}</small>`:''}</td><td>${r.yrs}<u>年</u></td><td>${f1(typeof mpay==='function'?mpay(r.amt,r.yrs,r.rate):0)}<u>万円</u></td></tr>`).join('');
+    loanBlk=`<div class="ppn-blk">${lhead}
+      <div class="ppn-lsum"><div><small>住宅価格</small><b>${f(L.price)}<u>万円</u></b></div><div><small>借入額${L.rows.length>1?'（合計）':''}</small><b>${f(L.total)}<u>万円</u></b></div><div><small>毎月の返済（目安）</small><b>${f1(L.monthly)}<u>万円</u></b></div><div><small>住宅ローン控除</small><b>${L.lctrlYears>0?`${L.lctrlYears}<u>年</u>`:'<span class="ppn-note">なし</span>'}</b></div></div>
+      <table class="ppn-tbl"><tr><th>名義</th><th>借入額</th><th>金利</th><th>期間</th><th>毎月の返済</th></tr>${rows}</table>
+      ${(L.tags.length||d.swap.length)?`<div class="ppn-tags">${L.tags.map(t=>`<span>${E(t)}</span>`).join('')}${d.swap.map((w,i)=>`<span class="sw">買い替え${d.swap.length>1?(i+1)+'回目':''}：${w.age}歳 売却${f(w.sell)}万円→購入${f(w.price)}万円</span>`).join('')}</div>`:''}</div>`;
   }
-  // 前提条件
-  const c=d.cash;
-  const cashBlk=`<div class="ppc-blk"><div class="ppc-bh">自己資金の内訳${c.move>0?`<span>${E(c.moveLbl)} ${f(c.move)}万円は、引き渡し年の支出としてCF表に計上</span>`:''}</div>
-    <div class="ppc-flow"><div class="b"><div class="l">現預金合計</div><div class="v">${f(c.total)}<small>万円</small></div></div><div class="ar">▶</div>
-      <div class="b"><div class="l">${E(c.downLbl)}</div><div class="v ${c.downOut?'neg':''}">${f(c.down)}<small>万円</small></div></div>
-      <div class="b"><div class="l">${E(c.costLbl)}</div><div class="v ${c.costOut?'neg':''}">${f(c.cost)}<small>万円</small></div></div><div class="ar">▶</div>
-      <div class="b ok"><div class="l">購入後残高</div><div class="v ${c.after>=0?'pos':'neg'}">${f(c.after)}<small>万円</small></div></div></div></div>`;
-  const L=d.loan;
-  const loanHead=`住宅ローン条件${L.label?`（${E(L.label)}）`:''}<span>住宅価格 ${f(L.price)}万円${L.delivery?`　／　引き渡し ${L.delivery}年`:''}</span>`;
-  const loanBlk=L.form==='cash'
-    ? `<div class="ppc-blk"><div class="ppc-bh">${loanHead}</div><div class="ppc-note">住宅ローンは利用しない（現金で購入）</div></div>`
-    : `<div class="ppc-blk"><div class="ppc-bh">${loanHead}</div><div class="ppc-loan">
-        <div class="hd"></div><div class="hd">借入額</div><div class="hd">当初金利</div><div class="hd">返済期間</div>
-        ${L.rows.map(r=>`<div class="who ${r.p}">${E(r.who)}</div><div class="v">${f(r.amt)}<small>万円</small></div><div class="v">${r.rate}<small>%${r.steps.length?`（${E(r.steps.join('・'))}）`:''}</small></div><div class="v">${r.yrs}<small>年</small></div>`).join('')}
-      </div></div>`;
-  const swapBlk=d.swap.length?`<div class="ppc-blk"><div class="ppc-bh">買い替え・住み替え予定</div><div class="ppc-swap">${d.swap.map((w,i)=>`<span>${i+1}回目：${w.age}歳　売却 ${f(w.sell)}万円 → 購入 ${f(w.price)}万円</span>`).join('')}</div></div>`:'';
-  const assetBlk=`<div class="ppc-blk"><div class="ppc-bh">その他金融資産（現時点）</div>${d.assets.items.length
-    ? `<table class="ppc-kv">${d.assets.items.map(a=>`<tr><td>${E(a.lbl)}</td><td>${f(a.val)}万円</td></tr>`).join('')}<tr class="tot"><td>合計</td><td>${f(d.assets.total)}万円</td></tr></table>`
-    : '<div class="ppc-note">なし</div>'}</div>`;
-  const memoBlk=`<div class="ppc-blk"><div class="ppc-bh">注釈・補足メモ</div>${d.memo?`<div class="ppc-memo">${E(d.memo).replace(/\n/g,'<br>')}</div>`:'<div class="ppc-note">なし</div>'}</div>`;
-  const pre=`<div class="ppc-box">${isMg?'<div class="ppc-blk ppc-pt"><div class="ppc-t">前提条件</div></div>':''}${cashBlk}${loanBlk}${swapBlk}<div class="ppc-two">${assetBlk}${memoBlk}</div></div>`;
-  return `<div class="ppc${isMg?' mg':''}" style="--kc:${E(d.color||'#2bb3a3')}">${side}<div class="ppc-main">${isMg?need:'<div class="ppc-t">前提条件</div>'}${pre}</div></div>`;
+  // ③ その他金融資産（ご主人様／奥様）
+  const A=d.assets;
+  const pill=p=>`<span class="ppn-pill ${p==='NISA'?'n':p==='財形'?'z':p==='債券'?'b':'k'}">${E(p)}</span>`;
+  const afterTd=it=>{ if(!isMg) return ''; const a=it.after||{}, a2=it.after2; return `<td class="af">${a.txt?`<span class="ppn-mgc ${a.cls}">${E(a.txt)}</span>`:''}${a2&&a2.txt?` <span class="${a2.cls?'ppn-mgc '+a2.cls:'ppn-rd'}">${E(a2.txt)}</span>`:''}</td>`; };
+  let assetRows='';
+  A.groups.forEach(g=>{
+    assetRows+=`<tr class="grp ${g.p}"><td colspan="${isMg?5:5}"><i></i>${E(g.lbl)}<small>小計 ${f(g.subBal)}万円${g.subMonthly>0?`・月${f1(g.subMonthly)}万円`:''}</small></td></tr>`;
+    g.items.forEach(it=>{
+      assetRows+=`<tr class="${it.dead?'dead':''}"><td class="n">${pill(it.pill)}${E(it.lbl)}</td><td>${f(it.bal)}<u>万円</u></td><td>${it.monthly>0?`月${f1(it.monthly)}<u>万円</u>`:'<span class="ppn-note">—</span>'}</td><td>${it.rate}<u>%</u></td>${isMg?afterTd(it):`<td class="u">${E(it.until||'—')}</td>`}</tr>`;
+    });
+  });
+  const assetBlk=`<div class="ppn-blk ppn-assets"><div class="ppn-bh"><i>3</i><b>その他金融資産</b><span>現時点の残高と積立${isMg?'・万が一の後の扱い':''}</span></div>
+    ${A.groups.length?`<table class="ppn-tbl at"><tr><th>商品</th><th>いまの残高</th><th>積立</th><th>利回り</th><th>${isMg?'万が一の後':'いつまで'}</th></tr>${assetRows}
+      ${(!isMg&&A.groups.length>1)?`<tr class="tot"><td class="n">合計</td><td>${f(A.total)}<u>万円</u></td><td>${A.totalMonthly>0?`月${f1(A.totalMonthly)}<u>万円</u>`:''}</td><td></td><td></td></tr>`:''}</table>`:'<div class="ppn-note" style="padding:2mm 4mm">なし</div>'}
+    <div class="ppn-memo"><b>注釈・補足メモ：</b>${d.memo?E(d.memo).replace(/\n/g,'<br>'):'<span class="ppn-note">なし</span>'}</div></div>`;
+  let main;
+  if(!isMg){
+    main=`<div class="ppn"><div class="ppc-t">前提条件</div>${cashBlk}${loanBlk}${assetBlk}</div>`;
+  }else{
+    const m=d.mg;
+    const band=`<div class="ppn-band"><span class="k">${E(m.kindLbl)}</span><span class="w">${E(m.title)}</span><span class="d">${E(m.when)}<br>${E(m.at)}</span></div>`;
+    const cards=(m.cards||[]).map(cd=>`<div class="ppn-cd${cd.changed?' ch':''}"><div class="t">${E(cd.t)}${cd.changed?`<em>${cd.auto?'お任せ':'設定'}</em>`:''}</div><div class="v">${E(cd.v)}</div>${cd.sub?`<div class="s">${E(cd.sub)}</div>`:''}</div>`).join('');
+    main=`<div class="ppn mg">${band}
+      <div class="ppn-sub">この万が一で決めたこと<small>色付きの枠は通常のCF表から変えたところ</small></div>
+      <div class="ppn-cards">${cards}</div>
+      <div class="ppn-sub">共通の前提<small>通常のCF表と同じ（その他金融資産は万が一の後の扱いも）</small></div>
+      ${cashBlk}${loanBlk}${assetBlk}</div>`;
+  }
+  return `<div class="ppc${isMg?' mg':''}" style="--kc:${E(d.color||'#2bb3a3')}">${side}<div class="ppc-main">${main}</div></div>`;
 }
 // 表紙の右側が1ページに収まらないときは、文字を少しずつ小さくする（最大5回）
 function _ppFitCover(body){
   const m=body.querySelector('.ppc-main'); if(!m)return;
   let z=1;
-  for(let k=0;k<5 && m.scrollHeight>m.clientHeight+1;k++){ z-=0.07; m.style.zoom=z; }
+  for(let k=0;k<8 && m.scrollHeight>m.clientHeight+1;k++){ z-=0.06; m.style.zoom=z; }
 }
 
 // ── 生活費の内訳ページ（生活費タブと同じ項目・金額・備考。lc-tab.js の項目定義を共用） ──

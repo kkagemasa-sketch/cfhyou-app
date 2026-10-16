@@ -468,6 +468,9 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
         if(!fits(c)) out.push('通常の表紙が1ページに収まらない（長いメモ）');
         const cashV=num(c.querySelector('.ppc-flow .b .v')?.textContent);
         if(cashV!==1100) out.push(`通常の表紙の現預金合計 ${cashV}（画面は1,100）`);
+        if(!/ローン条件/.test(c.textContent)||!/その他金融資産/.test(c.textContent)) out.push('通常の表紙に ローン条件／その他金融資産 の見出しが無い');
+        if(!/注釈・補足メモ/.test(c.querySelector('.ppn-memo')?.textContent||'')) out.push('通常の表紙のメモが出ていない（はみ出し）');
+        if(!/毎月の返済/.test(c.textContent)) out.push('ローン条件に毎月の返済が無い');
       }
       closePrintPreview();
       // 万が一
@@ -481,6 +484,14 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
         const nd=window.lastMR.need;
         if(c.querySelector('.ppc-need,.ppc-tier')) out.push('出さない設定なのに表紙に必要保障額がある');
         if(!/死亡した場合/.test(c.querySelector('.ppc-scn')?.textContent||'')) out.push('帯に「死亡した場合」が無い');
+        // 2026-10-16 作り直し：上の帯・決めたこと5枚・金融資産はご主人様／奥様に分けて「万が一の後」の列
+        if(!/死亡した場合/.test(c.querySelector('.ppn-band .w')?.textContent||'')) out.push('右上の帯に「死亡した場合」が無い');
+        if(c.querySelectorAll('.ppn-cd').length!==5) out.push('「この万が一で決めたこと」が5枚でない: '+c.querySelectorAll('.ppn-cd').length);
+        if(!/保険金/.test(c.querySelector('.ppn-cd.ch .t')?.textContent||'')) out.push('保険金のカードに「設定」の印が無い');
+        { const g=[...c.querySelectorAll('.ppn-tbl.at tr.grp td')].map(e=>e.textContent); if(!g.some(t=>/ご主人様/.test(t))) out.push('金融資産がご主人様で分かれていない'); }
+        if(!/万が一の後/.test(c.querySelector('.ppn-tbl.at th:last-child')?.textContent||'')) out.push('金融資産に「万が一の後」の列が無い');
+        if(!/万が一の年に現金化/.test(c.querySelector('.ppn-tbl.at tr.dead')?.textContent||'')) out.push('亡くなった方の商品が「万が一の年に現金化」になっていない');
+        if(/亡くなった方|障害の方/.test(c.querySelector('.ppn-tbl.at')?.textContent||'')) out.push('「亡くなった方」「障害の方」の表記が残っている');
       }
       closePrintPreview();
       // 現金一括購入

@@ -60,10 +60,32 @@ function getCoverData(kind){
       {who, p:who==='奥様'?'w':'h', amt, rate:rb, yrs, steps:stepsOf(isFlat?getFlat35Rates():getRates())}]};
   }
 
-  // その他金融資産（現時点）— 画面と同じ集計（財形も含む）
+  // ★ 2026-10-16 表紙の右側の作り直し：毎月の返済（目安）・住宅ローン控除の年数・団信などの札
+  loan.monthly = loan.rows.reduce((s,r)=>s+(typeof mpay==='function'?mpay(r.amt,r.yrs,r.rate):0),0);
+  loan.lctrlYears = (R.lCtrl||[]).filter(v=>v>0).length;
+  loan.tags = [];
+  if(loan.form!=='cash'){
+    if(loan.form==='pair'||loan.form==='flatPair'){
+      const j = ['h','w'].filter(p=>typeof getLoanDansinJoined==='function'&&getLoanDansinJoined(p)).map(p=>p==='h'?'ご主人様':'奥様');
+      loan.tags.push(j.length?`団信：${j.join('・')}（一般団信）`:'団信なし');
+    }else if(typeof jointLoanMode!=='undefined'&&jointLoanMode){
+      const sel = document.getElementById('joint-dansin-sel')?.value||'h';
+      loan.tags.push(sel==='none'?'団信なし':`団信：${sel==='both'?'おふたり':sel==='w'?'奥様':hLbl}（連帯債務）`);
+    }else{
+      loan.tags.push((typeof getLoanDansinJoined==='function'&&getLoanDansinJoined('s'))?`団信：${loan.rows[0].who}（一般団信）`:'団信なし');
+    }
+    loan.tags.push((R.prepayExp||[]).some(v=>v>0)?'繰上返済あり':'繰上返済なし');
+    if(loan.lctrlYears>0) loan.tags.push(`住宅ローン控除 ${loan.lctrlYears}年`);
+  }
+
+  // その他金融資産（現時点）— 画面と同じ集計（財形も含む）。表紙ではご主人様／奥様に分けて出す
   const items = [];
+  const groups = [];
   ['h','w'].forEach(p=>{
     const pLbl = p==='h'?hLbl:'奥様';
+    if(single && p==='w') return;
+    const g = {p, lbl:pLbl, items:[], subBal:0, subMonthly:0};
+    const pushG = (o)=>{ g.items.push(o); g.subBal+=o.bal; g.subMonthly+=o.monthly||0; };
     const seen = new Set();
     document.querySelectorAll(`[id^="sec-bal-${p}-"],[id^="sec-stk-bal-${p}-"]`).forEach(el=>{
       const m = el.id.match(new RegExp(`^sec-(?:stk-)?bal-${p}-(\\d+)$`));
@@ -74,18 +96,24 @@ function getCoverData(kind){
       const isBond = document.getElementById(`sec-bond-${p}-${sid}`)?.classList.contains('on');
       const isNisa = document.getElementById(`sec-nisa-${p}-${sid}`)?.classList.contains('on');
       const custom = document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
-      let val=0, cat='';
-      if(isBond){ if((iv(`sec-bond-age-${p}-${sid}`)||0)>0)return; val=fv(`sec-bond-bal-${p}-${sid}`)||0; cat='債券'; }
-      else if(isAcc){ val=fv(`sec-bal-${p}-${sid}`)||0; cat=isNisa?'NISA積立':'課税積立'; }
-      else if(isStock){ val=fv(`sec-stk-bal-${p}-${sid}`)||0; cat=isNisa?'NISA一括':'課税一括'; }
+      let val=0, cat='', monthly=0, rate=0, until='', kind='', pill='', name='';
+      if(isBond){ if((iv(`sec-bond-age-${p}-${sid}`)||0)>0)return; val=fv(`sec-bond-bal-${p}-${sid}`)||0; cat='債券'; kind='bond'; pill='債券'; rate=fv(`sec-bond-rate-${p}-${sid}`)||0; const m=iv(`sec-bond-mat-${p}-${sid}`)||0; until=m>0?`${m}歳 満期`:''; name='債券'; }
+      else if(isAcc){ val=fv(`sec-bal-${p}-${sid}`)||0; cat=isNisa?'NISA積立':'課税積立'; kind='accum'; pill=isNisa?'NISA':'課税'; monthly=fv(`sec-monthly-${p}-${sid}`)||0; rate=fvd(`sec-rate-${p}-${sid}`,5); const e=iv(`sec-end-${p}-${sid}`)||0, r=iv(`sec-redeem-${p}-${sid}`)||0; until=r>0?`${r}歳 解約${e>0&&e<r?`（積立は${e}歳まで）`:''}`:(e>0?`${e}歳 積立まで`:''); name=isNisa?(document.getElementById(`sec-frame-grow-${p}-${sid}`)?.classList.contains('on')?'成長枠':'つみたて枠'):'積立'; }
+      else if(isStock){ val=fv(`sec-stk-bal-${p}-${sid}`)||0; cat=isNisa?'NISA一括':'課税一括'; kind='stock'; pill=isNisa?'NISA':'課税'; rate=fv(`sec-div-${p}-${sid}`)||0; const r=iv(`sec-stk-redeem-${p}-${sid}`)||0; until=r>0?`${r}歳 解約`:''; name=isNisa?'成長枠（一括）':'一括投資'; }
       else return;
-      if(val<=0)return;
+      if(val<=0 && monthly<=0)return;
       items.push({lbl:custom||`${cat}（${pLbl}）`, val});
+      pushG({kind, sid, rkey:`${kind}|${p}|${sid}`, pill, lbl:custom||name, bal:val, monthly, rate, until});
     });
-    const z = fv(`zaikei-${p}-bal`)||0;
-    if(z>0) items.push({lbl:`財形貯蓄（${pLbl}）`, val:z});
+    const z = fv(`zaikei-${p}-bal`)||0, zm = fv(`zaikei-${p}-monthly`)||0;
+    if(z>0 || zm>0){
+      if(z>0) items.push({lbl:`財形貯蓄（${pLbl}）`, val:z});
+      const pr = p==='h'?(iv('retire-age')||60):(iv('w-retire-age')||60), ze=iv(`zaikei-${p}-end`)||0, zr=iv(`zaikei-${p}-redeem`)||0;
+      pushG({kind:'zaikei', sid:'zk', rkey:`zaikei|${p}`, pill:'財形', lbl:'財形貯蓄', bal:z, monthly:zm, rate:0, until:`${zr>0?zr:(ze>0?ze:pr)}歳 解約`});
+    }
+    if(g.items.length) groups.push(g);
   });
-  const assets = {items, total:items.reduce((s,x)=>s+x.val,0)};
+  const assets = {items, total:items.reduce((s,x)=>s+x.val,0), groups, totalMonthly:groups.reduce((s,g)=>s+g.subMonthly,0)};
 
   const swap = (typeof getSwapEvents==='function') ? getSwapEvents().map(sw=>({age:sw.age, sell:sw.sell, price:sw.price})) : [];
   const memo = String(window._cfSummaryNote||'').trim();
@@ -114,6 +142,37 @@ function getCoverData(kind){
         bMin:basis((nd.min||0)>0?nd.iMin:-1), bStd:basis(nd.iStd), bSafe:basis(nd.iSafe)}
     };
     d.color = window._mgKindColor||'#c2185b';
+    d.mg.kindLbl = isDis ? (MR._evLbl||'障害') : '死亡';
+    d.mg.when = `${y0+off}年（${off+1}年目）`;
+    d.mg.at = at.join('・');
+    // 万が一の画面で決めたこと（カードの要約と同じ）
+    const tab = (typeof mgQA_tabs!=='undefined') ? mgQA_tabs.find(t=>t.id===window._mgQA_activeTabId) : null;
+    d.mg.cards = [];
+    if(tab && typeof mgQA_cardSummary==='function'){
+      const defs = isDis
+        ? [['self',`${tLbl}の収入`],['sick','傷病手当金'],['dispen','障害年金'],['lc','生活費'],['house','住まい']]
+        : [['ins','保険金'],['pension','遺族年金'],['income',`${sLbl}の収入`],['lc','生活費'],['house','住まい']];
+      defs.forEach(([k,t])=>{ try{ const sm=mgQA_cardSummary(tab,k); d.mg.cards.push({key:k, t, v:sm.v||'', sub:String(sm.sub||'').replace(/^(\d+)〜歳$/,'$1歳から'), changed:!!sm.changed, auto:(k==='lc'&&tab.state.lcMode==='auto')}); }catch(e){} });
+      // 住まい：団信の結果を添える
+      const hc = d.mg.cards.find(c=>c.key==='house');
+      if(hc){ try{ hc.v = isDis ? (tab.state.disDansin==='clear'?'団信で完済':'ローンが残る') : mgC_dansinText(tab).short; hc.sub = mgQA_cardSummary(tab,'house').v==='住み続ける' ? '住み続ける' : mgQA_cardSummary(tab,'house').v; }catch(e){} }
+      // その他金融資産：万が一の後の扱い
+      const st = (typeof mgC_assetsState==='function') ? mgC_assetsState(tab) : {};
+      const deadP = isDis ? null : (tH?'h':'w');
+      assets.groups.forEach(g=>g.items.forEach(it=>{
+        if(g.p===deadP){ it.dead=true; it.after={cls:'cash', txt:'万が一の年に現金化'}; return; }
+        if(it.kind==='bond'){ it.after={cls:'', txt:'そのまま'}; return; }
+        const c = st[it.rkey]||{};
+        const parts=[];
+        if(it.monthly>0){ if(c.acc==='stop') parts.push({cls:'stop',txt:'積立を止める'}); else if(c.acc==='change') parts.push({cls:'stop',txt:`積立 月${(+c.monthly||0)}万に`}); else parts.push({cls:'keep',txt:'続ける'}); }
+        let rd='';
+        if(c.rd==='event') rd={cls:'cash',txt:'万が一の年に解約'};
+        else if(c.rd==='never') rd={cls:'',txt:'解約しない'};
+        else if(c.rd==='age' && +c.age>0) rd={cls:'',txt:`${+c.age}歳で解約`};
+        else rd={cls:'',txt: it.until||'そのまま'};
+        it.after = parts[0]||{cls:'',txt:''}; it.after2 = rd;
+      }));
+    }
   }
   return d;
 }
