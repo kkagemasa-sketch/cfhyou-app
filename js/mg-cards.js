@@ -1298,7 +1298,7 @@ function mgQA_assetsCard(tab){
   const head = `<div class="mgqa-ag h"><span>商品（②資産）</span><span>積立</span><span>解約</span></div>`;
   let h = '', cur = null;
   list.forEach(a=>{
-    if(mgC_isDis(tab) && a.p!==cur){ cur = a.p; h += `<div class="mgqa-agp">${mgC_name(a.p)}${a.p===tab.target?'（障害の方）':''}</div>` + head; }
+    if(mgC_isDis(tab) && a.p!==cur){ cur = a.p; h += `<div class="mgqa-agp">${mgC_name(a.p)}</div>` + head; }
     else if(!h) h += head;
     const c = st[a.rkey] || {}, k = `assets.${a.rkey}`;
     const acc = c.acc || 'keep', rd = c.rd || 'same';

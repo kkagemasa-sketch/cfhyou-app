@@ -718,7 +718,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       const evW=wa+3; if(redeemAt(window.lastMR.secRedeemRows,wa)!==evW) out.push("万が一の年に解約にしても、その年に解約されない "+redeemAt(window.lastMR.secRedeemRows,wa));
       mgQA_switchTab(t.id); await wait(300);
       const card=document.querySelector('[data-card="assets"]')?.textContent||"";
-      if(!/奥様の金融資産/.test(card)||!/財形貯蓄/.test(card)||/ご主人様（障害の方）/.test(card)) out.push("死亡タブのカードに遺された方の商品だけが並ばない");
+      if(!/奥様の金融資産/.test(card)||!/財形貯蓄/.test(card)||/ご主人様/.test([...document.querySelectorAll('[data-card="assets"] .mgqa-agp')].map(e=>e.textContent).join(""))) out.push("死亡タブのカードに遺された方の商品だけが並ばない");
       // 財形を止める：万が一の年から積立0、止めた年に解約しない
       t.state.assets={["zaikei|w"]:{acc:"stop"}}; mgQA_calcAndRender(t,true);
       const zr=(window.lastMR.zaikeiExp||[]); if(zr.length&&zr[3]>0) out.push("財形を止めても万が一の年に積立がある "+zr[3]);
@@ -730,7 +730,7 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       if(!rw||rw.vals[3]!==36) out.push("障害タブで止めていない奥様の積立が変わった "+(rw&&rw.vals[3]));
       mgQA_switchTab(t2.id); await wait(300);
       const c2=document.querySelector('[data-card="assets"]')?.textContent||"";
-      if(!/おふたりの金融資産/.test(c2)||!/ご主人様（障害の方）/.test(c2)||!/奥様/.test(c2)) out.push("障害タブのカードにおふたりの商品が並ばない");
+      if(!/おふたりの金融資産/.test(c2)||!/ご主人様/.test(c2)||!/奥様/.test(c2)||/障害の方/.test(c2)) out.push("障害タブのカードにおふたりの商品が並ばない");
       // 以前の形式（survInv/survRd）を読み替える
       mgQA_addTab("h"); const t3=mgQA_tabs[mgQA_tabs.length-1]; t3.state.deathYear=4; delete t3.state.assets;
       t3.state.survInv={["w|"+sw]:{mode:"stop"}}; t3.state.survRd={["accum|w|"+sw]:{mode:"age",age:70}}; mgQA_calcAndRender(t3,true);
@@ -831,6 +831,27 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(SVP.out.length){ bad++; console.log("❌ 遺族年金の見直し\n   - "+SVP.out.join("\n   - ")+"\n   "+JSON.stringify(SVP.info)); }
     else console.log("✅ 遺族年金: 中高齢寡婦加算は遺族基礎年金が終わった時点の年齢で判定・65歳で終了・65歳以降は3/4か1/2＋本人1/2の多い方・夫は妻の死亡時55歳以上のときだけ60歳から・障害タブの65歳以降は3つの組み合わせの多いもの");
+    /* ---- 教育費：学校外活動費と大学の生活費を含めない設定 ---- */
+    await page.evaluate(pageBaseSetup);
+    const EX=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      if(typeof setHouseholdType==="function") setHouseholdType("couple");
+      if($("cu-1")) $("cu-1").value="plit_b";
+      setRTab("cf"); live(true); await wait(900); render(); const on=window.lastR.edu[0].slice();
+      $("edu-extra-off").checked=true; live(true); await wait(900); render(); const off=window.lastR.edu[0].slice(); const at=a=>a-(+$("ca-1").value);
+      if(on[at(7)]-off[at(7)]!==EDU_BD.elem.extra.public[2]) out.push("小学校の学校外活動費が引かれない "+on[at(7)]+"→"+off[at(7)]);
+      if(on[at(16)]-off[at(16)]!==EDU_BD.high.extra.public[0]) out.push("高校の学校外活動費が引かれない");
+      if(on[at(19)]-off[at(19)]!==EDU_BD.univ.living.plit_b[0]) out.push("大学の生活費が引かれない "+on[at(19)]+"→"+off[at(19)]);
+      if((window.lastR.eduBd[0][at(7)]||{}).extra!==0) out.push("内訳の学校外活動費が0にならない");
+      const d=JSON.parse(JSON.stringify(_collectSaveData())); $("edu-extra-off").checked=false; _applyData(d); await wait(600);
+      if(!$("edu-extra-off").checked) out.push("保存→読込でチェックが戻らない");
+      mgQA_addTab("h"); const t=mgQA_tabs[mgQA_tabs.length-1]; t.state.deathYear=2; mgQA_calcAndRender(t,true);
+      if(window.lastMR.edu[0][at(7)]!==off[at(7)]) out.push("万が一の教育費に反映されない");
+      $("edu-extra-off").checked=false; live(true); await wait(600);
+      return out;
+    });
+    if(EX.length){ bad++; console.log("❌ 教育費の学校外活動費を含めない\n   - "+EX.join("\n   - ")); }
+    else console.log("✅ 教育費: 学校外活動費（小中高）と大学の生活費を含めない設定が計算・内訳・保存復元・万が一に効く");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

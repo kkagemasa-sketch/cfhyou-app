@@ -1839,6 +1839,13 @@ window.closeAboutModal=closeAboutModal;
         <button class="btn-add" onclick="addLCStep()">＋ 段階を追加</button>
       </div>
       <div class="divider"></div>
+      <!-- 教育費：学校外活動費・大学の生活費を含めない（2026-10-17） -->
+      <div class="fg" id="edu-extra-wrap" style="margin-bottom:6px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px">
+          <input type="checkbox" id="edu-extra-off" onchange="live()" style="cursor:pointer"> 教育費に<b>学校外活動費（塾・習い事）と大学の生活費を含めない</b>
+        </label>
+        <span class="hint" style="font-size:10px">チェックすると、小・中・高の学校外活動費と大学の生活費（下宿・自宅）を教育費から外して計算します（学校に払う費用だけ）</span>
+      </div>
       <div id="edu-sec"></div>
     </div>
   </div>

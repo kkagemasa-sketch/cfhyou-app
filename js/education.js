@@ -13,6 +13,8 @@ function hoikuDefaults(hoikuType){
   return [12,12,12,12,12,12,12];
 }
 
+// 教育費から学校外活動費・大学の生活費を外す設定（⑥生活の教育費のチェック）
+function eduExtraOff(){ return !!document.getElementById('edu-extra-off')?.checked; }
 function eduCosts(cid){
   const c=new Array(32).fill(0);
   const el=_v(`ce-${cid}`)||'public',mi=_v(`cm-${cid}`)||'public',hi=_v(`ch-${cid}`)||'public',un=_v(`cu-${cid}`)||'plit_h';
@@ -36,6 +38,13 @@ function eduCosts(cid){
   EDU.high[hi].forEach((v,i)=>{c[16+i]=v||0});
   // 大学：19歳〜
   if(un!=='none')(EDU.univ[un]||EDU.univ.plit_h).forEach((v,i)=>{c[19+i]=v||0});
+  // ★ 2026-10-17: 学校外活動費（小・中・高）と大学の生活費を含めない設定
+  if(eduExtraOff()){
+    if(EDU_BD.elem.extra[el]) EDU_BD.elem.extra[el].slice(2).forEach((v,i)=>{c[7+i]=Math.max(0,c[7+i]-(v||0));});
+    if(EDU_BD.mid.extra[mi]) EDU_BD.mid.extra[mi].forEach((v,i)=>{c[13+i]=Math.max(0,c[13+i]-(v||0));});
+    if(EDU_BD.high.extra[hi]) EDU_BD.high.extra[hi].forEach((v,i)=>{c[16+i]=Math.max(0,c[16+i]-(v||0));});
+    if(un!=='none'&&EDU_BD.univ.living[un]) EDU_BD.univ.living[un].forEach((v,i)=>{c[19+i]=Math.max(0,c[19+i]-(v||0));});
+  }
   // 大学院: 大学卒業後に進学（医歯博士は6年制学部卒後）
   // path: none / master(修士2年) / both(修士2年+博士3年) / doctor(博士のみ3年) / med(医歯博士4年)
   const gradPath = _v(`cgrad-path-${cid}`)||'none';
@@ -151,6 +160,7 @@ function eduCostsBd(cid){
       if(total[a]>0) stages[a]={stage:'univ', schoolType:un, gradeName:(univNameMap[un]||'大学')+(i+1)+'年', isUniv:true};
     }
   }
+  if(eduExtraOff()) extra.fill(0);   // 含めない設定：内訳の学校外活動費・生活費は0
   return {eduFee, lunch, extra, total, stages};
 }
 
