@@ -857,9 +857,17 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     const NW=await page.evaluate(async()=>{
       const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
       $("client-name").value="前のお客様"; setRTab("cf"); live(true); await wait(600);
+      // 白紙化で消し忘れていた3つ（引渡年数の隠し値・頭金の出どころ・「その他」自由記述）も仕込む
+      $("delivery-year").value=getCfStartYear()+3; calcDelivery(); setDownType("other");
+      $("down-other-text").value="前客メモA"; onDownOtherTextChange(); $("cost-other-text").value="前客メモB"; onCostOtherTextChange(); $("move-other-text").value="前客メモC"; onMoveOtherTextChange();
       execAddScenario(true); await wait(500); mgQA_addTab("h"); mgQA_addTab("w","dis2"); await wait(800);
       let n=0; const oc=window.confirm, oa=window.alert; window.confirm=()=>(++n===1?false:true); window.alert=()=>{};
       await newCFSheet(); await wait(1200); window.confirm=oc; window.alert=oa;
+      if($("delivery").value!=="0") out.push("引き渡しまでの年数の隠し値が残っている "+$("delivery").value);
+      if($("rent-row").style.display!=="none") out.push("家賃（引渡前）の行が表示されたまま");
+      if(downType!=="own") out.push("頭金の出どころが自己資金に戻っていない "+downType);
+      [["down-other-text","cf_down_other_text"],["cost-other-text","cf_cost_other_text"],["move-other-text","cf_move_other_text"]].forEach(([id,k])=>{ if($(id).value!==""||(localStorage.getItem(k)||"")!=="") out.push("「その他」の自由記述が残っている "+id); });
+      if(document.body.innerHTML.includes("前客メモ")) out.push("CF表の表示に前のお客様の「その他」の文字が残っている");
       if(scenarios.length!==1||scenarios[0].name!=="CF表1"||activeScenarioId!==1) out.push("CF表の複製タブが残っている "+scenarios.map(s=>s.name).join(","));
       if(mgQA_tabs.length!==0) out.push("万が一タブが残っている "+mgQA_tabs.length);
       if(rTab!=="cf") out.push("右側が通常のCF表に戻っていない "+rTab);

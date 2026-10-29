@@ -1250,7 +1250,18 @@ function _resetSheetState(){
   window._fundingBk=null; // 前のお客様の資金計画バックアップを破棄（復元混入防止）
   window._cfSummaryNote=''; // 注釈・補足メモも白紙に（前のお客様のメモ残留防止）
   if(typeof setFundingMode==='function')setFundingMode('detail'); // 資金計画モードを既定に戻す
+  // ★ 2026-10-29: 白紙化で消し忘れていた3つ（前のお客様の値が新しいCF表に残っていた）
+  //  1) 頭金の出どころ（自己資金/贈与/その他）の選択
+  if(typeof setDownType==='function')setDownType('own');
+  //  2) 頭金・諸費用・引越「その他」の自由記述（入力欄＋ブラウザ保存。CF表の表示はブラウザ保存を読む）
+  [['down-other-text','cf_down_other_text'],['cost-other-text','cf_cost_other_text'],['move-other-text','cf_move_other_text']].forEach(([id,key])=>{
+    const el=$(id); if(el)el.value='';
+    try{localStorage.setItem(key,'');}catch(e){}
+  });
   window.live=_origLive;
+  //  3) 引き渡しまでの年数の隠し値（delivery）と家賃（引渡前）行の表示。引き渡し年の欄は空に戻るのに
+  //     隠し値だけ前の「3年後」等が残り、ローン開始がずれたまま計算されていた
+  if(typeof calcDelivery==='function'){ const _l2=window.live; window.live=()=>{}; try{calcDelivery();}finally{window.live=_l2;} }
 
   // デフォルト要素は追加しない（完全白紙状態）
   // 子ども・収入ステップ・特別支出・車・修繕周期は
