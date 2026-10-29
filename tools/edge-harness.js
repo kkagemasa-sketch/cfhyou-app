@@ -43,6 +43,18 @@ async function launchEdge(puppeteer, edgeExe){
   const {spawn}=require('child_process');
   const os=require('os');
   const udd=fs.mkdtempSync(path.join(os.tmpdir(),'cf-test-'));
+  // ★ Windowsサインインのロックアウト防止（2026-10-29 根治）
+  //   Chromium系(Edge)は「新規プロファイルの初回起動」時に、OSパスワードが空かどうかを
+  //   空パスワードでの LogonUser(ログオン試行) で調べる。これが Windows の「ログオン失敗」として
+  //   記録され、10分間に10回でアカウントがロック → サインイン画面で「資格情報が…」と入れなくなる。
+  //   テストは毎回まっさらな一時プロファイルで起動するため、連続実行で必ず10回に達していた。
+  //   対策: 判定済みキャッシュ(Local State)を起動前に書いておき、試行そのものを起こさせない。
+  //   （os_password_last_changed は文字列必須。数値だと型不一致で無視され試行が走る）
+  try{
+    fs.writeFileSync(path.join(udd,'Local State'), JSON.stringify({
+      password_manager:{ os_password_blank:false, os_password_last_changed:'9223372036854775807' }
+    }));
+  }catch(e){}
   const dbgPort=9222+Math.floor(Math.random()*500);
   spawn(edgeExe,[
     '--headless','--disable-gpu','--no-first-run','--no-default-browser-check',
