@@ -375,6 +375,21 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
       .concat(Object.entries(QA).filter(([k,v])=>k.endsWith('_empty')&&v!=='消えた').map(([k])=>`${k.replace('_empty','')}: 追加後も「まだ登録されていません」が残る`));
     if(f9.length){ bad++; console.log('❌ 資産の種類ボタン\n   - '+f9.join('\n   - ')); }
     else console.log('✅ 資産の種類ボタン: 空のときの7種類（課税積立・NISAつみたて・NISA成長枠・課税一括・債券・積立保険・財形）をクリックでその種類のカードが追加される');
+    /* ---- 積立保険の説明文: 受取が払込満期より後でも、払込額は満期で止まる（返戻率が正しい） ---- */
+    await page.evaluate(pageBaseSetup);
+    const IH=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      $('husband-age').value=31; addInsSaving('h'); const id=insSavCnt;
+      $(`ins-m-h-${id}`).value=0.9; $(`ins-age-h-${id}`).value=44; $(`ins-redeem-h-${id}`).value=48; $(`ins-redeem-amt-h-${id}`).value=150;
+      calcInsPreview('h',id); await wait(300);
+      const t=($(`ins-preview-h-${id}`)||{}).textContent||'';
+      if(!t.includes('払込累計：140.4万円')) out.push('払込累計が140.4万円でない: '+t);
+      if(!t.includes('払込140.4万')) out.push('受取時点の払込が140.4万でない（満期で止まっていない）: '+t);
+      if(!t.includes('返戻率106.8%')) out.push('返戻率が106.8%でない: '+t);
+      return out;
+    });
+    if(IH.length){ bad++; console.log('❌ 積立保険の説明文\n   - '+IH.join('\n   - ')); }
+    else console.log('✅ 積立保険の説明文: 受取が払込満期より後でも払込額は満期で止まり、返戻率が正しい（150万÷140.4万=106.8%）');
 
     /* ---- Excel：CF表シートで折り返さない・情報欄の文字が結合したセルの幅に収まる（通常・万が一） ---- */
     await page.evaluate(pageBaseSetup);

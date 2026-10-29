@@ -560,7 +560,9 @@ function calcInsPreview(person,id){
   const cumPay=Math.round(monthly*12*payYrs*10)/10;
   let txt=`払込累計：<strong>${cumPay.toLocaleString()}万円</strong>（${payYrs}年間・満期${matAge}歳）`;
   if(redeemAge>0){
-    const paidYrs2=redeemAge-enrollAge;
+    // ★ 2026-10-29: 払込は満期で止まるので、受取年齢が満期より後でも払込年数は払込満期で頭打ち
+    //   （旧: 受取年齢まで払い続けた扱いになり、払込額が多く・返戻率が低く表示されていた。CF表の計算は元から正しい）
+    const paidYrs2=Math.min(redeemAge-enrollAge,payYrs);
     const cum2=Math.round(monthly*12*Math.max(0,paidYrs2)*10)/10;
     if(redeemAmt>0){
       const rateR=cum2>0?Math.round(redeemAmt/cum2*1000)/10:0;
