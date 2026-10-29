@@ -100,6 +100,10 @@ function calcLoanAmt(){
 function setFundingMode(mode){
   const fm=document.getElementById('funding-mode');
   const prevMode=fm?(fm.value||'detail'):'detail';
+  // ★ 2026-10-29: 詳細設定→住宅ローン総額のときは、モードを変える前に詳細設定の借入額（住宅価格−頭金＋諸費用）を
+  //   計算しておく（変えた後に計算すると、総額の欄の古い数字から計算してしまう）
+  let _detailLoan=null;
+  if(prevMode==='detail' && mode==='loanOnly' && !window._restoringData && typeof calcLoanAmt==='function'){ calcLoanAmt(); _detailLoan=fv('loan-amt')||0; }
   if(fm)fm.value=mode;
   const isCash = mode==='cash';
   // 詳細設定 → 他モード: 元の値を退避（既にバックアップがあれば上書きしない）
@@ -144,10 +148,15 @@ function setFundingMode(mode){
     const hint=document.getElementById('loan-breakdown-hint'); if(hint)hint.textContent='現金一括購入（ローンなし）';
     if(typeof live==='function') live(true);
   } else if(mode==='loanOnly'){
-    // 初回切替時: 現在の loan-amt を簡易入力に引き継ぐ（★復元中は保存値を尊重して引き継がない）
-    const currentLoan=fv('loan-amt')||0;
+    // 詳細設定から切り替えたときは、いまの借入額を簡易入力に引き継ぐ（★復元中は保存値を尊重して引き継がない）
+    // ★ 2026-10-29: 以前は欄が空か初期値(4500)のときだけ引き継いでいたため、複製したCF表などで
+    //   前に入れた総額（別のCF表の数字）がそのまま残り、「住宅ローン総額」を押すと古い数字が出ていた
+    const currentLoan=(_detailLoan!==null)?_detailLoan:(fv('loan-amt')||0);
     const simpleEl=document.getElementById('loan-total-simple');
-    if(!window._restoringData && simpleEl && (!simpleEl.value || simpleEl.value==='4500')) simpleEl.value=currentLoan;
+    if(!window._restoringData && simpleEl){
+      if(_detailLoan!==null) simpleEl.value=currentLoan;
+      else if(!simpleEl.value || simpleEl.value==='4500') simpleEl.value=currentLoan;
+    }
     onLoanTotalSimpleChange();
   } else {
     // 詳細設定に戻したとき、諸費用の種別トグル表示を戻す

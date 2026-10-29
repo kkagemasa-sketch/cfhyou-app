@@ -871,6 +871,23 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(NW.length){ bad++; console.log("❌ 新規作成のタブ\n   - "+NW.join("\n   - ")); }
     else console.log("✅ 新規作成: CF表の複製タブ・万が一タブが消え、右側は通常のCF表に戻る。消したCF表は復元のゴミ箱へ");
+    /* ---- 住宅ローン総額: 詳細設定から切り替えたとき、いまの借入額が入る（複製したCF表の古い総額が残らない） ---- */
+    await page.evaluate(pageBaseSetup);
+    const FM=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      setFundingMode("detail"); $("house-price").value=5000; $("down-payment").value=500; $("house-cost").value=200; calcLoanAmt(); setRTab("cf"); live(true); await wait(600);
+      setFundingMode("loanOnly"); $("loan-total-simple").value=3800; onLoanTotalSimpleChange(); live(true); await wait(600);
+      execAddScenario(true); await wait(800);
+      setFundingMode("detail"); $("house-price").value=6000; $("down-payment").value=0; $("house-cost").value=0; calcLoanAmt(); live(true); await wait(500);
+      setFundingMode("loanOnly"); await wait(400);
+      if($("loan-total-simple").value!=="6000") out.push("複製したCF表で総額ボタンを押すと古い総額が出る "+$("loan-total-simple").value+"（6000のはず）");
+      if($("loan-amt").value!=="6000") out.push("借入額が総額と合わない "+$("loan-amt").value);
+      switchScenario(1); await wait(700);
+      if($("loan-total-simple").value!=="3800"||$("funding-mode").value!=="loanOnly") out.push("元のCF表の総額が変わった "+$("loan-total-simple").value);
+      return out;
+    });
+    if(FM.length){ bad++; console.log("❌ 住宅ローン総額の引き継ぎ" + String.fromCharCode(10) + "   - "+FM.join(String.fromCharCode(10)+"   - ")); }
+    else console.log("✅ 住宅ローン総額: 詳細設定から切り替えるといまの借入額が入る・元のCF表の総額はそのまま");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });
