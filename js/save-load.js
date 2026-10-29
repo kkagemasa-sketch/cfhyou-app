@@ -1294,7 +1294,23 @@ async function newCFSheet(){
   }
   if(!confirm('本当に全データをリセットして新規作成しますか？\nこの操作は元に戻せません。'))return;
 
+  // ★ 2026-10-29: 複製したCF表（CF表2など）のタブも消す。以前は残っていて、前のお客様の数字が
+  //   他のタブに入ったままだった。消す前に全部「復元」のゴミ箱へ入れる（30日間は元に戻せる）
+  try{
+    const cur=scenarios.find(s=>s.id===activeScenarioId);
+    if(cur){ try{ cur.data=_collectSaveData(); }catch(e){} }
+    const trash=_loadScenTrash();
+    scenarios.forEach(s=>{ if(s.data) trash.push({name:s.name, data:s.data, deletedAt:Date.now()}); });
+    _saveScenTrash(trash);
+  }catch(e){}
+  scenarios=[{id:1,name:'CF表1',data:null,memo:''}];
+  activeScenarioId=1; scenarioCnt=1;
+  if(typeof renderScenarioTabs==='function') renderScenarioTabs();
+
   _resetSheetState();
+  // ★ 万が一のタブを開いたまま新規作成すると、右側が万が一の表のまま残っていたので、通常のCF表に戻す
+  window._mgIn=(typeof mgIn_default==='function')?mgIn_default():window._mgIn;
+  if(typeof setRTab==='function') setRTab('cf');
 
   // Undo/Redo履歴もクリア
   _undoStack=[];_redoStack=[];

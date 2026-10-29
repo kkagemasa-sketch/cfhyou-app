@@ -852,6 +852,25 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(EX.length){ bad++; console.log("❌ 教育費の学校外活動費を含めない\n   - "+EX.join("\n   - ")); }
     else console.log("✅ 教育費: 学校外活動費（小中高）と大学の生活費を含めない設定が計算・内訳・保存復元・万が一に効く");
+    /* ---- 新規作成：CF表の複製タブ・万が一タブが消え、右側は通常のCF表に戻る ---- */
+    await page.evaluate(pageBaseSetup);
+    const NW=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      $("client-name").value="前のお客様"; setRTab("cf"); live(true); await wait(600);
+      execAddScenario(true); await wait(500); mgQA_addTab("h"); mgQA_addTab("w","dis2"); await wait(800);
+      let n=0; const oc=window.confirm, oa=window.alert; window.confirm=()=>(++n===1?false:true); window.alert=()=>{};
+      await newCFSheet(); await wait(1200); window.confirm=oc; window.alert=oa;
+      if(scenarios.length!==1||scenarios[0].name!=="CF表1"||activeScenarioId!==1) out.push("CF表の複製タブが残っている "+scenarios.map(s=>s.name).join(","));
+      if(mgQA_tabs.length!==0) out.push("万が一タブが残っている "+mgQA_tabs.length);
+      if(rTab!=="cf") out.push("右側が通常のCF表に戻っていない "+rTab);
+      if($("client-name").value!=="") out.push("お客様名が残っている");
+      if(document.querySelectorAll("#scen-tabs .rtab").length!==1) out.push("CF表タブの表示が1つでない "+document.querySelectorAll("#scen-tabs .rtab").length);
+      if(!_loadScenTrash().some(t=>t.data&&t.data.fields&&t.data.fields["client-name"]==="前のお客様")) out.push("消したCF表が復元のゴミ箱に入っていない");
+      try{ localStorage.removeItem("cf_scenario_trash_v1"); }catch(e){}
+      return out;
+    });
+    if(NW.length){ bad++; console.log("❌ 新規作成のタブ\n   - "+NW.join("\n   - ")); }
+    else console.log("✅ 新規作成: CF表の複製タブ・万が一タブが消え、右側は通常のCF表に戻る。消したCF表は復元のゴミ箱へ");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });
