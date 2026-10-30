@@ -104,6 +104,34 @@ function _saveScenTrash(arr){
   }
 }
 
+// ===== 別のお客様のCF表タブが混ざっていたら片づける（2026-10-30） =====
+// 以前の不具合（新規作成で複製タブが残る）で、Bさんのファイルの中にAさんの複製CF表が
+// 一緒に保存されてしまったものがある。ファイル・保存データ・自動保存を開いたときに、
+// いま開いているお客様名と違う名前のタブを見つけたら、確認のうえゴミ箱（30日）へ移す。
+function scenPurgeForeign(){
+  try{
+    if(!Array.isArray(scenarios)||scenarios.length<2)return false;
+    const nameOf=s=>String((s&&s.data&&s.data.fields&&s.data.fields['client-name'])||'').trim();
+    const act=scenarios.find(s=>s.id===activeScenarioId);
+    const myName=(document.getElementById('client-name')?.value||'').trim()||(act?nameOf(act):'');
+    if(!myName)return false;
+    const foreign=scenarios.filter(s=>s!==act&&nameOf(s)&&nameOf(s)!==myName);
+    if(!foreign.length)return false;
+    const list=foreign.map(s=>`・${s.name}（${nameOf(s)}）`).join('\n');
+    const ok=confirm(`このデータには、いま開いている「${myName}」とは別のお客様名のCF表タブが入っています。\n${list}\n\n以前の不具合で、前のお客様の複製CF表が一緒に保存されてしまったものです。\nこのタブを消して「復元」のゴミ箱（30日間）へ移しますか？\n\n（「キャンセル」でそのまま残せます）`);
+    if(!ok)return false;
+    const trash=_loadScenTrash();
+    foreign.forEach(s=>trash.push({name:s.name+'（'+nameOf(s)+'）',data:s.data,deletedAt:Date.now()}));
+    _saveScenTrash(trash);
+    const ids=new Set(foreign.map(s=>s.id));
+    scenarios=scenarios.filter(s=>!ids.has(s.id));
+    renderScenarioTabs();
+    if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+    return true;
+  }catch(e){ console.warn('scenPurgeForeign',e); return false; }
+}
+window.scenPurgeForeign=scenPurgeForeign;
+
 function deleteScenario(id){
   if(scenarios.length<=1)return;
   const target=scenarios.find(s=>s.id===id);

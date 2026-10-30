@@ -911,6 +911,44 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(FM.length){ bad++; console.log("❌ 住宅ローン総額の引き継ぎ" + String.fromCharCode(10) + "   - "+FM.join(String.fromCharCode(10)+"   - ")); }
     else console.log("✅ 住宅ローン総額: 詳細設定から切り替えるといまの借入額が入る・元のCF表の総額はそのまま");
+    /* ---- 別のお客様のCF表タブが混ざったデータ: 開いたとき・保存するときに見つけて片づける ---- */
+    await page.evaluate(pageBaseSetup);
+    const PF=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      const oc=window.confirm, oa=window.alert; window.alert=()=>{};
+      try{
+        // Aさんの複製が混ざったBさんのファイルを作る
+        $("client-name").value="Aさん"; live(true); await wait(300); const aData=_collectSaveData();
+        $("client-name").value="Bさん"; live(true); await wait(300); const bData=_collectSaveData();
+        const bad={...bData,scenarios:[{id:1,name:"CF表1",data:bData,memo:""},{id:2,name:"お渡し用 5600万円",data:aData,memo:""},{id:3,name:"CF表3",data:aData,memo:""}],activeScenarioId:1};
+        // 1) ファイルから復元 → 確認で「はい」→ Aさんのタブが消える
+        window.confirm=()=>true;
+        const inp=$("json-import-input"); const dt=new DataTransfer(); dt.items.add(new File([JSON.stringify(bad)],"B.json",{type:"application/json"})); inp.files=dt.files;
+        onJSONImport(inp); await wait(1200);
+        if(scenarios.length!==1||$("client-name").value!=="Bさん") out.push("ファイル復元: Aさんのタブが残っている "+scenarios.map(s=>s.name).join(",")+" / "+$("client-name").value);
+        const tr=_loadScenTrash(); if(!tr.some(t=>t.name.includes("お渡し用 5600万円")&&t.data&&t.data.fields["client-name"]==="Aさん")) out.push("ファイル復元: 消したAさんのタブがゴミ箱に入っていない");
+        // 2) 「キャンセル」なら残る
+        window.confirm=()=>false;
+        const dt2=new DataTransfer(); dt2.items.add(new File([JSON.stringify(bad)],"B2.json",{type:"application/json"})); inp.files=dt2.files;
+        onJSONImport(inp); await wait(1200);
+        if(scenarios.length!==3) out.push("キャンセルしたのにタブが消えた "+scenarios.length);
+        // 3) 保存スロット経由でも片づく
+        window.confirm=()=>true;
+        await dbPut({name:"混ざりテストB",savedAt:"x",updatedAt:Date.now(),data:bad});
+        await loadSlot("混ざりテストB"); await wait(1000);
+        if(scenarios.length!==1) out.push("保存スロット読込: Aさんのタブが残っている "+scenarios.map(s=>s.name).join(","));
+        // 4) 同じお客様の複製は消さない
+        execAddScenario(true); await wait(500);
+        if(scenarios.length!==2) out.push("同じお客様の複製が作れない");
+        await saveSlot(); await wait(500);
+        if(scenarios.length!==2) out.push("保存のときに同じお客様の複製まで消えた "+scenarios.length);
+        try{ localStorage.removeItem("cf_scenario_trash_v1"); }catch(e){}
+      }catch(e){ out.push("例外: "+e.message); }
+      finally{ window.confirm=oc; window.alert=oa; }
+      return out;
+    });
+    if(PF.length){ bad++; console.log("❌ 別のお客様のタブの片づけ\n   - "+PF.join("\n   - ")); }
+    else console.log("✅ 別のお客様のタブの片づけ: 混ざったデータを開くと確認が出て、はいで消えてゴミ箱へ・キャンセルで残る・同じお客様の複製は消さない");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

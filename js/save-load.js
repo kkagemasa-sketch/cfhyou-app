@@ -8,6 +8,7 @@ async function exportJSON(){
   // （メモ・複数シナリオ・万が一CF表の手編集も含む完全保存）
   const _curScen = scenarios.find(s=>s.id===activeScenarioId);
   if(_curScen) _curScen.data = _collectSaveData();
+  if(typeof scenPurgeForeign==='function')scenPurgeForeign(); // 別のお客様のタブを一緒に保存しない
   const _saveData = {
     ..._collectSaveData(),
     scenarios: JSON.parse(JSON.stringify(scenarios)),
@@ -58,6 +59,7 @@ function onJSONImport(input){
           _applyData(activeScen.data);
         }
         if(typeof renderScenarioTabs==='function')renderScenarioTabs();
+        if(typeof scenPurgeForeign==='function')scenPurgeForeign(); // 別のお客様のタブが混ざっていたら片づける
       }else{
         // 旧フォーマット：シナリオなし、ルートデータをそのまま適用
         _applyData(d);
@@ -1417,6 +1419,7 @@ function _restoreScenarios(data){
     activeScenarioId=1;scenarioCnt=1;
   }
   if(typeof renderScenarioTabs==='function')renderScenarioTabs();
+  if(typeof scenPurgeForeign==='function')scenPurgeForeign(); // 別のお客様のタブが混ざっていたら片づける
 }
 
 async function restoreAutoSave(){
@@ -1554,6 +1557,7 @@ async function saveSlot(){
   // 現在のシナリオデータを更新してから全シナリオ保存
   const _curScen=scenarios.find(s=>s.id===activeScenarioId);
   if(_curScen)_curScen.data=_collectSaveData();
+  if(typeof scenPurgeForeign==='function')scenPurgeForeign(); // 別のお客様のタブを一緒に保存しない
   const _saveData={..._collectSaveData(),scenarios:JSON.parse(JSON.stringify(scenarios)),activeScenarioId};
   const entry={name, savedAt:existing?.savedAt||_fmtDate(new Date()), updatedAt:Date.now(), data:_saveData};
   try{
@@ -1582,6 +1586,7 @@ async function loadSlot(name){
   }
   renderScenarioTabs();
   document.getElementById('slot-modal')?.remove();
+  if(typeof scenPurgeForeign==='function')scenPurgeForeign(); // 別のお客様のタブが混ざっていたら片づける
   // トークメモウィンドウにクライアント名変更を通知
   if(typeof notifyTalkMemoClient==='function') setTimeout(notifyTalkMemoClient, 200);
 }
