@@ -259,6 +259,14 @@ function checkVersionNotes(){
   if(!Array.isArray(v.notes) || v.notes.length===0 || v.notes.every(n=>!String(n).trim())){
     E('version.json の notes が空です。更新バナーに表示する「何を更新したか」を1行以上書いてください');
   }
+  // 画面右上の版番号表示（index.html の #app-ver）も sw.js と一致させる（更新されたかの確認用）
+  const html = read('index.html');
+  const am = html.match(/id="app-ver"[^>]*>v(\d+)</);
+  const swNum = (cache.match(/v(\d+)$/)||[])[1];
+  if(!am){ E('index.html に版番号表示 <span id="app-ver">v◯◯</span> がありません'); }
+  else if(swNum && am[1]!==swNum){
+    E(`画面の版番号(#app-ver)が v${am[1]} のままです。sw.js の ${cache} に合わせて v${swNum} にしてください`);
+  }
 }
 
 /* ------------------------------ 実行 ------------------------------ */
