@@ -59,6 +59,7 @@ function onJSONImport(input){
           _applyData(activeScen.data);
         }
         if(typeof renderScenarioTabs==='function')renderScenarioTabs();
+        if(typeof _scenUndoResetAll==='function')_scenUndoResetAll(); // 前のデータの「戻る」履歴を持ち込まない
         if(typeof scenPurgeForeign==='function')scenPurgeForeign(); // 別のお客様のタブが混ざっていたら片づける
       }else{
         // 旧フォーマット：シナリオなし、ルートデータをそのまま適用
@@ -812,7 +813,7 @@ function _updateUndoRedoBtns(){
 //   ブロッキング処理から外し、入力時の固まり時間を短縮する。
 function schedulePushUndoSnap(){
   if(_undoSnapTimer!==null)return; // 既にスケジュール済み
-  const run=()=>{_undoSnapTimer=null;pushUndoSnap();};
+  const run=()=>{_undoSnapTimer=null;pushUndoSnap(true);};
   if(typeof requestIdleCallback==='function'){
     _undoSnapIsIdle=true;
     _undoSnapTimer=requestIdleCallback(run,{timeout:1000});
@@ -829,14 +830,22 @@ function _flushUndoSnap(){
   if(_undoSnapIsIdle&&typeof cancelIdleCallback==='function')cancelIdleCallback(_undoSnapTimer);
   else clearTimeout(_undoSnapTimer);
   _undoSnapTimer=null;
-  pushUndoSnap();
+  pushUndoSnap(true);
 }
-function pushUndoSnap(){
+// fromLive=true は live()（再計算）経由の自動記録。人が何も操作していない間（戻る/やり直す/CF表切替の
+// 直後の自動再計算）は履歴に積まず基準だけ更新する。ボタン操作など直接呼ぶ側は引数なし＝必ず積む。
+window._undoUserEdited=true;
+['input','change','click','keydown'].forEach(ev=>document.addEventListener(ev,()=>{window._undoUserEdited=true;},true));
+function pushUndoSnap(fromLive){
   const snap=_collectSaveData();
   const snapStr=JSON.stringify(snap);
   // ★ パフォーマンス改善: 直前スナップとの比較で再度 JSON.stringify せず、
   //   キャッシュした文字列と比較する（入力ごとに 20〜80ms 短縮）
   if(_lastUndoStr===snapStr) return;
+  // ★ 2026-10-30: 戻る/やり直す/CF表切替の直後は、復元に伴う live() の再計算で入力欄が
+  //   少し書き換わって「別の状態」に見えることがある。その間は履歴に積まず基準だけ更新する
+  //   （積むと redo が消え、「戻る」が1手しか戻れなくなる）
+  if(fromLive&&!window._undoUserEdited){ _lastUndoStr=snapStr; return; }
   _lastUndoStr=snapStr;
   _undoStack.push(snap);
   if(_undoStack.length>30){
@@ -845,6 +854,16 @@ function pushUndoSnap(){
   _redoStack=[];// 新しい操作でRedoスタックをクリア
   _updateUndoRedoBtns();
 }
+// ★ 2026-10-30: 戻る/やり直す/CF表切替で状態を復元したあとの「落ち着き処理」。
+//   復元に伴う再計算を今すぐ済ませ、その結果を履歴の基準(_lastUndoStr)にする。
+//   こうしないと、あとから走る live() が入力欄を少し書き換えて「別の状態」として履歴に積み、
+//   redo が消えて「戻る」が1手しか戻れなかった。念のため直後の1回分は積まずに基準だけ更新する。
+function _undoSettle(){
+  try{ if(typeof _liveRun==='function'){ clearTimeout(timer); _livePendingForce=true; _liveRun(); } }catch(e){}
+  try{ _lastUndoStr=JSON.stringify(_collectSaveData()); }catch(e){}
+  window._undoUserEdited=false; // 次に人が操作するまで、自動再計算による変化は履歴に積まない
+}
+window._undoSettle=_undoSettle;
 function undoState(){
   _flushUndoSnap(); // 遅延中の未記録スナップを先に確定（1手古い状態に戻るのを防止）
   if(_undoStack.length<2)return;
@@ -852,9 +871,11 @@ function undoState(){
   _redoStack.push(cur);
   if(_redoStack.length>30)_redoStack.shift();
   const prev=_undoStack[_undoStack.length-1];
-  // ★ Undo/Redo時はキャッシュをリセット（次の入力で必ず最新比較するため）
-  _lastUndoStr=null;
+  // ★ 2026-10-30: 戻した状態の文字列をキャッシュにしておく。null にすると復元後の live() が
+  //   同じ状態をもう一度積んで redo を消し、「戻る」が1手しか戻れず「やり直す」も効かなかった
+  _lastUndoStr=JSON.stringify(prev);
   _applyData(prev);
+  _undoSettle();
   _updateUndoRedoBtns();
 }
 function redoState(){
@@ -862,9 +883,10 @@ function redoState(){
   if(_redoStack.length===0)return;
   const next=_redoStack.pop();
   _undoStack.push(next);
-  // ★ Undo/Redo時はキャッシュをリセット
-  _lastUndoStr=null;
+  // ★ 2026-10-30: 同上（やり直した状態を積み直さない）
+  _lastUndoStr=JSON.stringify(next);
   _applyData(next);
+  _undoSettle();
   _updateUndoRedoBtns();
 }
 // 保存値からカンマを除去する（旧データの "19,543" 等を救済）
@@ -1325,7 +1347,8 @@ async function newCFSheet(){
   window._mgIn=(typeof mgIn_default==='function')?mgIn_default():window._mgIn;
   if(typeof setRTab==='function') setRTab('cf');
 
-  // Undo/Redo履歴もクリア
+  // Undo/Redo履歴もクリア（CF表ごとの履歴も全部）
+  if(typeof _scenUndoResetAll==='function')_scenUndoResetAll();
   _undoStack=[];_redoStack=[];
   _updateUndoRedoBtns();
 
@@ -1419,6 +1442,7 @@ function _restoreScenarios(data){
     activeScenarioId=1;scenarioCnt=1;
   }
   if(typeof renderScenarioTabs==='function')renderScenarioTabs();
+  if(typeof _scenUndoResetAll==='function')_scenUndoResetAll(); // 前のデータの「戻る」履歴を持ち込まない
   if(typeof scenPurgeForeign==='function')scenPurgeForeign(); // 別のお客様のタブが混ざっていたら片づける
 }
 
@@ -1586,6 +1610,7 @@ async function loadSlot(name){
   }
   renderScenarioTabs();
   document.getElementById('slot-modal')?.remove();
+  if(typeof _scenUndoResetAll==='function')_scenUndoResetAll(); // 前のデータの「戻る」履歴を持ち込まない
   if(typeof scenPurgeForeign==='function')scenPurgeForeign(); // 別のお客様のタブが混ざっていたら片づける
   // トークメモウィンドウにクライアント名変更を通知
   if(typeof notifyTalkMemoClient==='function') setTimeout(notifyTalkMemoClient, 200);

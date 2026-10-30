@@ -949,6 +949,38 @@ const { findEdge, startServer, launchEdge, openApp, pageBaseSetup } = require('.
     });
     if(PF.length){ bad++; console.log("❌ 別のお客様のタブの片づけ\n   - "+PF.join("\n   - ")); }
     else console.log("✅ 別のお客様のタブの片づけ: 混ざったデータを開くと確認が出て、はいで消えてゴミ箱へ・キャンセルで残る・同じお客様の複製は消さない");
+    /* ---- 「戻る」の履歴はCF表ごと: CF表2で住宅価格を変えてCF表1に切り替え、戻るを押してもCF表1は変わらない ---- */
+    await page.evaluate(pageBaseSetup);
+    const UD=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(res=>setTimeout(res,ms)); const $=id=>document.getElementById(id); const out=[];
+      const oa=window.alert; window.alert=()=>{};
+      const setPrice=async v=>{ const el=$('house-price'); el.value=v; el.dispatchEvent(new Event('input',{bubbles:true})); live(true); await wait(900); _flushUndoSnap(); };
+      const trace=[]; const tr=tag=>trace.push(`${tag}: CF表${activeScenarioId} price=${$('house-price').value} mode=${$('funding-mode').value} type=${ST.type} undo=${_undoStack.length} redo=${_redoStack.length}`);
+      try{
+        $('client-name').value='履歴テスト'; live(true); await wait(900); _flushUndoSnap(); tr('開始'); const id1=activeScenarioId;
+        await setPrice(5000); tr('CF表1 5000');
+        execAddScenario(true); await wait(900); tr('複製'); const id2=activeScenarioId;
+        await setPrice(6000); await setPrice(7000); tr('CF表2 7000');
+        undoState(); await wait(900); tr('CF表2 戻る');
+        if($('house-price').value!=='6000') out.push('CF表2で戻ると6000に戻るはずが '+$('house-price').value);
+        switchScenario(id1); await wait(900); tr('CF表1 切替');
+        undoState(); await wait(900); tr('CF表1 戻る1');
+        if(['6000','7000'].includes($('house-price').value)) out.push('CF表1で戻るとCF表2の値に化けた '+$('house-price').value);
+        undoState(); await wait(900); tr('CF表1 戻る2');
+        if(['6000','7000'].includes($('house-price').value)) out.push('CF表1で2回戻るとCF表2の値に化けた '+$('house-price').value);
+        redoState(); await wait(900); redoState(); await wait(900); tr('CF表1 やり直す×2');
+        if($('house-price').value!=='5000') out.push('CF表1でやり直すと5000に戻るはずが '+$('house-price').value);
+        switchScenario(id2); await wait(900); tr('CF表2 切替');
+        if($('house-price').value!=='6000') out.push('CF表2に戻ったら6000のはずが '+$('house-price').value);
+        redoState(); await wait(900); tr('CF表2 やり直す');
+        if($('house-price').value!=='7000') out.push('CF表2でやり直すと7000のはずが '+$('house-price').value);
+        if(out.length) out.push('経過: '+trace.join(' / '));
+      }catch(e){ out.push('例外: '+e.message); }
+      finally{ window.alert=oa; }
+      return out;
+    });
+    if(UD.length){ bad++; console.log("❌ 戻る履歴のCF表またぎ\n   - "+UD.join("\n   - ")); }
+    else console.log("✅ 戻る履歴: CF表ごとに分かれ、切替後に戻るを押しても別のCF表の内容に化けない・やり直すも各CF表で効く");
   } finally { try{ await browser.close(); }catch(e){} srv.close(); }
   process.exit(bad?1:0);
 })().catch(e=>{ console.error(e); process.exit(1); });

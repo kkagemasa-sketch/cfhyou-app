@@ -62,6 +62,36 @@ function switchScenarioAndShow(id){
   // renderScenarioTabs()はsetRTab内で呼ばれる
 }
 
+// ===== 「戻る／やり直す」の履歴をCF表ごとに分ける（2026-10-30） =====
+// 以前は全CF表で1本の履歴を共用していたため、CF表2で住宅価格などを変えたあとCF表1に切り替えて
+// 「戻る」を押すと、CF表1の中身が丸ごとCF表2の状態に化けていた（住宅価格欄の干渉として報告）。
+window._undoByScen = window._undoByScen || {};
+function _scenUndoStash(){
+  try{
+    if(typeof _flushUndoSnap==='function')_flushUndoSnap();
+    window._undoByScen[activeScenarioId]={undo:_undoStack,redo:_redoStack};
+  }catch(e){}
+}
+function _scenUndoLoad(id){
+  try{
+    const st=window._undoByScen[id];
+    _undoStack=st?st.undo:[]; _redoStack=st?st.redo:[];
+    // 切替直後の状態＝このCF表の履歴の先頭。同じ状態を積み直して「やり直す」を消さないよう文字列を合わせておく
+    if(typeof _lastUndoStr!=='undefined')_lastUndoStr=_undoStack.length?JSON.stringify(_undoStack[_undoStack.length-1]):null;
+    if(typeof _updateUndoRedoBtns==='function')_updateUndoRedoBtns();
+  }catch(e){}
+}
+// ファイル読込・新規作成など、CF表の集合が丸ごと入れ替わるときは履歴を全部捨てる
+function _scenUndoResetAll(){
+  try{
+    window._undoByScen={};
+    _undoStack=[]; _redoStack=[];
+    if(typeof _lastUndoStr!=='undefined')_lastUndoStr=null;
+    if(typeof _updateUndoRedoBtns==='function')_updateUndoRedoBtns();
+  }catch(e){}
+}
+window._scenUndoResetAll=_scenUndoResetAll;
+
 function switchScenario(id){
   // 生活費・グラフ・返済計画・メモを開いたまま切り替えた場合は、そのページのまま中身だけ切り替える
   // （_applyData内部のsetRTab('cf')でrTabが書き換わる前に記憶しておく）
@@ -69,6 +99,9 @@ function switchScenario(id){
   // 現在の状態を保存
   const cur=scenarios.find(s=>s.id===activeScenarioId);
   if(cur)cur.data=_collectSaveData();
+  // 「戻る」の履歴もこのCF表の分として退避し、切替先の履歴に差し替える
+  _scenUndoStash();
+  _scenUndoLoad(id);
   // 切替
   activeScenarioId=id;
   const target=scenarios.find(s=>s.id===id);
@@ -80,6 +113,12 @@ function switchScenario(id){
     if(typeof live==='function') live();
     if(typeof render==='function') render();
   }
+  // 切替直後の状態を再計算まで済ませて「記録済み」にし、直後の live() が同じ状態を積み直して「やり直す」を消さないようにする。
+  // 履歴が空（複製直後など）なら、切替直後の状態を最初の1手として積んでおく（最初の編集を戻せるように。redo は消さない）
+  if(typeof _undoSettle==='function')_undoSettle();
+  try{
+    if(!_undoStack.length){ const s0=_collectSaveData(); _undoStack.push(s0); _lastUndoStr=JSON.stringify(s0); if(typeof _updateUndoRedoBtns==='function')_updateUndoRedoBtns(); }
+  }catch(e){}
   window._lastCFTab='cf'; // 前のCF表で万が一グラフを見ていた場合の引きずり防止
   setRTab(_keep); // setRTab内でrenderScenarioTabs()も呼ばれる
 }
@@ -147,8 +186,10 @@ function deleteScenario(id){
     _saveScenTrash(trash);
   }
   scenarios=scenarios.filter(s=>s.id!==id);
+  try{ delete window._undoByScen[id]; }catch(e){}
   if(activeScenarioId===id){
     activeScenarioId=scenarios[0].id;
+    _scenUndoLoad(activeScenarioId); // 消したCF表の「戻る」履歴を残りのCF表に持ち込まない
     const t=scenarios[0];
     if(t.data)_applyData(t.data);
   }
