@@ -2002,3 +2002,32 @@ body.mg-need-hide #right-body table.cf td.need-m1,body.mg-need-hide #right-body 
 .ppn.mg .ppn-tbl.at tr.grp td{padding:1.2mm 3.5mm;font-size:12.5px}
 .ppn.mg .ppn-tags{padding:1.4mm 3.5mm}
 .ppn.mg .ppn-memo{padding:1.4mm 3.5mm}
+
+/* ============================================================
+   縦積みモード（幅700px以下：iPhone Duo を開いた縦向き・閉じた画面、小型スマホ）
+   JS(ui.js)が body.stack-mode を付ける。上＝CF表(.panel-r)／仕切り／下＝入力(.panel-l)。
+   上段の高さは --stack-top（仕切りドラッグで変更、未設定なら50%）。
+   PC・iPad横向き（701px以上）には一切影響しない。
+   ============================================================ */
+body.stack-mode .layout{flex-direction:column!important}
+body.stack-mode .panel-r{order:1;flex:0 0 var(--stack-top,50%)!important;min-width:0;min-height:90px;max-height:calc(100% - 112px)}
+body.stack-mode #panel-resizer{
+  order:2;display:flex!important;width:100%!important;height:22px;min-height:22px;
+  cursor:row-resize;touch-action:none;align-items:center;justify-content:center;
+  background-size:8px 8px
+}
+body.stack-mode #panel-resizer button{
+  width:22px;height:72px;font-size:11px;opacity:1!important;
+  transform:translate(-50%,-50%) rotate(-90deg);
+}
+body.stack-mode .panel-l{
+  order:3;flex:1 1 0!important;width:100%!important;min-width:0!important;min-height:0;
+  border-right:none;border-top:2px solid var(--border)
+}
+/* 入力パネルを隠したとき：仕切り（▲ボタン）は残し、CF表を全高に */
+body.stack-mode .panel-l.hidden+.panel-resizer-grip{display:flex!important}
+body.stack-mode .panel-l.hidden~.panel-r{flex:1 1 0!important;max-height:none}
+/* 「入力拡大」でCF表を隠したとき（toggleCFPanel が inline width:100% を付ける）は入力パネルを全高に */
+body.stack-mode .panel-l[style*="width: 100%"]{flex:1 1 0!important}
+/* CF全画面モードは縦積みでも「ヘッダーと入力を隠す」だけで同じ動き */
+body.stack-mode.cf-full .panel-r{flex:1 1 0!important;max-height:none}

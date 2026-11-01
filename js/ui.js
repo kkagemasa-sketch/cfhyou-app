@@ -267,28 +267,77 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.use
   },true);
 }
 
-// パネルリサイザー
+// ===== 縦積みモード（幅700px以下：iPhone Duo を開いた縦向き・閉じた画面、小型スマホ） =====
+// 左右2分割だと右のCF表が1〜2年分しか見えないため、「上＝CF表／仕切り／下＝入力」の上下分割にする。
+// 切替は body.stack-mode クラス（CSS側で order と flex を差し替え）。PC・iPad横向きには影響しない。
+// 上段の高さは仕切りドラッグで変更でき、端末ごとに localStorage(cf_stack_top) に記憶する。
+const _STACK_MQ='(max-width:700px)';
+function _isStackMode(){return document.body.classList.contains('stack-mode');}
+window._isStackMode=_isStackMode;
+(function(){
+  const mq=window.matchMedia?window.matchMedia(_STACK_MQ):null;
+  if(!mq)return;
+  function apply(){
+    const on=mq.matches;
+    const was=document.body.classList.contains('stack-mode');
+    document.body.classList.toggle('stack-mode',on);
+    const pl=document.querySelector('.panel-l');
+    const lay=document.querySelector('.layout');
+    if(on){
+      // 横並び時にドラッグで付いた幅指定（inline !important）は縦積みでは邪魔なので外す
+      if(pl){pl.style.removeProperty('width');pl.style.removeProperty('min-width');}
+      let h=null;try{h=parseInt(localStorage.getItem('cf_stack_top'))||null;}catch(e){}
+      if(lay){ if(h)lay.style.setProperty('--stack-top',h+'px'); else lay.style.removeProperty('--stack-top'); }
+    }else if(lay){
+      lay.style.removeProperty('--stack-top');
+    }
+    if(was!==on){ try{window.dispatchEvent(new Event('resize'));}catch(e){} }
+  }
+  if(document.body)apply(); else document.addEventListener('DOMContentLoaded',apply);
+  if(mq.addEventListener)mq.addEventListener('change',apply); else if(mq.addListener)mq.addListener(apply);
+})();
+
+// パネルリサイザー（横並び：入力パネルの幅／縦積み：上段CF表の高さ）
 (function(){
   const resizer=document.querySelector('.panel-resizer-grip');
   if(!resizer)return;
-  let isResizing=false,startX=0,startW=0;
-  resizer.addEventListener('mousedown',e=>{
-    isResizing=true;startX=e.clientX;
+  let isResizing=false,startX=0,startW=0,startY=0,startH=0,stack=false;
+  function _begin(x,y){
+    stack=_isStackMode();
+    startX=x;startY=y;
     const pl=document.querySelector('.panel-l');
     startW=pl.getBoundingClientRect().width;
-    document.body.style.cursor='col-resize';
-    document.body.style.userSelect='none';
+    const pr=document.querySelector('.panel-r');
+    startH=pr?pr.getBoundingClientRect().height:0;
     resizer.classList.add('dragging');
     pl.style.transition='none';
+  }
+  function _move(x,y){
+    if(stack){
+      const lay=document.querySelector('.layout');
+      if(!lay)return;
+      const total=lay.getBoundingClientRect().height;
+      const dy=y-startY;
+      const newH=Math.max(90,Math.min(startH+dy,total-90-22));
+      lay.style.setProperty('--stack-top',newH+'px');
+      try{localStorage.setItem('cf_stack_top',String(Math.round(newH)));}catch(e){}
+      return;
+    }
+    const pl=document.querySelector('.panel-l');
+    const dx=x-startX;
+    const maxW=Math.max(200,window.innerWidth-150);const newW=Math.max(200,Math.min(startW+dx,maxW));
+    pl.style.setProperty('width',newW+'px','important');
+    pl.style.setProperty('min-width','0','important');
+  }
+  resizer.addEventListener('mousedown',e=>{
+    isResizing=true;_begin(e.clientX,e.clientY);
+    document.body.style.cursor=stack?'row-resize':'col-resize';
+    document.body.style.userSelect='none';
     e.preventDefault();
   });
   document.addEventListener('mousemove',e=>{
     if(!isResizing)return;
-    const pl=document.querySelector('.panel-l');
-    const dx=e.clientX-startX;
-    const maxW=Math.max(200,window.innerWidth-150);const newW=Math.max(200,Math.min(startW+dx,maxW));
-    pl.style.setProperty('width',newW+'px','important');
-    pl.style.setProperty('min-width','0','important');
+    _move(e.clientX,e.clientY);
   });
   document.addEventListener('mouseup',()=>{
     if(!isResizing)return;
@@ -307,22 +356,14 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.use
     //   ここで preventDefault すると iOS がクリックを発生させず、
     //   「入力パネルを閉じられない」バグになっていた。
     if(e.target&&e.target.closest&&e.target.closest('button'))return;
-    isResizing=true;startX=e.touches[0].clientX;
-    const pl=document.querySelector('.panel-l');
-    startW=pl.getBoundingClientRect().width;
-    resizer.classList.add('dragging');
-    pl.style.transition='none';
+    isResizing=true;_begin(e.touches[0].clientX,e.touches[0].clientY);
     e.preventDefault();
   },{passive:false});
   window.addEventListener('touchmove',e=>{
     if(!isResizing)return;
     e.preventDefault();
     e.stopPropagation();
-    const pl=document.querySelector('.panel-l');
-    const dx=e.touches[0].clientX-startX;
-    const maxW=Math.max(200,window.innerWidth-150);const newW=Math.max(200,Math.min(startW+dx,maxW));
-    pl.style.setProperty('width',newW+'px','important');
-    pl.style.setProperty('min-width','0','important');
+    _move(e.touches[0].clientX,e.touches[0].clientY);
   },{passive:false,capture:true});
   window.addEventListener('touchend',()=>{isResizing=false;resizer.classList.remove('dragging');document.querySelector('.panel-l').style.transition='';},{passive:true});
 })();
