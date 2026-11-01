@@ -2031,7 +2031,7 @@ function _renderContingencyInner(_mgStopOv){
   let h=`<div class="r-summary" style="margin-top:30px;border-top:3px solid ${(window._mgKindColor)||'#c2185b'};padding-top:16px">`;
 
   // 折りたたみ状態（通常CF表とは別キー）
-  const _mgSumHidden = (()=>{try{return localStorage.getItem('mg_summary_collapsed')==='1'}catch(e){return false}})();
+  const _mgSumHidden = (()=>{try{const v=localStorage.getItem('mg_summary_collapsed');if(v===null&&window._isStackMode&&window._isStackMode())return true;/* 縦積みは未設定なら畳む */return v==='1'}catch(e){return false}})();
   const _mgTogLabel = _mgSumHidden ? '▸ 詳細を表示' : '▾ 詳細を隠す';
   // 必要保障額のカードを隠しているか（画面だけ。PDF・Excelには影響しない）
   const _mgNeedHidden = (()=>{try{return localStorage.getItem('mg_need_collapsed')==='1'}catch(e){return false}})();

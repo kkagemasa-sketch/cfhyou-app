@@ -34,7 +34,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   const getColCls=i=>{let c='';if(i===hDeathCol||i===wDeathCol)c+=' col-death';if(i===hRetireCol||i===wRetireCol)c+=' col-retire';return c;};
 
   // 詳細ボックス（自己資金の内訳＋住宅ローン条件）の折りたたみ状態
-  const _cfSumHidden = (()=>{try{return localStorage.getItem('cf_summary_collapsed')==='1'}catch(e){return false}})();
+  const _cfSumHidden = (()=>{try{const v=localStorage.getItem('cf_summary_collapsed');if(v===null&&window._isStackMode&&window._isStackMode())return true;/* 縦積み(iPhone Duo縦向き等)は未設定なら畳んで表を広く */return v==='1'}catch(e){return false}})();
   const _togLabel = _cfSumHidden ? '▸ 詳細を表示' : '▾ 詳細を隠す';
   // 自動取崩し ON/OFF 状態
   const _autoLiqOffTop = (()=>{try{return localStorage.getItem('cf_auto_liq_off')==='1'}catch(e){return false}})();
