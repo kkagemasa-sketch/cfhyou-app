@@ -270,10 +270,30 @@ if(/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.use
 // ===== 縦積みモード（幅700px以下：iPhone Duo を開いた縦向き・閉じた画面、小型スマホ） =====
 // 左右2分割だと右のCF表が1〜2年分しか見えないため、「上＝CF表／仕切り／下＝入力」の上下分割にする。
 // 切替は body.stack-mode クラス（CSS側で order と flex を差し替え）。PC・iPad横向きには影響しない。
-// 上段の高さは仕切りドラッグで変更でき、端末ごとに localStorage(cf_stack_top) に記憶する。
+// 仕切りの位置は既定で「画面の折り目（高さのちょうど真ん中）」に合わせる（ノートPCのように
+// 上の画面＝CF表、下の画面＝入力）。ドラッグで変えた高さは端末ごとに localStorage(cf_stack_top) に記憶し、
+// 仕切りをダブルタップ（ダブルクリック）すると折り目の位置に戻す。
 const _STACK_MQ='(max-width:700px)';
 function _isStackMode(){return document.body.classList.contains('stack-mode');}
 window._isStackMode=_isStackMode;
+// 折り目に合わせた上段（CF表）の高さ：画面の半分 − ヘッダー − 仕切りの半分
+function _stackFoldTop(){
+  const hdr=document.querySelector('.hdr');
+  const hh=(hdr&&getComputedStyle(hdr).display!=='none')?hdr.getBoundingClientRect().height:0;
+  const vh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
+  return Math.max(90,Math.round(vh/2-hh-11));
+}
+function _stackApplyTop(){
+  const lay=document.querySelector('.layout');
+  if(!lay||!_isStackMode())return;
+  let h=null;try{h=parseInt(localStorage.getItem('cf_stack_top'))||null;}catch(e){}
+  lay.style.setProperty('--stack-top',(h||_stackFoldTop())+'px');
+}
+function _stackResetToFold(){
+  try{localStorage.removeItem('cf_stack_top');}catch(e){}
+  _stackApplyTop();
+}
+window._stackResetToFold=_stackResetToFold;
 (function(){
   const mq=window.matchMedia?window.matchMedia(_STACK_MQ):null;
   if(!mq)return;
@@ -286,8 +306,7 @@ window._isStackMode=_isStackMode;
     if(on){
       // 横並び時にドラッグで付いた幅指定（inline !important）は縦積みでは邪魔なので外す
       if(pl){pl.style.removeProperty('width');pl.style.removeProperty('min-width');}
-      let h=null;try{h=parseInt(localStorage.getItem('cf_stack_top'))||null;}catch(e){}
-      if(lay){ if(h)lay.style.setProperty('--stack-top',h+'px'); else lay.style.removeProperty('--stack-top'); }
+      _stackApplyTop();
     }else if(lay){
       lay.style.removeProperty('--stack-top');
     }
@@ -295,13 +314,16 @@ window._isStackMode=_isStackMode;
   }
   if(document.body)apply(); else document.addEventListener('DOMContentLoaded',apply);
   if(mq.addEventListener)mq.addEventListener('change',apply); else if(mq.addListener)mq.addListener(apply);
+  // 開閉・回転で高さが変わったら折り目の位置を取り直す（ドラッグで決めた高さがある時はそれを優先）
+  let _t=null;
+  window.addEventListener('resize',()=>{ if(!_isStackMode())return; clearTimeout(_t); _t=setTimeout(_stackApplyTop,120); });
 })();
 
 // パネルリサイザー（横並び：入力パネルの幅／縦積み：上段CF表の高さ）
 (function(){
   const resizer=document.querySelector('.panel-resizer-grip');
   if(!resizer)return;
-  let isResizing=false,startX=0,startW=0,startY=0,startH=0,stack=false;
+  let isResizing=false,startX=0,startW=0,startY=0,startH=0,stack=false,_lastTap=0;
   function _begin(x,y){
     stack=_isStackMode();
     startX=x;startY=y;
@@ -356,9 +378,17 @@ window._isStackMode=_isStackMode;
     //   ここで preventDefault すると iOS がクリックを発生させず、
     //   「入力パネルを閉じられない」バグになっていた。
     if(e.target&&e.target.closest&&e.target.closest('button'))return;
+    // 縦積み：仕切りをダブルタップで折り目の位置に戻す
+    const now=Date.now();
+    if(_isStackMode()&&now-_lastTap<350){_lastTap=0;e.preventDefault();_stackResetToFold();return;}
+    _lastTap=now;
     isResizing=true;_begin(e.touches[0].clientX,e.touches[0].clientY);
     e.preventDefault();
   },{passive:false});
+  resizer.addEventListener('dblclick',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('button'))return;
+    if(_isStackMode())_stackResetToFold();
+  });
   window.addEventListener('touchmove',e=>{
     if(!isResizing)return;
     e.preventDefault();
