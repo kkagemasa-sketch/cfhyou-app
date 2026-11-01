@@ -889,6 +889,18 @@ function rmCar(id){
   live();
 }
 function syncParkEndAge(){/* 旧park-end-age連動は廃止 — 呼び出し元互換のため残置 */}
+// 駐車場「終了年齢」の新規作成時の既定値 ＝ 車を手放す年齢（将来購入予定の1台目。無ければ車の既定70歳）
+// ※ 新規作成（初回表示・「新規作成」ボタン・新しいCF表タブ）のときだけ使う。
+//   保存済みファイルの読込では使わない（空欄＝ずっと のまま変えない）。
+function _parkToAgeDefault(){
+  const first=document.querySelector('#car-list input[id^="car-"][id$="-end-age"]');
+  const v=first?parseInt(first.value):0;
+  return (v>0?v:70);
+}
+function _applyParkToAgeDefault(){
+  const el=document.getElementById('park-to-age');
+  if(el&&!el.value)el.value=_parkToAgeDefault();
+}
 
 function setLoanMode(mode){
   pairLoanMode=mode==='pair';

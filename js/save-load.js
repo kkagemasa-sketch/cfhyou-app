@@ -1290,6 +1290,9 @@ function _resetSheetState(){
   // デフォルト要素は追加しない（完全白紙状態）
   // 子ども・収入ステップ・特別支出・車・修繕周期は
   // ユーザーが必要に応じて追加する
+  // 駐車場の終了年齢: 新規作成時は「車を手放す年齢」と同じ（車が無い白紙では車の既定70歳）。
+  // ※ 保存ファイルの読込は _applyData 側で保存値をそのまま入れるので、古いファイルの「空欄＝ずっと」は変わらない
+  if(typeof _applyParkToAgeDefault==='function')_applyParkToAgeDefault();
 
   // fvd()/||デフォルトが非ゼロの項目に明示的に0を設定
   ['sqm','furn-cycle','furn-cost'].forEach(id=>{
