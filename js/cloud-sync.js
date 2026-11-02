@@ -70,7 +70,12 @@ window._cloudSyncOnAuth=function(user){
     _cs.user=user;
     _csUpdateButton();
     // 合言葉がこの端末に保存されていれば、静かに鍵を作って確認する
-    _csTryStoredPass().finally(()=>{_csUpdateButton();_csRerender();});
+    _csTryStoredPass()
+      .then(async()=>{
+        // クラウドが空かどうかを先に調べておく（空なら最初から「確認用」の欄を出す）
+        if(!_cs.key&&_cs.metaExists===null){try{await _csLoadMeta();}catch(e){}}
+      })
+      .finally(()=>{_csUpdateButton();_csRerender();});
   }else{
     _cs.user=null;_cs.key=null;_cs.salt=null;_cs.metaExists=null;
     _csUpdateButton();_csRerender();
@@ -200,14 +205,22 @@ async function _csTryStoredPass(){
   }
 }
 async function csSubmitPass(){
+  // ★ 入力欄は描き直しの前に両方読む（描き直すと確認用の欄が空に戻り、必ず「一致しません」になっていた）
   const inp=document.getElementById('cs-pass-input');
   const pass=(inp?inp.value:'').trim();
+  const inp2=document.getElementById('cs-pass-input2');
+  const pass2=inp2?inp2.value.trim():null; // 確認欄が無い画面なら null
   if(pass.length<CS_PASS_MIN){_csMsg('合言葉は'+CS_PASS_MIN+'文字以上にしてください','#dc2626');return;}
   _cs.busy=true;_csRerender();
   let r=await _csApplyPass(pass,{allowCreate:false});
   if(r==='create'){
-    const inp2=document.getElementById('cs-pass-input2');
-    const pass2=(inp2?inp2.value:'').trim();
+    if(pass2===null){
+      // 確認欄がまだ出ていなかった（クラウドが空だと分かったのが今）→ 確認欄を出して、もう一度押してもらう
+      _cs.busy=false;_csRerender();
+      _csMsg('クラウドにはまだ何もありません。確認のため、もう一度同じ合言葉を下の欄にも入れて押してください','#92400e');
+      setTimeout(()=>{const e=document.getElementById('cs-pass-input2');if(e)e.focus();},60);
+      return;
+    }
     if(pass2!==pass){_cs.busy=false;_csRerender();_csMsg('確認用の合言葉が一致しません','#dc2626');return;}
     if(!confirm('クラウドにはまだ何もありません。\nこの合言葉で暗号化を始めます。\n\n合言葉を忘れるとクラウドのデータは読めなくなります（端末内の保存・ファイル保存は残ります）。\nよろしいですか？')){_cs.busy=false;_csRerender();return;}
     r=await _csApplyPass(pass,{allowCreate:true});
@@ -235,6 +248,7 @@ function openCloudSyncPanel(keepMsg){
   const prevMsg=keepMsg?document.getElementById('cs-msg'):null;
   const prevMsgText=prevMsg?prevMsg.textContent:'';const prevMsgColor=prevMsg?prevMsg.style.color:'';
   const prevPass=keepMsg?(document.getElementById('cs-pass-input')||{}).value||'':'';
+  const prevPass2=keepMsg?(document.getElementById('cs-pass-input2')||{}).value||'':'';
   document.getElementById('cloud-sync-modal')?.remove();
   const btn=(label,fn,bg,color,border)=>`<button onclick="${fn}" ${_cs.busy?'disabled':''} style="font-size:12px;padding:7px 16px;background:${bg};color:${color};border:1px solid ${border};border-radius:7px;cursor:pointer;font-weight:700;white-space:nowrap;${_cs.busy?'opacity:.5':''}">${label}</button>`;
   let body='';
@@ -277,7 +291,7 @@ function openCloudSyncPanel(keepMsg){
         <input id="cs-pass-input" type="password" value="${prevPass.replace(/"/g,'&quot;')}" placeholder="合言葉（${CS_PASS_MIN}文字以上）" autocomplete="off"
           style="width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;font-family:inherit;outline:none;margin-bottom:8px"
           onkeydown="if(event.key==='Enter')csSubmitPass()">
-        ${creating?`<input id="cs-pass-input2" type="password" placeholder="もう一度（確認）" autocomplete="off"
+        ${creating?`<input id="cs-pass-input2" type="password" value="${prevPass2.replace(/"/g,'&quot;')}" placeholder="もう一度（確認）" autocomplete="off"
           style="width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;font-family:inherit;outline:none;margin-bottom:8px"
           onkeydown="if(event.key==='Enter')csSubmitPass()">`:''}
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
