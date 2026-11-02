@@ -1,0 +1,313 @@
+// cloud-sync.js — クラウド同期（段階1: Googleログイン＋同期パネル＋合言葉）
+//
+// 仕組み（docs/superpowers/specs/2026-11-01-cloud-sync-design.md）
+//   - 既存の Firebase（cfhyou-shared）に Google ログインを追加し、Firestore の users/{本人のID}/... だけを
+//     本人が読み書きする。ログインしていなければ、アプリは今までどおり何も変わらない。
+//   - お客様データは送る前にブラウザで暗号化（AES-GCM 256bit、鍵は合言葉から PBKDF2 で作る）。
+//     Firebase には暗号文しか置かない。合言葉はサーバーに送らない。
+//   - 合言葉は端末ごとに localStorage に保存し、次回から聞かない。鍵は端末のメモリ内だけ。
+//
+// Firestore の置き場所
+//   users/{uid}/sync/meta      … {kdfSalt, check(合言葉検証用の暗号文), createdAt, updatedAt}
+//   users/{uid}/slots/{id}     … 名前付き保存（段階2）
+//   users/{uid}/sync/autosave  … 自動保存（段階3）
+//
+// 公開範囲: いまは本人のGoogleアカウントだけ（CS_ALLOWED_EMAILS）。メンバーにも開放するときは
+//   この配列を空にし、Firestore ルールの「request.auth.token.email in [...]」の行を消す。
+
+const CS_ALLOWED_EMAILS=['k.kagemasa@gmail.com','kgmkhmuk@gmail.com']; // 空＝全員OK
+const CS_PASS_MIN=8;
+const CS_KDF_ITER=200000;
+const CS_CHECK_TEXT='cf-sync-ok';
+const CS_LS_PASS='cf_sync_pass';   // この端末の合言葉
+const CS_LS_ON='cf_cloud_sync_on'; // 「☁ 同期」ボタンを出す端末
+
+const _cs={user:null,key:null,salt:null,metaExists:null,busy:false,lastError:''};
+
+// ===== ボタンの表示 =====
+// 本人専用の間は、URLに ?sync を付けて開いた端末だけボタンを出す（メンバーの画面には出ない）。
+// Googleでログイン済みの端末では常に出す。
+function _csButtonWanted(){
+  try{
+    if(location.search.indexOf('sync')>=0){localStorage.setItem(CS_LS_ON,'1');}
+    if(localStorage.getItem(CS_LS_ON)==='1')return true;
+  }catch(e){}
+  return !!_cs.user;
+}
+function _csUpdateButton(){
+  const b=document.getElementById('btn-cloud-sync');
+  if(!b)return;
+  b.style.display=_csButtonWanted()?'':'none';
+  if(_cs.user){
+    b.textContent=_cs.key?'☁ 同期中':'☁ 同期（合言葉）';
+    b.title='クラウド同期: '+(_cs.user.email||'')+(_cs.key?'':'（合言葉が未設定）');
+  }else{
+    b.textContent='☁ 同期';
+    b.title='クラウド同期（自分の端末どうしでCF表を共有）';
+  }
+}
+
+// ===== 認証 =====
+function _csIsGoogleUser(u){
+  return !!(u&&!u.isAnonymous&&(u.providerData||[]).some(p=>p.providerId==='google.com'));
+}
+function _csEmailAllowed(email){
+  if(!CS_ALLOWED_EMAILS.length)return true;
+  return CS_ALLOWED_EMAILS.map(s=>s.toLowerCase()).includes(String(email||'').toLowerCase());
+}
+// firebase-init.js から、ログイン状態が変わるたびに呼ばれる
+window._cloudSyncOnAuth=function(user){
+  if(_csIsGoogleUser(user)){
+    if(!_csEmailAllowed(user.email)){
+      // 許可していないアカウント → すぐログアウトして、今までどおり匿名に戻す
+      _cs.user=null;_cs.key=null;
+      _csSignOutQuiet().then(()=>{
+        alert('このGoogleアカウント（'+(user.email||'')+'）はクラウド同期の対象外です。\n今はアプリの持ち主だけが使える設定になっています。');
+        _csUpdateButton();_csRerender();
+      });
+      return;
+    }
+    _cs.user=user;
+    _csUpdateButton();
+    // 合言葉がこの端末に保存されていれば、静かに鍵を作って確認する
+    _csTryStoredPass().finally(()=>{_csUpdateButton();_csRerender();});
+  }else{
+    _cs.user=null;_cs.key=null;_cs.salt=null;_cs.metaExists=null;
+    _csUpdateButton();_csRerender();
+  }
+};
+window._cloudSyncOnRedirectError=function(e){
+  _cs.lastError='Googleログインに失敗しました: '+((e&&e.message)||e);
+  _csRerender();
+};
+
+async function csLogin(){
+  const fb=window._firebase;
+  if(!fb||!fb.GoogleAuthProvider){alert('Firebaseの準備ができていません。少し待ってからもう一度押してください。');return;}
+  if(!navigator.onLine){alert('インターネットに接続されていません。接続してからログインしてください。');return;}
+  const provider=new fb.GoogleAuthProvider();
+  provider.setCustomParameters({prompt:'select_account'});
+  _cs.busy=true;_cs.lastError='';_csRerender();
+  try{
+    // 画面の中で開いた場合（ホーム画面アプリ・ポップアップ禁止）はリダイレクト方式に切り替える
+    const standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;
+    if(standalone){
+      await fb.signInWithRedirect(fb.auth,provider);
+      return; // ページが切り替わる
+    }
+    await fb.signInWithPopup(fb.auth,provider);
+    // 続きは _cloudSyncOnAuth で
+  }catch(e){
+    const code=(e&&e.code)||'';
+    if(code==='auth/popup-blocked'||code==='auth/operation-not-supported-in-this-environment'||code==='auth/cancelled-popup-request'){
+      try{await fb.signInWithRedirect(fb.auth,provider);return;}catch(e2){e=e2;}
+    }
+    if(code==='auth/popup-closed-by-user'){_cs.lastError='';}
+    else if(code==='auth/unauthorized-domain'){_cs.lastError='このURL（'+location.hostname+'）はFirebaseの承認済みドメインに入っていません。';}
+    else{_cs.lastError='Googleログインに失敗しました: '+((e&&e.message)||e);}
+  }finally{
+    _cs.busy=false;_csRerender();
+  }
+}
+async function _csSignOutQuiet(){
+  const fb=window._firebase;
+  try{await fb.signOut(fb.auth);}catch(e){}
+  // マンション共有のために、今までどおり匿名で入り直す
+  try{if(typeof window._firebaseAnonSignIn==='function')await window._firebaseAnonSignIn();}catch(e){}
+}
+async function csLogout(){
+  if(!confirm('クラウド同期からログアウトしますか？\n\n端末内の保存データ（保存/読込・ファイル）はそのまま残ります。\nこの端末の合言葉も残します（忘れさせるには別のボタンを使ってください）。'))return;
+  _cs.busy=true;_csRerender();
+  await _csSignOutQuiet();
+  _cs.user=null;_cs.key=null;_cs.salt=null;_cs.metaExists=null;_cs.busy=false;
+  _csUpdateButton();_csRerender();
+}
+
+// ===== 暗号（WebCrypto） =====
+function _csB64(bytes){let s='';const a=new Uint8Array(bytes);for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s);}
+function _csUnb64(str){const s=atob(str);const a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a;}
+async function _csDeriveKey(pass,saltBytes){
+  const enc=new TextEncoder();
+  const base=await crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:saltBytes,iterations:CS_KDF_ITER,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function _csEncrypt(key,text){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(text));
+  return {iv:_csB64(iv),ct:_csB64(ct)};
+}
+async function _csDecrypt(key,enc){
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:_csUnb64(enc.iv)},key,_csUnb64(enc.ct));
+  return new TextDecoder().decode(pt);
+}
+// 段階2以降で使う: オブジェクト ⇄ 暗号文
+window._csEncryptObj=async function(obj){ if(!_cs.key)throw new Error('合言葉が未設定'); return _csEncrypt(_cs.key,JSON.stringify(obj)); };
+window._csDecryptObj=async function(enc){ if(!_cs.key)throw new Error('合言葉が未設定'); return JSON.parse(await _csDecrypt(_cs.key,enc)); };
+window._csState=function(){return {loggedIn:!!_cs.user,email:_cs.user?_cs.user.email:'',uid:_cs.user?_cs.user.uid:'',ready:!!(_cs.user&&_cs.key)};};
+
+// ===== 合言葉（meta） =====
+function _csMetaRef(){
+  const fb=window._firebase;
+  return fb.doc(fb.db,'users',_cs.user.uid,'sync','meta');
+}
+async function _csLoadMeta(){
+  const fb=window._firebase;
+  const snap=await fb.getDoc(_csMetaRef());
+  _cs.metaExists=snap.exists();
+  return snap.exists()?snap.data():null;
+}
+// 合言葉を設定/確認する。戻り値: 'ok' | 'wrong' | エラー文字列
+async function _csApplyPass(pass,opts){
+  opts=opts||{};
+  if(!_cs.user)return 'ログインしていません';
+  if(!pass||pass.length<CS_PASS_MIN)return '合言葉は'+CS_PASS_MIN+'文字以上にしてください';
+  let meta;
+  try{meta=await _csLoadMeta();}catch(e){return 'クラウドに接続できませんでした（'+((e&&e.message)||e)+'）';}
+  if(meta&&meta.kdfSalt&&meta.check){
+    const salt=_csUnb64(meta.kdfSalt);
+    const key=await _csDeriveKey(pass,salt);
+    try{
+      const t=await _csDecrypt(key,meta.check);
+      if(t!==CS_CHECK_TEXT)return 'wrong';
+    }catch(e){return 'wrong';}
+    _cs.key=key;_cs.salt=salt;
+  }else{
+    if(!opts.allowCreate)return 'create';
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    const key=await _csDeriveKey(pass,salt);
+    const check=await _csEncrypt(key,CS_CHECK_TEXT);
+    const fb=window._firebase;
+    try{
+      await fb.setDoc(_csMetaRef(),{kdfSalt:_csB64(salt),check,createdAt:Date.now(),updatedAt:Date.now(),email:_cs.user.email||''});
+    }catch(e){return 'クラウドに書き込めませんでした（'+((e&&e.message)||e)+'）';}
+    _cs.key=key;_cs.salt=salt;_cs.metaExists=true;
+  }
+  try{localStorage.setItem(CS_LS_PASS,pass);}catch(e){}
+  return 'ok';
+}
+async function _csTryStoredPass(){
+  let pass='';
+  try{pass=localStorage.getItem(CS_LS_PASS)||'';}catch(e){}
+  if(!pass)return;
+  const r=await _csApplyPass(pass,{allowCreate:false});
+  if(r==='wrong'){
+    // 別の端末で合言葉を変えた等 → この端末の保存は消して、次回聞き直す
+    try{localStorage.removeItem(CS_LS_PASS);}catch(e){}
+    _cs.lastError='この端末に保存していた合言葉が、クラウド側と合いません。合言葉を入れ直してください。';
+  }else if(r==='create'){
+    // クラウドが空（初めて）→ 保存していた合言葉でそのまま作る
+    await _csApplyPass(pass,{allowCreate:true});
+  }
+}
+async function csSubmitPass(){
+  const inp=document.getElementById('cs-pass-input');
+  const pass=(inp?inp.value:'').trim();
+  if(pass.length<CS_PASS_MIN){_csMsg('合言葉は'+CS_PASS_MIN+'文字以上にしてください','#dc2626');return;}
+  _cs.busy=true;_csRerender();
+  let r=await _csApplyPass(pass,{allowCreate:false});
+  if(r==='create'){
+    const inp2=document.getElementById('cs-pass-input2');
+    const pass2=(inp2?inp2.value:'').trim();
+    if(pass2!==pass){_cs.busy=false;_csRerender();_csMsg('確認用の合言葉が一致しません','#dc2626');return;}
+    if(!confirm('クラウドにはまだ何もありません。\nこの合言葉で暗号化を始めます。\n\n合言葉を忘れるとクラウドのデータは読めなくなります（端末内の保存・ファイル保存は残ります）。\nよろしいですか？')){_cs.busy=false;_csRerender();return;}
+    r=await _csApplyPass(pass,{allowCreate:true});
+  }
+  _cs.busy=false;
+  if(r==='ok'){_cs.lastError='';_csUpdateButton();_csRerender();_csMsg('合言葉を確認しました。この端末で同期できます。','#16a34a');}
+  else if(r==='wrong'){_csRerender();_csMsg('合言葉が違います','#dc2626');}
+  else{_csRerender();_csMsg(r,'#dc2626');}
+}
+function csForgetPass(){
+  if(!confirm('この端末に保存している合言葉を消しますか？\n次に開いたとき、もう一度合言葉を聞きます。\nクラウドのデータは消えません。'))return;
+  try{localStorage.removeItem(CS_LS_PASS);}catch(e){}
+  _cs.key=null;_csUpdateButton();_csRerender();
+}
+
+// ===== 同期パネル =====
+function _csMsg(text,color){
+  const el=document.getElementById('cs-msg');
+  if(el){el.textContent=text;el.style.color=color||'#64748b';}
+}
+function _csRerender(){
+  if(document.getElementById('cloud-sync-modal'))openCloudSyncPanel(true);
+}
+function openCloudSyncPanel(keepMsg){
+  const prevMsg=keepMsg?document.getElementById('cs-msg'):null;
+  const prevMsgText=prevMsg?prevMsg.textContent:'';const prevMsgColor=prevMsg?prevMsg.style.color:'';
+  const prevPass=keepMsg?(document.getElementById('cs-pass-input')||{}).value||'':'';
+  document.getElementById('cloud-sync-modal')?.remove();
+  const btn=(label,fn,bg,color,border)=>`<button onclick="${fn}" ${_cs.busy?'disabled':''} style="font-size:12px;padding:7px 16px;background:${bg};color:${color};border:1px solid ${border};border-radius:7px;cursor:pointer;font-weight:700;white-space:nowrap;${_cs.busy?'opacity:.5':''}">${label}</button>`;
+  let body='';
+  if(!_cs.user){
+    body+=`
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:.04em">ログイン</div>
+        <div style="font-size:12px;color:#334155;line-height:1.6;margin-bottom:10px">自分のパソコン・iPad・iPhoneのあいだでCF表を共有するには、同じGoogleアカウントでログインします。<br>ログインしなくても、今までどおりこの端末だけで使えます。</div>
+        ${btn(_cs.busy?'ログイン中…':'Googleでログイン','csLogin()','#1e3a5f','#fff','#1e3a5f')}
+      </div>`;
+  }else{
+    body+=`
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="min-width:0">
+          <div style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.04em">ログイン中</div>
+          <div style="font-size:12px;color:#14532d;word-break:break-all">${_cs.user.email||''}</div>
+        </div>
+        ${btn('ログアウト','csLogout()','#fff','#64748b','#cbd5e1')}
+      </div>`;
+    if(_cs.key){
+      body+=`
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;letter-spacing:.04em">合言葉</div>
+        <div style="font-size:12px;color:#16a34a;font-weight:700;margin-bottom:8px">✓ この端末に設定済み（データは暗号化して送ります）</div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">他の端末でも同じ合言葉を入れると、同じデータが見えます。</div>
+        ${btn('この端末の合言葉を忘れさせる','csForgetPass()','#fff','#92400e','#fed7aa')}
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:6px;letter-spacing:.04em">同期</div>
+        <div style="font-size:12px;color:#1e3a5f;line-height:1.6">準備ができました。保存データのクラウド保存・取り込み（段階2）は次の版で入ります。</div>
+      </div>`;
+    }else{
+      const creating=_cs.metaExists===false;
+      body+=`
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:6px;letter-spacing:.04em">同期の合言葉</div>
+        <div style="font-size:12px;color:#78350f;line-height:1.6;margin-bottom:10px">${creating
+          ?'クラウドにはまだ何もありません。暗号化に使う合言葉を決めてください（'+CS_PASS_MIN+'文字以上）。<br><b>忘れるとクラウドのデータは読めなくなります。</b>端末内の保存とファイル保存は残ります。'
+          :'クラウドのデータを読むための合言葉を入れてください（'+CS_PASS_MIN+'文字以上）。他の端末で決めたものと同じです。'}</div>
+        <input id="cs-pass-input" type="password" value="${prevPass.replace(/"/g,'&quot;')}" placeholder="合言葉（${CS_PASS_MIN}文字以上）" autocomplete="off"
+          style="width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;font-family:inherit;outline:none;margin-bottom:8px"
+          onkeydown="if(event.key==='Enter')csSubmitPass()">
+        ${creating?`<input id="cs-pass-input2" type="password" placeholder="もう一度（確認）" autocomplete="off"
+          style="width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;font-family:inherit;outline:none;margin-bottom:8px"
+          onkeydown="if(event.key==='Enter')csSubmitPass()">`:''}
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${btn(_cs.busy?'確認中…':(creating?'この合言葉で始める':'合言葉を確認'),'csSubmitPass()','#1e3a5f','#fff','#1e3a5f')}
+          <label style="font-size:11px;color:#64748b;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" onchange="['cs-pass-input','cs-pass-input2'].forEach(id=>{const e=document.getElementById(id);if(e)e.type=this.checked?'text':'password'})">表示する</label>
+        </div>
+      </div>`;
+    }
+  }
+  const modal=document.createElement('div');
+  modal.id='cloud-sync-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(15,39,68,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:14px;padding:24px;width:440px;max-width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800;font-size:15px;color:#1e3a5f">☁ クラウド同期</div>
+        <button onclick="document.getElementById('cloud-sync-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0 4px" title="閉じる">✕</button>
+      </div>
+      ${body}
+      <div id="cs-msg" style="font-size:12px;min-height:16px;color:${prevMsgColor||'#64748b'}">${prevMsgText||(_cs.lastError||'')}</div>
+      <div style="font-size:10px;color:#94a3b8;line-height:1.5;border-top:1px solid #f1f5f9;padding-top:10px">データは送る前にこの端末で暗号化します。合言葉はクラウドに送りません。保存場所はFirebase（東京リージョン）です。</div>
+    </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  if(_cs.lastError&&!prevMsgText){const m=document.getElementById('cs-msg');if(m)m.style.color='#dc2626';}
+  if(!keepMsg)setTimeout(()=>{const inp=document.getElementById('cs-pass-input');if(inp)inp.focus();},60);
+}
+
+// 起動時: ボタンの表示だけ決める（ログイン状態は firebase-init からの通知で反映）
+(function(){
+  function init(){_csUpdateButton();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();

@@ -94,11 +94,12 @@ function checkPW(){
     <input type="file" id="json-bulk-import-input" accept=".json" style="display:none" onchange="onBulkJSONImport(this)">
     <button class="btn-h" onclick="newCFSheet()" title="全項目を白紙にして新しいCF表を作成" style="background:rgba(180,60,0,.3);border-color:rgba(255,120,50,.5)">新規作成</button>
     <button class="btn-h" onclick="openSlotPanel()" title="お客様データの保存・読込・バックアップ" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">保存 / 読込</button>
+    <button class="btn-h" id="btn-cloud-sync" onclick="openCloudSyncPanel()" title="クラウド同期（自分の端末どうしでCF表を共有）" style="display:none;background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">☁ 同期</button>
     <button class="btn-h" onclick="exportJSON()" title="現在のデータをJSONファイルとしてPCに保存（バックアップ）" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">ファイルに保存</button>
     <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">ファイルから復元</button>
     <button class="btn-h" id="btn-mansion-mgmt" onclick="openMansionMgmt()" title="マンションマスターデータの登録・編集" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">マンション管理</button>
     <button class="btn-h" onclick="openAboutModal()" title="バージョン情報・ライセンス・規約類" style="background:rgba(100,116,139,.25);border-color:rgba(148,163,184,.4)">ⓘ</button>
-    <span id="app-ver" title="いま動いている版（更新されたか確認用）" style="font-size:10px;color:#cbd5e1;align-self:center;white-space:nowrap">v641</span>
+    <span id="app-ver" title="いま動いている版（更新されたか確認用）" style="font-size:10px;color:#cbd5e1;align-self:center;white-space:nowrap">v642</span>
 
   </div>
 </header>
@@ -2033,7 +2034,8 @@ window.closeAboutModal=closeAboutModal;
 <script src="js/ui.js?v=22"></script>
 <script src="js/app.js?v=45"></script>
 <!-- Firebase (マンションマスター共有) -->
-<script type="module" src="js/firebase-init.js?v=3"></script>
+<script src="js/cloud-sync.js?v=1"></script>
+<script type="module" src="js/firebase-init.js?v=4"></script>
 <script src="js/mansion-files.js?v=2"></script>
 <script>
 if('serviceWorker' in navigator){
