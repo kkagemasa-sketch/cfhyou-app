@@ -1371,6 +1371,8 @@ function scheduleAutoSave(){
     try{
       // ★ scenarios含む完全状態で保存（複製CF表が消えないように）
       await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:_collectFullState()});
+      // ★ クラウド同期（cloud-sync.js）: 「未送信の変更あり」の印だけ付ける（送るのは手が止まってから1分以内）
+      if(typeof _csNoteLocalChange==='function')_csNoteLocalChange();
     }catch(e){}
   },2000);
 }
@@ -1397,6 +1399,8 @@ function _saveNow(){
     //   openDB済みの接続(_db=自己修復済み)を優先。無ければ生openするが、
     //   離脱中に重い再構築はせず「store無しなら諦める」(localStorageバックアップが残る)
     const entry={name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data};
+    // ★ クラウド同期: 画面を離れる前に未送信分を送る（待たない。間に合わなければ次回開いたとき送る）
+    if(typeof _csFlushOnHide==='function'){try{_csFlushOnHide(data);}catch(e){}}
     const _put=db=>{try{if(db&&db.objectStoreNames.contains(STORE_NAME)){const tx=db.transaction(STORE_NAME,'readwrite');tx.objectStore(STORE_NAME).put(entry);}}catch(e){}};
     if(_db){_put(_db);}
     else{
@@ -1429,6 +1433,10 @@ async function saveAndRefresh(){
     try{
       await dbPut({name:AUTOSAVE_KEY, savedAt:_fmtDate(new Date()), updatedAt:Date.now(), data:data});
     }catch(e){ console.warn('IndexedDB保存失敗（localStorageバックアップを利用）:',e); }
+    // ★ クラウド同期: 更新の前に未送信分を送っておく（最大2秒だけ待つ。間に合わなければ次回開いたとき送る）
+    if(typeof _csNoteLocalChange==='function'&&typeof _csFlushAutosave==='function'){
+      try{_csNoteLocalChange();await Promise.race([_csFlushAutosave(false,data),new Promise(r=>setTimeout(r,2000))]);}catch(e){}
+    }
   }
   window.location.href=window.location.pathname+'?v='+Date.now();
 }

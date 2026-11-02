@@ -78,6 +78,7 @@ window._cloudSyncOnAuth=function(user){
         if(!_cs.key&&_cs.metaExists===null){try{await _csLoadMeta();}catch(e){}}
         // 合言葉が通ったら、クラウドの件数も静かに調べておく（段階2）
         if(_cs.key){try{_cs.cloudCount=(await csListCloud(true)||[]).length;}catch(e){_cs.cloudError=_csErr(e);}}
+        if(_cs.key)_csAutoStart(); // 段階3: 自動保存の同期を始める（他端末の編集があれば確認）
       })
       .finally(()=>{_csUpdateButton();_csRerender();});
   }else{
@@ -231,7 +232,7 @@ async function csSubmitPass(){
     r=await _csApplyPass(pass,{allowCreate:true});
   }
   _cs.busy=false;
-  if(r==='ok'){_cs.lastError='';_csUpdateButton();_csRerender();_csMsg('合言葉を確認しました。この端末で同期できます。','#16a34a');csRefreshCloudCount();}
+  if(r==='ok'){_cs.lastError='';_csUpdateButton();_csRerender();_csMsg('合言葉を確認しました。この端末で同期できます。','#16a34a');csRefreshCloudCount();_csAutoStart();}
   else if(r==='wrong'){_csRerender();_csMsg('合言葉が違います','#dc2626');}
   else{_csRerender();_csMsg(r,'#dc2626');}
 }
@@ -253,10 +254,10 @@ function _csErr(e){return (e&&e.message)||String(e);}
 function _csInvalidateList(){_cs.listCache=null;}
 
 // 1件をクラウドへ（暗号化して setDoc）。entry={name,savedAt,updatedAt,data}
-async function _csPushEntry(ref,entry){
+async function _csPushEntry(ref,entry,extra){
   const enc=await window._csEncryptObj(entry.data);
   const fb=window._firebase;
-  await fb.setDoc(ref,{name:entry.name,savedAt:entry.savedAt||'',updatedAt:entry.updatedAt||Date.now(),enc,bytes:enc.length,pushedAt:Date.now()});
+  await fb.setDoc(ref,Object.assign({name:entry.name,savedAt:entry.savedAt||'',updatedAt:entry.updatedAt||Date.now(),enc,bytes:enc.length,pushedAt:Date.now()},extra||{}));
   _cs.lastSyncAt=Date.now();_csInvalidateList();
 }
 async function csPushSlot(entry){ if(!_csReady())return false; await _csPushEntry(_csSlotRef(entry.name),entry); return true; }
@@ -392,6 +393,151 @@ async function csMigrateAll(){
   alert(lines.join('\n'));
   _csMsg(res.err.length?'一部送れませんでした（詳細は上のメッセージ）':'すべて送りました','#16a34a');
 }
+// ===== 段階3: 作業中の自動保存の同期 =====
+// 端末内の自動保存（scheduleAutoSave）が書かれるたびに「未送信」の印を付け、
+// 1分ごとに「手が止まっていて・内容が前回送ったものと違えば」クラウド sync/autosave に送る。
+// 画面を離れるとき（pagehide / 非表示）と「今すぐ送る」でも送る。
+// 開いたとき（と手が止まっているとき）は、他の端末の自動保存が新しければ確認してから取り込む。
+const CS_AUTO_INTERVAL=60000; // 1分
+const CS_AUTO_IDLE=5000;      // 手が止まってから5秒
+const CS_LS_DIRTY='cf_sync_auto_dirty';   // 未送信の変更あり（閉じたあと次回に送るため）
+const CS_LS_DEVICE='cf_sync_device';      // この端末の名前
+const _csAuto={started:false,timer:null,dirty:false,lastChangeAt:0,lastSentJson:'',lastSentAt:0,sending:false,declinedAt:0,remoteSeenAt:0,lastRemote:null,lastError:''};
+function _csDeviceName(){
+  let n='';try{n=localStorage.getItem(CS_LS_DEVICE)||'';}catch(e){}
+  if(n)return n;
+  const ua=navigator.userAgent||'';
+  let base='端末';
+  if(/iPhone/.test(ua))base='iPhone';
+  else if(/iPad/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1))base='iPad';
+  else if(/Android/.test(ua))base='Android';
+  else if(/Windows/.test(ua))base='Windows PC';
+  else if(/Macintosh/.test(ua))base='Mac';
+  n=base+'-'+Math.random().toString(36).slice(2,5);
+  try{localStorage.setItem(CS_LS_DEVICE,n);}catch(e){}
+  return n;
+}
+function csRenameDevice(){
+  const cur=_csDeviceName();
+  const n=prompt('この端末の名前（他の端末で「○○で編集中」と表示されます）',cur);
+  if(n===null)return;
+  const v=n.trim();if(!v)return;
+  try{localStorage.setItem(CS_LS_DEVICE,v);}catch(e){}
+  _csRerender();
+}
+// save-load.js の scheduleAutoSave から呼ばれる（端末内の自動保存を書いた直後）
+function _csNoteLocalChange(){
+  _csAuto.dirty=true;_csAuto.lastChangeAt=Date.now();
+  try{localStorage.setItem(CS_LS_DIRTY,'1');}catch(e){}
+}
+function _csAutoStart(){
+  if(_csAuto.started)return;
+  _csAuto.started=true;
+  let dirtyFromLast=false;try{dirtyFromLast=localStorage.getItem(CS_LS_DIRTY)==='1';}catch(e){}
+  if(dirtyFromLast){_csAuto.dirty=true;_csAuto.lastChangeAt=0;}
+  _csAuto.timer=setInterval(_csAutoTick,CS_AUTO_INTERVAL);
+  window.addEventListener('online',()=>{_csAutoTick();});
+  // 復元が終わってから、他端末の自動保存を確認 → そのあと未送信分を送る
+  _csWhenRestored(async()=>{
+    await _csCheckRemoteAutosave(true);
+    if(_csAuto.dirty)_csFlushAutosave(false);
+  });
+}
+function _csWhenRestored(fn){
+  let n=0;
+  const t=setInterval(()=>{n++;if(window._restoreDone||n>60){clearInterval(t);try{fn();}catch(e){}}},500);
+}
+async function _csAutoTick(){
+  if(!_csReady()||!navigator.onLine)return;
+  if(_csAuto.dirty){
+    if(Date.now()-_csAuto.lastChangeAt<CS_AUTO_IDLE)return; // まだ手が動いている → 次の1分で
+    await _csFlushAutosave(false);
+  }else{
+    // こちらに変更が無いときだけ、他端末の新しい編集が無いか見る
+    await _csCheckRemoteAutosave(false);
+  }
+}
+function _csCurrentState(){
+  try{return (typeof _collectFullState==='function')?_collectFullState():null;}catch(e){return null;}
+}
+// 送る。force=true は「今すぐ送る」（内容が同じでも送る）
+async function _csFlushAutosave(force,dataGiven){
+  if(!_csReady()||_csAuto.sending)return false;
+  if(!window._restoreDone)return false; // 白紙の状態を送らない
+  const data=dataGiven||_csCurrentState();
+  if(!data)return false;
+  const json=JSON.stringify(data);
+  if(!force&&json===_csAuto.lastSentJson){_csAuto.dirty=false;try{localStorage.removeItem(CS_LS_DIRTY);}catch(e){}return true;}
+  _csAuto.sending=true;
+  try{
+    const ts=Date.now();
+    await _csPushEntry(_csAutosaveRef(),{name:'autosave',savedAt:_fmtDate(new Date()),updatedAt:ts,data},{device:_csDeviceName()});
+    _csAuto.lastSentJson=json;_csAuto.lastSentAt=ts;_csAuto.remoteSeenAt=ts;_csAuto.dirty=false;_csAuto.lastError='';
+    try{localStorage.removeItem(CS_LS_DIRTY);}catch(e){}
+    _csAutoRerenderStatus();
+    return true;
+  }catch(e){_csAuto.lastError=_csErr(e);_csAutoRerenderStatus();return false;}
+  finally{_csAuto.sending=false;}
+}
+// 画面を離れるとき（save-load.js の _saveNow から）。待たずに送るだけ送る
+function _csFlushOnHide(data){
+  if(!_csReady())return;
+  try{_csFlushAutosave(false,data);}catch(e){} // 内容が前回送ったものと同じなら送らない
+}
+// 「今すぐ送る」
+async function csSendNow(){
+  if(!_csReady()){_csMsg('先にログインと合言葉の確認をしてください','#dc2626');return;}
+  _csMsg('送っています…','#1e40af');
+  const ok=await _csFlushAutosave(true);
+  _csRerender();
+  _csMsg(ok?'いまの作業内容をクラウドへ送りました（'+_fmtDate(_csAuto.lastSentAt)+'）':'送れませんでした: '+_csAuto.lastError,ok?'#16a34a':'#dc2626');
+}
+// 他端末の自動保存を確認。askIfNewer=true なら新しければ確認して取り込む
+async function _csCheckRemoteAutosave(onOpen){
+  if(!_csReady())return;
+  let snap;
+  try{snap=await window._firebase.getDoc(_csAutosaveRef());}catch(e){_csAuto.lastError=_csErr(e);return;}
+  if(!snap.exists())return;
+  const v=snap.data()||{};
+  _csAuto.lastRemote={updatedAt:v.updatedAt||0,device:v.device||'',pushedAt:v.pushedAt||0};
+  const ru=v.updatedAt||0;
+  if(v.device===_csDeviceName())return;          // 自分が送ったもの
+  if(ru<=_csAuto.remoteSeenAt||ru<=_csAuto.lastSentAt)return; // もう見た／こちらの方が新しい
+  if(ru===_csAuto.declinedAt)return;             // さっき「読み込まない」と答えたもの
+  // こちらの端末内の自動保存と比べる
+  let local=null;try{local=await dbGet(AUTOSAVE_KEY);}catch(e){}
+  const lu=local?(local.updatedAt||0):0;
+  if(ru<=lu)return;
+  if(!onOpen&&_csAuto.dirty)return; // こちらで作業中なら、いまは聞かない
+  if(document.getElementById('slot-modal')||document.getElementById('cloud-sync-modal'))return; // 画面が開いているときは邪魔しない
+  const when=_fmtDate(ru);
+  const ok=confirm('他の端末（'+(v.device||'不明')+'）で '+when+' に編集した作業中の内容がクラウドにあります。\n\nこの端末に読み込みますか？\n「OK」→ いまの画面の内容は、その内容で置き換わります\n「キャンセル」→ この端末の内容のまま続けます（次にこの端末で変更を送ると、クラウドの方が置き換わります）');
+  if(!ok){_csAuto.declinedAt=ru;return;}
+  try{
+    const data=await window._csDecryptObj(v.enc);
+    _applyData(data);
+    if(typeof _restoreScenarios==='function')_restoreScenarios(data);
+    await dbPut({name:AUTOSAVE_KEY,savedAt:v.savedAt||_fmtDate(new Date()),updatedAt:ru,data});
+    _csAuto.lastSentJson=JSON.stringify(data);_csAuto.remoteSeenAt=ru;_csAuto.dirty=false;
+    try{localStorage.removeItem(CS_LS_DIRTY);}catch(e){}
+    if(typeof live==='function')live();
+    if(typeof notifyTalkMemoClient==='function')setTimeout(notifyTalkMemoClient,200);
+  }catch(e){alert('読み込めませんでした: '+_csErr(e)+'\n（合言葉が違う場合は ☁ 同期 から入れ直してください）');}
+}
+function _csAutoRerenderStatus(){
+  const el=document.getElementById('cs-auto-status');
+  if(el)el.innerHTML=_csAutoStatusHtml();
+}
+function _csAutoStatusHtml(){
+  const parts=[];
+  parts.push('この端末の名前: <b>'+_csDeviceName()+'</b> <a href="#" onclick="csRenameDevice();return false" style="font-size:10px;color:#1e40af">変更</a>');
+  parts.push(_csAuto.lastSentAt?'最後に送った時刻: '+_fmtDate(_csAuto.lastSentAt):'この端末からはまだ送っていません');
+  parts.push(_csAuto.dirty?'<span style="color:#92400e">未送信の変更があります（手が止まると1分以内に送ります）</span>':'<span style="color:#16a34a">送信済み（変更なし）</span>');
+  if(_csAuto.lastRemote&&_csAuto.lastRemote.device&&_csAuto.lastRemote.device!==_csDeviceName())parts.push('クラウドの作業中データ: '+_csAuto.lastRemote.device+'（'+_fmtDate(_csAuto.lastRemote.updatedAt)+'）');
+  if(_csAuto.lastError)parts.push('<span style="color:#dc2626">前回エラー: '+_csAuto.lastError+'</span>');
+  return parts.join('<br>');
+}
+
 async function csRefreshCloudCount(){
   if(!_csReady())return;
   try{_cs.cloudCount=(await csListCloud(true)||[]).length;_cs.cloudError='';}
@@ -451,6 +597,12 @@ function openCloudSyncPanel(keepMsg){
           ${btn('クラウドの件数を確認','csRefreshCloudCount()','#fff','#1e40af','#bfdbfe')}
           ${btn('保存/読込を開く','document.getElementById(\'cloud-sync-modal\').remove();openSlotPanel()','#fff','#1e3a5f','#cbd5e1')}
         </div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;letter-spacing:.04em">作業中の内容（自動保存）の同期</div>
+        <div id="cs-auto-status" style="font-size:11px;color:#334155;line-height:1.7;margin-bottom:10px">${_csAutoStatusHtml()}</div>
+        <div style="font-size:10px;color:#94a3b8;line-height:1.5;margin-bottom:10px">手が止まってから1分以内に自動で送ります。画面を閉じる・切り替えるときにも送ります。別の端末で開いたとき、こちらの方が新しければ「読み込みますか？」と聞きます。</div>
+        ${btn(_csAuto.sending?'送っています…':'今すぐ送る','csSendNow()','#1e3a5f','#fff','#1e3a5f')}
       </div>
       <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px">
         <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:6px;letter-spacing:.04em">今までのデータを移す（端末ごとに1回）</div>
