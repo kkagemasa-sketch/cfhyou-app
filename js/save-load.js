@@ -1512,17 +1512,52 @@ async function openSlotPanel(){
   const clientName=rawName&&!rawName.endsWith('様')?rawName+'様':rawName;
   const slotCount=slots.length;
 
-  const listHtml=slots.length===0
-    ?'<div style="color:#94a3b8;font-size:12px;padding:16px 0;text-align:center">保存データがありません</div>'
-    :slots.map(s=>`
+  // ★ クラウド同期（cloud-sync.js、ログイン＋合言葉が済んだ端末だけ）: クラウドの一覧を取り、
+  //   端末内より新しいものには「☁ 新しい版あり」、端末内に無いものは「☁ クラウドのみ」として並べる
+  const cloudOn=(typeof _csState==='function')&&_csState().ready;
+  const cloudList=cloudOn&&(typeof csListCloudSafe==='function')?await csListCloudSafe():null;
+  const cloudMap=new Map((cloudList||[]).map(c=>[c.name,c]));
+  const _esc=n=>n.replace(/'/g,"\\'");
+  const _badge=(text,bg,color)=>`<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;background:${bg};color:${color};white-space:nowrap">${text}</span>`;
+  const _cloudBtn=(label,fn,title)=>`<button onclick="${fn}" title="${title||''}" style="font-size:11px;padding:4px 10px;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:5px;cursor:pointer;white-space:nowrap;font-weight:600">${label}</button>`;
+  const rows=slots.map(s=>{
+    const c=cloudMap.get(s.name);
+    let badge='',extra='';
+    if(cloudList){
+      if(!c){badge=_badge('この端末のみ','#f1f5f9','#64748b');extra=_cloudBtn('↑ 送る',`csPushSlotByName('${_esc(s.name)}')`,'この端末の内容をクラウドへ送る');}
+      else if((c.updatedAt||0)>(s.updatedAt||0)){badge=_badge('☁ 新しい版あり '+_fmtDate(c.updatedAt),'#dbeafe','#1e40af');extra=_cloudBtn('☁ 取り込む',`csPullSlot('${_esc(s.name)}')`,'クラウドの新しい版を取り込んで読み込む');}
+      else if((c.updatedAt||0)<(s.updatedAt||0)){badge=_badge('この端末の方が新しい','#fef3c7','#92400e');extra=_cloudBtn('↑ 送る',`csPushSlotByName('${_esc(s.name)}')`,'この端末の内容でクラウドを更新する');}
+      else{badge=_badge('☁ 同期済み','#dcfce7','#166534');}
+    }
+    return `
       <div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f1f5f9">
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:12px;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</div>
-          <div style="font-size:10px;color:#94a3b8;margin-top:1px">${_fmtDate(s.updatedAt)} 保存</div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:1px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">${_fmtDate(s.updatedAt)} 保存 ${badge}</div>
         </div>
-        <button onclick="loadSlot('${s.name.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 12px;background:#2d7dd2;color:#fff;border:none;border-radius:5px;cursor:pointer;white-space:nowrap;font-weight:600">読込</button>
-        <button onclick="deleteSlot('${s.name.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 8px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:5px;cursor:pointer" title="削除">削除</button>
-      </div>`).join('');
+        ${extra}
+        <button onclick="loadSlot('${_esc(s.name)}')" style="font-size:11px;padding:4px 12px;background:#2d7dd2;color:#fff;border:none;border-radius:5px;cursor:pointer;white-space:nowrap;font-weight:600">読込</button>
+        <button onclick="deleteSlot('${_esc(s.name)}')" style="font-size:11px;padding:4px 8px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:5px;cursor:pointer" title="削除">削除</button>
+      </div>`;
+  });
+  const localNames=new Set(slots.map(s=>s.name));
+  const cloudOnly=(cloudList||[]).filter(c=>!localNames.has(c.name));
+  cloudOnly.forEach(c=>{
+    rows.push(`
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f1f5f9;background:#f8fbff">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:12px;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:1px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">${_fmtDate(c.updatedAt)} 保存 ${_badge('☁ クラウドのみ','#dbeafe','#1e40af')}</div>
+        </div>
+        ${_cloudBtn('☁ 取り込む',`csPullSlot('${_esc(c.name)}')`,'クラウドから取り込んで読み込む')}
+      </div>`);
+  });
+  const listHtml=rows.length===0
+    ?'<div style="color:#94a3b8;font-size:12px;padding:16px 0;text-align:center">保存データがありません</div>'
+    :rows.join('');
+  const cloudNote=!cloudOn?''
+    :cloudList?`<div id="slot-cloud-msg" style="font-size:10px;color:#1e40af;margin-top:4px">☁ クラウド同期中（クラウド ${cloudList.length}件）</div>`
+    :`<div id="slot-cloud-msg" style="font-size:10px;color:#dc2626;margin-top:4px">☁ クラウドの一覧を取れませんでした${(typeof _cs!=='undefined'&&_cs.cloudError)?'（'+_cs.cloudError+'）':''}。端末内の保存はそのまま使えます</div>`;
 
   const modal=document.createElement('div');
   modal.id='slot-modal';
@@ -1545,6 +1580,7 @@ async function openSlotPanel(){
           <button onclick="saveSlot()" style="font-size:12px;padding:7px 18px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700;white-space:nowrap">保存</button>
         </div>
         <div style="font-size:10px;color:#94a3b8;margin-top:6px">同名のデータがある場合は上書き確認が表示されます</div>
+        ${cloudNote}
       </div>
 
       <!-- スロット一覧 -->
@@ -1589,12 +1625,17 @@ async function saveSlot(){
   const entry={name, savedAt:existing?.savedAt||_fmtDate(new Date()), updatedAt:Date.now(), data:_saveData};
   try{
     await dbPut(entry);
-    await openSlotPanel();
-    setTimeout(()=>{
-      const inp=document.getElementById('slot-name-input');
-      if(inp){inp.style.borderColor='#4ade80';inp.style.background='#f0fdf4';}
-    },30);
-  }catch(e){alert('保存に失敗しました。');}
+  }catch(e){alert('保存に失敗しました。');return;}
+  // ★ クラウド同期が有効な端末では、端末内に保存したあとクラウドにも送る（失敗しても端末内の保存はそのまま）
+  let cloudRes=null;
+  if(typeof csAfterLocalSave==='function'){try{cloudRes=await csAfterLocalSave(entry);}catch(e){cloudRes={ok:false,msg:'クラウドへの保存に失敗しました（端末内には保存済み）'};}}
+  await openSlotPanel();
+  setTimeout(()=>{
+    const inp=document.getElementById('slot-name-input');
+    if(inp){inp.style.borderColor='#4ade80';inp.style.background='#f0fdf4';}
+    const m=document.getElementById('slot-cloud-msg');
+    if(m&&cloudRes&&!cloudRes.skipped){m.textContent=cloudRes.ok?'☁ クラウドにも保存しました':cloudRes.msg;m.style.color=cloudRes.ok?'#16a34a':'#dc2626';}
+  },30);
 }
 
 async function loadSlot(name){
@@ -1624,6 +1665,15 @@ async function deleteSlot(name){
   if(!entry)return;
   if(!confirm(`「${name}」を削除しますか？\nこの操作は元に戻せません。`))return;
   await dbDelete(name);
+  // ★ クラウドにも同じ名前があれば、別に確認してから消す（勝手には消さない）
+  if((typeof _csState==='function')&&_csState().ready&&typeof csListCloudSafe==='function'){
+    const list=await csListCloudSafe();
+    if(list&&list.find(c=>c.name===name)){
+      if(confirm(`クラウドにも「${name}」があります。クラウドからも削除しますか？\n（削除すると他の端末からも見えなくなります。「キャンセル」ならクラウドには残ります）`)){
+        try{await csDeleteCloudSlot(name);}catch(e){alert('クラウドからの削除に失敗しました: '+((e&&e.message)||e));}
+      }
+    }
+  }
   await openSlotPanel();
 }
 
