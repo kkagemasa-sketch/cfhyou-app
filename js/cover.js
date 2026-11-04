@@ -98,7 +98,13 @@ function getCoverData(kind){
       const custom = document.getElementById(`sec-label-${p}-${sid}`)?.value?.trim()||'';
       let val=0, cat='', monthly=0, rate=0, until='', kind='', pill='', name='';
       if(isBond){ if((iv(`sec-bond-age-${p}-${sid}`)||0)>0)return; val=fv(`sec-bond-bal-${p}-${sid}`)||0; cat='債券'; kind='bond'; pill='債券'; rate=fv(`sec-bond-rate-${p}-${sid}`)||0; const m=iv(`sec-bond-mat-${p}-${sid}`)||0; until=m>0?`${m}歳 満期`:''; name='債券'; }
-      else if(isAcc){ val=fv(`sec-bal-${p}-${sid}`)||0; cat=isNisa?'NISA積立':'課税積立'; kind='accum'; pill=isNisa?'NISA':'課税'; monthly=fv(`sec-monthly-${p}-${sid}`)||0; rate=fvd(`sec-rate-${p}-${sid}`,5); const e=iv(`sec-end-${p}-${sid}`)||0, r=iv(`sec-redeem-${p}-${sid}`)||0; until=r>0?`${r}歳 解約${e>0&&e<r?`（積立は${e}歳まで）`:''}`:(e>0?`${e}歳 積立まで`:''); name=isNisa?(document.getElementById(`sec-frame-grow-${p}-${sid}`)?.classList.contains('on')?'成長枠':'つみたて枠'):'積立'; }
+      else if(isAcc){ val=fv(`sec-bal-${p}-${sid}`)||0; cat=isNisa?'NISA積立':'課税積立'; kind='accum'; pill=isNisa?'NISA':'課税'; monthly=fv(`sec-monthly-${p}-${sid}`)||0; rate=fvd(`sec-rate-${p}-${sid}`,5); const e0=iv(`sec-end-${p}-${sid}`)||0, r=iv(`sec-redeem-${p}-${sid}`)||0;
+        // 「取崩し発生で積立をやめる」で計算上もっと早く止まった積立は、その年齢（最後に積み立てる歳）を出す（window._secStopEnd は cf-calc.js が設定）
+        const so=window._secStopEnd?window._secStopEnd[`${p}|${sid}`]:undefined;
+        const stopped=so!==undefined&&(e0===0||so<e0);
+        const e=stopped?so:e0, curAge=p==='h'?hAge:wAge;
+        const accTxt=!stopped?(e>0?`積立は${e}歳まで`:''):(e<curAge?'預貯金不足で積立できず':`積立は${e}歳まで・預貯金不足で停止`);
+        until=r>0?`${r}歳 解約${accTxt&&(e<r||stopped)?`（${accTxt}）`:''}`:(stopped?accTxt:(e>0?`${e}歳 積立まで`:'')); name=isNisa?(document.getElementById(`sec-frame-grow-${p}-${sid}`)?.classList.contains('on')?'成長枠':'つみたて枠'):'積立'; }
       else if(isStock){ val=fv(`sec-stk-bal-${p}-${sid}`)||0; cat=isNisa?'NISA一括':'課税一括'; kind='stock'; pill=isNisa?'NISA':'課税'; rate=fv(`sec-div-${p}-${sid}`)||0; const r=iv(`sec-stk-redeem-${p}-${sid}`)||0; until=r>0?`${r}歳 解約`:''; name=isNisa?'成長枠（一括）':'一括投資'; }
       else return;
       if(val<=0 && monthly<=0)return;
