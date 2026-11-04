@@ -99,7 +99,7 @@ function checkPW(){
     <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">ファイルから復元</button>
     <button class="btn-h" id="btn-mansion-mgmt" onclick="openMansionMgmt()" title="マンションマスターデータの登録・編集" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">マンション管理</button>
     <button class="btn-h" onclick="openAboutModal()" title="バージョン情報・ライセンス・規約類" style="background:rgba(100,116,139,.25);border-color:rgba(148,163,184,.4)">ⓘ</button>
-    <span id="app-ver" title="いま動いている版（更新されたか確認用）" style="font-size:10px;color:#cbd5e1;align-self:center;white-space:nowrap">v651</span>
+    <span id="app-ver" title="いま動いている版（更新されたか確認用）" style="font-size:10px;color:#cbd5e1;align-self:center;white-space:nowrap">v652</span>
 
   </div>
 </header>
@@ -2080,13 +2080,16 @@ if('serviceWorker' in navigator){
   function _showUpdateBanner(waitingWorker){
     if(document.getElementById('cf-update-banner'))return; // 二重表示防止
     if(_bannerShownThisSession)return; // ★ 1回の起動につき1回まで（次に開いたとき自動で最新になる）
-    try{ const until=parseInt(localStorage.getItem('cf_update_snooze_until')||'0')||0; if(Date.now()<until)return; }catch(e){} // ★「後で」から24時間は出さない
+    // ★ v652: お知らせは24時間に1回まで（版がいくつ出ても）。前回出した時刻で判定する
+    try{ const at=parseInt(localStorage.getItem('cf_update_banner_at')||'0')||0; if(Date.now()-at<24*60*60*1000)return; }catch(e){}
+    try{ const until=parseInt(localStorage.getItem('cf_update_snooze_until')||'0')||0; if(Date.now()<until)return; }catch(e){} // 「後で」から24時間は出さない
     fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).catch(()=>null).then(v=>{
       const ver=(v&&v.cache)||'';
       let dismissed=''; try{dismissed=localStorage.getItem('cf_update_dismissed')||'';}catch(e){}
       if(ver&&ver===dismissed)return; // この版は「後で」済み
       if(_bannerShownThisSession||document.getElementById('cf-update-banner'))return;
       _bannerShownThisSession=true;
+      try{ localStorage.setItem('cf_update_banner_at',String(Date.now())); }catch(e){}
       _buildUpdateBanner(waitingWorker, v, ver);
     });
   }
@@ -2099,34 +2102,50 @@ if('serviceWorker' in navigator){
       '<span>新しいバージョンがあります</span>'+
       '<button id="cf-update-btn" style="background:#22c55e;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">今すぐ更新</button>'+
       '<button id="cf-update-later" style="background:transparent;color:#cbd5e1;border:none;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap" title="次にアプリを開いたとき自動で更新されます">後で（次回開く時に自動更新）</button>'+
-      '</div><div id="cf-update-notes" style="display:none;font-size:11.5px;line-height:1.7;color:#dbe6f5;border-top:1px solid rgba(255,255,255,.2);padding-top:7px"></div>';
+      '</div>'+
+      // ★ v652: 更新内容は最初は畳んでおき、見たい人だけ「更新内容を見る」で開く
+      '<button id="cf-update-toggle" style="display:none;align-self:flex-start;background:transparent;color:#cbd5e1;border:none;font-size:12px;cursor:pointer;font-family:inherit;padding:0">更新内容を見る ▾</button>'+
+      '<div id="cf-update-notes" style="display:none;font-size:11.5px;line-height:1.7;color:#dbe6f5;border-top:1px solid rgba(255,255,255,.2);padding-top:7px;max-height:40vh;overflow-y:auto"></div>';
     document.body.appendChild(bar);
     // 新バージョンの更新内容（呼び出し元で取得済みのversion.jsonから表示）
     try{
       const el=document.getElementById('cf-update-notes');
-      if(el&&v&&Array.isArray(v.notes)&&v.notes.length>0){
-        el.innerHTML='<div style="font-weight:700;color:#fff;margin-bottom:2px">今回の更新内容</div>'+
-          v.notes.slice(0,5).map(n=>'・'+String(n).replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>');
-        el.style.display='';
+      const tg=document.getElementById('cf-update-toggle');
+      if(el&&tg&&v&&Array.isArray(v.notes)&&v.notes.length>0){
+        el.innerHTML='<div style="font-weight:700;color:#fff;margin-bottom:2px">今回の更新内容（'+((v&&v.cache)||'').replace('cf-app-','')+'）</div>'+
+          v.notes.slice(0,10).map(n=>'・'+String(n).replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>');
+        tg.style.display='';
+        tg.onclick=()=>{ const open=el.style.display==='none'; el.style.display=open?'':'none'; tg.textContent=open?'更新内容を閉じる ▴':'更新内容を見る ▾'; };
       }
     }catch(e){}
     document.getElementById('cf-update-btn').onclick=()=>{
       // 念のため現在の状態を保存してから更新（autosave）
       try{ if(typeof _saveNow==='function') _saveNow(); }catch(e){}
-      // ★ バナー表示後にさらに新しい版が来ていると、表示時に掴んだ waitingWorker が
-      //   古い参照になり skipWaiting が効かず「バナーが消えない」ループになる。
-      //   押した時点の最新の待機中SWを取り直して切り替える。
-      try{
-        navigator.serviceWorker.getRegistration().then(reg=>{
-          const w=(reg&&reg.waiting)||waitingWorker;
-          try{ if(w) w.postMessage({type:'SKIP_WAITING'}); }catch(e){}
-        }).catch(()=>{ try{ if(waitingWorker) waitingWorker.postMessage({type:'SKIP_WAITING'}); }catch(e){} });
-      }catch(e){ try{ if(waitingWorker) waitingWorker.postMessage({type:'SKIP_WAITING'}); }catch(e2){} }
       bar.querySelector('span').textContent='更新中…';
       document.getElementById('cf-update-btn').disabled=true;
+      // ★ v652: 「今すぐ更新」1回でその時点の最新版まで上げる。
+      //   押した時点でもう一度新版を探し（reg.update）、取り込み中なら待ってから、最新の待機中SWに切り替える。
+      //   読み込み直した後は、開いた直後の黙って更新がさらに新しい版を続けて取り込む（連続3回まで・回数は一度リセット）。
+      try{ sessionStorage.removeItem('cf_silent_upd_n'); }catch(e){}
+      const _go=(w)=>{ try{ if(w) w.postMessage({type:'SKIP_WAITING'}); }catch(e){} };
+      const _waitInstalled=(reg)=>new Promise(res=>{
+        const nw=reg&&reg.installing; if(!nw){res();return;}
+        const t=setTimeout(res,4000);
+        nw.addEventListener('statechange',()=>{ if(nw.state==='installed'||nw.state==='redundant'||nw.state==='activated'){clearTimeout(t);res();} });
+      });
+      let _done=false;
+      const _finish=(reg)=>{ if(_done)return; _done=true; _go((reg&&reg.waiting)||waitingWorker); };
+      try{
+        navigator.serviceWorker.getRegistration().then(async reg=>{
+          if(!reg){_finish(null);return;}
+          try{ await Promise.race([reg.update(),new Promise(r=>setTimeout(r,3000))]); }catch(e){}
+          await _waitInstalled(reg);
+          _finish(reg);
+        }).catch(()=>_finish(null));
+      }catch(e){ _finish(null); }
       // ★ フォールバック: controllerchange が発火しない環境でも必ず更新できるよう、
-      //   2秒待っても切替が来なければ強制的に再読込する（「更新中…」のまま固まるのを防止）。
-      setTimeout(()=>{ if(!_swRefreshing){ _swRefreshing=true; location.reload(); } }, 2000);
+      //   8秒待っても切替が来なければ強制的に再読込する（「更新中…」のまま固まるのを防止）。
+      setTimeout(()=>{ if(!_swRefreshing){ _swRefreshing=true; location.reload(); } }, 8000);
     };
     document.getElementById('cf-update-later').onclick=()=>{
       // この版はもう表示しない。さらに24時間はどの版でも出さない（次に開いたとき自動で最新になる）
