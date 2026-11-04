@@ -1,7 +1,8 @@
 {
-  "cache": "cf-app-v648",
+  "cache": "cf-app-v649",
   "date": "2026-11-04",
   "notes": [
+    "iPhone/iPadのホーム画面アプリで「Googleでログイン」のあと英語のエラー（Unable to process request due to missing initial state）が出て戻れなかった件の対策。ログインの受け口を cfhyou.pages.dev 自身に置きました（Google Cloud側の設定追加が必要。PC・ブラウザは今までどおり）（v649）",
     "クラウド同期: 大きいお客様データが「Property enc contains an invalid nested entity」で送れなかったのを修正。送る前に圧縮し、それでも1MBを超えるものは分けて送って受け取り時につなぎます。失敗したときはそのデータの大きさも表示します。v647以前に送った分はそのまま読めます（v648）",
     "PCにインストールしたアプリ（Edge/Chrome）で「Googleでログイン」を押しても何も起きなかったのを修正。ブラウザと同じポップアップ方式でログインします。iPhone/iPadのホーム画面アプリは引き続き改善中です（v647）",
     "ホーム画面に追加したアプリ（iPhone/iPad）でもクラウド同期を使えるように: 右上の版番号（v646 の文字）を3秒以内に5回続けて押すと「☁ 同期」ボタンが出ます。URLに ?sync を付けられないアプリの中でも、ログイン→合言葉→「すべてクラウドへ送る」まで進められます（v646）",

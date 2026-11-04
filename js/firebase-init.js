@@ -40,6 +40,17 @@ const firebaseConfig = {
   appId: "1:1043679684977:web:f1798fb692cded15846ed0"
 };
 
+// ★ v649: iPhone/iPad のホーム画面アプリ（リダイレクト方式でしかログインできない）では、
+//   ログインの受け口を cfhyou.pages.dev 自身にする（functions/__/auth/[[path]].js が firebaseapp.com へ中継）。
+//   firebaseapp.com から戻る方式は storage-partitioned の制限で結果を受け取れないため（Firebase 公式 Option 4）。
+//   PC・ブラウザはポップアップ方式で問題ないので今までどおり。
+try {
+  const ua = navigator.userAgent || '';
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  if (ios && standalone && location.hostname === 'cfhyou.pages.dev') firebaseConfig.authDomain = 'cfhyou.pages.dev';
+} catch (e) {}
+
 // Firebase初期化
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
