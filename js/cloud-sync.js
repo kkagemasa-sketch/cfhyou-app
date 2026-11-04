@@ -154,9 +154,39 @@ async function _csDecrypt(key,enc){
   const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:_csUnb64(enc.iv)},key,_csUnb64(enc.ct));
   return new TextDecoder().decode(pt);
 }
+// ★ v648: 大きいデータ対策。送る前に gzip 圧縮してから暗号化する（enc.z=1）。
+//   圧縮できないブラウザでは従来どおり（z なし）。受け取り側は z の有無で切り替えるので、v647以前に送った分もそのまま読める
+async function _csGzip(bytes){
+  const cs=new CompressionStream('gzip');const w=cs.writable.getWriter();w.write(bytes);w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function _csGunzip(bytes){
+  const ds=new DecompressionStream('gzip');const w=ds.writable.getWriter();w.write(bytes);w.close();
+  return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+}
+async function _csEncryptBytes(key,bytes){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,bytes);
+  return {iv:_csB64(iv),ct:_csB64(ct)};
+}
 // 段階2以降で使う: オブジェクト ⇄ 暗号文
-window._csEncryptObj=async function(obj){ if(!_cs.key)throw new Error('合言葉が未設定'); return _csEncrypt(_cs.key,JSON.stringify(obj)); };
-window._csDecryptObj=async function(enc){ if(!_cs.key)throw new Error('合言葉が未設定'); return JSON.parse(await _csDecrypt(_cs.key,enc)); };
+window._csEncryptObj=async function(obj){
+  if(!_cs.key)throw new Error('合言葉が未設定');
+  const raw=new TextEncoder().encode(JSON.stringify(obj));
+  if(typeof CompressionStream==='function'){
+    try{const z=await _csGzip(raw);const e=await _csEncryptBytes(_cs.key,z);e.z=1;e.raw=raw.length;return e;}catch(err){}
+  }
+  return _csEncrypt(_cs.key,JSON.stringify(obj));
+};
+window._csDecryptObj=async function(enc){
+  if(!_cs.key)throw new Error('合言葉が未設定');
+  if(enc&&enc.z){
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:_csUnb64(enc.iv)},_cs.key,_csUnb64(enc.ct));
+    const raw=await _csGunzip(new Uint8Array(pt));
+    return JSON.parse(new TextDecoder().decode(raw));
+  }
+  return JSON.parse(await _csDecrypt(_cs.key,enc));
+};
 window._csState=function(){return {loggedIn:!!_cs.user,email:_cs.user?_cs.user.email:'',uid:_cs.user?_cs.user.uid:'',ready:!!(_cs.user&&_cs.key)};};
 
 // ===== 合言葉（meta） =====
@@ -257,13 +287,50 @@ function _csErr(e){return (e&&e.message)||String(e);}
 function _csInvalidateList(){_cs.listCache=null;}
 
 // 1件をクラウドへ（暗号化して setDoc）。entry={name,savedAt,updatedAt,data}
+// ★ v648: Firestore は1件あたり約1MBまで。暗号文が CS_PART_SIZE 文字を超えるときは
+//   本体には {iv, z, parts:n} だけ置き、暗号文を ref/parts/0..n-1 に分けて置く（受け取り時につなぐ）
+const CS_PART_SIZE=700000;
+function _csPartsCol(ref){const fb=window._firebase;return fb.collection(ref,'parts');}
 async function _csPushEntry(ref,entry,extra){
   const enc=await window._csEncryptObj(entry.data);
   const fb=window._firebase;
   // ★ enc は {iv, ct} の形。enc.length は undefined になり Firestore が「Unsupported field value: undefined」で拒否していた(v644)
   const bytes=((enc&&enc.ct)||'').length+((enc&&enc.iv)||'').length;
-  await fb.setDoc(ref,Object.assign({name:entry.name,savedAt:entry.savedAt||'',updatedAt:entry.updatedAt||Date.now(),enc,bytes,pushedAt:Date.now()},extra||{}));
+  // 前の版が分割されていたら、その数を覚えておいて余った分を後で消す
+  let oldParts=0;try{const s=await fb.getDoc(ref);if(s.exists()){const e=(s.data()||{}).enc;oldParts=(e&&e.parts)||0;}}catch(e){}
+  let meta;
+  if(enc.ct.length>CS_PART_SIZE){
+    const ct=enc.ct;const n=Math.ceil(ct.length/CS_PART_SIZE);
+    for(let i=0;i<n;i++){
+      await fb.setDoc(fb.doc(_csPartsCol(ref),String(i)),{i,ct:ct.slice(i*CS_PART_SIZE,(i+1)*CS_PART_SIZE)});
+    }
+    meta={iv:enc.iv,parts:n};if(enc.z)meta.z=1;
+  }else{
+    meta=enc;
+  }
+  await fb.setDoc(ref,Object.assign({name:entry.name,savedAt:entry.savedAt||'',updatedAt:entry.updatedAt||Date.now(),enc:meta,bytes,pushedAt:Date.now()},extra||{}));
+  const newParts=meta.parts||0;
+  for(let i=newParts;i<oldParts;i++){try{await fb.deleteDoc(fb.doc(_csPartsCol(ref),String(i)));}catch(e){}}
   _cs.lastSyncAt=Date.now();_csInvalidateList();
+}
+// 本体の enc が分割形式なら parts を集めて 1つの暗号文に戻す
+async function _csResolveEnc(ref,enc){
+  if(!enc||!enc.parts)return enc;
+  const fb=window._firebase;
+  const parts=[];
+  for(let i=0;i<enc.parts;i++){
+    const s=await fb.getDoc(fb.doc(_csPartsCol(ref),String(i)));
+    if(!s.exists())throw new Error('クラウドのデータが欠けています（分割 '+(i+1)+'/'+enc.parts+'）');
+    parts.push((s.data()||{}).ct||'');
+  }
+  const out={iv:enc.iv,ct:parts.join('')};if(enc.z)out.z=1;
+  return out;
+}
+async function _csDeleteDoc(ref){
+  const fb=window._firebase;
+  let n=0;try{const s=await fb.getDoc(ref);if(s.exists()){const e=(s.data()||{}).enc;n=(e&&e.parts)||0;}}catch(e){}
+  for(let i=0;i<n;i++){try{await fb.deleteDoc(fb.doc(_csPartsCol(ref),String(i)));}catch(e){}}
+  await fb.deleteDoc(ref);
 }
 async function csPushSlot(entry){ if(!_csReady())return false; await _csPushEntry(_csSlotRef(entry.name),entry); return true; }
 
@@ -290,10 +357,10 @@ async function csFetchSlot(name){
   const snap=await fb.getDoc(_csSlotRef(name));
   if(!snap.exists())return null;
   const v=snap.data();
-  const data=await window._csDecryptObj(v.enc);
+  const data=await window._csDecryptObj(await _csResolveEnc(_csSlotRef(name),v.enc));
   return {name:v.name||name,savedAt:v.savedAt||'',updatedAt:v.updatedAt||0,data};
 }
-async function csDeleteCloudSlot(name){const fb=window._firebase;await fb.deleteDoc(_csSlotRef(name));_csInvalidateList();}
+async function csDeleteCloudSlot(name){await _csDeleteDoc(_csSlotRef(name));_csInvalidateList();}
 
 // 保存/読込の「保存」のあとに呼ばれる（save-load.js）。端末内の保存は済んでいるので、失敗しても止めない
 async function csAfterLocalSave(entry){
@@ -370,7 +437,7 @@ async function csMigrateAll(){
           if(oldEntry){const old=_csOldName(s.name,oldEntry.updatedAt,taken);await csPushSlot({...oldEntry,name:old});res.kept++;}
           await csPushSlot(s);res.updated++;
         }
-      }catch(e){res.err.push(s.name+': '+_csErr(e));}
+      }catch(e){let sz='';try{sz='（大きさ '+_fmtSize(JSON.stringify(s.data).length*2)+'）';}catch(e2){}res.err.push(s.name+sz+': '+_csErr(e));}
     }
     if(auto){
       try{
@@ -519,7 +586,7 @@ async function _csCheckRemoteAutosave(onOpen){
   const ok=confirm('他の端末（'+(v.device||'不明')+'）で '+when+' に編集した作業中の内容がクラウドにあります。\n\nこの端末に読み込みますか？\n「OK」→ いまの画面の内容は、その内容で置き換わります\n「キャンセル」→ この端末の内容のまま続けます（次にこの端末で変更を送ると、クラウドの方が置き換わります）');
   if(!ok){_csAuto.declinedAt=ru;return;}
   try{
-    const data=await window._csDecryptObj(v.enc);
+    const data=await window._csDecryptObj(await _csResolveEnc(_csAutosaveRef(),v.enc));
     _applyData(data);
     if(typeof _restoreScenarios==='function')_restoreScenarios(data);
     await dbPut({name:AUTOSAVE_KEY,savedAt:v.savedAt||_fmtDate(new Date()),updatedAt:ru,data});
