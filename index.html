@@ -15,7 +15,7 @@
 <!-- Sentry エラー監視（DSN未設定時はローカルログのみ動作） -->
 <script src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js" crossorigin="anonymous"></script>
 <script src="js/error-monitor.js?v=2"></script>
-<link rel="stylesheet" href="css/style.css?v=76">
+<link rel="stylesheet" href="css/style.css?v=77">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -99,7 +99,7 @@ function checkPW(){
     <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">ファイルから復元</button>
     <button class="btn-h" id="btn-mansion-mgmt" onclick="openMansionMgmt()" title="マンションマスターデータの登録・編集" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">マンション管理</button>
     <button class="btn-h" onclick="openAboutModal()" title="バージョン情報・ライセンス・規約類" style="background:rgba(100,116,139,.25);border-color:rgba(148,163,184,.4)">ⓘ</button>
-    <span id="app-ver" title="いま動いている版（更新されたか確認用）" style="font-size:10px;color:#cbd5e1;align-self:center;white-space:nowrap">v650</span>
+    <span id="app-ver" title="いま動いている版（更新されたか確認用）" style="font-size:10px;color:#cbd5e1;align-self:center;white-space:nowrap">v651</span>
 
   </div>
 </header>
@@ -2159,6 +2159,30 @@ if('serviceWorker' in navigator){
     setInterval(_swUpdate, 1800000);
   });
 }
+</script>
+
+<script>
+// ★ v651: PC（タッチパッドの二本指など）の横スワイプで Edge/Chrome が「戻る・進む」をして
+//   アプリが読み込み直されるのを止める。横に動かせる場所（CF表など）がまだ動けるときはそのまま通し、
+//   端まで来ていて横に動けないときだけブラウザに動きを渡さない。
+(function(){
+  function canScrollX(el,dx){
+    for(let n=el;n&&n!==document.documentElement;n=n.parentElement){
+      const cs=getComputedStyle(n);
+      const ox=cs.overflowX;
+      if((ox==='auto'||ox==='scroll')&&n.scrollWidth>n.clientWidth+1){
+        if(dx<0&&n.scrollLeft>0)return true;
+        if(dx>0&&n.scrollLeft+n.clientWidth<n.scrollWidth-1)return true;
+      }
+    }
+    return false;
+  }
+  window.addEventListener('wheel',function(e){
+    if(e.ctrlKey)return; // ピンチ拡大はそのまま
+    if(Math.abs(e.deltaX)<=Math.abs(e.deltaY))return; // 縦の動きは関係ない
+    if(!canScrollX(e.target,e.deltaX))e.preventDefault();
+  },{passive:false,capture:true});
+})();
 </script>
 
 <!-- 運用シミュレーションパネル（案C サイドパネル） -->
