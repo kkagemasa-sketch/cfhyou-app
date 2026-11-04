@@ -257,7 +257,9 @@ function _csInvalidateList(){_cs.listCache=null;}
 async function _csPushEntry(ref,entry,extra){
   const enc=await window._csEncryptObj(entry.data);
   const fb=window._firebase;
-  await fb.setDoc(ref,Object.assign({name:entry.name,savedAt:entry.savedAt||'',updatedAt:entry.updatedAt||Date.now(),enc,bytes:enc.length,pushedAt:Date.now()},extra||{}));
+  // ★ enc は {iv, ct} の形。enc.length は undefined になり Firestore が「Unsupported field value: undefined」で拒否していた(v644)
+  const bytes=((enc&&enc.ct)||'').length+((enc&&enc.iv)||'').length;
+  await fb.setDoc(ref,Object.assign({name:entry.name,savedAt:entry.savedAt||'',updatedAt:entry.updatedAt||Date.now(),enc,bytes,pushedAt:Date.now()},extra||{}));
   _cs.lastSyncAt=Date.now();_csInvalidateList();
 }
 async function csPushSlot(entry){ if(!_csReady())return false; await _csPushEntry(_csSlotRef(entry.name),entry); return true; }
