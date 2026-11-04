@@ -506,6 +506,40 @@ function rowLabelEdit(td){
   else{_cfRowLabels[key]=txt;}
   scheduleAutoSave();
 }
+// ===== CF表 収入・支出の行の並び替え =====
+// rows=初期の並びで集めた {key,...} の配列。保存した並び _cfRowOrder[section] の順に並べ直す。
+// 保存にない行（後から増えた行）は、初期の並びで直前にある「並べ終わった行」のすぐ後ろに入れる。
+// 保存にあるが今はない行は無視する（消さない）。画面(cf-table.js)とExcel(export.js)の両方で使う
+function cfOrderRows(section,rows){
+  const S=(typeof _cfRowOrder==='object'&&_cfRowOrder&&Array.isArray(_cfRowOrder[section]))?_cfRowOrder[section]:[];
+  if(!S.length)return rows.slice();
+  const used=new Set();const out=[];
+  S.forEach(k=>{rows.forEach(r=>{if(r.key===k&&!used.has(r)){used.add(r);out.push(r);}});});
+  rows.forEach((r,idx)=>{
+    if(used.has(r))return;
+    let pos=-1;
+    for(let j=idx-1;j>=0;j--){const p=out.indexOf(rows[j]);if(p>=0){pos=p;break;}}
+    out.splice(pos+1,0,r);used.add(r);
+  });
+  return out;
+}
+// ▲▼ボタン：いま画面に出ている並び（window._cfRowKeysShown は cf-table.js が設定）で隣と入れ替えて保存し、作り直す
+function moveCfRow(section,key,dir){
+  const shown=(window._cfRowKeysShown||{})[section]||[];
+  const keys=shown.slice();const i=keys.indexOf(key);const j=i+dir;
+  if(i<0||j<0||j>=keys.length)return;
+  keys[i]=keys[j];keys[j]=key;
+  if(typeof _cfRowOrder!=='object'||!_cfRowOrder)_cfRowOrder={inc:[],exp:[]};
+  _cfRowOrder[section]=keys;
+  render();
+  scheduleAutoSave();
+}
+function resetCfRowOrder(section){
+  if(typeof _cfRowOrder!=='object'||!_cfRowOrder)_cfRowOrder={inc:[],exp:[]};
+  _cfRowOrder[section]=[];
+  render();
+  scheduleAutoSave();
+}
 
 // CF表の詳細ボックス（自己資金内訳・住宅ローン条件）の折りたたみトグル
 // 注釈・補足メモ（★各CF表＝シナリオごとに独立。保存データ d.cfSummaryNote に含める）

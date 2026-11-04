@@ -355,7 +355,20 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`</thead><tbody>`;
 
   // カスタム行レンダラー
-  const _customRow=(row,disp,cls)=>{
+  // ★ 収入・支出の行は一度 {key,html} で集め、保存した並び（_cfRowOrder、cfOrderRows）で並べ直してから出す。
+  //   1列目に ▲▼（moveCfRow）を付ける。印刷(print.js)は button を消すのでPDFには出ない
+  const _rowsInc=[],_rowsExp=[];
+  const _emit=(section,key,html)=>{if(html)(section==='inc'?_rowsInc:_rowsExp).push({key:String(key),html});return '';};
+  const _mvBtns=(section,key,first,last)=>{const k=String(key).replace(/'/g,"\\'");// ▲▼はCSSの ::before で描く（textContent を空にして、行名を文字で読む処理＝画面↔Excel照合や複製に影響しない）
+    return `<span class="row-mv"><button type="button" class="rmv up" title="上へ" aria-label="上へ" onclick="moveCfRow('${section}','${k}',-1)"${first?' disabled':''}></button><button type="button" class="rmv dn" title="下へ" aria-label="下へ" onclick="moveCfRow('${section}','${k}',1)"${last?' disabled':''}></button></span>`;};
+  const _outRows=(section,rows)=>{
+    const ord=cfOrderRows(section,rows);
+    window._cfRowKeysShown=window._cfRowKeysShown||{};window._cfRowKeysShown[section]=ord.map(r=>r.key);
+    return ord.map((r,i)=>r.html.replace(/^(<tr class="[^"]*"><td>)/,`$1${_mvBtns(section,r.key,i===0,i===ord.length-1)}`)).join('');
+  };
+  const _resetBtn=(section)=>((_cfRowOrder&&_cfRowOrder[section]&&_cfRowOrder[section].length)?` <button onclick="resetCfRowOrder('${section}')" class="btn-add-row" title="並び替えを取り消して元の並びに戻す">並びを元に戻す</button>`:'');
+  const _customRow=(row,disp,cls)=>_emit(cls==='rinc'?'inc':'exp',row.id,_customRow0(row,disp,cls));
+  const _customRow0=(row,disp,cls)=>{
     let tot=0;
     let r=`<tr class="${cls}"><td><button onclick="deleteCustomRow('${row.id}')" class="btn-del-row" title="行を削除">×</button></td><td contenteditable="true" data-custom-id="${row.id}" onblur="customLabelEdit(this)" class="custom-lbl">${row.label}</td>`;
     for(let i=0;i<disp;i++){
@@ -371,7 +384,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=`<tr class="rcat inc-cat"><td></td><td>収　　入</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   const _hasExplain=(typeof isExplainEnabled==='function')?isExplainEnabled:(()=>false);
   const _explainIcon=(typeof explainIconHtml==='function')?explainIconHtml:(()=>'');
-  const iRow=(lbl,arr,rowKey,mlFlags,forceShow)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(!forceShow&&tot===0&&vals.every(v=>v===0||v===undefined))return'';const _exp=_hasExplain(rowKey);let r=`<tr class="rinc"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;const _hasValue=dv>0;const _showIcon=_exp&&_hasValue;const _icon=_showIcon?_explainIcon(rowKey,i,'cf'):'';const _isML=mlFlags&&mlFlags[i];const _mlAttr=_isML?` title="育休期間（給付金・非課税）" data-matleave="1"`:'';const _mlIcon=_isML?'<span style="color:#d97706;font-size:10px;margin-right:2px" aria-hidden="true"></span>':'';const _mlCls=_isML?' cell-matleave':'';r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${_showIcon?' has-explain':''}${_mlCls}${getColCls(i)}"${_mlAttr} contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_mlIcon}${dv>0?ri(dv).toLocaleString():'-'}${_icon}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
+  const iRow=(lbl,arr,rowKey,mlFlags,forceShow)=>_emit('inc',rowKey,_iRow0(lbl,arr,rowKey,mlFlags,forceShow));
+  const _iRow0=(lbl,arr,rowKey,mlFlags,forceShow)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(!forceShow&&tot===0&&vals.every(v=>v===0||v===undefined))return'';const _exp=_hasExplain(rowKey);let r=`<tr class="rinc"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;const _hasValue=dv>0;const _showIcon=_exp&&_hasValue;const _icon=_showIcon?_explainIcon(rowKey,i,'cf'):'';const _isML=mlFlags&&mlFlags[i];const _mlAttr=_isML?` title="育休期間（給付金・非課税）" data-matleave="1"`:'';const _mlIcon=_isML?'<span style="color:#d97706;font-size:10px;margin-right:2px" aria-hidden="true"></span>':'';const _mlCls=_isML?' cell-matleave':'';r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${_showIcon?' has-explain':''}${_mlCls}${getColCls(i)}"${_mlAttr} contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${_mlIcon}${dv>0?ri(dv).toLocaleString():'-'}${_icon}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
   // 収入行：年収 → 退職金 → 年金系 → 金融商品解約系 → 奨学金 → 児童手当 → 控除
   const _hLbl=_isSingle_t?'手取年収':'ご主人様手取年収';
   h+=iRow(_hLbl,R.hInc,'hInc',R.mlH,true);
@@ -407,12 +421,14 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   }
   // カスタム収入行
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{h+=_customRow(r,disp,'rinc');});
-  h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('inc')" class="btn-add-row">＋ 収入行を追加</button></td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
+  h+=_outRows('inc',_rowsInc);   // ★ 集めた収入行を保存した並びで出す
+  h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('inc')" class="btn-add-row">＋ 収入行を追加</button>${_resetBtn('inc')}</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   h+=`<tr class="rinct"><td>収入合計</td><td></td>`;for(let i=0;i<disp;i++)h+=`<td>${ri(R.incT[i]).toLocaleString()}</td>`;h+=`<td>${R.incT.slice(0,disp).reduce((a,b)=>a+ri(b),0).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">収入合計</span></td></tr>`;
 
   // ─ 支出 ─
   h+=`<tr class="rcat exp-cat"><td></td><td>支　　出</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
-  const eRow=(lbl,arr,rowKey)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(tot===0&&vals.every(v=>v===0||v===undefined))return'';let r=`<tr class="rexp"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
+  const eRow=(lbl,arr,rowKey)=>_emit('exp',rowKey,_eRow0(lbl,arr,rowKey));
+  const _eRow0=(lbl,arr,rowKey)=>{const dl=_rl(rowKey,lbl);let tot=0;const vals=arr.slice(0,disp);for(let i=0;i<vals.length;i++){const ov=cfOverrides[rowKey]?.[i];tot+=ri(ov!==undefined?ov:vals[i]);}if(tot===0&&vals.every(v=>v===0||v===undefined))return'';let r=`<tr class="rexp"><td></td><td contenteditable="true" data-rowlbl="${rowKey}" data-default="${lbl}" onblur="rowLabelEdit(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dl}</td>`;for(let i=0;i<disp;i++){const v=arr[i];const ov=cfOverrides[rowKey]?.[i];const dv=ov!==undefined?ov:v;const isOvr=ov!==undefined;r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${dv>0?ri(dv).toLocaleString():'-'}</td>`}return r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`};
 
   // 教育費専用行レンダラー（年齢に応じて色分け・univコース受け取り）
   const eduRow=(lbl,arr,childAge0,univCourse,rowKey,childIdx)=>{
@@ -479,7 +495,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   h+=eRow('固定資産税',R.ptx,'ptx')+eRow('家具家電買替',R.furn,'furn')+eRow(isM?'専有部分修繕費':'修繕費',R.senyu,'senyu');
   // 退職後の税・社保（退職翌年の住民税・国民年金保険料・国保概算）— 値がある年のみ表示
   if(R.retireTax&&R.retireTax.slice(0,disp).some(v=>v>0))h+=eRow('退職後の税・社保',R.retireTax,'retireTax');
-  children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`,ci);});
+  children.forEach((c,ci)=>{const uc=_v(`cu-${ci+1}`)||'plit_h';h+=_emit('exp',`edu${ci}`,eduRow(`${cLbls[ci]}教育費`,R.edu[ci],c.age,uc,`edu${ci}`,ci));});
   // 車両費（現有車・将来購入車）: 所有者(ご主人様/奥様/共用)を設定した車は所有者ごとの行、
   // 未設定の車は従来どおり「車両費・車検」行に表示 + hover内訳ツールチップ
   (()=>{
@@ -516,7 +532,7 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
         const titleAttr=title?` title="${title.replace(/"/g,'&quot;')}"`:'';
         r+=`<td class="${dv===0?'vz':''}${isOvr?' cell-ovr':''}${getColCls(i)}" contenteditable="true" data-row="${rowKey}" data-col="${i}" onblur="cellEdit(this)" onfocus="selectAll(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"${titleAttr}>${dv>0?ri(dv).toLocaleString():'-'}</td>`;
       }
-      h+=r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`;
+      _emit('exp',rowKey,r+`<td>${tot.toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">${dl}</span></td></tr>`);
     });
   })();
   h+=eRow('駐車場代',R.prk,'prk');
@@ -538,7 +554,8 @@ function renderTable(R,total,disp,cLbls,cYear,loanAmt,isM,hAge,retAge,children,d
   }
   // カスタム支出行
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{h+=_customRow(r,disp,'rexp');});
-  h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('exp')" class="btn-add-row">＋ 支出行を追加</button></td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
+  h+=_outRows('exp',_rowsExp);   // ★ 集めた支出行を保存した並びで出す
+  h+=`<tr class="radd"><td colspan="2"><button onclick="addCustomRow('exp')" class="btn-add-row">＋ 支出行を追加</button>${_resetBtn('exp')}</td>`;for(let i=0;i<disp;i++)h+=`<td></td>`;h+=`<td></td></tr>`;
   h+=`<tr class="rexpt"><td>支出合計</td><td></td>`;for(let i=0;i<disp;i++)h+=`<td>${ri(R.expT[i]).toLocaleString()}</td>`;h+=`<td>${R.expT.slice(0,disp).reduce((a,b)=>a+ri(b),0).toLocaleString()}<br><span style="font-size:9px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif;font-weight:400">支出合計</span></td></tr>`;
 
   // ─ 収支・残高 ─

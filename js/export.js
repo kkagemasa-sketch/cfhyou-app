@@ -1710,111 +1710,115 @@ async function exportExcel(){
 
   // ── 収入 ──
   push(['収　入','',...Array(disp).fill(''),''],'incCat');
-  const addI=(lbl,arr)=>{
+  const _incX=[];   // ★ 行の並び替え: {key,row,type} で集めて cfOrderRows で並べ直す
+  const addI=(lbl,arr,key)=>{
     if(!arr)return;const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
     if(tot===0)return;
-    push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'inc');
+    _incX.push({key:String(key||lbl),row:['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],type:'inc'});
   };
-  // 収入行順序：CF表(cf-table.js)と同じ順序で出力
-  addI(_rl('hInc',_isSingle_e?'手取年収':'ご主人様手取年収'),R.hInc);
-  if(!_isSingle_e)addI(_rl('wInc','奥様手取年収'),R.wInc);
-  addI(_rl('dcTaxSavingH',_isSingle_e?'iDeCo/DC節税':'iDeCo/DC節税(ご主人様)'),R.dcTaxSavingH);
-  if(!_isSingle_e)addI(_rl('dcTaxSavingW','iDeCo/DC節税(奥様)'),R.dcTaxSavingW);
-  addI(_rl('otherInc','副業・その他収入'),R.otherInc);
-  addI(_rl('rPay',_isSingle_e?'退職金':'退職金（ご主人様）'),R.rPay);
-  if(!_isSingle_e)addI(_rl('wRPay','退職金（奥様）'),R.wRPay);
+  // 収入行順序：CF表(cf-table.js)と同じ順序で集め、保存した並び（cfOrderRows）で並べ直してから出力
+  addI(_rl('hInc',_isSingle_e?'手取年収':'ご主人様手取年収'),R.hInc,'hInc');
+  if(!_isSingle_e)addI(_rl('wInc','奥様手取年収'),R.wInc,'wInc');
+  addI(_rl('dcTaxSavingH',_isSingle_e?'iDeCo/DC節税':'iDeCo/DC節税(ご主人様)'),R.dcTaxSavingH,'dcTaxSavingH');
+  if(!_isSingle_e)addI(_rl('dcTaxSavingW','iDeCo/DC節税(奥様)'),R.dcTaxSavingW,'dcTaxSavingW');
+  addI(_rl('otherInc','副業・その他収入'),R.otherInc,'otherInc');
+  addI(_rl('rPay',_isSingle_e?'退職金':'退職金（ご主人様）'),R.rPay,'rPay');
+  if(!_isSingle_e)addI(_rl('wRPay','退職金（奥様）'),R.wRPay,'wRPay');
   // ★ B4修正: アプリ画面と同じ「ご主人様年金受給額 / 奥様年金受給額」の2行構造に統一
   //   旧コードは 本人年金/配偶者年金/遺族年金 の3行で出していたため、ご主人逝去後の年で
   //   行単位で見るとアプリと食い違って見えていた。合計値は元から一致。
   if(_isSingle_e){
-    addI(_rl('pS','老齢年金'),R.pS);
+    addI(_rl('pS','老齢年金'),R.pS,'pS');
   } else {
-    addI(_rl('pTotalH','ご主人様年金受給額'), R.pTotalH);
-    addI(_rl('pTotalW','奥様年金受給額'), R.pTotalW);
+    addI(_rl('pTotalH','ご主人様年金受給額'), R.pTotalH,'pTotalH');
+    addI(_rl('pTotalW','奥様年金受給額'), R.pTotalW,'pTotalW');
   }
-  addI(_rl('dcReceiptH',_isSingle_e?'DC受取':'DC受取(ご主人様)'),R.dcReceiptH);
-  if(!_isSingle_e)addI(_rl('dcReceiptW','DC受取(奥様)'),R.dcReceiptW);
-  addI(_rl('idecoReceiptH',_isSingle_e?'iDeCo受取':'iDeCo受取(ご主人様)'),R.idecoReceiptH);
-  if(!_isSingle_e)addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW);
-  addI(_rl('insMat','保険満期金'),R.insMat);
+  addI(_rl('dcReceiptH',_isSingle_e?'DC受取':'DC受取(ご主人様)'),R.dcReceiptH,'dcReceiptH');
+  if(!_isSingle_e)addI(_rl('dcReceiptW','DC受取(奥様)'),R.dcReceiptW,'dcReceiptW');
+  addI(_rl('idecoReceiptH',_isSingle_e?'iDeCo受取':'iDeCo受取(ご主人様)'),R.idecoReceiptH,'idecoReceiptH');
+  if(!_isSingle_e)addI(_rl('idecoReceiptW','iDeCo受取(奥様)'),R.idecoReceiptW,'idecoReceiptW');
+  addI(_rl('insMat','保険満期金'),R.insMat,'insMat');
   // ★ B5修正: 個別行も _rl で行ラベル編集を反映
-  if(R.secDrawRows)R.secDrawRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals);});
-  if(R.bondIntRows)R.bondIntRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals);});
-  if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals);});
+  if(R.secDrawRows)R.secDrawRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});
+  if(R.bondIntRows)R.bondIntRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});
+  if(R.secRedeemRows)R.secRedeemRows.forEach(row=>{addI(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});
   // 財形解約（個別行：実額がある人のみ）
-  if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addI(_rl(row.key||row.lbl,row.lbl),row.vals);});}
-  addI(_rl('scholarship','奨学金'),R.scholarship);addI(_rl('teate','児童手当'),R.teate);addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl);
+  if(R.zaikeiRedeemRows&&R.zaikeiRedeemRows.length>0){R.zaikeiRedeemRows.forEach(row=>{if(row.vals.some(v=>v>0))addI(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});}
+  addI(_rl('scholarship','奨学金'),R.scholarship,'scholarship');addI(_rl('teate','児童手当'),R.teate,'teate');addI(_rl('lCtrl','住宅ローン控除'),R.lCtrl,'lCtrl');
   // 自動資産取崩し（預貯金マイナス補填）
-  if(R.autoLiq&&R.autoLiq.some(v=>v>0)) addI('自動資産取崩し',R.autoLiq);
+  if(R.autoLiq&&R.autoLiq.some(v=>v>0)) addI('自動資産取崩し',R.autoLiq,'autoLiq');
   // ★ A2修正: 買い替えイベントの収入行（旧住宅売却額）— アプリ画面と同じ
-  if(R.swapSell&&R.swapSell.some(v=>v>0)) addI('旧住宅売却額',R.swapSell);
-  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals);});
+  if(R.swapSell&&R.swapSell.some(v=>v>0)) addI('旧住宅売却額',R.swapSell,'swapSell');
+  cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals,r.id);});
+  cfOrderRows('inc',_incX).forEach(x=>push(x.row,x.type));   // ★ 保存した並びで出力
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
   // ── 支出 ──
   push(['支　出','',...Array(disp).fill(''),''],'expCat');
-  const addE=(lbl,arr)=>{
+  const _expX=[];   // ★ 行の並び替え: {key,row,type} で集めて cfOrderRows で並べ直す
+  const addE=(lbl,arr,key)=>{
     if(!arr)return;const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);
     if(tot===0)return;
-    push(['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],'exp');
+    _expX.push({key:String(key||lbl),row:['',lbl,...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],type:'exp'});
   };
-  // 支出行順序：CF表(cf-table.js)と同じ順序で出力
-  addE(_rl('lc','生活費'),R.lc);
-  addE(_rl('rent','家賃（引渡前）'),R.rent);
-  addE(_rl('moveInCost','引越・家具家電'),R.moveInCost);
-  if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(ご主人様)'),R.lRepH);addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW);}
-  else{addE(_rl('lRep','住宅ローン返済'),R.lRep);}
+  // 支出行順序：CF表(cf-table.js)と同じ順序で集め、保存した並び（cfOrderRows）で並べ直してから出力
+  addE(_rl('lc','生活費'),R.lc,'lc');
+  addE(_rl('rent','家賃（引渡前）'),R.rent,'rent');
+  addE(_rl('moveInCost','引越・家具家電'),R.moveInCost,'moveInCost');
+  if(pairLoanMode&&!_isSingle_e){addE(_rl('lRepH','ローン返済(ご主人様)'),R.lRepH,'lRepH');addE(_rl('lRepW','ローン返済(奥様)'),R.lRepW,'lRepW');}
+  else{addE(_rl('lRep','住宅ローン返済'),R.lRep,'lRep');}
   // 繰上返済（画面と同一行構成）
   if(pairLoanMode&&!_isSingle_e){
-    if(R.prepayExpH&&R.prepayExpH.some(v=>v>0)) addE(_rl('prepayExpH','繰上返済(ご主人様)'),R.prepayExpH);
-    if(R.prepayExpW&&R.prepayExpW.some(v=>v>0)) addE(_rl('prepayExpW','繰上返済(奥様)'),R.prepayExpW);
+    if(R.prepayExpH&&R.prepayExpH.some(v=>v>0)) addE(_rl('prepayExpH','繰上返済(ご主人様)'),R.prepayExpH,'prepayExpH');
+    if(R.prepayExpW&&R.prepayExpW.some(v=>v>0)) addE(_rl('prepayExpW','繰上返済(奥様)'),R.prepayExpW,'prepayExpW');
   } else if(R.prepayExp&&R.prepayExp.some(v=>v>0)){
-    addE(_rl('prepayExp','繰上返済'),R.prepayExp);
+    addE(_rl('prepayExp','繰上返済'),R.prepayExp,'prepayExp');
   }
-  if(R.housePurchase&&R.housePurchase.some(v=>v>0)) addE('住宅購入（一括）',R.housePurchase);
+  if(R.housePurchase&&R.housePurchase.some(v=>v>0)) addE('住宅購入（一括）',R.housePurchase,'housePurchase');
   // 定期借地権付き物件：地代・解体準備金
-  if(R.chidai&&R.chidai.some(v=>v>0))addE(_rl('chidai','地代'),R.chidai);
-  if(R.kaitai&&R.kaitai.some(v=>v>0))addE(_rl('kaitai','解体準備金'),R.kaitai);
+  if(R.chidai&&R.chidai.some(v=>v>0))addE(_rl('chidai','地代'),R.chidai,'chidai');
+  if(R.kaitai&&R.kaitai.some(v=>v>0))addE(_rl('kaitai','解体準備金'),R.kaitai,'kaitai');
   // ★ A2修正: 買い替えイベントの支出行（旧ローン一括返済・譲渡所得税・新居買付）
-  if(R.swapPayoff&&R.swapPayoff.some(v=>v>0)) addE('旧ローン一括返済',R.swapPayoff);
-  if(R.swapTax&&R.swapTax.some(v=>v>0)) addE('譲渡所得税',R.swapTax);
-  if(R.swapBuy&&R.swapBuy.some(v=>v>0)) addE('新居買付費用',R.swapBuy);
-  if(isM)addE(_rl('rep','修繕積立金'),R.rep);
-  addE(_rl('ptx','固定資産税'),R.ptx);addE(_rl('furn','家具家電買替'),R.furn);
-  addE(_rl('senyu',isM?'専有部分修繕費':'修繕費'),R.senyu);
-  if(R.retireTax&&R.retireTax.some(v=>v>0))addE(_rl('retireTax','退職後の税・社保'),R.retireTax);
+  if(R.swapPayoff&&R.swapPayoff.some(v=>v>0)) addE('旧ローン一括返済',R.swapPayoff,'swapPayoff');
+  if(R.swapTax&&R.swapTax.some(v=>v>0)) addE('譲渡所得税',R.swapTax,'swapTax');
+  if(R.swapBuy&&R.swapBuy.some(v=>v>0)) addE('新居買付費用',R.swapBuy,'swapBuy');
+  if(isM)addE(_rl('rep','修繕積立金'),R.rep,'rep');
+  addE(_rl('ptx','固定資産税'),R.ptx,'ptx');addE(_rl('furn','家具家電買替'),R.furn,'furn');
+  addE(_rl('senyu',isM?'専有部分修繕費':'修繕費'),R.senyu,'senyu');
+  if(R.retireTax&&R.retireTax.some(v=>v>0))addE(_rl('retireTax','退職後の税・社保'),R.retireTax,'retireTax');
   children.forEach((c,ci)=>{
     const arr=R.edu[ci];if(!arr)return;
     const tot=arr.slice(0,disp).reduce((a,b)=>a+b,0);if(tot===0)return;
     const ages=arr.slice(0,disp).map((_,i)=>c.age+i);
-    push(['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],{type:'edu',ages,ci:ci+1});
+    _expX.push({key:'edu'+ci,row:['',_rl('edu'+ci,`${cLbls[ci]}教育費`),...arr.slice(0,disp).map(v=>ri(v)),ri(tot)],type:{type:'edu',ages,ci:ci+1}});
   });
   // 車両費: 所有者(ご主人様/奥様/共用)設定車は所有者別の行、未設定は従来の1行（画面と同一構成）
   {
     const _anyOwnerX=['carTotalH','carTotalW','carTotalS'].some(k=>R[k]&&R[k].some(v=>v>0));
-    addE(_rl('carTotal','車両費・車検'), _anyOwnerX?R.carTotalNone:R.carTotal);
-    if(R.carTotalH&&R.carTotalH.some(v=>v>0)) addE(_rl('carTotalH','車両費・車検（ご主人様）'),R.carTotalH);
-    if(R.carTotalW&&R.carTotalW.some(v=>v>0)) addE(_rl('carTotalW','車両費・車検（奥様）'),R.carTotalW);
-    if(R.carTotalS&&R.carTotalS.some(v=>v>0)) addE(_rl('carTotalS','車両費・車検（共用）'),R.carTotalS);
+    addE(_rl('carTotal','車両費・車検'), _anyOwnerX?R.carTotalNone:R.carTotal,'carTotal');
+    if(R.carTotalH&&R.carTotalH.some(v=>v>0)) addE(_rl('carTotalH','車両費・車検（ご主人様）'),R.carTotalH,'carTotalH');
+    if(R.carTotalW&&R.carTotalW.some(v=>v>0)) addE(_rl('carTotalW','車両費・車検（奥様）'),R.carTotalW,'carTotalW');
+    if(R.carTotalS&&R.carTotalS.some(v=>v>0)) addE(_rl('carTotalS','車両費・車検（共用）'),R.carTotalS,'carTotalS');
   }
-  addE(_rl('prk','駐車場代'),R.prk);
+  addE(_rl('prk','駐車場代'),R.prk,'prk');
   // ★ B5修正: 個別行も _rl で行ラベル編集を反映
-  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest);}
-  addE(_rl('secBuy','一括投資額'),R.secBuy);
-  if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('保険料（積立）',R.insMonthly);}
-  if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('一時払い保険',R.insLumpExp);}
-  addE('結婚のお祝い',R.wedding);
-  addE(_isSingle_e?'DC拠出':'DC拠出(ご主人様)',R.dcMatchExpH);
-  if(!_isSingle_e)addE('DC拠出(奥様)',R.dcMatchExpW);
-  addE(_isSingle_e?'iDeCo拠出':'iDeCo拠出(ご主人様)',R.idecoExpH);
-  if(!_isSingle_e)addE('iDeCo拠出(奥様)',R.idecoExpW);
+  if(R.secInvestRows&&R.secInvestRows.length>0){R.secInvestRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});}else{addE(_rl('secInvest','積立投資額'),R.secInvest,'secInvest');}
+  addE(_rl('secBuy','一括投資額'),R.secBuy,'secBuy');
+  if(R.insMonthlyRows&&R.insMonthlyRows.length>0){R.insMonthlyRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});}else{addE('保険料（積立）',R.insMonthly,'insMonthly');}
+  if(R.insLumpExpRows&&R.insLumpExpRows.length>0){R.insLumpExpRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});}else{addE('一時払い保険',R.insLumpExp,'insLumpExp');}
+  addE('結婚のお祝い',R.wedding,'wedding');
+  addE(_isSingle_e?'DC拠出':'DC拠出(ご主人様)',R.dcMatchExpH,'dcMatchExpH');
+  if(!_isSingle_e)addE('DC拠出(奥様)',R.dcMatchExpW,'dcMatchExpW');
+  addE(_isSingle_e?'iDeCo拠出':'iDeCo拠出(ご主人様)',R.idecoExpH,'idecoExpH');
+  if(!_isSingle_e)addE('iDeCo拠出(奥様)',R.idecoExpW,'idecoExpW');
   // 財形積立（個別行：実額がある人のみ）
   // ★ B5修正: 個別行も _rl で行ラベル編集を反映
-  if(R.zaikeiRows&&R.zaikeiRows.length>0){R.zaikeiRows.forEach(row=>{if(row.vals.some(v=>v>0))addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}
-  if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals);});}else{addE('特別支出',R.ext);}
+  if(R.zaikeiRows&&R.zaikeiRows.length>0){R.zaikeiRows.forEach(row=>{if(row.vals.some(v=>v>0))addE(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});}
+  if(R.extRows&&R.extRows.length>0){R.extRows.forEach(row=>{addE(_rl(row.key||row.lbl,row.lbl),row.vals,row.key||row.lbl);});}else{addE('特別支出',R.ext,'ext');}
   // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
-  if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)) addE('譲渡益課税(自動取崩し)',R.autoLiqTax);
-  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals);});
+  if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)) addE('譲渡益課税(自動取崩し)',R.autoLiqTax,'autoLiqTax');
+  cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals,r.id);});
+  cfOrderRows('exp',_expX).forEach(x=>push(x.row,x.type));   // ★ 保存した並びで出力
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
   // ── 収支・残高 ──

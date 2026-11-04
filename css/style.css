@@ -573,6 +573,14 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
 .radd td{border:none!important;padding:2px!important}
 .btn-del-row{background:none;border:none;color:rgba(200,80,80,.5);font-size:12px;cursor:pointer;padding:0 4px;line-height:1}
 .btn-del-row:hover{color:#e55}
+/* 収入・支出の行の並び替え ▲▼（1列目。印刷では button が消されるので出ない） */
+.row-mv{display:inline-flex;flex-direction:column;vertical-align:middle;margin-right:2px}
+.row-mv .rmv{background:none;border:none;color:rgba(100,140,200,.45);font-size:8px;line-height:1;padding:0 3px;cursor:pointer;font-family:inherit}
+.row-mv .rmv.up::before{content:"▲"}
+.row-mv .rmv.dn::before{content:"▼"}
+.row-mv .rmv:hover{color:#2d7dd2}
+.row-mv .rmv:disabled{color:rgba(100,140,200,.12);cursor:default}
+tr:hover .row-mv .rmv:not(:disabled){color:rgba(100,140,200,.85)}
 .custom-lbl{cursor:text;min-width:60px}
 
 /* ============================================================

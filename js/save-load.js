@@ -235,6 +235,8 @@ function _collectDynamic(){
   d.lcBikou=typeof _lcBikou==='object'?{..._lcBikou}:{};
   // CF表行名カスタムラベル
   d.cfRowLabels=typeof _cfRowLabels==='object'?{..._cfRowLabels}:{};
+  // CF表 収入・支出の行の並び
+  d.cfRowOrder=(typeof _cfRowOrder==='object'&&_cfRowOrder)?{inc:(_cfRowOrder.inc||[]).slice(),exp:(_cfRowOrder.exp||[]).slice()}:{inc:[],exp:[]};
   // 下落シミュレーション
   d.marketShocks=typeof marketShocks!=='undefined'?JSON.parse(JSON.stringify(marketShocks)):[];
   d.secIndexMap=typeof secIndexMap==='object'?{...secIndexMap}:{};
@@ -1030,6 +1032,9 @@ function _applyData(d){
     const _dyn = d.dynamic || {};
     _lcBikou=(typeof _dyn.lcBikou==='object'&&_dyn.lcBikou)?_dyn.lcBikou:(d.lcBikou||{});
     _cfRowLabels=(typeof _dyn.cfRowLabels==='object'&&_dyn.cfRowLabels)?_dyn.cfRowLabels:(d.cfRowLabels||{});
+    // CF表 収入・支出の行の並び（記録のない古いファイルは初期の並び）
+    {const _ro=(typeof _dyn.cfRowOrder==='object'&&_dyn.cfRowOrder)?_dyn.cfRowOrder:(d.cfRowOrder||{});
+     _cfRowOrder={inc:Array.isArray(_ro.inc)?_ro.inc.slice():[],exp:Array.isArray(_ro.exp)?_ro.exp.slice():[]};}
     // 下落シミュレーション
     const _dynShocks = Array.isArray(_dyn.marketShocks) ? _dyn.marketShocks : (Array.isArray(d.marketShocks) ? d.marketShocks : []);
     marketShocks = _dynShocks;
@@ -1173,6 +1178,7 @@ function _resetSheetState(){
   _marketShockId=0;
   marketShockCompareOn=true;
   _cfRowLabels={};
+  _cfRowOrder={inc:[],exp:[]};
   // 万が一タブのキャッシュもクリア
   window._mgStore=null;
   window._mgMRStore=null;

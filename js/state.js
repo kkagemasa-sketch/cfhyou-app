@@ -3,6 +3,7 @@
 let finAssetVisible=true;
 let _lcBikou={}; // 生活費タブの備考データ
 let _cfRowLabels={}; // CF表行名のカスタムラベル {rowKey: 'カスタム名'}
+let _cfRowOrder={inc:[],exp:[]}; // CF表の収入・支出の行の並び（rowKeyの配列。空＝初期の並び）。お客様ごとに保存
 let _cfStartYear=null; // CF表の開始年（nullなら今日の年、ユーザーが変更可）
 // CF表の開始年を取得（未設定なら今日の年）
 function getCfStartYear(){

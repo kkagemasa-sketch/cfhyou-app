@@ -75,7 +75,7 @@ function _ppCleanCell(cell, i, nCols){
   const c=cell.cloneNode(true);
   c.removeAttribute('onclick'); c.removeAttribute('ondblclick'); c.removeAttribute('contenteditable'); c.removeAttribute('title');
   c.classList.remove('cf-cell-range','cf-row-highlight');
-  c.querySelectorAll('button,input,select,textarea,.explain-ic').forEach(e=>e.remove());
+  c.querySelectorAll('button,input,select,textarea,.explain-ic,.row-mv').forEach(e=>e.remove());   // .row-mv＝行の並び替え▲▼の入れ物
   if(i===2) c.innerHTML=c.innerHTML.replace('開始年を設定','');
   // 合計列は「数字<br>画面用の説明文字」の形があるので、改行以降を取り除いて数字だけにする
   if(i===nCols-1){ const br=c.querySelector('br'); if(br){ while(br.nextSibling) br.nextSibling.remove(); br.remove(); } }
