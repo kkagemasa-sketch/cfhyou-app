@@ -651,8 +651,28 @@ function openCloudSyncPanel(keepMsg){
   if(!keepMsg)setTimeout(()=>{const inp=document.getElementById('cs-pass-input');if(inp)inp.focus();},60);
 }
 
+// ホーム画面に追加したアプリ（iPhone/iPad）では URL に ?sync を付けられないので、
+// 右上の版番号を3秒以内に5回続けて押しても「☁ 同期」ボタンを出せるようにする（v646）。
+// 持ち主の Google アカウント以外はログインできないので、メンバーが誤って押しても何も起きない。
+function _csSetupVersionTap(){
+  const el=document.getElementById('app-ver');
+  if(!el)return;
+  let n=0,first=0;
+  el.style.cursor='pointer';
+  el.addEventListener('click',()=>{
+    const now=Date.now();
+    if(now-first>3000){n=0;first=now;}
+    n++;
+    if(n>=5){
+      n=0;
+      try{localStorage.setItem(CS_LS_ON,'1');}catch(e){}
+      _csUpdateButton();
+      alert('「☁ 同期」ボタンを出しました。右上の「保存 / 読込」の隣にあります。');
+    }
+  });
+}
 // 起動時: ボタンの表示だけ決める（ログイン状態は firebase-init からの通知で反映）
 (function(){
-  function init(){_csUpdateButton();}
+  function init(){_csUpdateButton();_csSetupVersionTap();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
