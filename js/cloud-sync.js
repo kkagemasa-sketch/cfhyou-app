@@ -100,9 +100,12 @@ async function csLogin(){
   provider.setCustomParameters({prompt:'select_account'});
   _cs.busy=true;_cs.lastError='';_csRerender();
   try{
-    // 画面の中で開いた場合（ホーム画面アプリ・ポップアップ禁止）はリダイレクト方式に切り替える
+    // iPhone/iPad のホーム画面アプリだけリダイレクト方式（ポップアップが戻ってこられない）。
+    // PC にインストールしたアプリ（Edge/Chrome）はポップアップが使えるので、ブラウザと同じ方式にする(v647)。
+    // ※ リダイレクト方式は最近のブラウザでは結果を受け取れないことが多いので、使う場面を最小にする
     const standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;
-    if(standalone){
+    const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+    if(standalone&&ios){
       await fb.signInWithRedirect(fb.auth,provider);
       return; // ページが切り替わる
     }
