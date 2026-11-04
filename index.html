@@ -99,7 +99,7 @@ function checkPW(){
     <button class="btn-h" onclick="importJSON()" title="JSONファイルからデータを復元" style="background:rgba(0,100,0,.3);border-color:rgba(0,180,0,.5)">ファイルから復元</button>
     <button class="btn-h" id="btn-mansion-mgmt" onclick="openMansionMgmt()" title="マンションマスターデータの登録・編集" style="background:rgba(30,58,95,.3);border-color:rgba(45,125,210,.5)">マンション管理</button>
     <button class="btn-h" onclick="openAboutModal()" title="バージョン情報・ライセンス・規約類" style="background:rgba(100,116,139,.25);border-color:rgba(148,163,184,.4)">ⓘ</button>
-    <span id="app-ver" title="いま動いている版（更新されたか確認用）" style="font-size:10px;color:#cbd5e1;align-self:center;white-space:nowrap">v649</span>
+    <span id="app-ver" title="いま動いている版（更新されたか確認用）" style="font-size:10px;color:#cbd5e1;align-self:center;white-space:nowrap">v650</span>
 
   </div>
 </header>
@@ -2052,16 +2052,22 @@ if('serviceWorker' in navigator){
   //   次にアプリを開いたときにこの仕組みが自動で最新化する → 更新ボタン連打が不要になる。
   let _userTouched=false;
   ['pointerdown','keydown'].forEach(ev=>window.addEventListener(ev,()=>{_userTouched=true;},{capture:true,passive:true}));
+  // ★ v650: 版が立て続けに出たとき、開くたび・更新するたびにお知らせが出続けるのをやめる
+  //   ・開いた直後の黙って更新は、連続3回まで続けて行う（以前は2回目でお知らせに切り替えていた）
+  //   ・お知らせは1回の起動につき最大1回。その後に来た版は黙っておき、次に開いたとき自動で最新になる
+  //   ・「後で」を押したら24時間はどの版でもお知らせを出さない（次に開いたとき自動更新される）
+  const _silentCount=()=>{ try{ return parseInt(sessionStorage.getItem('cf_silent_upd_n')||'0')||0; }catch(e){ return 0; } };
   const _canSilentUpdate=()=>{
     if(_userTouched)return false;
     if(performance.now()>20000)return false; // 開いてから20秒超は「使用中」とみなす
-    // 無限リロード保険: 直前にもサイレント更新していたら2回目はバナーに切り替える
-    try{ if(sessionStorage.getItem('cf_silent_upd')==='1')return false; }catch(e){}
+    // 無限リロード保険: 連続3回までは黙って更新、それ以上はお知らせに切り替える
+    if(_silentCount()>=3)return false;
     return true;
   };
+  let _bannerShownThisSession=false;
   function _autoApplyUpdate(waitingWorker){
     if(_swRefreshing||!waitingWorker)return;
-    try{ sessionStorage.setItem('cf_silent_upd','1'); setTimeout(()=>{try{sessionStorage.removeItem('cf_silent_upd');}catch(e){}},15000); }catch(e){}
+    try{ sessionStorage.setItem('cf_silent_upd_n',String(_silentCount()+1)); setTimeout(()=>{try{sessionStorage.removeItem('cf_silent_upd_n');}catch(e){}},30000); }catch(e){}
     try{ waitingWorker.postMessage({type:'SKIP_WAITING'}); }catch(e){}
     // controllerchange が来ない環境の保険
     setTimeout(()=>{ if(!_swRefreshing){ _swRefreshing=true; location.reload(); } }, 2000);
@@ -2073,10 +2079,14 @@ if('serviceWorker' in navigator){
   //     新しい版が公開されれば版名が変わるので、また1回だけ表示される）
   function _showUpdateBanner(waitingWorker){
     if(document.getElementById('cf-update-banner'))return; // 二重表示防止
+    if(_bannerShownThisSession)return; // ★ 1回の起動につき1回まで（次に開いたとき自動で最新になる）
+    try{ const until=parseInt(localStorage.getItem('cf_update_snooze_until')||'0')||0; if(Date.now()<until)return; }catch(e){} // ★「後で」から24時間は出さない
     fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).catch(()=>null).then(v=>{
       const ver=(v&&v.cache)||'';
       let dismissed=''; try{dismissed=localStorage.getItem('cf_update_dismissed')||'';}catch(e){}
       if(ver&&ver===dismissed)return; // この版は「後で」済み
+      if(_bannerShownThisSession||document.getElementById('cf-update-banner'))return;
+      _bannerShownThisSession=true;
       _buildUpdateBanner(waitingWorker, v, ver);
     });
   }
@@ -2119,8 +2129,8 @@ if('serviceWorker' in navigator){
       setTimeout(()=>{ if(!_swRefreshing){ _swRefreshing=true; location.reload(); } }, 2000);
     };
     document.getElementById('cf-update-later').onclick=()=>{
-      // この版はもう表示しない（新しい版が出たらまた1回だけ表示される）
-      try{ if(ver)localStorage.setItem('cf_update_dismissed',ver); }catch(e){}
+      // この版はもう表示しない。さらに24時間はどの版でも出さない（次に開いたとき自動で最新になる）
+      try{ if(ver)localStorage.setItem('cf_update_dismissed',ver); localStorage.setItem('cf_update_snooze_until',String(Date.now()+24*60*60*1000)); }catch(e){}
       bar.remove();
     };
   }
