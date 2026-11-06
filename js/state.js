@@ -19,6 +19,7 @@ let charts={};
 let timer=null;
 let rTab='cf';
 let cfOverrides={};// CF表手動上書き {rowKey: {colIndex: value}}
+let cfCellColors={cf:{},mg:{}};// セル・行の色 {cf:{'rowKey|col':{bg,fg}, 'rowKey|*':{bg,fg}}, mg:{...}}（cell-color.js）
 let cfCustomRows=[];// カスタム行 [{id:'cinc_1', type:'inc'|'exp', label:'...'}]
 let mgCustomRows=[];// 万が一カスタム行（通常CFとは独立）
 let _cfCustomId=0;  // カスタム行ID用カウンタ（単調増加）

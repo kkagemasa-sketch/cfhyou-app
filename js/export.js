@@ -258,8 +258,8 @@ async function exportExcelMG(opt){
   const wPenRecv_e=iv('pension-w-receive')||65;
 
   const wb=opt.wb||XLSX.utils.book_new();
-  const rows=[], types=[];
-  const push=(data,type)=>{rows.push(data);types.push(type);};
+  const rows=[], types=[], rowKeys=[]; // rowKeys: セル・行の色（cell-color.js）用の行キー
+  const push=(data,type,key)=>{rows.push(data);types.push(type);rowKeys.push(key||null);};
 
   // ── 前提条件情報（通常CFと同じ形式） ──
   const housePrice=fv('house-price')||0;
@@ -944,6 +944,7 @@ async function exportExcelMG(opt){
       _savColorChain[disp+2]=_savColorChain[disp+1];
     }
   }
+  const _ccMgLbl=(typeof ccMgLabelMap==='function')?ccMgLabelMap():{}; // セル・行の色: 行名→rowKey
   rows.forEach((row,r)=>{
     const rawTp=types[r];
     const tp=(rawTp&&typeof rawTp==='object')?rawTp.type:rawTp;
@@ -1107,6 +1108,13 @@ async function exportExcelMG(opt){
       }
 
       // blank/footer行・範囲外セルは塗りつぶしなし
+      // セル・行の色（cell-color.js）: 行名一致で万が一表の rowKey を引く。合計列は対象外
+      if(typeof ccExcelColor==='function'&&c>=1&&c<lastCol&&(tp==='inc'||tp==='exp'||tp==='edu')){
+        const _lblTxt=String(row[1]||'').replace(/\s+/g,' ').trim();
+        const _rkey=rowKeys[r]||_ccMgLbl[_lblTxt];
+        const _cc=_rkey?ccExcelColor('mg',_rkey,c===1?'*':(c-2)):null;
+        if(_cc){if(_cc.bg)cellFill={patternType:'solid',fgColor:{rgb:_cc.bg}};if(_cc.fg)fObj.color={rgb:_cc.fg};}
+      }
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       const finalAlign=cell._centerAlign?'center':hAlign;
       // ペアローン行（/）は1行表示にしたいのでwrap無効＋shrinkで縮小
@@ -1533,8 +1541,8 @@ async function exportExcel(){
 
   const wb=XLSX.utils.book_new();
   // rows配列: [data, rowType] のペアで管理
-  const rows=[], types=[];
-  const push=(data,type)=>{rows.push(data);types.push(type);};
+  const rows=[], types=[], rowKeys=[]; // rowKeys: セル・行の色（cell-color.js）用の行キー
+  const push=(data,type,key)=>{rows.push(data);types.push(type);rowKeys.push(key||null);};
 
   // ── 前提条件情報 ──
   const housePrice=fv('house-price')||0;
@@ -1750,7 +1758,7 @@ async function exportExcel(){
   // ★ A2修正: 買い替えイベントの収入行（旧住宅売却額）— アプリ画面と同じ
   if(R.swapSell&&R.swapSell.some(v=>v>0)) addI('旧住宅売却額',R.swapSell,'swapSell');
   cfCustomRows.filter(r=>r.type==='inc').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addI(r.label,vals,r.id);});
-  cfOrderRows('inc',_incX).forEach(x=>push(x.row,x.type));   // ★ 保存した並びで出力
+  cfOrderRows('inc',_incX).forEach(x=>push(x.row,x.type,x.key));   // ★ 保存した並びで出力
   push(['収入合計','',...R.incT.slice(0,disp).map(v=>ri(v)),ri(R.incT.slice(0,disp).reduce((a,b)=>a+b,0))],'incTotal');
 
   // ── 支出 ──
@@ -1818,7 +1826,7 @@ async function exportExcel(){
   // 譲渡益課税（自動取崩しに伴う 20.315% 課税）
   if(R.autoLiqTax&&R.autoLiqTax.some(v=>v>0)) addE('譲渡益課税(自動取崩し)',R.autoLiqTax,'autoLiqTax');
   cfCustomRows.filter(r=>r.type==='exp').forEach(r=>{const vals=Array.from({length:disp},(_,i)=>cfOverrides[r.id]?.[i]||0);addE(r.label,vals,r.id);});
-  cfOrderRows('exp',_expX).forEach(x=>push(x.row,x.type));   // ★ 保存した並びで出力
+  cfOrderRows('exp',_expX).forEach(x=>push(x.row,x.type,x.key));   // ★ 保存した並びで出力
   push(['支出合計','',...R.expT.slice(0,disp).map(v=>ri(v)),ri(R.expT.slice(0,disp).reduce((a,b)=>a+b,0))],'expTotal');
 
   // ── 収支・残高 ──
@@ -2274,6 +2282,11 @@ async function exportExcel(){
       }
 
       // blank/footer行・範囲外セルは塗りつぶしなし
+      // セル・行の色（cell-color.js）: 行キー（rowKeys）で引く。合計列は対象外
+      if(typeof ccExcelColor==='function'&&c>=1&&c<lastCol&&rowKeys[r]&&(tp==='inc'||tp==='exp'||tp==='edu')){
+        const _cc=ccExcelColor('cf',rowKeys[r],c===1?'*':(c-2));
+        if(_cc){if(_cc.bg)cellFill={patternType:'solid',fgColor:{rgb:_cc.bg}};if(_cc.fg)fObj.color={rgb:_cc.fg};}
+      }
       const finalFill=(noBorder||cell._noFill)?undefined:cellFill;
       // 情報欄は折り返さない（文字の幅に合わせて結合済み）。注釈・補足だけ改行を保つため wrapText
       const shrinkToFit=(tp==='info'&&c>=2&&!cell._noFill&&r!==_noteRowIdx_n);

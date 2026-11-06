@@ -332,6 +332,7 @@ function mgQA_calcAndRender(tab, immediate){
 
     // innerHTML 置換
     rb.innerHTML = html;
+    if(typeof applyCellColors==='function')applyCellColors(rb); // セル・行の色（cell-color.js）
 
     // thead の sticky top 値を動的計算
     if(typeof applyStickyTop === 'function') applyStickyTop(rb);

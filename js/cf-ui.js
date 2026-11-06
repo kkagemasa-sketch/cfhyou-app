@@ -219,6 +219,7 @@ function setRTab(t){
       if(html){
         const _rb=$('right-body');
         _rb.innerHTML=html;
+        if(typeof applyCellColors==='function')applyCellColors(_rb); // セル・行の色（cell-color.js）
         applyStickyTop(_rb);
         _applyFinAssetVisibility();
       }

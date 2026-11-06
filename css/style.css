@@ -548,7 +548,20 @@ td.col-retire{background:rgba(255,220,0,.16)!important}
 .vz{color:#bec8d4}
 
 /* 手動上書きセル */
-.cell-ovr{background:#fff9e0!important;outline:1.5px solid #f0c040!important;color:#7a5000!important;font-weight:700!important}
+/* 手動上書きセル: 画面では右上に小さな点だけ（黄色の背景・枠・太字は 2026-11-06 に廃止。印刷では print.js がクラスを外す） */
+.cell-ovr{position:relative}
+.cell-ovr::after{content:"";position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:#f59e0b;pointer-events:none}
+/* セル・行の色メニュー（cell-color.js） */
+.cc-menu{position:fixed;z-index:9000;background:#fff;border:1px solid #c8d2de;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);padding:8px 10px;font-size:11px;color:#1e3a5f;min-width:200px}
+.cc-menu .cc-ttl{font-weight:700;margin-bottom:4px}
+.cc-menu .cc-lbl{color:#64748b;margin:4px 0 2px}
+.cc-menu .cc-row{display:flex;gap:5px;flex-wrap:wrap}
+.cc-menu .cc-sw{width:22px;height:22px;border-radius:5px;border:1px solid #c8d2de;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.cc-menu .cc-sw:hover{outline:2px solid #2d7dd2}
+.cc-menu .cc-sw.on{outline:2px solid #1e3a5f}
+.cc-menu .cc-none{background:#fff;color:#64748b;font-size:9px}
+.cc-menu .cc-close{margin-top:6px;text-align:right}
+.cc-menu .cc-close button{font-size:10px;padding:2px 8px;border:1px solid #c8d2de;border-radius:4px;background:#f8fafc;cursor:pointer}
 /* 育休期間セル（非課税の給付金） */
 .cell-matleave{background:#fff3e0!important;color:#b45309!important}
 .cell-matleave:hover{background:#ffe0b2!important}
