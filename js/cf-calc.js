@@ -1679,7 +1679,17 @@ function render(){
       (_insMByP&&_insMByP[p]||document.querySelectorAll(`[id^="ins-m-${p}-"]`)).forEach(el=>{
         const parts=el.id.split('-');const iid=parts[parts.length-1];
         const redeemAge=iv(`ins-redeem-${p}-${iid}`)||0;
-        if(redeemAge<=0||pAge!==redeemAge)return;
+        if(redeemAge<=0)return;
+        // 受取方法「年金」: 受取歳から年数分、毎年「年額」を「保険名（年金）」の行で計上（2026-11-06）
+        if((document.getElementById(`ins-mode-${p}-${iid}`)||{}).value==='annuity'){
+          const annAmt=fv(`ins-ann-amt-${p}-${iid}`)||0, annYrs=iv(`ins-ann-yrs-${p}-${iid}`)||0;
+          if(annAmt<=0||annYrs<=0||pAge<redeemAge||pAge>=redeemAge+annYrs)return;
+          const customLblA=document.getElementById(`ins-label-${p}-${iid}`)?.value?.trim()||'';
+          const lblA=(customLblA||`積立保険(${p==='h'?'ご主人様':'奥様'})`)+'（年金）';
+          secRedeemMap[`insann-${p}-${iid}`]={lbl:lblA,val:annAmt};secRedeemTotal+=annAmt;
+          return;
+        }
+        if(pAge!==redeemAge)return;
         const monthly=fv(`ins-m-${p}-${iid}`)||0;
         const matAge=iv(`ins-age-${p}-${iid}`)||0;
         const matAmt=fv(`ins-mat-${p}-${iid}`)||0;

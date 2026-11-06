@@ -177,7 +177,7 @@ function _collectDynamic(){
   ['h','w'].forEach(p=>{
     document.querySelectorAll(`#ins-savings-cont-${p}>[id^="ins-${p}-"]`).forEach(el=>{
       const id=el.id.split('-').pop();
-      d.insSavings.push({person:p,label:$(`ins-label-${p}-${id}`)?.value||'',enrollAge:$(`ins-enroll-${p}-${id}`)?.value||'',monthly:$(`ins-m-${p}-${id}`)?.value||'',matAge:$(`ins-age-${p}-${id}`)?.value||'',matAmt:$(`ins-mat-${p}-${id}`)?.value||'',redeemAge:$(`ins-redeem-${p}-${id}`)?.value||'',redeemAmt:$(`ins-redeem-amt-${p}-${id}`)?.value||''});
+      d.insSavings.push({person:p,label:$(`ins-label-${p}-${id}`)?.value||'',enrollAge:$(`ins-enroll-${p}-${id}`)?.value||'',monthly:$(`ins-m-${p}-${id}`)?.value||'',matAge:$(`ins-age-${p}-${id}`)?.value||'',matAmt:$(`ins-mat-${p}-${id}`)?.value||'',redeemAge:$(`ins-redeem-${p}-${id}`)?.value||'',redeemAmt:$(`ins-redeem-amt-${p}-${id}`)?.value||'',mode:$(`ins-mode-${p}-${id}`)?.value||'lump',annAmt:$(`ins-ann-amt-${p}-${id}`)?.value||'',annYrs:$(`ins-ann-yrs-${p}-${id}`)?.value||''});
     });
   });
   d.insLumps=[];
@@ -502,6 +502,10 @@ function _restoreDynamic(d){
     if($(`ins-mat-${p}-${id}`))$(`ins-mat-${p}-${id}`).value=s.matAmt;
     if($(`ins-redeem-${p}-${id}`))$(`ins-redeem-${p}-${id}`).value=s.redeemAge;
     if($(`ins-redeem-amt-${p}-${id}`))$(`ins-redeem-amt-${p}-${id}`).value=s.redeemAmt||'';
+    // 受取方法（年金）: 旧データは項目が無いので一時金のまま
+    if($(`ins-ann-amt-${p}-${id}`))$(`ins-ann-amt-${p}-${id}`).value=s.annAmt||'';
+    if($(`ins-ann-yrs-${p}-${id}`))$(`ins-ann-yrs-${p}-${id}`).value=s.annYrs||'';
+    if(typeof setInsMode==='function')setInsMode(p,id,s.mode==='annuity'?'annuity':'lump');
   });
   // 有価証券
   ['h','w'].forEach(p=>{if($(`securities-cont-${p}`))$(`securities-cont-${p}`).innerHTML='';});

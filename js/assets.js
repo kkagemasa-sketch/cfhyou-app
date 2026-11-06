@@ -89,8 +89,17 @@ function addInsSaving(person){
     <div class="frow">
       <span class="ilb" title="支出に自動計上されます"><span class="pre">保険料</span><input id="ins-m-${person}-${id}" type="number" value="" placeholder="例:3" min="0" oninput="calcInsPreview('${person}',${id})"><span class="un">万/月</span></span>
       <span class="ilb" title="保険料の支払いが終わる年齢"><span class="pre">払込満期</span><input id="ins-age-${person}-${id}" type="number" value="" placeholder="例:60" min="30" max="100" oninput="calcInsPreview('${person}',${id})"><span class="un">歳</span></span>
-      <span class="ilb"><span class="pre">受取</span><input id="ins-redeem-${person}-${id}" type="number" value="" placeholder="例:60" min="20" max="100" oninput="calcInsPreview('${person}',${id})"><span class="un">歳</span></span>
-      <span class="ilb"><span class="pre">受取額</span><input class="w6" id="ins-redeem-amt-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})"><span class="un">万</span></span>
+      <span class="ilb" title="一時金はこの歳に受け取り、年金はこの歳から受け取り始めます"><span class="pre">受取</span><input id="ins-redeem-${person}-${id}" type="number" value="" placeholder="例:60" min="20" max="100" oninput="calcInsPreview('${person}',${id})"><span class="un">歳</span></span>
+      <span class="ilb" id="ins-lump-wrap-${person}-${id}"><span class="pre">受取額</span><input class="w6" id="ins-redeem-amt-${person}-${id}" type="number" value="" placeholder="例:500" min="0" oninput="calcInsPreview('${person}',${id})"><span class="un">万</span></span>
+      <span class="ilb" id="ins-ann-amt-wrap-${person}-${id}" style="display:none" title="毎年受け取る金額"><span class="pre">年額</span><input class="w6" id="ins-ann-amt-${person}-${id}" type="number" value="" placeholder="例:60" min="0" oninput="calcInsPreview('${person}',${id})"><span class="un">万</span></span>
+      <span class="ilb" id="ins-ann-yrs-wrap-${person}-${id}" style="display:none" title="受取歳から何年間受け取るか"><span class="pre">年数</span><input class="w6" id="ins-ann-yrs-${person}-${id}" type="number" value="" placeholder="例:10" min="1" max="60" oninput="calcInsPreview('${person}',${id})"><span class="un">年</span></span>
+    </div>
+    <div class="frow" style="margin-top:3px">
+      <span class="ilb" title="受け取り方。年金はCF表に「保険名（年金）」の収入行で出ます"><span class="pre">受取方法</span>
+        <span class="tc on" id="ins-mode-lump-${person}-${id}" onclick="setInsMode('${person}',${id},'lump')" style="padding:2px 8px;font-size:10px;cursor:pointer;white-space:nowrap">一時金</span>
+        <span class="tc" id="ins-mode-ann-${person}-${id}" onclick="setInsMode('${person}',${id},'annuity')" style="padding:2px 8px;font-size:10px;cursor:pointer;white-space:nowrap;margin-left:3px">年金</span>
+        <input type="hidden" id="ins-mode-${person}-${id}" value="lump">
+      </span>
     </div>
     <div class="a-chips">
       <span class="a-gear">⚙</span>
@@ -545,6 +554,21 @@ function validateNisaLimits(){
   if(sw){ sw.innerHTML = hasW ? htmlW : ''; sw.style.display = hasW ? '' : 'none'; }
 }
 
+// 積立保険の受取方法（一時金／年金）切替（2026-11-06）。年金＝受取歳から年数分、毎年「年額」を収入行「保険名（年金）」で計上
+function setInsMode(person,id,mode){
+  const g=x=>document.getElementById(x+'-'+person+'-'+id);
+  const m=(mode==='annuity')?'annuity':'lump';
+  if(g('ins-mode'))g('ins-mode').value=m;
+  g('ins-mode-lump')?.classList.toggle('on',m==='lump');
+  g('ins-mode-ann')?.classList.toggle('on',m==='annuity');
+  if(g('ins-lump-wrap'))g('ins-lump-wrap').style.display=m==='lump'?'':'none';
+  if(g('ins-ann-amt-wrap'))g('ins-ann-amt-wrap').style.display=m==='annuity'?'':'none';
+  if(g('ins-ann-yrs-wrap'))g('ins-ann-yrs-wrap').style.display=m==='annuity'?'':'none';
+  if(typeof insRefreshCard==='function')insRefreshCard(person,id);
+  calcInsPreview(person,id);
+}
+window.setInsMode=setInsMode;
+function insGetMode(person,id){return (document.getElementById('ins-mode-'+person+'-'+id)||{}).value==='annuity'?'annuity':'lump';}
 function calcInsPreview(person,id){
   const pBaseAge=person==='h'?iv('husband-age'):iv('wife-age');
   const enrollAge=iv(`ins-enroll-${person}-${id}`)||pBaseAge||0;
@@ -564,7 +588,17 @@ function calcInsPreview(person,id){
     //   （旧: 受取年齢まで払い続けた扱いになり、払込額が多く・返戻率が低く表示されていた。CF表の計算は元から正しい）
     const paidYrs2=Math.min(redeemAge-enrollAge,payYrs);
     const cum2=Math.round(monthly*12*Math.max(0,paidYrs2)*10)/10;
-    if(redeemAmt>0){
+    const annAmt=fv(`ins-ann-amt-${person}-${id}`)||0, annYrs=iv(`ins-ann-yrs-${person}-${id}`)||0;
+    if(insGetMode(person,id)==='annuity'){
+      if(annAmt>0&&annYrs>0){
+        const total=Math.round(annAmt*annYrs*10)/10;
+        const rateA=cum2>0?Math.round(total/cum2*1000)/10:0;
+        const aColor=rateA>=100?'#0d8a20':'#d63a2a';
+        txt+=`　｜　<span style="color:#c00">年金（${redeemAge}歳から${annYrs}年・年${annAmt}万）：払込${cum2}万 → 合計<strong>${total}万</strong>（<span style="color:${aColor}">返戻率${rateA}%</span>）</span>`;
+      }else{
+        txt+=`　｜　<span style="color:#888">年金：年額と年数を入れてください</span>`;
+      }
+    }else if(redeemAmt>0){
       const rateR=cum2>0?Math.round(redeemAmt/cum2*1000)/10:0;
       const rColor=rateR>=100?'#0d8a20':'#d63a2a';
       const lblR=redeemAge>=matAge?'満期受取':'解約返戻金';
@@ -1156,7 +1190,7 @@ function insRefreshCard(p,id){
     const m=parseFloat((g('ins-m')||{}).value)||0;
     const mat=parseInt((g('ins-age')||{}).value)||0;
     const rd=parseInt((g('ins-redeem')||{}).value)||0;
-    chipEst.style.display=(amt<=0&&m>0&&mat>0&&rd>0)?'':'none';
+    chipEst.style.display=(amt<=0&&m>0&&mat>0&&rd>0&&insGetMode(p,id)!=='annuity')?'':'none';
   }
 }
 window.secRefreshCard=secRefreshCard;window.insRefreshCard=insRefreshCard;
