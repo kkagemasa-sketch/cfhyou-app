@@ -506,6 +506,12 @@ function rowLabelEdit(td){
   else{_cfRowLabels[key]=txt;}
   scheduleAutoSave();
 }
+// 一括投資の取得原価（買った値段）。「これから買う」（買う歳あり／切替がbuy）は投資額＝買値なので取得価格欄は使わない（2026-11-09）
+function secStkBasisInput(p,sid){
+  if((iv(`sec-stk-age-${p}-${sid}`)||0)>0)return 0;
+  if((document.getElementById(`sec-stk-mode-${p}-${sid}`)||{}).value==='buy')return 0;
+  return fv(`sec-basis-${p}-${sid}`)||0;
+}
 // ===== CF表 収入・支出の行の並び替え =====
 // rows=初期の並びで集めた {key,...} の配列。保存した並び _cfRowOrder[section] の順に並べ直す。
 // 保存にない行（後から増えた行）は、初期の並びで直前にある「並べ終わった行」のすぐ後ろに入れる。

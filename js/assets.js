@@ -132,7 +132,7 @@ function addSecurity(person){
     <div id="sec-nisa-warn-${person}-${id}" style="display:none;color:#b91c1c;font-size:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:5px 8px;margin:5px 0 0;line-height:1.5"></div>
     <!-- 取得価格: 評価額の上に常時表示（2026-09-30 チップ格納から昇格。IDと挙動は従来のまま） -->
     <div class="frow" id="sec-basis-line-${person}-${id}" style="margin-top:5px">
-      <span class="ilb" id="sec-nisa-basis-row-${person}-${id}"><span class="pre">取得価格累計</span><input class="w6" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits();updateBasisHint&&updateBasisHint('${person}','${id}')"><span class="un">万</span></span>
+      <span class="ilb" id="sec-nisa-basis-row-${person}-${id}"><span class="pre" id="sec-basis-lbl-${person}-${id}">取得価格累計</span><input class="w6" id="sec-basis-${person}-${id}" type="number" value="" placeholder="例:300" min="0" oninput="live();validateNisaLimits&&validateNisaLimits();updateBasisHint&&updateBasisHint('${person}','${id}');calcStkPreview&&calcStkPreview('${person}',${id})"><span class="un">万</span></span>
       <span id="sec-basis-hint-${person}-${id}" style="font-size:9px;color:#475569">※NISAは生涯枠1800万の判定／課税口座は譲渡益課税の取得原価に使用</span>
     </div>
     <div class="frow" id="sec-accum-fields-${person}-${id}">
@@ -149,11 +149,17 @@ function addSecurity(person){
       </span>
     </div>
     <div class="frow" id="sec-stock-fields-${person}-${id}" style="display:none">
-      <span class="ilb"><span class="pre">投資額</span><input class="w6" id="sec-stk-bal-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="live()"><span class="un">万</span></span>
-      <span class="ilb" title="空欄=すでに保有中"><span class="pre">開始</span><input id="sec-stk-age-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="保有中" min="20" max="90" oninput="live()"><span class="un">歳</span></span>
-      <span class="ilb"><span class="pre">利回り</span><input id="sec-div-${person}-${id}" data-def="5" class="adef" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live()"><span class="un">%</span></span>
-      <span class="ilb" title="空欄=売らずに持ち続ける"><span class="pre">解約</span><input id="sec-stk-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="—" min="20" max="100" oninput="live()"><span class="un">歳</span></span>
+      <span style="display:inline-flex;gap:3px;align-items:center;margin-right:4px" title="すでに持っている資産か、将来まとめて買う資産か">
+        <div class="tc tc-mini on" id="sec-stk-hold-${person}-${id}" onclick="setStkMode('${person}',${id},'hold')">保有中</div>
+        <div class="tc tc-mini" id="sec-stk-buy-${person}-${id}" onclick="setStkMode('${person}',${id},'buy')">これから買う</div>
+        <input type="hidden" id="sec-stk-mode-${person}-${id}" value="hold">
+      </span>
+      <span class="ilb"><span class="pre" id="sec-stk-bal-lbl-${person}-${id}">今の評価額</span><input class="w6" id="sec-stk-bal-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="live();calcStkPreview('${person}',${id})"><span class="un">万</span></span>
+      <span class="ilb" id="sec-stk-age-wrap-${person}-${id}" style="display:none" title="この歳に投資額を支出として計上し、その年から運用します"><span class="pre">買う歳</span><input id="sec-stk-age-${person}-${id}" onfocus="scrollToCFRow('secBuy')" onblur="cfRowBlur()" type="number" value="" placeholder="例:45" min="20" max="90" oninput="live();calcStkPreview('${person}',${id})"><span class="un">歳</span></span>
+      <span class="ilb"><span class="pre">利回り</span><input id="sec-div-${person}-${id}" data-def="5" class="adef" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="5" placeholder="5" min="0" max="20" step="0.1" oninput="live();calcStkPreview('${person}',${id})"><span class="un">%</span></span>
+      <span class="ilb" title="空欄=売らずに持ち続ける。入れるとその歳に全部売って収入に入ります"><span class="pre">売る歳</span><input id="sec-stk-redeem-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="—" min="20" max="100" oninput="live();calcStkPreview('${person}',${id})"><span class="un">歳</span></span>
     </div>
+    <div id="sec-stk-preview-${person}-${id}" style="margin-top:5px;font-size:10px;color:#1e3a5f;background:#e8f1ff;border-radius:4px;padding:4px 8px;display:none;line-height:1.6"></div>
     <div class="frow" id="sec-bond-fields-${person}-${id}" style="display:none">
       <span class="ilb"><span class="pre">投資額</span><input class="w6" id="sec-bond-bal-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="0" min="0" oninput="live()"><span class="un">万</span></span>
       <span class="ilb"><span class="pre">利回り</span><input id="sec-bond-rate-${person}-${id}" onfocus="scrollToCFRow('totalAsset')" onblur="cfRowBlur()" type="number" value="" placeholder="例:3" min="0" max="20" step="0.1" oninput="live()"><span class="un">%/年</span></span>
@@ -286,6 +292,19 @@ function updateBasisHint(person, id){
   const isNisa = document.getElementById(`sec-nisa-${person}-${id}`)?.classList.contains('on');
   const basis = parseFloat(document.getElementById(`sec-basis-${person}-${id}`)?.value)||0;
   const bal = parseFloat(document.getElementById(`sec-bal-${person}-${id}`)?.value)||0;
+  const isStk = (typeof secCurType==='function') && secCurType(person,id)==='stock';
+  if(isStk){
+    // 一括投資（保有中）: 「買った値段」。売却時の税金（利益の20.315%）の原価
+    const sbal = parseFloat(document.getElementById(`sec-stk-bal-${person}-${id}`)?.value)||0;
+    if(basis<=0 && sbal>0){
+      hintEl.style.color='#dc2626';hintEl.style.fontWeight='700';
+      hintEl.textContent='空欄のため、今の評価額＝買った値段（含み益なし）とみなします。含み益があると売るときの税金が少なく出ます';
+    }else{
+      hintEl.style.color='#475569';hintEl.style.fontWeight='400';
+      hintEl.textContent='※売るときの税金（利益の20.315%）の計算に使います';
+    }
+    return;
+  }
   if(isNisa){
     hintEl.style.color='#475569';
     hintEl.textContent='※生涯枠1800万の判定に使用';
@@ -362,12 +381,76 @@ function setSecType(person,id,t){
   // 取り崩し設定は積立型・一括投資のみ（債券は満期保有前提のため非表示）
   const drawW=document.getElementById(`sec-draw-wrap-${person}-${id}`);
   if(drawW)drawW.style.display=t==='bond'?'none':'';
-  // 取得価格の行も同様（債券は元本=取得原価のため不要）
-  const basisL=document.getElementById(`sec-basis-line-${person}-${id}`);
-  if(basisL)basisL.style.display=t==='bond'?'none':'';
+  // 取得価格の行: 一括は欄の下へ移して「買った値段」、債券は非表示（元本=取得原価）
+  _secBasisLayout(person,id);
   live();
   if(typeof validateNisaLimits==='function') validateNisaLimits();
 }
+// ===== 一括投資「保有中／これから買う」（2026-11-09） =====
+// hold=今の評価額＋買った値段（取得価格欄）／buy=投資額＋買う歳（取得価格欄は使わない＝投資額が買値）
+function setStkMode(person,id,m,keepAge){
+  const g=x=>document.getElementById(x+'-'+person+'-'+id);
+  m=(m==='buy')?'buy':'hold';
+  if(g('sec-stk-mode'))g('sec-stk-mode').value=m;
+  g('sec-stk-hold')?.classList.toggle('on',m==='hold');
+  g('sec-stk-buy')?.classList.toggle('on',m==='buy');
+  if(g('sec-stk-age-wrap'))g('sec-stk-age-wrap').style.display=m==='buy'?'':'none';
+  if(g('sec-stk-bal-lbl'))g('sec-stk-bal-lbl').textContent=m==='buy'?'投資額':'今の評価額';
+  // 保有中＝買う歳なし（計算は「買う歳が空欄なら保有中」のルールのまま）
+  if(m==='hold'&&!keepAge&&g('sec-stk-age'))g('sec-stk-age').value='';
+  _secBasisLayout(person,id);
+  if(!keepAge)live();
+  if(typeof secRefreshCard==='function')secRefreshCard(person,id);
+}
+window.setStkMode=setStkMode;
+function secStkMode(person,id){return (document.getElementById('sec-stk-mode-'+person+'-'+id)||{}).value==='buy'?'buy':'hold';}
+// 取得価格欄の置き場所と文言（一括: 欄の下・「買った値段」／それ以外: 積立欄の前・「取得価格累計」）
+function _secBasisLayout(person,id){
+  const g=x=>document.getElementById(x+'-'+person+'-'+id);
+  const basisL=g('sec-basis-line');if(!basisL)return;
+  const t=secCurType(person,id);
+  const accF=g('sec-accum-fields'),prev=g('sec-stk-preview'),lbl=g('sec-basis-lbl'),inp=g('sec-basis');
+  if(t==='stock'){
+    if(prev&&basisL.nextElementSibling!==prev)prev.before(basisL);
+    basisL.style.display=secStkMode(person,id)==='buy'?'none':'';
+    if(lbl)lbl.textContent='買った値段';
+    if(inp)inp.placeholder='空欄=評価額と同じ';
+  }else{
+    if(accF&&accF.previousElementSibling!==basisL)accF.before(basisL);
+    basisL.style.display=t==='bond'?'none':'';
+    if(lbl)lbl.textContent='取得価格累計';
+    if(inp)inp.placeholder='例:300';
+  }
+  if(typeof updateBasisHint==='function')updateBasisHint(person,id);
+}
+// カード下の説明文。年数の数え方はCF表の計算（cf-calc.js）と同じ: 保有中=現在年齢からT歳まで+1年、これから買う=T−買う歳
+function calcStkPreview(person,id){
+  const g=x=>document.getElementById(x+'-'+person+'-'+id);
+  const prev=g('sec-stk-preview');if(!prev)return;
+  if(secCurType(person,id)!=='stock'){prev.style.display='none';return;}
+  const bal=parseFloat((g('sec-stk-bal')||{}).value)||0;
+  if(bal<=0){prev.style.display='none';return;}
+  const buy=secStkMode(person,id)==='buy';
+  const nowAge=iv(person==='h'?'husband-age':'wife-age')||0;
+  const investAge=buy?(parseInt((g('sec-stk-age')||{}).value)||0):0;
+  if(buy&&investAge<=0){prev.innerHTML='<span style="color:#888">「買う歳」を入れてください（その歳に投資額を支出として計上します）</span>';prev.style.display='';return;}
+  const rateIn=parseFloat((g('sec-div')||{}).value);const rate=isNaN(rateIn)?0:rateIn;const r=rate/100;
+  const basisIn=buy?0:(parseFloat((g('sec-basis')||{}).value)||0);
+  const cost=basisIn>0?basisIn:bal;
+  const start=buy?investAge:nowAge;
+  const redeem=parseInt((g('sec-stk-redeem')||{}).value)||0;
+  const T=redeem>0?redeem:(start<65?65:start+10);
+  const yrs=Math.max(0,buy?(T-investAge):(T-nowAge+1));
+  const fvAmt=Math.round(bal*Math.pow(1+r,yrs));
+  const gain=fvAmt-cost;const tax=Math.max(0,gain)*0.20315;const net=Math.round(fvAmt-tax);
+  const f=n=>Math.round(n).toLocaleString();
+  const head=buy?`${investAge}歳に${f(bal)}万を購入`:`今の評価額${f(bal)}万（買値${f(cost)}万）`;
+  const when=redeem>0?`売る${T}歳に`:`${T}歳時点で`;
+  let t=`${head} → 利回り${rate}%で${when}約<strong>${f(fvAmt)}万</strong>（含み益${gain<0?'▲':''}${f(Math.abs(gain))}万、${redeem>0?'税引後の受取':'売ると税引後'} 約${f(net)}万）`;
+  if(g('sec')?.classList.contains('has-draw'))t+=`<br><span style="color:#64748b">※取り崩し設定あり。CF表は取り崩し後の残高です</span>`;
+  prev.innerHTML=t;prev.style.display='';
+}
+window.calcStkPreview=calcStkPreview;
 // 取り崩し方式切替（pct=定率 / amt=定額）
 function setSecDrawMode(person,id,m){
   document.getElementById(`sec-draw-rate-${person}-${id}`)?.classList.toggle('on',m==='pct');
@@ -1174,6 +1257,7 @@ function secRefreshCard(p,id){
     if(show)chipH.textContent=en2+'歳以降は積立なしで'+rd+'歳まで運用継続';
   }
   ['sec-rate','sec-end','sec-div'].forEach(k=>_fmtDef(g(k)));
+  if(typeof calcStkPreview==='function')calcStkPreview(p,id);
 }
 function insRefreshCard(p,id){
   const g=x=>document.getElementById(x+'-'+p+'-'+id);

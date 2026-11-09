@@ -689,7 +689,7 @@ function render(){
         rate:(fv(`sec-div-${p}-${sid}`)||0)/100,
         investAge:iv(`sec-stk-age-${p}-${sid}`)||0,
         redeemAge:_secRedeemOf('stock',p,sid),
-        basisInput:fv(`sec-basis-${p}-${sid}`)||0,
+        basisInput:secStkBasisInput(p,sid),
         liquidations:[]
       });
     });
@@ -2554,7 +2554,7 @@ function render(){
         }
         finRowMapBase[lbl]=(finRowMapBase[lbl]||0)+_evalBase;
         // 一括投資の取得原価: basisがあればそれ、なければ初期評価額(bal) — 取崩しによる原価減少も反映
-        const _stkBasisIn = fv(`sec-basis-${p}-${sid}`)||0;
+        const _stkBasisIn = secStkBasisInput(p,sid);
         let _stkPrincipal = _stkBasisIn>0 ? _stkBasisIn : bal;
         if(_matchSecStk){
           let _stkPrincReduction=0;

@@ -335,7 +335,7 @@ function _renderContingencyInner(_mgStopOv){
           }:{
             type:'stock',bal:fv(`sec-stk-bal-${p}-${sid}`)||0,monthly:0,endAge:0,
             rate:(fv(`sec-div-${p}-${sid}`)||0)/100,investAge:iv(`sec-stk-age-${p}-${sid}`)||0,
-            redeemAge:iv(`sec-stk-redeem-${p}-${sid}`)||0,basisInput:fv(`sec-basis-${p}-${sid}`)||0
+            redeemAge:iv(`sec-stk-redeem-${p}-${sid}`)||0,basisInput:secStkBasisInput(p,sid)
           };
           if(cfg.bal<=0&&cfg.monthly<=0)return;
           cfg.baseAge=pBaseAge;cfg.drawStart=drawStart;cfg.drawEnd=drawEnd;cfg.drawMode=drawMode;
@@ -423,7 +423,7 @@ function _renderContingencyInner(_mgStopOv){
     const yrsHeld=investAge>0?(_deadDeathAge-investAge):_yrsAtDeath;
     let val=Math.round(bal*Math.pow(1+rate,Math.max(0,yrsHeld)));
     const isNisa=document.getElementById(`sec-nisa-${_deadP}-${sid}`)?.classList.contains('on');
-    if(!isNisa){const gain=Math.max(0,val-bal);val=Math.round(val-gain*0.20315);}
+    if(!isNisa){const _costD=secStkBasisInput(_deadP,sid)||bal;const gain=Math.max(0,val-_costD);val=Math.round(val-gain*0.20315);}
     _deadFinTotal+=val;
   });
   // 債券（死亡者分 — 死亡時点の価値で現金化。死亡年＝償還年の年は現金化側で受ける）
@@ -566,7 +566,7 @@ function _renderContingencyInner(_mgStopOv){
         rate:(fv(`sec-div-${p}-${sid}`)||0)/100,
         investAge:iv(`sec-stk-age-${p}-${sid}`)||0,
         redeemAge:_mgRedeemOf('stock',p,sid),
-        basisInput:fv(`sec-basis-${p}-${sid}`)||0,
+        basisInput:secStkBasisInput(p,sid),
         liquidations:[]
       });
     });

@@ -207,7 +207,7 @@ function _collectDynamic(){
       d.securities.push({person:p,label:$(`sec-label-${p}-${id}`)?.value||'',taxType:isNisa?'nisa':'taxable',secType:isBond?'bond':(isStock?'stock':'accum'),
         nisaFrame, basis:_rawVal(`sec-basis-${p}-${id}`), nisaAnnual:_rawVal(`sec-nisa-annual-${p}-${id}`),
         bal:_rawVal(`sec-bal-${p}-${id}`),monthly:_rawVal(`sec-monthly-${p}-${id}`),end:_rawVal(`sec-end-${p}-${id}`),rate:_rawVal(`sec-rate-${p}-${id}`),redeem:_rawVal(`sec-redeem-${p}-${id}`),
-        stkBal:_rawVal(`sec-stk-bal-${p}-${id}`),stkAge:_rawVal(`sec-stk-age-${p}-${id}`),div:_rawVal(`sec-div-${p}-${id}`),stkRedeem:_rawVal(`sec-stk-redeem-${p}-${id}`),
+        stkBal:_rawVal(`sec-stk-bal-${p}-${id}`),stkAge:_rawVal(`sec-stk-age-${p}-${id}`),div:_rawVal(`sec-div-${p}-${id}`),stkRedeem:_rawVal(`sec-stk-redeem-${p}-${id}`),stkMode:$(`sec-stk-mode-${p}-${id}`)?.value||'hold',
         bondBal:_rawVal(`sec-bond-bal-${p}-${id}`),bondAge:_rawVal(`sec-bond-age-${p}-${id}`),bondRate:_rawVal(`sec-bond-rate-${p}-${id}`),bondMat:_rawVal(`sec-bond-mat-${p}-${id}`),
         bondPay:$(`sec-bond-reinv-${p}-${id}`)?.classList.contains('on')?'reinv':'int',
         stopOnShort:$(`sec-stopliq-${p}-${id}`)?.classList.contains('on')||false,
@@ -545,6 +545,8 @@ function _restoreDynamic(d){
     if($(`sec-stk-age-${p}-${id}`))$(`sec-stk-age-${p}-${id}`).value=s.stkAge;
     if($(`sec-div-${p}-${id}`))$(`sec-div-${p}-${id}`).value=s.div;
     if($(`sec-stk-redeem-${p}-${id}`))$(`sec-stk-redeem-${p}-${id}`).value=s.stkRedeem;
+    // 一括投資の「保有中／これから買う」。旧データは買う歳の有無で決める
+    if(typeof setStkMode==='function')setStkMode(p,id,s.stkMode||((parseInt(s.stkAge)||0)>0?'buy':'hold'),true);
   });
   // その他収入
   if($('other-income-cont'))$('other-income-cont').innerHTML='';
