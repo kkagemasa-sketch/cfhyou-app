@@ -20,7 +20,8 @@ import {
   getDoc,
   getDocs,
   setDoc,
-  deleteDoc
+  deleteDoc,
+  deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
   getStorage,
@@ -72,7 +73,7 @@ try {
 // グローバル公開（他のJSファイルから使えるように）
 window._firebase = {
   app, auth, db, storage,
-  collection, doc, getDoc, getDocs, setDoc, deleteDoc,
+  collection, doc, getDoc, getDocs, setDoc, deleteDoc, deleteField,
   storageRef, uploadBytes, getDownloadURL, deleteObject,
   signInAnonymously,
   // クラウド同期（cloud-sync.js）用: Googleログイン

@@ -24,7 +24,9 @@ const CS_LS_ON='cf_cloud_sync_on'; // 「☁ 同期」ボタンを出す端末
 
 const _cs={user:null,key:null,salt:null,metaExists:null,busy:false,lastError:'',
   // 段階2
-  listCache:null,lastSyncAt:0,cloudCount:null,cloudError:''};
+  listCache:null,lastSyncAt:0,cloudCount:null,cloudError:'',
+  // v659: 目次（null＝まだ読んでいない）
+  index:null,autoParts:null};
 
 // ===== ボタンの表示 =====
 // 本人専用の間は、URLに ?sync を付けて開いた端末だけボタンを出す（メンバーの画面には出ない）。
@@ -83,7 +85,7 @@ window._cloudSyncOnAuth=function(user){
       .finally(()=>{_csUpdateButton();_csRerender();});
   }else{
     _cs.user=null;_cs.key=null;_cs.salt=null;_cs.metaExists=null;
-    _cs.listCache=null;_cs.cloudCount=null;_cs.cloudError='';
+    _cs.listCache=null;_cs.cloudCount=null;_cs.cloudError='';_cs.index=null;_cs.autoParts=null;
     _csUpdateButton();_csRerender();
   }
 };
@@ -286,18 +288,84 @@ function _csAutosaveRef(){const fb=window._firebase;return fb.doc(fb.db,'users',
 function _csErr(e){return (e&&e.message)||String(e);}
 function _csInvalidateList(){_cs.listCache=null;}
 
+// ===== v659: 「目次」（通信量を減らすため） =====
+// 以前は一覧・件数・1分ごとの確認・送る前に、暗号文の本体ごとダウンロードしていた（通信量が多い）。
+// 名前・日付・大きさ・分割数だけの小さな目次を別に置き、ふだんは目次だけを読む。本体は取り込むときだけ読む。
+//   users/{uid}/sync/index    … {v:1, slots:{[slotId]:{name,savedAt,updatedAt,bytes,parts,pushedAt}}, builtAt}
+//   users/{uid}/sync/autohead … 自動保存の目次 {updatedAt,savedAt,device,pushedAt,bytes,parts}
+// 目次が無いとき（最初の1回・v658以前のデータ）は、本体を1回だけ読んで目次を作る。
+function _csIndexRef(){const fb=window._firebase;return fb.doc(fb.db,'users',_cs.user.uid,'sync','index');}
+function _csAutoHeadRef(){const fb=window._firebase;return fb.doc(fb.db,'users',_cs.user.uid,'sync','autohead');}
+function _csEntryMeta(v){
+  const e=(v&&v.enc)||{};
+  return {name:v.name||'',savedAt:v.savedAt||'',updatedAt:v.updatedAt||0,bytes:v.bytes||0,parts:e.parts||0,pushedAt:v.pushedAt||0};
+}
+// 本体を全部読んで目次を作り直す（目次が無いとき・「一覧を作り直す」のときだけ）
+async function _csRebuildIndex(){
+  const fb=window._firebase;
+  const snap=await fb.getDocs(_csSlotsCol());
+  const slots={};
+  snap.forEach(d=>{const v=d.data()||{};const m=_csEntryMeta(v);if(!m.name)m.name=decodeURIComponent(d.id.replace(/^s_/,''));slots[d.id]=m;});
+  await fb.setDoc(_csIndexRef(),{v:1,slots,builtAt:Date.now()});
+  _cs.index=slots;
+  return slots;
+}
+// 目次を読む（無ければ作る）。_cs.index に記憶する
+async function _csLoadIndex(){
+  const fb=window._firebase;
+  const snap=await fb.getDoc(_csIndexRef());
+  if(!snap.exists())return await _csRebuildIndex();
+  _cs.index=(snap.data()||{}).slots||{};
+  return _cs.index;
+}
+async function _csIndexPut(id,meta){
+  const fb=window._firebase;
+  await fb.setDoc(_csIndexRef(),{v:1,slots:{[id]:meta}},{merge:true});
+  if(_cs.index)_cs.index[id]=meta;
+}
+async function _csIndexRemove(id){
+  const fb=window._firebase;
+  await fb.setDoc(_csIndexRef(),{slots:{[id]:fb.deleteField()}},{merge:true});
+  if(_cs.index)delete _cs.index[id];
+}
+// 自動保存の目次を読む。無ければ（v658以前）本体を1回だけ読んで目次を作る。どちらも無ければ null
+async function _csReadAutoHead(){
+  const fb=window._firebase;
+  const h=await fb.getDoc(_csAutoHeadRef());
+  if(h.exists()){const v=h.data()||{};_cs.autoParts=v.parts||0;return v;}
+  const b=await fb.getDoc(_csAutosaveRef());
+  if(!b.exists()){_cs.autoParts=0;return null;}
+  const bv=b.data()||{};
+  const head=Object.assign(_csEntryMeta(bv),{device:bv.device||''});
+  delete head.name;
+  try{await fb.setDoc(_csAutoHeadRef(),head);}catch(e){}
+  _cs.autoParts=head.parts||0;
+  return head;
+}
+
 // 1件をクラウドへ（暗号化して setDoc）。entry={name,savedAt,updatedAt,data}
 // ★ v648: Firestore は1件あたり約1MBまで。暗号文が CS_PART_SIZE 文字を超えるときは
 //   本体には {iv, z, parts:n} だけ置き、暗号文を ref/parts/0..n-1 に分けて置く（受け取り時につなぐ）
+// ★ v659: 前の版の分割数は目次から知る（本体を読み直さない）。送ったあと目次も書く
+//   kind: 'slot'（名前付き保存）/'auto'（自動保存）
 const CS_PART_SIZE=700000;
 function _csPartsCol(ref){const fb=window._firebase;return fb.collection(ref,'parts');}
-async function _csPushEntry(ref,entry,extra){
+async function _csPushEntry(ref,entry,extra,kind){
   const enc=await window._csEncryptObj(entry.data);
   const fb=window._firebase;
   // ★ enc は {iv, ct} の形。enc.length は undefined になり Firestore が「Unsupported field value: undefined」で拒否していた(v644)
   const bytes=((enc&&enc.ct)||'').length+((enc&&enc.iv)||'').length;
-  // 前の版が分割されていたら、その数を覚えておいて余った分を後で消す
-  let oldParts=0;try{const s=await fb.getDoc(ref);if(s.exists()){const e=(s.data()||{}).enc;oldParts=(e&&e.parts)||0;}}catch(e){}
+  // 前の版が分割されていたら、その数を覚えておいて余った分を後で消す（数は目次から）
+  let oldParts=0;
+  try{
+    if(kind==='auto'){
+      if(_cs.autoParts==null)await _csReadAutoHead();
+      oldParts=_cs.autoParts||0;
+    }else{
+      if(!_cs.index)await _csLoadIndex();
+      const m=_cs.index&&_cs.index[ref.id];oldParts=(m&&m.parts)||0;
+    }
+  }catch(e){}
   let meta;
   if(enc.ct.length>CS_PART_SIZE){
     const ct=enc.ct;const n=Math.ceil(ct.length/CS_PART_SIZE);
@@ -308,9 +376,18 @@ async function _csPushEntry(ref,entry,extra){
   }else{
     meta=enc;
   }
-  await fb.setDoc(ref,Object.assign({name:entry.name,savedAt:entry.savedAt||'',updatedAt:entry.updatedAt||Date.now(),enc:meta,bytes,pushedAt:Date.now()},extra||{}));
+  const body=Object.assign({name:entry.name,savedAt:entry.savedAt||'',updatedAt:entry.updatedAt||Date.now(),enc:meta,bytes,pushedAt:Date.now()},extra||{});
+  await fb.setDoc(ref,body);
   const newParts=meta.parts||0;
   for(let i=newParts;i<oldParts;i++){try{await fb.deleteDoc(fb.doc(_csPartsCol(ref),String(i)));}catch(e){}}
+  // 本体を書いてから目次を書く（他の端末は目次を見て本体を取りに来るので、この順番）
+  if(kind==='auto'){
+    const head=Object.assign(_csEntryMeta(body),{device:body.device||''});delete head.name;
+    await fb.setDoc(_csAutoHeadRef(),head);
+    _cs.autoParts=newParts;
+  }else{
+    await _csIndexPut(ref.id,_csEntryMeta(body));
+  }
   _cs.lastSyncAt=Date.now();_csInvalidateList();
 }
 // 本体の enc が分割形式なら parts を集めて 1つの暗号文に戻す
@@ -326,22 +403,26 @@ async function _csResolveEnc(ref,enc){
   const out={iv:enc.iv,ct:parts.join('')};if(enc.z)out.z=1;
   return out;
 }
+// 名前付き保存を消す（分割数は目次から。目次に無ければ本体を読んで確かめる）。目次からも消す
 async function _csDeleteDoc(ref){
   const fb=window._firebase;
-  let n=0;try{const s=await fb.getDoc(ref);if(s.exists()){const e=(s.data()||{}).enc;n=(e&&e.parts)||0;}}catch(e){}
+  let n=null;
+  try{if(!_cs.index)await _csLoadIndex();const m=_cs.index&&_cs.index[ref.id];if(m)n=m.parts||0;}catch(e){}
+  if(n===null){n=0;try{const s=await fb.getDoc(ref);if(s.exists()){const e=(s.data()||{}).enc;n=(e&&e.parts)||0;}}catch(e){}}
   for(let i=0;i<n;i++){try{await fb.deleteDoc(fb.doc(_csPartsCol(ref),String(i)));}catch(e){}}
   await fb.deleteDoc(ref);
+  await _csIndexRemove(ref.id);
 }
-async function csPushSlot(entry){ if(!_csReady())return false; await _csPushEntry(_csSlotRef(entry.name),entry); return true; }
+async function csPushSlot(entry){ if(!_csReady())return false; await _csPushEntry(_csSlotRef(entry.name),entry,null,'slot'); return true; }
 
-// クラウドの一覧（暗号文は含めない）。30秒だけ記憶して、保存/読込パネルを開くたびの通信を減らす
-async function csListCloud(force){
+// クラウドの一覧（暗号文は含めない）。v659: 目次1件だけを読む。30秒だけ記憶する
+//   rebuild=true のときは本体を全部読んで目次を作り直す（「一覧を作り直す」ボタン）
+async function csListCloud(force,rebuild){
   if(!_csReady())return null;
-  if(!force&&_cs.listCache&&Date.now()-_cs.listCache.at<30000)return _cs.listCache.list;
-  const fb=window._firebase;
-  const snap=await fb.getDocs(_csSlotsCol());
+  if(!force&&!rebuild&&_cs.listCache&&Date.now()-_cs.listCache.at<30000)return _cs.listCache.list;
+  const slots=rebuild?await _csRebuildIndex():await _csLoadIndex();
   const list=[];
-  snap.forEach(d=>{const v=d.data()||{};list.push({id:d.id,name:v.name||decodeURIComponent(d.id.replace(/^s_/,'')),savedAt:v.savedAt||'',updatedAt:v.updatedAt||0,bytes:v.bytes||0});});
+  Object.keys(slots).forEach(id=>{const v=slots[id]||{};list.push({id,name:v.name||decodeURIComponent(id.replace(/^s_/,'')),savedAt:v.savedAt||'',updatedAt:v.updatedAt||0,bytes:v.bytes||0});});
   list.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   _cs.listCache={at:Date.now(),list};_cs.lastSyncAt=Date.now();_cs.cloudError='';
   return list;
@@ -441,10 +522,9 @@ async function csMigrateAll(){
     }
     if(auto){
       try{
-        const fb=window._firebase;
-        const snap=await fb.getDoc(_csAutosaveRef());
-        const cu=snap.exists()?(snap.data().updatedAt||0):0;
-        if(!snap.exists()||(auto.updatedAt||0)>cu){await _csPushEntry(_csAutosaveRef(),{...auto,name:'autosave'});res.auto='自動保存をクラウドの自動保存にしました';}
+        const head=await _csReadAutoHead(); // v659: 本体ではなく目次で比べる
+        const cu=head?(head.updatedAt||0):0;
+        if(!head||(auto.updatedAt||0)>cu){await _csPushEntry(_csAutosaveRef(),{...auto,name:'autosave'},null,'auto');res.auto='自動保存をクラウドの自動保存にしました';}
         else if((auto.updatedAt||0)===cu){res.auto='自動保存はクラウドと同じでした';}
         else{
           const d=new Date(auto.updatedAt||Date.now());
@@ -543,7 +623,7 @@ async function _csFlushAutosave(force,dataGiven){
   _csAuto.sending=true;
   try{
     const ts=Date.now();
-    await _csPushEntry(_csAutosaveRef(),{name:'autosave',savedAt:_fmtDate(new Date()),updatedAt:ts,data},{device:_csDeviceName()});
+    await _csPushEntry(_csAutosaveRef(),{name:'autosave',savedAt:_fmtDate(new Date()),updatedAt:ts,data},{device:_csDeviceName()},'auto');
     _csAuto.lastSentJson=json;_csAuto.lastSentAt=ts;_csAuto.remoteSeenAt=ts;_csAuto.dirty=false;_csAuto.lastError='';
     try{localStorage.removeItem(CS_LS_DIRTY);}catch(e){}
     _csAutoRerenderStatus();
@@ -567,10 +647,10 @@ async function csSendNow(){
 // 他端末の自動保存を確認。askIfNewer=true なら新しければ確認して取り込む
 async function _csCheckRemoteAutosave(onOpen){
   if(!_csReady())return;
-  let snap;
-  try{snap=await window._firebase.getDoc(_csAutosaveRef());}catch(e){_csAuto.lastError=_csErr(e);return;}
-  if(!snap.exists())return;
-  const v=snap.data()||{};
+  // v659: 1分ごとに読むのは小さな目次だけ。新しくて「OK」のときだけ本体を読む
+  let v;
+  try{v=await _csReadAutoHead();}catch(e){_csAuto.lastError=_csErr(e);return;}
+  if(!v)return;
   _csAuto.lastRemote={updatedAt:v.updatedAt||0,device:v.device||'',pushedAt:v.pushedAt||0};
   const ru=v.updatedAt||0;
   if(v.device===_csDeviceName())return;          // 自分が送ったもの
@@ -586,11 +666,15 @@ async function _csCheckRemoteAutosave(onOpen){
   const ok=confirm('他の端末（'+(v.device||'不明')+'）で '+when+' に編集した作業中の内容がクラウドにあります。\n\nこの端末に読み込みますか？\n「OK」→ いまの画面の内容は、その内容で置き換わります\n「キャンセル」→ この端末の内容のまま続けます（次にこの端末で変更を送ると、クラウドの方が置き換わります）');
   if(!ok){_csAuto.declinedAt=ru;return;}
   try{
-    const data=await window._csDecryptObj(await _csResolveEnc(_csAutosaveRef(),v.enc));
+    const bsnap=await window._firebase.getDoc(_csAutosaveRef());
+    if(!bsnap.exists())throw new Error('クラウドの作業中データが見つかりません');
+    const bv=bsnap.data()||{};
+    const bu=Math.max(bv.updatedAt||0,ru); // 目次を見たあとに本体が新しくなっていたら、そちらの時刻
+    const data=await window._csDecryptObj(await _csResolveEnc(_csAutosaveRef(),bv.enc));
     _applyData(data);
     if(typeof _restoreScenarios==='function')_restoreScenarios(data);
-    await dbPut({name:AUTOSAVE_KEY,savedAt:v.savedAt||_fmtDate(new Date()),updatedAt:ru,data});
-    _csAuto.lastSentJson=JSON.stringify(data);_csAuto.remoteSeenAt=ru;_csAuto.dirty=false;
+    await dbPut({name:AUTOSAVE_KEY,savedAt:bv.savedAt||v.savedAt||_fmtDate(new Date()),updatedAt:bu,data});
+    _csAuto.lastSentJson=JSON.stringify(data);_csAuto.remoteSeenAt=bu;_csAuto.dirty=false;
     try{localStorage.removeItem(CS_LS_DIRTY);}catch(e){}
     if(typeof live==='function')live();
     if(typeof notifyTalkMemoClient==='function')setTimeout(notifyTalkMemoClient,200);
@@ -610,9 +694,11 @@ function _csAutoStatusHtml(){
   return parts.join('<br>');
 }
 
-async function csRefreshCloudCount(){
+// rebuild=true:「クラウドの一覧を作り直す」— 本体を全部読んで目次を作り直す（通信が多いので押したときだけ）
+async function csRefreshCloudCount(rebuild){
   if(!_csReady())return;
-  try{_cs.cloudCount=(await csListCloud(true)||[]).length;_cs.cloudError='';}
+  if(rebuild)_csMsg('クラウドの一覧を作り直しています…','#1e40af');
+  try{_cs.cloudCount=(await csListCloud(true,!!rebuild)||[]).length;_cs.cloudError='';if(rebuild)_csMsg('クラウドの一覧を作り直しました（'+_cs.cloudCount+'件）','#16a34a');}
   catch(e){_cs.cloudError=_csErr(e);}
   _csRerender();
 }
@@ -666,7 +752,7 @@ function openCloudSyncPanel(keepMsg){
         </div>
         <div style="font-size:11px;color:#475569;line-height:1.6;margin-bottom:10px">「保存/読込」で名前を付けて保存すると、端末内とクラウドの両方に保存されます。保存一覧には「☁ 新しい版あり」「☁ クラウドのみ」が出て、取り込めます。</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${btn('クラウドの件数を確認','csRefreshCloudCount()','#fff','#1e40af','#bfdbfe')}
+          ${btn('クラウドの一覧を作り直す','csRefreshCloudCount(true)','#fff','#1e40af','#bfdbfe')}
           ${btn('保存/読込を開く','document.getElementById(\'cloud-sync-modal\').remove();openSlotPanel()','#fff','#1e3a5f','#cbd5e1')}
         </div>
       </div>
