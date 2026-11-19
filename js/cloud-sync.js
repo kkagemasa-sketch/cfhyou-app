@@ -12,10 +12,12 @@
 //   users/{uid}/slots/{id}     … 名前付き保存（段階2）
 //   users/{uid}/sync/autosave  … 自動保存（段階3）
 //
-// 公開範囲: いまは本人のGoogleアカウントだけ（CS_ALLOWED_EMAILS）。メンバーにも開放するときは
-//   この配列を空にし、Firestore ルールの「request.auth.token.email in [...]」の行を消す。
+// 公開範囲（v660〜）: 管理者（CS_ADMIN_EMAILS）と、管理者が「メンバー管理」で登録したメンバーだけ。
+//   メンバー名簿は Firestore の syncMembers/{メールアドレス小文字} … {email,name,active,addedAt,updatedAt}
+//   名簿の読み書きは管理者だけ。メンバーは自分の1件だけ読める（Firestore ルールで守る）。
+//   メンバーを消すことはせず「停止」にする（active:false）。停止中の人はログインしても使えない。
 
-const CS_ALLOWED_EMAILS=['k.kagemasa@gmail.com','kgmkhmuk@gmail.com']; // 空＝全員OK
+const CS_ADMIN_EMAILS=['k.kagemasa@gmail.com','kgmkhmuk@gmail.com']; // 管理者（メンバー管理ができる人）
 const CS_PASS_MIN=8;
 const CS_KDF_ITER=200000;
 const CS_CHECK_TEXT='cf-sync-ok';
@@ -24,20 +26,15 @@ const CS_LS_ON='cf_cloud_sync_on'; // 「☁ 同期」ボタンを出す端末
 
 const _cs={user:null,key:null,salt:null,metaExists:null,busy:false,lastError:'',
   // 段階2
-  listCache:null,lastSyncAt:0,cloudCount:null,cloudError:'',detailsOpen:false,
+  listCache:null,lastSyncAt:0,cloudCount:null,cloudError:'',detailsOpen:false,isAdmin:false,
   // v659: 目次（null＝まだ読んでいない）
   index:null,autoParts:null};
 
 // ===== ボタンの表示 =====
 // 本人専用の間は、URLに ?sync を付けて開いた端末だけボタンを出す（メンバーの画面には出ない）。
 // Googleでログイン済みの端末では常に出す。
-function _csButtonWanted(){
-  try{
-    if(location.search.indexOf('sync')>=0){localStorage.setItem(CS_LS_ON,'1');}
-    if(localStorage.getItem(CS_LS_ON)==='1')return true;
-  }catch(e){}
-  return !!_cs.user;
-}
+// v660: 「☁ 同期」ボタンは全員の画面に出す（使えるのは登録されたメンバーだけ）
+function _csButtonWanted(){return true;}
 function _csUpdateButton(){
   const b=document.getElementById('btn-cloud-sync');
   if(!b)return;
@@ -55,22 +52,45 @@ function _csUpdateButton(){
 function _csIsGoogleUser(u){
   return !!(u&&!u.isAnonymous&&(u.providerData||[]).some(p=>p.providerId==='google.com'));
 }
-function _csEmailAllowed(email){
-  if(!CS_ALLOWED_EMAILS.length)return true;
-  return CS_ALLOWED_EMAILS.map(s=>s.toLowerCase()).includes(String(email||'').toLowerCase());
+function _csEmailKey(email){return String(email||'').trim().toLowerCase();}
+function _csIsAdmin(email){return CS_ADMIN_EMAILS.map(_csEmailKey).includes(_csEmailKey(email));}
+function _csMemberRef(email){const fb=window._firebase;return fb.doc(fb.db,'syncMembers',_csEmailKey(email));}
+// 管理者なら true。それ以外は名簿に「使用中」で載っていれば true。読めない（未登録・ルールで拒否）なら false
+async function _csIsMember(email){
+  if(_csIsAdmin(email))return true;
+  try{
+    const snap=await window._firebase.getDoc(_csMemberRef(email));
+    return snap.exists()&&(snap.data()||{}).active!==false;
+  }catch(e){
+    // 名簿を読む権利が無い＝未登録（ルールで拒否）。通信の失敗など、それ以外は追い出さない
+    //（クラウドのデータそのものは Firestore ルールで守られているので、ここで通しても他人のデータは読めない）
+    const code=String((e&&e.code)||'');
+    return !(code==='permission-denied'||/permission/i.test(String(e&&e.message)));
+  }
 }
 // firebase-init.js から、ログイン状態が変わるたびに呼ばれる
 window._cloudSyncOnAuth=function(user){
   if(_csIsGoogleUser(user)){
-    if(!_csEmailAllowed(user.email)){
-      // 許可していないアカウント → すぐログアウトして、今までどおり匿名に戻す
+    _csOnGoogleUser(user);
+  }else{
+    _cs.user=null;_cs.key=null;_cs.salt=null;_cs.metaExists=null;_cs.isAdmin=false;
+    _cs.listCache=null;_cs.cloudCount=null;_cs.cloudError='';_cs.index=null;_cs.autoParts=null;
+    _csUpdateButton();_csRerender();
+  }
+};
+async function _csOnGoogleUser(user){
+  {
+    // v660: 管理者か、名簿に登録された（停止中でない）メンバーだけ使える
+    if(!(await _csIsMember(user.email))){
+      // 登録されていないアカウント → すぐログアウトして、今までどおり匿名に戻す
       _cs.user=null;_cs.key=null;
       _csSignOutQuiet().then(()=>{
-        alert('このGoogleアカウント（'+(user.email||'')+'）はクラウド同期の対象外です。\n今はアプリの持ち主だけが使える設定になっています。');
+        alert('このGoogleアカウント（'+(user.email||'')+'）は、まだクラウド同期のメンバーに登録されていません（または停止中です）。\n\nアプリの管理者に、このメールアドレスの登録を頼んでください。\nログインしなくても、今までどおりこの端末だけで使えます。');
         _csUpdateButton();_csRerender();
       });
       return;
     }
+    _cs.isAdmin=_csIsAdmin(user.email);
     _cs.user=user;
     _csUpdateButton();
     // 合言葉がこの端末に保存されていれば、静かに鍵を作って確認する
@@ -83,12 +103,8 @@ window._cloudSyncOnAuth=function(user){
         if(_cs.key)_csAutoStart(); // 段階3: 自動保存の同期を始める（他端末の編集があれば確認）
       })
       .finally(()=>{_csUpdateButton();_csRerender();});
-  }else{
-    _cs.user=null;_cs.key=null;_cs.salt=null;_cs.metaExists=null;
-    _cs.listCache=null;_cs.cloudCount=null;_cs.cloudError='';_cs.index=null;_cs.autoParts=null;
-    _csUpdateButton();_csRerender();
   }
-};
+}
 window._cloudSyncOnRedirectError=function(e){
   _cs.lastError='Googleログインに失敗しました: '+((e&&e.message)||e);
   _csRerender();
@@ -135,7 +151,7 @@ async function csLogout(){
   if(!confirm('クラウド同期からログアウトしますか？\n\n端末内の保存データ（保存/読込・ファイル）はそのまま残ります。\nこの端末の合言葉も残します（忘れさせるには別のボタンを使ってください）。'))return;
   _cs.busy=true;_csRerender();
   await _csSignOutQuiet();
-  _cs.user=null;_cs.key=null;_cs.salt=null;_cs.metaExists=null;_cs.busy=false;
+  _cs.user=null;_cs.key=null;_cs.salt=null;_cs.metaExists=null;_cs.busy=false;_cs.isAdmin=false;
   _csUpdateButton();_csRerender();
 }
 
@@ -263,6 +279,8 @@ async function csSubmitPass(){
       return;
     }
     if(pass2!==pass){_cs.busy=false;_csRerender();_csMsg('確認用の合言葉が一致しません','#dc2626');return;}
+    const agree=document.getElementById('cs-pass-agree');
+    if(!agree||!agree.checked){_cs.busy=false;_csRerender();_csMsg('「合言葉を忘れると戻せない」ことを確認して、チェックを入れてください','#dc2626');return;}
     if(!confirm('クラウドにはまだ何もありません。\nこの合言葉で暗号化を始めます。\n\n合言葉を忘れるとクラウドのデータは読めなくなります（端末内の保存・ファイル保存は残ります）。\nよろしいですか？')){_cs.busy=false;_csRerender();return;}
     r=await _csApplyPass(pass,{allowCreate:true});
   }
@@ -737,6 +755,7 @@ function openCloudSyncPanel(keepMsg){
   const prevMsgText=prevMsg?prevMsg.textContent:'';const prevMsgColor=prevMsg?prevMsg.style.color:'';
   const prevPass=keepMsg?(document.getElementById('cs-pass-input')||{}).value||'':'';
   const prevPass2=keepMsg?(document.getElementById('cs-pass-input2')||{}).value||'':'';
+  const prevAgree=keepMsg?!!(document.getElementById('cs-pass-agree')||{}).checked:false;
   document.getElementById('cloud-sync-modal')?.remove();
   const btn=(label,fn,bg,color,border)=>`<button onclick="${fn}" ${_cs.busy?'disabled':''} style="font-size:12px;padding:7px 16px;background:${bg};color:${color};border:1px solid ${border};border-radius:7px;cursor:pointer;font-weight:700;white-space:nowrap;${_cs.busy?'opacity:.5':''}">${label}</button>`;
   let body='';
@@ -744,7 +763,7 @@ function openCloudSyncPanel(keepMsg){
     body+=`
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
         <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:.04em">ログイン</div>
-        <div style="font-size:12px;color:#334155;line-height:1.6;margin-bottom:10px">自分のパソコン・iPad・iPhoneのあいだでCF表を共有するには、同じGoogleアカウントでログインします。<br>ログインしなくても、今までどおりこの端末だけで使えます。</div>
+        <div style="font-size:12px;color:#334155;line-height:1.6;margin-bottom:10px">自分のパソコン・iPad・iPhoneのあいだでCF表を共有するには、同じGoogleアカウントでログインします。<br>ログインしなくても、今までどおりこの端末だけで使えます。<br><span style="color:#64748b">※使えるのは、アプリの管理者にメンバー登録してもらったGoogleアカウントだけです（個人のGmail・会社のGoogleアカウントどちらでも）。</span></div>
         ${btn(_cs.busy?'ログイン中…':'Googleでログイン','csLogin()','#1e3a5f','#fff','#1e3a5f')}
       </div>`;
   }else{
@@ -770,6 +789,7 @@ function openCloudSyncPanel(keepMsg){
       <details ${_cs.detailsOpen?'open':''} ontoggle="_cs.detailsOpen=this.open" style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;background:#f8fafc">
         <summary style="cursor:pointer;font-size:12px;font-weight:700;color:#475569">くわしい設定（ふだんは使いません）</summary>
         <div style="margin-top:8px">
+          ${_cs.isAdmin?row(`<b>メンバー管理</b>（管理者だけに出ています）<br><span style="font-size:10px;color:#94a3b8">同期を使えるメンバーの登録・停止</span>`,small('メンバー管理を開く','openSyncMemberPanel()','#166534','#bbf7d0')):''}
           ${row(`<b>${_cs.user.email||''}</b> でログイン中`,small('ログアウト','csLogout()','#64748b','#cbd5e1'))}
           ${row(`この端末の名前：<b>${_csDeviceName()}</b><br><span style="font-size:10px;color:#94a3b8">他の端末に「○○で編集」と出る名前です</span>`,small('変更','csRenameDevice()','#1e40af','#bfdbfe'))}
           ${row(`この端末のデータを全部クラウドに保存<br><span style="font-size:10px;color:#94a3b8">端末ごとに最初の1回だけ。端末の中のデータは消えません</span>`,small(_cs.busy?'保存しています…':'全部保存する','csMigrateAll()','#92400e','#fed7aa'))}
@@ -790,7 +810,11 @@ function openCloudSyncPanel(keepMsg){
           onkeydown="if(event.key==='Enter')csSubmitPass()">
         ${creating?`<input id="cs-pass-input2" type="password" value="${prevPass2.replace(/"/g,'&quot;')}" placeholder="もう一度（確認）" autocomplete="off"
           style="width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;font-family:inherit;outline:none;margin-bottom:8px"
-          onkeydown="if(event.key==='Enter')csSubmitPass()">`:''}
+          onkeydown="if(event.key==='Enter')csSubmitPass()">
+        <label style="display:flex;gap:6px;align-items:flex-start;font-size:12px;color:#991b1b;font-weight:700;line-height:1.5;margin-bottom:10px;cursor:pointer;background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:8px">
+          <input id="cs-pass-agree" type="checkbox" ${prevAgree?'checked':''} style="margin-top:2px">
+          <span>合言葉を忘れると、クラウドのデータは<u>管理者を含めて誰にも戻せない</u>ことを理解しました（紙に書くなどして大切に保管してください）</span>
+        </label>`:''}
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           ${btn(_cs.busy?'確認中…':(creating?'この合言葉で始める':'合言葉を確認'),'csSubmitPass()','#1e3a5f','#fff','#1e3a5f')}
           <label style="font-size:11px;color:#64748b;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" onchange="['cs-pass-input','cs-pass-input2'].forEach(id=>{const e=document.getElementById(id);if(e)e.type=this.checked?'text':'password'})">表示する</label>
@@ -837,6 +861,106 @@ function _csSetupVersionTap(){
     }
   });
 }
+// ===== v660: メンバー管理（管理者だけ） =====
+// syncMembers/{メール小文字} … {email,name,active,addedAt,updatedAt,addedBy}
+// 消さずに「停止」にする（停止中の人はログインしても使えない。再開もできる）
+const _csMem={list:null,error:'',busy:false};
+async function _csLoadMembers(){
+  const fb=window._firebase;
+  const snap=await fb.getDocs(fb.collection(fb.db,'syncMembers'));
+  const list=[];
+  snap.forEach(d=>{const v=d.data()||{};list.push({id:d.id,email:v.email||d.id,name:v.name||'',active:v.active!==false,addedAt:v.addedAt||0,updatedAt:v.updatedAt||0});});
+  list.sort((a,b)=>(b.active-a.active)||String(a.name||a.email).localeCompare(String(b.name||b.email),'ja'));
+  return list;
+}
+async function openSyncMemberPanel(){
+  if(!_cs.isAdmin){alert('メンバー管理は管理者だけが使えます');return;}
+  document.getElementById('cloud-sync-modal')?.remove();
+  _csMem.error='';
+  _csRenderMemberPanel();
+  try{_csMem.list=await _csLoadMembers();}catch(e){_csMem.error='名簿を読めませんでした: '+_csErr(e);}
+  _csRenderMemberPanel();
+}
+function _csMemEsc(t){return String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function _csRenderMemberPanel(msg,color){
+  const keepName=(document.getElementById('csm-name')||{}).value||'';
+  const keepMail=(document.getElementById('csm-mail')||{}).value||'';
+  document.getElementById('sync-member-modal')?.remove();
+  const L=_csMem.list;
+  const rows=L==null?'<div style="font-size:12px;color:#64748b;padding:8px 0">読み込んでいます…</div>'
+    :L.length===0?'<div style="font-size:12px;color:#64748b;padding:8px 0">まだ誰も登録されていません（管理者は登録しなくても使えます）</div>'
+    :L.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #e2e8f0;${m.active?'':'opacity:.55'}">
+        <div style="min-width:0;flex:1">
+          <div style="font-size:13px;font-weight:700;color:#1e3a5f">${_csMemEsc(m.name||'（名前なし）')} <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:9px;${m.active?'background:#dcfce7;color:#166534':'background:#f1f5f9;color:#64748b'}">${m.active?'使用中':'停止中'}</span></div>
+          <div style="font-size:11px;color:#64748b;word-break:break-all">${_csMemEsc(m.email)}　登録 ${m.addedAt?_csShortTime(m.addedAt):'-'}</div>
+        </div>
+        <button onclick="csSetMemberActive('${_csMemEsc(m.id)}',${m.active?'false':'true'})" ${_csMem.busy?'disabled':''} style="font-size:11px;padding:5px 12px;background:#fff;border-radius:7px;cursor:pointer;font-weight:700;white-space:nowrap;${m.active?'color:#92400e;border:1px solid #fed7aa':'color:#166534;border:1px solid #bbf7d0'}">${m.active?'停止する':'再開する'}</button>
+      </div>`).join('');
+  const inp='width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;font-family:inherit;outline:none';
+  const modal=document.createElement('div');
+  modal.id='sync-member-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(15,39,68,.5);z-index:9001;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:14px;padding:24px;width:460px;max-width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Yu Gothic UI','Meiryo',sans-serif">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800;font-size:15px;color:#1e3a5f">👥 同期のメンバー管理</div>
+        <button onclick="document.getElementById('sync-member-modal').remove();openCloudSyncPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0 4px" title="閉じる">✕</button>
+      </div>
+      <div style="font-size:12px;color:#475569;line-height:1.6;margin-top:-6px">ここに登録したGoogleアカウントだけが「☁ 同期」を使えます。<br>メンバーのデータは本人の合言葉で暗号化されるので、管理者にも中身は見えません。</div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.04em">メンバーを追加</div>
+        <input id="csm-name" placeholder="名前（例：山田 花子）" value="${_csMemEsc(keepName)}" style="${inp}">
+        <input id="csm-mail" type="email" placeholder="Googleアカウントのメールアドレス" value="${_csMemEsc(keepMail)}" style="${inp}" onkeydown="if(event.key==='Enter')csAddMember()">
+        <div style="font-size:10px;color:#94a3b8">個人のGmailでも、会社のGoogleアカウントでも登録できます。</div>
+        <div><button onclick="csAddMember()" ${_csMem.busy?'disabled':''} style="font-size:12px;padding:7px 16px;background:#1e3a5f;color:#fff;border:1px solid #1e3a5f;border-radius:7px;cursor:pointer;font-weight:700">${_csMem.busy?'登録しています…':'登録する'}</button></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.04em;margin-bottom:2px">登録済みのメンバー${L?'（'+L.filter(m=>m.active).length+'人 使用中）':''}</div>
+        ${rows}
+      </div>
+      <div id="csm-msg" style="font-size:12px;min-height:16px;color:${color||'#64748b'}">${_csMemEsc(msg||_csMem.error||'')}</div>
+      <div style="font-size:10px;color:#94a3b8;line-height:1.5;border-top:1px solid #f1f5f9;padding-top:10px">名簿から消すことはできません。使わなくなった人は「停止する」にしてください（その人のクラウドのデータは残ります）。</div>
+    </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal){modal.remove();openCloudSyncPanel();}});
+  document.body.appendChild(modal);
+  if(_csMem.error&&!msg){const m=document.getElementById('csm-msg');if(m)m.style.color='#dc2626';}
+}
+async function csAddMember(){
+  if(!_cs.isAdmin)return;
+  const name=((document.getElementById('csm-name')||{}).value||'').trim();
+  const mail=_csEmailKey((document.getElementById('csm-mail')||{}).value);
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){_csRenderMemberPanel('メールアドレスの形が正しくありません','#dc2626');return;}
+  if(_csIsAdmin(mail)){_csRenderMemberPanel('このアドレスは管理者なので、登録しなくても使えます','#92400e');return;}
+  const ex=(_csMem.list||[]).find(m=>m.id===mail);
+  if(ex&&ex.active){_csRenderMemberPanel('このアドレスはもう登録されています','#92400e');return;}
+  if(ex&&!ex.active){
+    if(!confirm('「'+mail+'」は停止中です。再開しますか？'))return;
+    return csSetMemberActive(mail,true);
+  }
+  if(!confirm('次のメンバーを登録します。\n\n名前：'+(name||'（なし）')+'\nメール：'+mail+'\n\nこの人が「☁ 同期」を使えるようになります。よろしいですか？'))return;
+  _csMem.busy=true;_csRenderMemberPanel('登録しています…','#1e40af');
+  try{
+    const fb=window._firebase;const now=Date.now();
+    await fb.setDoc(_csMemberRef(mail),{email:mail,name,active:true,addedAt:now,updatedAt:now,addedBy:_csEmailKey(_cs.user&&_cs.user.email)});
+    _csMem.list=await _csLoadMembers();
+    _csMem.busy=false;
+    const n=document.getElementById('csm-name'),m=document.getElementById('csm-mail');if(n)n.value='';if(m)m.value='';
+    _csRenderMemberPanel('「'+(name||mail)+'」を登録しました','#16a34a');
+  }catch(e){_csMem.busy=false;_csRenderMemberPanel('登録できませんでした: '+_csErr(e),'#dc2626');}
+}
+async function csSetMemberActive(id,active){
+  if(!_cs.isAdmin)return;
+  const m=(_csMem.list||[]).find(x=>x.id===id);
+  const who=m?(m.name||m.email):id;
+  if(!active&&!confirm('「'+who+'」を停止しますか？\n\n・この人は「☁ 同期」を使えなくなります\n・この人のクラウドのデータは消えません（再開すればまた使えます）\n・この人の端末の中のデータもそのまま残ります'))return;
+  _csMem.busy=true;_csRenderMemberPanel(active?'再開しています…':'停止しています…','#1e40af');
+  try{
+    await window._firebase.setDoc(_csMemberRef(id),{active,updatedAt:Date.now()},{merge:true});
+    _csMem.list=await _csLoadMembers();
+    _csMem.busy=false;_csRenderMemberPanel('「'+who+'」を'+(active?'再開':'停止')+'しました','#16a34a');
+  }catch(e){_csMem.busy=false;_csRenderMemberPanel('変更できませんでした: '+_csErr(e),'#dc2626');}
+}
+
 // 起動時: ボタンの表示だけ決める（ログイン状態は firebase-init からの通知で反映）
 (function(){
   function init(){_csUpdateButton();_csSetupVersionTap();}
