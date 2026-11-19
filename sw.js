@@ -43,6 +43,7 @@ const ASSETS = [
   './js/save-load.js',
   './js/ui.js',
   './js/app.js',
+  './js/auth-gate.js',
   './js/cloud-sync.js',
   './js/firebase-init.js',
   './js/mansion-files.js',

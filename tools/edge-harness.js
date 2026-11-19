@@ -87,6 +87,8 @@ async function openApp(browser, origin, errors){
   //   'serviceWorker' in navigator が false になり、アプリのSW関連コードは丸ごとスキップされる。
   await page.evaluateOnNewDocument(()=>{
     try{ localStorage.setItem('cf-auth-exp', String(Date.now()+86400000)); }catch(e){}
+    // v660〜: 入口がGoogleログインになったので、テストでは localhost 限定の印で入口を飛ばす（js/auth-gate.js）
+    try{ localStorage.setItem('cf-gate-test','1'); }catch(e){}
     try{ delete Navigator.prototype.serviceWorker; }catch(e){}
   });
   page.on('pageerror',e=>{

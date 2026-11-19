@@ -989,12 +989,15 @@ async function loadMansionMaster(){
   }catch(e){_mansionMaster=[];}
   populateMansionSelect();
 
+  // ★ v660: 外部の利用者には、チームのマンション共有を出さない（データも Firestore ルールで読めない）
+  if(window._cfRole==='external'){_mansionMaster=[];populateMansionSelect();return;}
   // Firebase準備完了後、クラウドから最新を取得
   if(window._firebaseReadyPromise){
     try{
       const ok=await window._firebaseReadyPromise;
       if(!ok||!window._firebase)return;
       const fb=window._firebase;
+      if(window._cfRole==='external')return;
       const snap=await fb.getDocs(fb.collection(fb.db,'mansions'));
       _mansionMaster=snap.docs.map(d=>({id:d.id,...d.data()}));
       // ローカルキャッシュを更新

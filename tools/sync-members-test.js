@@ -1,6 +1,7 @@
 // cloud-sync.js（v660 メンバー登録）の動作確認。にせの Firestore を使う（ネットにはつながない）。実行: node tools/sync-members-test.js
 const fs = require('fs');
 const vm = require('vm');
+const gateSrc = fs.readFileSync(require('path').join(__dirname, '..', 'js', 'auth-gate.js'), 'utf8');
 const src = fs.readFileSync(process.argv[2] || require('path').join(__dirname, '..', 'js', 'cloud-sync.js'), 'utf8');
 
 // ---- にせ Firestore ----
@@ -54,7 +55,8 @@ const ctx = {
   setInterval: () => 0, clearInterval: () => {},
   localStorage: { getItem: k => (k in ls ? ls[k] : null), setItem: (k, v) => { ls[k] = String(v); }, removeItem: k => { delete ls[k]; } },
   navigator: { onLine: true, userAgent: 'test', maxTouchPoints: 0 },
-  location: { search: '', hostname: 'localhost' },
+  location: { search: '', hostname: 'cfhyou.pages.dev' },
+  sessionStorage: (()=>{const m={};return {getItem:k=>(k in m?m[k]:null),setItem:(k,v)=>{m[k]=String(v);},removeItem:k=>{delete m[k];}};})(),
   document: { readyState: 'complete', getElementById: () => null, addEventListener() {}, querySelector: () => null, body: { appendChild() {} }, createElement: () => { const el={ style: {}, addEventListener() {}, appendChild() {} }; ctx.__lastEl=el; return el; } },
   alert: m => { console.log('  [alert]', String(m).split('\n')[0]); }, confirm: () => (ctx.confirmAnswer !== undefined ? ctx.confirmAnswer : confirmAnswer), prompt: () => null,
   dbGet: async k => local.get(k) || null, dbPut: async e => { local.set(e.name, e); }, dbGetAll: async () => [...local.values()],
@@ -87,6 +89,7 @@ const test = `
   const setv=(id,v)=>{};
   // 入力欄のまね
   const fields={};document.getElementById=id=>fields[id]||null;
+  const lock={style:{display:'flex'}};fields['pw-lock']=lock;fields['pw-err']={style:{},textContent:''};fields['gate-btn']={style:{},textContent:'',disabled:false};
   fields['csm-name']={value:'山田 花子'};fields['csm-mail']={value:' Hanako.Yamada@Example.co.jp '};
   await csAddMember();
   const d=__store.get('syncMembers/hanako.yamada@example.co.jp');
@@ -117,7 +120,7 @@ const test = `
   ok(_cs.user&&_cs.isAdmin===false&&signedOut===0,'登録済みメンバーは使える（管理者ではない）');
   window._cloudSyncOnAuth(null);
   await _csOnGoogleUser(g('taro@gmail.com'));await wait();
-  ok(!_cs.user&&signedOut===1&&alerts.some(a=>a.indexOf('登録されていません')>=0),'停止中の人は使えない');
+  ok(!_cs.user&&signedOut===1&&fields['pw-err'].textContent.indexOf('登録されていません')>=0&&lock.style.display==='flex','停止中の人は使えない（入口に案内が出る）');
   signedOut=0;alerts.length=0;
   await _csOnGoogleUser(g('stranger@gmail.com'));await wait();
   ok(!_cs.user&&signedOut===1,'未登録の人は使えない');
@@ -131,9 +134,9 @@ const test = `
 
   console.log('5) メンバーには「メンバー管理」が出ない／管理者には出る');
   _cs.key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-  openCloudSyncPanel();ok(__lastEl.innerHTML.indexOf('メンバー管理を開く')<0,'メンバーの画面に出ない');
+  openCloudSyncPanel();ok(__lastEl.innerHTML.indexOf('利用者管理を開く')<0,'メンバーの画面に出ない');
   _cs.isAdmin=false;await openSyncMemberPanel();ok(alerts.some(a=>a.indexOf('管理者だけ')>=0),'メンバーが開こうとしても開けない');
-  _cs.isAdmin=true;openCloudSyncPanel();ok(__lastEl.innerHTML.indexOf('メンバー管理を開く')>=0,'管理者の画面に出る');
+  _cs.isAdmin=true;openCloudSyncPanel();ok(__lastEl.innerHTML.indexOf('利用者管理を開く')>=0,'管理者の画面に出る');
 
   console.log('6) 合言葉を初めて作るときは「戻せない」のチェックが必須');
   _cs.key=null;_cs.metaExists=false;openCloudSyncPanel();
@@ -144,10 +147,48 @@ const test = `
   await csSubmitPass();
   ok(fields['cs-msg'].textContent.indexOf('チェックを入れて')>=0,'チェックなしでは始められない');
 
+  console.log('7) チーム／外部の区分');
+  _cs.user={uid:'A',email:'k.kagemasa@gmail.com'};_cs.isAdmin=true;
+  document.querySelector=sel=>sel.indexOf('csm-role')>=0?{value:'external'}:null;
+  fields['csm-name']={value:'外部 一郎'};fields['csm-mail']={value:'ichiro@gmail.com'};
+  await csAddMember();
+  ok(__store.get('syncMembers/ichiro@gmail.com').role==='external','外部として登録できる');
+  ok(txt(__lastEl.innerHTML).indexOf('外部')>=0&&txt(__lastEl.innerHTML).indexOf('チームにする')>=0,'一覧に「外部」と「チームにする」');
+  __store.set('syncMembers/old@gmail.com',{email:'old@gmail.com',name:'古い登録',active:true});
+  _csMem.list=await _csLoadMembers();
+  ok(_csMem.list.find(m=>m.id==='old@gmail.com').role==='team','区分が無い古い登録はチーム扱い');
+  document.querySelector=()=>null;
+  window._cloudSyncOnAuth(null);lock.style.display='flex';
+  await _csOnGoogleUser(g('ichiro@gmail.com'));await wait();
+  ok(_cs.role==='external'&&window._cfRole==='external','外部の人がログイン → 区分は外部');
+  _cs.isAdmin=true;_csMem.list=await _csLoadMembers();
+  await csSetMemberRole('ichiro@gmail.com','team');
+  ok(__store.get('syncMembers/ichiro@gmail.com').role==='team','チームに切り替えられる');
+
+  console.log('8) 入口（Googleログイン）');
+  window._cloudSyncOnAuth(null);
+  ok(lock.style.display==='flex'&&!localStorage.getItem('cf-gate'),'ログインしていなければ入口が出る');
+  await _csOnGoogleUser(g('hanako.yamada@example.co.jp'));await wait();
+  ok(lock.style.display==='flex'&&fields['gate-btn'].textContent==='同意して始める','ログインは残っているが同意前 → 「同意して始める」');
+  gateButton();
+  ok(lock.style.display==='none'&&JSON.parse(localStorage.getItem('cf-gate')).email==='hanako.yamada@example.co.jp','押すと入口が閉じ、7日間覚える');
+  window._cloudSyncOnAuth(null);lock.style.display='flex';
+  sessionStorage.setItem('cf-gate-agree','1');
+  await _csOnGoogleUser(g('hanako.yamada@example.co.jp'));await wait();
+  ok(lock.style.display==='none','「同意してGoogleでログイン」→ ログインできたらすぐ入れる');
+  window._cloudSyncOnAuth(null);
+  ok(lock.style.display==='flex'&&!localStorage.getItem('cf-gate'),'ログアウトしたら入口に戻り、覚えた印も消える');
+  await _csOnGoogleUser(g('nobody@gmail.com'));await wait();
+  ok(lock.style.display==='flex'&&fields['pw-err'].textContent.indexOf('nobody@gmail.com')>=0,'未登録の人は入口に案内');
+  __netFail=true;localStorage.setItem('cf-gate-role',JSON.stringify({email:'ichiro@gmail.com',role:'external'}));
+  __store.get('syncMembers/ichiro@gmail.com').role='external';
+  await _csOnGoogleUser(g('ichiro@gmail.com'));await wait();__netFail=false;
+  ok(_cs.user&&_cs.role==='external','通信できないときは、前回の区分（外部）を使う');
+
   console.log(__fail.n?'\\n失敗 '+__fail.n+' 件':'\\nすべて合格');
 })().catch(e=>{console.log('ERROR',e&&e.stack||e);__fail.n++;});
 `;
 ctx.__deny = false; ctx.__netFail = false;
 ctx.__fb = fb; ctx.__store = store; ctx.__applied = applied; ctx.__fail = { n: 0 };
 ctx.__st = { reset() { reads = 0; readBytes = 0; }, get reads() { return reads; }, get bytes() { return readBytes; } };
-vm.runInContext(src + test, ctx, { filename: 'cloud-sync.js' });
+vm.runInContext(gateSrc + '\n' + src + test, ctx, { filename: 'cloud-sync.js' });
