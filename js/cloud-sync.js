@@ -24,7 +24,7 @@ const CS_LS_ON='cf_cloud_sync_on'; // 「☁ 同期」ボタンを出す端末
 
 const _cs={user:null,key:null,salt:null,metaExists:null,busy:false,lastError:'',
   // 段階2
-  listCache:null,lastSyncAt:0,cloudCount:null,cloudError:'',
+  listCache:null,lastSyncAt:0,cloudCount:null,cloudError:'',detailsOpen:false,
   // v659: 目次（null＝まだ読んでいない）
   index:null,autoParts:null};
 
@@ -454,7 +454,7 @@ async function csPullSlot(name){
   if(!_csReady()){alert('クラウド同期の準備ができていません（☁ 同期 でログインと合言葉を確認してください）');return;}
   let cloud;
   try{cloud=await csFetchSlot(name);}
-  catch(e){alert('クラウドから取り込めませんでした: '+_csErr(e)+'\n（合言葉が違う場合は ☁ 同期 から入れ直してください）');return;}
+  catch(e){alert('クラウドから取り出せませんでした: '+_csErr(e)+'\n（合言葉が違う場合は ☁ 同期 から入れ直してください）');return;}
   if(!cloud){alert('クラウドに「'+name+'」が見つかりません');return;}
   const local=await dbGet(name);
   if(local&&(local.updatedAt||0)>(cloud.updatedAt||0)){
@@ -473,7 +473,7 @@ async function csPushSlotByName(name){
   if(c&&(c.updatedAt||0)>(local.updatedAt||0)){
     if(!confirm('クラウドの「'+name+'」（'+_fmtDate(c.updatedAt)+'）の方が、この端末（'+_fmtDate(local.updatedAt)+'）より新しいです。\nこの端末の内容でクラウドを上書きしますか？'))return;
   }
-  try{await csPushSlot(local);}catch(e){alert('クラウドへ送れませんでした: '+_csErr(e));return;}
+  try{await csPushSlot(local);}catch(e){alert('クラウドに保存できませんでした: '+_csErr(e));return;}
   await openSlotPanel();
 }
 
@@ -491,19 +491,19 @@ async function csMigrateAll(){
   let slots,auto;
   try{slots=await dbGetAll();auto=await dbGet(AUTOSAVE_KEY);}
   catch(e){_csMsg('この端末の保存データを読めませんでした: '+_csErr(e),'#dc2626');return;}
-  if(slots.length===0&&!auto){_csMsg('この端末には送る保存データがありません','#92400e');return;}
-  if(!confirm('この端末の保存データ '+slots.length+'件'+(auto?'と自動保存':'')+' をクラウドへ送ります。\n\n'
+  if(slots.length===0&&!auto){_csMsg('この端末には保存データがありません','#92400e');return;}
+  if(!confirm('この端末の保存データ '+slots.length+'件'+(auto?'と自動保存':'')+' をクラウドに保存します。\n\n'
     +'・端末内のデータは消しません（そのまま残ります）\n'
     +'・同じ名前がクラウドにある場合は新しい方を優先し、古い方は「名前 ＿旧・月/日」の名前で残します\n'
     +'・件数が多いと少し時間がかかります\n\nよろしいですか？'))return;
-  _cs.busy=true;_csRerender();_csMsg('送っています… 0/'+slots.length,'#1e40af');
+  _cs.busy=true;_csRerender();_csMsg('クラウドに保存しています… 0/'+slots.length,'#1e40af');
   const res={added:0,updated:0,same:0,kept:0,auto:'',err:[]};
   try{
     const cloud=await csListCloud(true)||[];
     const taken=new Set(cloud.map(c=>c.name));
     let i=0;
     for(const s of slots){
-      i++;_csMsg('送っています… '+i+'/'+slots.length+'「'+s.name+'」','#1e40af');
+      i++;_csMsg('クラウドに保存しています… '+i+'/'+slots.length+'「'+s.name+'」','#1e40af');
       try{
         const c=cloud.find(x=>x.name===s.name);
         if(!c){await csPushSlot(s);res.added++;taken.add(s.name);}
@@ -538,12 +538,12 @@ async function csMigrateAll(){
   _cs.busy=false;_csInvalidateList();
   try{_cs.cloudCount=(await csListCloud(true)||[]).length;}catch(e){}
   _csRerender();
-  const lines=['送り終わりました。','新しく追加: '+res.added+'件','クラウドを更新: '+res.updated+'件','同じだった: '+res.same+'件','「＿旧」で残した: '+res.kept+'件'];
+  const lines=['クラウドへの保存が終わりました。','新しく追加: '+res.added+'件','クラウドを更新: '+res.updated+'件','同じだった: '+res.same+'件','「＿旧」で残した: '+res.kept+'件'];
   if(res.auto)lines.push(res.auto);
   if(res.err.length)lines.push('失敗: '+res.err.length+'件\n'+res.err.join('\n'));
   lines.push('\n端末内のデータはそのまま残っています。');
   alert(lines.join('\n'));
-  _csMsg(res.err.length?'一部送れませんでした（詳細は上のメッセージ）':'すべて送りました','#16a34a');
+  _csMsg(res.err.length?'一部保存できませんでした（詳細は上のメッセージ）':'すべてクラウドに保存しました','#16a34a');
 }
 // ===== 段階3: 作業中の自動保存の同期 =====
 // 端末内の自動保存（scheduleAutoSave）が書かれるたびに「未送信」の印を付け、
@@ -624,7 +624,7 @@ async function _csFlushAutosave(force,dataGiven){
   try{
     const ts=Date.now();
     await _csPushEntry(_csAutosaveRef(),{name:'autosave',savedAt:_fmtDate(new Date()),updatedAt:ts,data},{device:_csDeviceName()},'auto');
-    _csAuto.lastSentJson=json;_csAuto.lastSentAt=ts;_csAuto.remoteSeenAt=ts;_csAuto.dirty=false;_csAuto.lastError='';
+    _csAuto.lastSentJson=json;_csAuto.lastSentAt=ts;_csAuto.remoteSeenAt=ts;_csAuto.dirty=false;_csAuto.lastError='';_cs.cloudError='';
     try{localStorage.removeItem(CS_LS_DIRTY);}catch(e){}
     _csAutoRerenderStatus();
     return true;
@@ -639,10 +639,10 @@ function _csFlushOnHide(data){
 // 「今すぐ送る」
 async function csSendNow(){
   if(!_csReady()){_csMsg('先にログインと合言葉の確認をしてください','#dc2626');return;}
-  _csMsg('送っています…','#1e40af');
+  _csMsg('クラウドに保存しています…','#1e40af');
   const ok=await _csFlushAutosave(true);
   _csRerender();
-  _csMsg(ok?'いまの作業内容をクラウドへ送りました（'+_fmtDate(_csAuto.lastSentAt)+'）':'送れませんでした: '+_csAuto.lastError,ok?'#16a34a':'#dc2626');
+  _csMsg(ok?'いまの作業をクラウドに保存しました（'+_csShortTime(_csAuto.lastSentAt)+'）':'クラウドに保存できませんでした: '+_csAuto.lastError,ok?'#16a34a':'#dc2626');
 }
 // 他端末の自動保存を確認。askIfNewer=true なら新しければ確認して取り込む
 async function _csCheckRemoteAutosave(onOpen){
@@ -663,7 +663,7 @@ async function _csCheckRemoteAutosave(onOpen){
   if(!onOpen&&_csAuto.dirty)return; // こちらで作業中なら、いまは聞かない
   if(document.getElementById('slot-modal')||document.getElementById('cloud-sync-modal'))return; // 画面が開いているときは邪魔しない
   const when=_fmtDate(ru);
-  const ok=confirm('他の端末（'+(v.device||'不明')+'）で '+when+' に編集した作業中の内容がクラウドにあります。\n\nこの端末に読み込みますか？\n「OK」→ いまの画面の内容は、その内容で置き換わります\n「キャンセル」→ この端末の内容のまま続けます（次にこの端末で変更を送ると、クラウドの方が置き換わります）');
+  const ok=confirm('他の端末（'+(v.device||'不明')+'）で '+when+' に編集した作業中の内容がクラウドにあります。\n\nこの端末に読み込みますか？\n「OK」→ いまの画面の内容は、その内容で置き換わります\n「キャンセル」→ この端末の内容のまま続けます（次にこの端末で変更すると、クラウドの方がこの端末の内容に置き換わります）');
   if(!ok){_csAuto.declinedAt=ru;return;}
   try{
     const bsnap=await window._firebase.getDoc(_csAutosaveRef());
@@ -684,14 +684,35 @@ function _csAutoRerenderStatus(){
   const el=document.getElementById('cs-auto-status');
   if(el)el.innerHTML=_csAutoStatusHtml();
 }
+// v659: 時刻を短く（今日なら「11:05」、それ以外は「11/18 11:05」）
+function _csShortTime(t){
+  if(!t)return '';
+  const d=new Date(t),n=new Date();
+  const hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  if(d.toDateString()===n.toDateString())return '今日 '+hm;
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+hm;
+}
+// 同期画面の一番上「今の状態」（v659: 言葉をやさしく。#cs-auto-status の中身）
 function _csAutoStatusHtml(){
-  const parts=[];
-  parts.push('この端末の名前: <b>'+_csDeviceName()+'</b> <a href="#" onclick="csRenameDevice();return false" style="font-size:10px;color:#1e40af">変更</a>');
-  parts.push(_csAuto.lastSentAt?'最後に送った時刻: '+_fmtDate(_csAuto.lastSentAt):'この端末からはまだ送っていません');
-  parts.push(_csAuto.dirty?'<span style="color:#92400e">未送信の変更があります（手が止まると1分以内に送ります）</span>':'<span style="color:#16a34a">送信済み（変更なし）</span>');
-  if(_csAuto.lastRemote&&_csAuto.lastRemote.device&&_csAuto.lastRemote.device!==_csDeviceName())parts.push('クラウドの作業中データ: '+_csAuto.lastRemote.device+'（'+_fmtDate(_csAuto.lastRemote.updatedAt)+'）');
-  if(_csAuto.lastError)parts.push('<span style="color:#dc2626">前回エラー: '+_csAuto.lastError+'</span>');
-  return parts.join('<br>');
+  const err=!navigator.onLine?'インターネットにつながっていません':(_cs.cloudError||_csAuto.lastError||'');
+  let head,bg,bd,col;
+  if(err){head='❌ クラウドにつながっていません';bg='#fef2f2';bd='#fecaca';col='#991b1b';}
+  else if(_csAuto.dirty){head='⚠ まだクラウドに保存していない変更があります';bg='#fffbeb';bd='#fde68a';col='#92400e';}
+  else{head='✅ 同期できています';bg='#f0fdf4';bd='#bbf7d0';col='#166534';}
+  const lines=[];
+  if(err)lines.push('この端末の中には保存されています。つながると自動でクラウドに保存します。');
+  else if(_csAuto.dirty)lines.push('手を止めると1分以内に、自動でクラウドに保存します。');
+  let mine;
+  if(_csAuto.dirty)mine=_csAuto.lastSentAt?_csShortTime(_csAuto.lastSentAt)+' に保存（そのあと変更あり）':'まだクラウドに保存していません';
+  else mine=_csAuto.lastSentAt?_csShortTime(_csAuto.lastSentAt)+' にクラウドへ保存済み':'変更はありません';
+  lines.push('この端末の作業：'+mine);
+  const r=_csAuto.lastRemote;
+  lines.push('他の端末の最新：'+((r&&r.device&&r.device!==_csDeviceName()&&r.updatedAt)?r.device+' で '+_csShortTime(r.updatedAt)+' に編集':'ありません'));
+  let h=`<div style="background:${bg};border:1px solid ${bd};border-radius:10px;padding:14px">
+    <div style="font-size:14px;font-weight:800;color:${col};margin-bottom:6px">${head}</div>
+    <div style="font-size:12px;color:#334155;line-height:1.8">${lines.join('<br>')}</div>`;
+  if(err)h+=`<div style="font-size:10px;color:#991b1b;margin-top:6px;word-break:break-all">くわしい理由: ${err}</div>`;
+  return h+'</div>';
 }
 
 // rebuild=true:「クラウドの一覧を作り直す」— 本体を全部読んで目次を作り直す（通信が多いので押したときだけ）
@@ -727,7 +748,7 @@ function openCloudSyncPanel(keepMsg){
         ${btn(_cs.busy?'ログイン中…':'Googleでログイン','csLogin()','#1e3a5f','#fff','#1e3a5f')}
       </div>`;
   }else{
-    body+=`
+    if(!_cs.key)body+=`
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
         <div style="min-width:0">
           <div style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.04em">ログイン中</div>
@@ -736,37 +757,26 @@ function openCloudSyncPanel(keepMsg){
         ${btn('ログアウト','csLogout()','#fff','#64748b','#cbd5e1')}
       </div>`;
     if(_cs.key){
+      // v659: 一番上に「今の状態」、ボタン2つ、ふだん使わないものは「くわしい設定」に畳む
+      const row=(label,button)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid #e2e8f0"><div style="font-size:12px;color:#334155;line-height:1.5;flex:1;min-width:160px">${label}</div>${button}</div>`;
+      const small=(label,fn,color,border)=>`<button onclick="${fn}" ${_cs.busy?'disabled':''} style="font-size:11px;padding:5px 12px;background:#fff;color:${color};border:1px solid ${border};border-radius:7px;cursor:pointer;font-weight:700;white-space:nowrap;${_cs.busy?'opacity:.5':''}">${label}</button>`;
       body+=`
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
-        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;letter-spacing:.04em">合言葉</div>
-        <div style="font-size:12px;color:#16a34a;font-weight:700;margin-bottom:8px">✓ この端末に設定済み（データは暗号化して送ります）</div>
-        <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">他の端末でも同じ合言葉を入れると、同じデータが見えます。</div>
-        ${btn('この端末の合言葉を忘れさせる','csForgetPass()','#fff','#92400e','#fed7aa')}
+      <div style="font-size:12px;color:#475569;line-height:1.6;margin-top:-6px">クラウド＝インターネット上にある、自分専用の保管庫です。<br>パソコン・iPad・iPhone で同じデータを見られます。</div>
+      <div id="cs-auto-status">${_csAutoStatusHtml()}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${btn(_csAuto.sending?'保存しています…':'いまの作業をクラウドに保存する','csSendNow()','#1e3a5f','#fff','#1e3a5f')}
+        ${btn('保存/読込を開く','document.getElementById(\'cloud-sync-modal\').remove();openSlotPanel()','#fff','#1e3a5f','#cbd5e1')}
       </div>
-      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px">
-        <div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:6px;letter-spacing:.04em">同期</div>
-        <div style="font-size:12px;color:#1e3a5f;line-height:1.6;margin-bottom:8px">
-          クラウドの保存データ: <b>${_cs.cloudCount==null?'（未確認）':_cs.cloudCount+'件'}</b>
-          ${_cs.lastSyncAt?'<span style="color:#64748b">（最終確認 '+_fmtDate(_cs.lastSyncAt)+'）</span>':''}
-          ${_cs.cloudError?'<div style="color:#dc2626;font-size:11px">クラウドに接続できません: '+_cs.cloudError+'</div>':''}
+      <details ${_cs.detailsOpen?'open':''} ontoggle="_cs.detailsOpen=this.open" style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;background:#f8fafc">
+        <summary style="cursor:pointer;font-size:12px;font-weight:700;color:#475569">くわしい設定（ふだんは使いません）</summary>
+        <div style="margin-top:8px">
+          ${row(`<b>${_cs.user.email||''}</b> でログイン中`,small('ログアウト','csLogout()','#64748b','#cbd5e1'))}
+          ${row(`この端末の名前：<b>${_csDeviceName()}</b><br><span style="font-size:10px;color:#94a3b8">他の端末に「○○で編集」と出る名前です</span>`,small('変更','csRenameDevice()','#1e40af','#bfdbfe'))}
+          ${row(`この端末のデータを全部クラウドに保存<br><span style="font-size:10px;color:#94a3b8">端末ごとに最初の1回だけ。端末の中のデータは消えません</span>`,small(_cs.busy?'保存しています…':'全部保存する','csMigrateAll()','#92400e','#fed7aa'))}
+          ${row(`クラウドの一覧が合わないとき<br><span style="font-size:10px;color:#94a3b8">いまクラウドにあるお客様データ：${_cs.cloudCount==null?'未確認':_cs.cloudCount+'件'}</span>`,small('一覧を作り直す','csRefreshCloudCount(true)','#1e40af','#bfdbfe'))}
+          ${row(`合言葉（この端末に設定済み）<br><span style="font-size:10px;color:#94a3b8">忘れさせると、次に開いたとき入れ直しになります</span>`,small('この端末で忘れさせる','csForgetPass()','#92400e','#fed7aa'))}
         </div>
-        <div style="font-size:11px;color:#475569;line-height:1.6;margin-bottom:10px">「保存/読込」で名前を付けて保存すると、端末内とクラウドの両方に保存されます。保存一覧には「☁ 新しい版あり」「☁ クラウドのみ」が出て、取り込めます。</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${btn('クラウドの一覧を作り直す','csRefreshCloudCount(true)','#fff','#1e40af','#bfdbfe')}
-          ${btn('保存/読込を開く','document.getElementById(\'cloud-sync-modal\').remove();openSlotPanel()','#fff','#1e3a5f','#cbd5e1')}
-        </div>
-      </div>
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
-        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;letter-spacing:.04em">作業中の内容（自動保存）の同期</div>
-        <div id="cs-auto-status" style="font-size:11px;color:#334155;line-height:1.7;margin-bottom:10px">${_csAutoStatusHtml()}</div>
-        <div style="font-size:10px;color:#94a3b8;line-height:1.5;margin-bottom:10px">手が止まってから1分以内に自動で送ります。画面を閉じる・切り替えるときにも送ります。別の端末で開いたとき、こちらの方が新しければ「読み込みますか？」と聞きます。</div>
-        ${btn(_csAuto.sending?'送っています…':'今すぐ送る','csSendNow()','#1e3a5f','#fff','#1e3a5f')}
-      </div>
-      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px">
-        <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:6px;letter-spacing:.04em">今までのデータを移す（端末ごとに1回）</div>
-        <div style="font-size:11px;color:#78350f;line-height:1.6;margin-bottom:10px">この端末に保存してある全データと自動保存を、暗号化してクラウドへ送ります。端末内のデータは消しません。同じ名前がクラウドにある場合は新しい方を優先し、古い方は「名前 ＿旧・月/日」で残します。</div>
-        ${btn(_cs.busy?'送っています…':'この端末の保存データをすべてクラウドへ送る','csMigrateAll()','#92400e','#fff','#92400e')}
-      </div>`;
+      </details>`;
     }else{
       const creating=_cs.metaExists===false;
       body+=`
@@ -799,7 +809,7 @@ function openCloudSyncPanel(keepMsg){
       </div>
       ${body}
       <div id="cs-msg" style="font-size:12px;min-height:16px;color:${prevMsgColor||'#64748b'}">${prevMsgText||(_cs.lastError||'')}</div>
-      <div style="font-size:10px;color:#94a3b8;line-height:1.5;border-top:1px solid #f1f5f9;padding-top:10px">データは送る前にこの端末で暗号化します。合言葉はクラウドに送りません。保存場所はFirebase（東京リージョン）です。</div>
+      <div style="font-size:10px;color:#94a3b8;line-height:1.5;border-top:1px solid #f1f5f9;padding-top:10px">データはこの端末で暗号化してからクラウドに保存します。合言葉はクラウドに送りません。保存場所はFirebase（東京リージョン）です。</div>
     </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);

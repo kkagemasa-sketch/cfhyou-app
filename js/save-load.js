@@ -1546,9 +1546,9 @@ async function openSlotPanel(){
     const c=cloudMap.get(s.name);
     let badge='',extra='';
     if(cloudList){
-      if(!c){badge=_badge('この端末のみ','#f1f5f9','#64748b');extra=_cloudBtn('↑ 送る',`csPushSlotByName('${_esc(s.name)}')`,'この端末の内容をクラウドへ送る');}
-      else if((c.updatedAt||0)>(s.updatedAt||0)){badge=_badge('☁ 新しい版あり '+_fmtDate(c.updatedAt),'#dbeafe','#1e40af');extra=_cloudBtn('☁ 取り込む',`csPullSlot('${_esc(s.name)}')`,'クラウドの新しい版を取り込んで読み込む');}
-      else if((c.updatedAt||0)<(s.updatedAt||0)){badge=_badge('この端末の方が新しい','#fef3c7','#92400e');extra=_cloudBtn('↑ 送る',`csPushSlotByName('${_esc(s.name)}')`,'この端末の内容でクラウドを更新する');}
+      if(!c){badge=_badge('この端末のみ','#f1f5f9','#64748b');extra=_cloudBtn('↑ クラウドに保存',`csPushSlotByName('${_esc(s.name)}')`,'この端末の内容をクラウドに保存する');}
+      else if((c.updatedAt||0)>(s.updatedAt||0)){badge=_badge('☁ 新しい版あり '+_fmtDate(c.updatedAt),'#dbeafe','#1e40af');extra=_cloudBtn('☁ クラウドから取り出す',`csPullSlot('${_esc(s.name)}')`,'クラウドの新しい版を取り出して開く');}
+      else if((c.updatedAt||0)<(s.updatedAt||0)){badge=_badge('この端末の方が新しい','#fef3c7','#92400e');extra=_cloudBtn('↑ クラウドに保存',`csPushSlotByName('${_esc(s.name)}')`,'この端末の内容でクラウドを更新する');}
       else{badge=_badge('☁ 同期済み','#dcfce7','#166534');}
     }
     return `
@@ -1571,7 +1571,7 @@ async function openSlotPanel(){
           <div style="font-weight:700;font-size:12px;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
           <div style="font-size:10px;color:#94a3b8;margin-top:1px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">${_fmtDate(c.updatedAt)} 保存 ${_badge('☁ クラウドのみ','#dbeafe','#1e40af')}</div>
         </div>
-        ${_cloudBtn('☁ 取り込む',`csPullSlot('${_esc(c.name)}')`,'クラウドから取り込んで読み込む')}
+        ${_cloudBtn('☁ クラウドから取り出す',`csPullSlot('${_esc(c.name)}')`,'クラウドから取り出して開く')}
       </div>`);
   });
   const listHtml=rows.length===0
