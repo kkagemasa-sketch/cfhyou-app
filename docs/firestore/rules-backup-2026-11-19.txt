@@ -1,0 +1,22 @@
+== firestore.rules
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // マンション共有（今までどおり：ログイン済みなら読み書きOK）
+    match /mansions/{mansionId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // CF表のクラウド同期：いまは本人のGoogleアカウントだけ。
+    // メンバーにも開放するときは、下の「&& request.auth.token.email in [...]」の行を消す
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['k.kagemasa@gmail.com', 'kgmkhmuk@gmail.com'];
+    }
+  }
+}

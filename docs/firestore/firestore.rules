@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // マンション共有（今までどおり：ログイン済みなら読み書きOK）
+    match /mansions/{mansionId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ===== CF表のクラウド同期（v660〜）=====
+    // 管理者: アプリの持ち主（メンバー管理ができる）
+    function isSyncAdmin() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in ['k.kagemasa@gmail.com', 'kgmkhmuk@gmail.com'];
+    }
+    // メンバー: 管理者が名簿 syncMembers に「使用中」で登録した Google アカウント
+    function isSyncMember() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.token.email_verified == true
+        && (isSyncAdmin()
+            || get(/databases/$(database)/documents/syncMembers/$(request.auth.token.email.lower())).data.active == true);
+    }
+
+    // メンバー名簿: 読み書きは管理者だけ。本人は自分の1件だけ読める（ログイン時の確認用）
+    match /syncMembers/{email} {
+      allow read: if isSyncAdmin()
+        || (request.auth != null
+            && request.auth.token.firebase.sign_in_provider == 'google.com'
+            && request.auth.token.email.lower() == email);
+      allow write: if isSyncAdmin();
+    }
+
+    // 各自のデータ: 本人だけ（しかも管理者か、使用中のメンバーのときだけ）
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && isSyncMember();
+    }
+  }
+}
