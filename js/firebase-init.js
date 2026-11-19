@@ -49,7 +49,10 @@ try {
   const ua = navigator.userAgent || '';
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
-  if (ios && standalone && location.hostname === 'cfhyou.pages.dev') firebaseConfig.authDomain = 'cfhyou.pages.dev';
+  // ★ v660: iPhone/iPad は Safari（ブラウザ）でも同じ。入口がGoogleログインだけになり、Safari でポップアップが
+  //   使えずリダイレクトになったとき「Unable to process request due to missing initial state」で入れなかったため
+  if (ios && location.hostname === 'cfhyou.pages.dev') firebaseConfig.authDomain = 'cfhyou.pages.dev';
+  void standalone;
 } catch (e) {}
 
 // Firebase初期化
