@@ -895,6 +895,7 @@ function _csRenderMemberPanel(msg,color){
           <div style="font-size:11px;color:#64748b;word-break:break-all">${_csMemEsc(m.email)}　登録 ${m.addedAt?_csShortTime(m.addedAt):'-'}</div>
         </div>
         <button onclick="csSetMemberActive('${_csMemEsc(m.id)}',${m.active?'false':'true'})" ${_csMem.busy?'disabled':''} style="font-size:11px;padding:5px 12px;background:#fff;border-radius:7px;cursor:pointer;font-weight:700;white-space:nowrap;${m.active?'color:#92400e;border:1px solid #fed7aa':'color:#166534;border:1px solid #bbf7d0'}">${m.active?'停止する':'再開する'}</button>
+        <button onclick="csRemoveMember('${_csMemEsc(m.id)}')" ${_csMem.busy?'disabled':''} style="font-size:11px;padding:5px 10px;background:#fff;border-radius:7px;cursor:pointer;font-weight:700;white-space:nowrap;color:#991b1b;border:1px solid #fecaca">名簿から消す</button>
       </div>`).join('');
   const inp='width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;font-family:inherit;outline:none';
   const modal=document.createElement('div');
@@ -919,7 +920,7 @@ function _csRenderMemberPanel(msg,color){
         ${rows}
       </div>
       <div id="csm-msg" style="font-size:12px;min-height:16px;color:${color||'#64748b'}">${_csMemEsc(msg||_csMem.error||'')}</div>
-      <div style="font-size:10px;color:#94a3b8;line-height:1.5;border-top:1px solid #f1f5f9;padding-top:10px">名簿から消すことはできません。使わなくなった人は「停止する」にしてください（その人のクラウドのデータは残ります）。</div>
+      <div style="font-size:10px;color:#94a3b8;line-height:1.5;border-top:1px solid #f1f5f9;padding-top:10px">しばらく使わない人は「停止する」（再開できます）、間違えて登録した人・辞めた人は「名簿から消す」にしてください。どちらも、その人のクラウドのデータと端末の中のデータは消えません。</div>
     </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal){modal.remove();openCloudSyncPanel();}});
   document.body.appendChild(modal);
@@ -959,6 +960,20 @@ async function csSetMemberActive(id,active){
     _csMem.list=await _csLoadMembers();
     _csMem.busy=false;_csRenderMemberPanel('「'+who+'」を'+(active?'再開':'停止')+'しました','#16a34a');
   }catch(e){_csMem.busy=false;_csRenderMemberPanel('変更できませんでした: '+_csErr(e),'#dc2626');}
+}
+
+// 名簿から1件消す（その人のデータは消さない。管理者にはそもそも消す権限が無い）
+async function csRemoveMember(id){
+  if(!_cs.isAdmin)return;
+  const m=(_csMem.list||[]).find(x=>x.id===id);
+  const who=m?((m.name?m.name+'（'+m.email+'）':m.email)):id;
+  if(!confirm('「'+who+'」を名簿から消しますか？\n\n・この人は「☁ 同期」を使えなくなります\n・名簿の一覧からも消えます（あとで使うときは、もう一度登録すればOK）\n・この人のクラウドのデータは消えません\n・この人の端末の中のデータも消えません'))return;
+  _csMem.busy=true;_csRenderMemberPanel('名簿から消しています…','#1e40af');
+  try{
+    await window._firebase.deleteDoc(_csMemberRef(id));
+    _csMem.list=await _csLoadMembers();
+    _csMem.busy=false;_csRenderMemberPanel('「'+(m?(m.name||m.email):id)+'」を名簿から消しました','#16a34a');
+  }catch(e){_csMem.busy=false;_csRenderMemberPanel('消せませんでした: '+_csErr(e),'#dc2626');}
 }
 
 // 起動時: ボタンの表示だけ決める（ログイン状態は firebase-init からの通知で反映）

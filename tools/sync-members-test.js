@@ -56,7 +56,7 @@ const ctx = {
   navigator: { onLine: true, userAgent: 'test', maxTouchPoints: 0 },
   location: { search: '', hostname: 'localhost' },
   document: { readyState: 'complete', getElementById: () => null, addEventListener() {}, querySelector: () => null, body: { appendChild() {} }, createElement: () => { const el={ style: {}, addEventListener() {}, appendChild() {} }; ctx.__lastEl=el; return el; } },
-  alert: m => { console.log('  [alert]', String(m).split('\n')[0]); }, confirm: () => confirmAnswer, prompt: () => null,
+  alert: m => { console.log('  [alert]', String(m).split('\n')[0]); }, confirm: () => (ctx.confirmAnswer !== undefined ? ctx.confirmAnswer : confirmAnswer), prompt: () => null,
   dbGet: async k => local.get(k) || null, dbPut: async e => { local.set(e.name, e); }, dbGetAll: async () => [...local.values()],
   AUTOSAVE_KEY: '__autosave__', _fmtDate: d => new Date(d).toISOString(), _applyData: d => applied.push(d),
   live: () => {}, encodeURIComponent, decodeURIComponent, parseInt, isNaN,
@@ -102,6 +102,14 @@ const test = `
   await csSetMemberActive('taro@gmail.com',false);
   ok(__store.get('syncMembers/taro@gmail.com').active===false&&__store.has('syncMembers/taro@gmail.com'),'停止しても名簿からは消えない');
   ok(txt(__lastEl.innerHTML).indexOf('停止中')>=0,'一覧に「停止中」');
+  ok(__lastEl.innerHTML.indexOf('名簿から消す')>=0,'「名簿から消す」ボタンがある');
+  fields['csm-name']={value:'間違い'};fields['csm-mail']={value:'oops@gmail.com'};await csAddMember();
+  __store.set('users/uid-oops@gmail.com/slots/s_x',{name:'x'});
+  confirmAnswer=false;await csRemoveMember('oops@gmail.com');
+  ok(__store.has('syncMembers/oops@gmail.com'),'確認で「キャンセル」なら消さない');
+  confirmAnswer=true;await csRemoveMember('oops@gmail.com');
+  ok(!__store.has('syncMembers/oops@gmail.com')&&txt(__lastEl.innerHTML).indexOf('oops@gmail.com')<0,'「OK」で名簿から消える');
+  ok(__store.has('users/uid-oops@gmail.com/slots/s_x'),'その人のクラウドのデータは消えない');
 
   console.log('4) メンバーのログイン');
   _cs.user=null;signedOut=0;alerts.length=0;
