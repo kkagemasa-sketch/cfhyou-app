@@ -1,0 +1,13 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // マンションの添付ファイル（v660〜）: Googleでログインした人だけ（匿名ログインは不可）
+    //   アプリの入口が「名簿に登録されたGoogleアカウント」だけになったので、ここでは Google ログインを条件にする。
+    //   外部の利用者はマンションのデータ（ファイルの置き場所）を Firestore ルールで読めないため、ファイルにもたどり着けない。
+    match /mansions/{mansionId}/{fileName} {
+      allow read, write: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.token.email_verified == true;
+    }
+  }
+}
